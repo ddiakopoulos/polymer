@@ -1,0 +1,122 @@
+﻿Original code licensed is released under the BSD 3-clause license (See LICENSE for more details). 
+
+This project *strictly* avoids the inclusion of *any* code under the the following licenses: GPL, LGPL, MPL, AGPL, CC-*-NC, and various restrictive academic variants.
+
+Other third party source-code components used in this repository are documented as follows:
+
+///////////////////////
+//   Public Domain   //
+///////////////////////
+
+https://github.com/nothings/stb (Public Domain)
+Authored by Sean T. Barrett, 1998+
+
+https://github.com/sgorsten/linalg (Public Domain)
+Authored by Sterling G. Orsten, 2014
+
+https://github.com/sgorsten/workbench (Public Domain)
+Authored by Sterling G. Orsten, 2015+
+
+https://github.com/nvpro-samples/shared_sources/blob/master/noise/noise1234.h (Public Domain)
+Authored by Stefan Gustavson, 2011
+
+https://en.wikipedia.org/wiki/MurmurHash (Public Domain)
+Authored by Austin Appleby, 2008
+
+https://github.com/emilk/emilib (Public Domain)
+Authored by Emil Ernerfeldt, 2015
+
+https://github.com/mstump/queues/tree/master/include (Public Domain)
+Authored by Matt Stump, 2014 and inspired by Dmitry Vyukov (http://www.1024cores.net/home/lock-free-algorithms)
+
+https://github.com/forrestthewoods/lib_fts (Public Domain)
+Authored by Forrest Smith, 2016+
+
+////////////////////////////////////////
+//   Permissively Licensed Libraries  //
+////////////////////////////////////////
+
+https://github.com/bulletphysics/bullet3 (zlib)
+Copyright (C) Erwin Coumans and Bullet contributors 
+
+https://github.com/fsole/brokkr (MIT)
+Copyright (C) Ferran Sole, 2017
+
+https://github.com/gabime/spdlog/ (MIT)
+Copyright (C) Gabi Melman, 2016
+
+http://www.glfw.org/ (zlib/libpng)
+Copyright (C) Camilla Berglund, 2006+
+
+http://www.geometrictools.com/ (Boost)
+Copyright (C) Geometric Tools, 1998-2015
+
+https://github.com/g-truc/gli (MIT)
+Copyright (C) G-Truc Creation, 2010+
+
+https://github.com/g-truc/glm (MIT)
+Copyright (C) G-Truc Creation, 2005+
+
+https://github.com/cinder/Cinder (BSD 2-Clause)
+Copyright (C) The Barbarian Group, 2010+
+
+https://github.com/ocornut/imgui (MIT)
+Copyright (C) Omar Cornut and ImGui contributors, 2014+
+
+https://github.com/bkaradzic/bgfx (BSD 2-Clause)
+Copyright (C) Branimir Karadzic, 2010+
+
+https://github.com/syoyo/tinyobjloader (BSD 2-Clause)
+Copyright (C) Syoyo Fujita, 2012+
+
+https://github.com/melax/sandbox (MIT)
+Copyright (C) Stan Melax, 2014
+
+https://github.com/dmsovetov/Nimble (MIT)
+Copyright (C) Dmitry Sovetov, 2015
+
+https://github.com/memononen/nanovg/ (zlib/libpng)
+Copyright (C) Mikko Mononen, 2015
+
+https://github.com/caseman/noise (MIT)
+Copyright (C) Casey Duncan, 2008
+
+https://hal.inria.fr/hal-00670496/ (One Euro Filter) (Boost)
+Copyright (C) Reviatech, 2012
+
+https://github.com/mattdesl/glsl-fxaa/blob/master/fxaa.glsl (BSD 3-Clause)
+Copyright (C) Armin Ronacher, 2011
+
+https://github.com/spite/THREE.MeshLine (MIT)
+Copyright (C) Jaume Sanchez Elias, 2015
+
+https://github.com/spite/THREE.DecalGeometry (MIT)
+Copyright (C) Jaume Sanchez Elias, 2014
+
+https://github.com/simongeilfus/PoissonDiskDistribution (MIT)
+Copyright (C) Simon Geilfus, 2015
+
+https://github.com/simongeilfus/Cinder-Experiments (BSD 2-Clause)
+Copyright (C) Simon Geilfus, 2015
+
+https://github.com/simongeilfus/SimplexNoise (BSD 2-Clause)
+Copyright (C) Simon Geilfus, 2016
+
+https://github.com/nickgillian/grt (MIT)
+Copyright (C) Nicholas Gillian, 2012
+
+https://github.com/ekmett/vr (BSD 2-Clause)
+Copyright (C) Edward Kmett, 2015
+
+https://github.com/facebookresearch/HVVR (BSD 3-Clause)
+Copyright (C) Facebook, Inc., 2017+
+
+https://github.com/facebookincubator/FBX2glTF (BSD 3-Clause)
+Copyright (C) Facebook, Inc., 2017+
+
+///////////////////////////////
+//   Acadenuc Publications   //
+///////////////////////////////
+
+"An Analytic Model for Full Spectral Sky-Dome Radiance"
+Copyright (C) Lukas Hosek and Alexander Wilkie, 2012-2013
