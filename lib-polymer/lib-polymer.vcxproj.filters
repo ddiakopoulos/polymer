@@ -1,0 +1,177 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="third_party">
+      <UniqueIdentifier>{44fc042c-0d49-441b-ba08-cdbd35a2a947}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\imgui">
+      <UniqueIdentifier>{b12263b9-093c-4d8a-814d-4c507b45ede6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\nanovg">
+      <UniqueIdentifier>{5019fdaa-f676-4a48-9b30-deb85e914465}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\tinygizmo">
+      <UniqueIdentifier>{154c9f53-9e43-418e-92c2-b97ca9e2b2e5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{18186070-66de-4e86-bdec-e8ce244b6aff}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\math">
+      <UniqueIdentifier>{c7417ef8-96e1-441c-86ea-dd75ccbeaae8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\tools">
+      <UniqueIdentifier>{10616b86-375f-450b-ab3f-8e2517e46f22}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\queues">
+      <UniqueIdentifier>{dd4ad3de-9911-4ad3-868e-03f188576ff1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\math-core">
+      <UniqueIdentifier>{912ca261-d758-4be2-9f0e-4c906ab3c952}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\third_party\imgui\imconfig.h">
+      <Filter>third_party\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third_party\imgui\imgui.h">
+      <Filter>third_party\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third_party\imgui\imgui_internal.h">
+      <Filter>third_party\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third_party\nanovg_gl_utils.h">
+      <Filter>third_party\nanovg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third_party\nanovg.h">
+      <Filter>third_party\nanovg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third_party\nanovg_gl.h">
+      <Filter>third_party\nanovg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third_party\fontstash.h">
+      <Filter>third_party\nanovg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third_party\tiny-gizmo.hpp">
+      <Filter>third_party\tinygizmo</Filter>
+    </ClInclude>
+    <ClInclude Include="math-common.hpp">
+      <Filter>src\math-core</Filter>
+    </ClInclude>
+    <ClInclude Include="math-spatial.hpp">
+      <Filter>src\math-core</Filter>
+    </ClInclude>
+    <ClInclude Include="math-ray.hpp">
+      <Filter>src\math-core</Filter>
+    </ClInclude>
+    <ClInclude Include="math-projection.hpp">
+      <Filter>src\math-core</Filter>
+    </ClInclude>
+    <ClInclude Include="math-euclidean.hpp">
+      <Filter>src\math-core</Filter>
+    </ClInclude>
+    <ClInclude Include="math-core.hpp">
+      <Filter>src\math-core</Filter>
+    </ClInclude>
+    <ClInclude Include="spsc_queue.hpp">
+      <Filter>src\queues</Filter>
+    </ClInclude>
+    <ClInclude Include="spsc_bounded_queue.hpp">
+      <Filter>src\queues</Filter>
+    </ClInclude>
+    <ClInclude Include="mpsc_queue.hpp">
+      <Filter>src\queues</Filter>
+    </ClInclude>
+    <ClInclude Include="mpsc_bounded_queue.hpp">
+      <Filter>src\queues</Filter>
+    </ClInclude>
+    <ClInclude Include="mpmc_bounded_queue.hpp">
+      <Filter>src\queues</Filter>
+    </ClInclude>
+    <ClInclude Include="mpmc_blocking_queue.hpp">
+      <Filter>src\queues</Filter>
+    </ClInclude>
+    <ClInclude Include="circular_buffer.hpp">
+      <Filter>src\queues</Filter>
+    </ClInclude>
+    <ClInclude Include="algo_misc.hpp">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="tweens.hpp">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="trajectory.hpp">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="splines.hpp">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="solvers.hpp">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="simplex_noise.hpp">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="radix_sort.hpp">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="poisson_disk.hpp">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="parallel_transport_frames.hpp">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="one_euro.hpp">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="octree.hpp">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="index.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="movement_tracker.hpp">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="procedural_mesh.hpp">
+      <Filter>src\tools</Filter>
+    </ClInclude>
+    <ClInclude Include="geometry.hpp">
+      <Filter>src\tools</Filter>
+    </ClInclude>
+    <ClInclude Include="file_io.hpp">
+      <Filter>src\tools</Filter>
+    </ClInclude>
+    <ClInclude Include="bit_mask.hpp">
+      <Filter>src\tools</Filter>
+    </ClInclude>
+    <ClInclude Include="arcball.hpp">
+      <Filter>src\tools</Filter>
+    </ClInclude>
+    <ClInclude Include="util.hpp">
+      <Filter>src\tools</Filter>
+    </ClInclude>
+    <ClInclude Include="string_utils.hpp">
+      <Filter>src\tools</Filter>
+    </ClInclude>
+    <ClInclude Include="linalg.h">
+      <Filter>src\math-core</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\third_party\imgui\imgui.cpp">
+      <Filter>third_party\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\third_party\imgui\imgui_draw.cpp">
+      <Filter>third_party\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\third_party\nanovg.cpp">
+      <Filter>third_party\nanovg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\third_party\tiny-gizmo.cpp">
+      <Filter>third_party\tinygizmo</Filter>
+    </ClCompile>
+    <ClCompile Include="impl.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

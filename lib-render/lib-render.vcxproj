@@ -1,0 +1,125 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{71F00A1A-C67D-4CB9-9F37-98D4975FA5C7}</ProjectGuid>
+    <RootNamespace>lib-render</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IntDir>$(SolutionDir)build\$(Platform)\$(Configuration)\$(ProjectName)\obj\</IntDir>
+    <OutDir>$(SolutionDir)build\$(Platform)\$(Configuration)\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IntDir>$(SolutionDir)build\$(Platform)\$(Configuration)\$(ProjectName)\obj\</IntDir>
+    <OutDir>$(SolutionDir)build\$(Platform)\$(Configuration)\</OutDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\;$(ProjectDir)..\lib-render\gfx\gl;$(ProjectDir)..\lib-polymer;$(ProjectDir)..\third_party;$(ProjectDir)..\examples;$(ProjectDir)..\third_party\glew;$(ProjectDir)..\third_party\glfw3\include;$(ProjectDir)..\third_party\cereal\include</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;__WINDOWS_DS__;NOMINMAX;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(ProjectDir)..\third_party\glew\lib\$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>glew32s.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\;$(ProjectDir)..\lib-render\gfx\gl;$(ProjectDir)..\lib-polymer;$(ProjectDir)..\third_party;$(ProjectDir)..\examples;$(ProjectDir)..\third_party\glew;$(ProjectDir)..\third_party\glfw3\include;$(ProjectDir)..\third_party\cereal\include</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;__WINDOWS_DS__;NOMINMAX;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>$(ProjectDir)..\third_party\glew\lib\$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>glew32s.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="assets.hpp" />
+    <ClInclude Include="bloom_pass.hpp" />
+    <ClInclude Include="fwd_renderer.hpp" />
+    <ClInclude Include="gfx\gl\gl-api.hpp" />
+    <ClInclude Include="gfx\gl\gl-async-gpu-timer.hpp" />
+    <ClInclude Include="gfx\gl\gl-async-pbo.hpp" />
+    <ClInclude Include="gfx\gl\gl-camera.hpp" />
+    <ClInclude Include="gfx\gl\gl-gizmo.hpp" />
+    <ClInclude Include="gfx\gl\gl-imgui.hpp" />
+    <ClInclude Include="gfx\gl\gl-loaders.hpp" />
+    <ClInclude Include="gfx\gl\gl-mesh.hpp" />
+    <ClInclude Include="gfx\gl\gl-nvg.hpp" />
+    <ClInclude Include="gfx\gl\gl-procedural-mesh.hpp" />
+    <ClInclude Include="gfx\gl\gl-procedural-sky.hpp" />
+    <ClInclude Include="gfx\gl\gl-renderable-grid.hpp" />
+    <ClInclude Include="gfx\gl\gl-renderable-meshline.hpp" />
+    <ClInclude Include="gfx\gl\gl-shader-monitor.hpp" />
+    <ClInclude Include="gfx\gl\gl-texture-view.hpp" />
+    <ClInclude Include="gfx\gl\glfw-app.hpp" />
+    <ClInclude Include="logging.hpp" />
+    <ClInclude Include="material.hpp" />
+    <ClInclude Include="scene.hpp" />
+    <ClInclude Include="serialization.hpp" />
+    <ClInclude Include="shadow_pass.hpp" />
+    <ClInclude Include="uniforms.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="fwd_renderer.cpp" />
+    <ClCompile Include="gfx\gl\gl-imgui.cpp" />
+    <ClCompile Include="gfx\gl\gl-nvg.cpp" />
+    <ClCompile Include="gfx\gl\glfw-app.cpp" />
+    <ClCompile Include="material.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\lib-polymer\lib-polymer.vcxproj">
+      <Project>{992e85a7-b590-477b-a1b2-8a04aaad0e10}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

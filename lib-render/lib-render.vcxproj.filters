@@ -1,0 +1,83 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="fwd_renderer.cpp" />
+    <ClCompile Include="material.cpp" />
+    <ClCompile Include="gfx\gl\glfw-app.cpp">
+      <Filter>backend\gl</Filter>
+    </ClCompile>
+    <ClCompile Include="gfx\gl\gl-imgui.cpp">
+      <Filter>backend\gl</Filter>
+    </ClCompile>
+    <ClCompile Include="gfx\gl\gl-nvg.cpp">
+      <Filter>backend\gl</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="assets.hpp" />
+    <ClInclude Include="bloom_pass.hpp" />
+    <ClInclude Include="fwd_renderer.hpp" />
+    <ClInclude Include="logging.hpp" />
+    <ClInclude Include="material.hpp" />
+    <ClInclude Include="scene.hpp" />
+    <ClInclude Include="serialization.hpp" />
+    <ClInclude Include="shadow_pass.hpp" />
+    <ClInclude Include="uniforms.hpp" />
+    <ClInclude Include="gfx\gl\gl-api.hpp">
+      <Filter>backend\gl</Filter>
+    </ClInclude>
+    <ClInclude Include="gfx\gl\gl-async-gpu-timer.hpp">
+      <Filter>backend\gl</Filter>
+    </ClInclude>
+    <ClInclude Include="gfx\gl\gl-async-pbo.hpp">
+      <Filter>backend\gl</Filter>
+    </ClInclude>
+    <ClInclude Include="gfx\gl\gl-camera.hpp">
+      <Filter>backend\gl</Filter>
+    </ClInclude>
+    <ClInclude Include="gfx\gl\glfw-app.hpp">
+      <Filter>backend\gl</Filter>
+    </ClInclude>
+    <ClInclude Include="gfx\gl\gl-gizmo.hpp">
+      <Filter>backend\gl</Filter>
+    </ClInclude>
+    <ClInclude Include="gfx\gl\gl-imgui.hpp">
+      <Filter>backend\gl</Filter>
+    </ClInclude>
+    <ClInclude Include="gfx\gl\gl-loaders.hpp">
+      <Filter>backend\gl</Filter>
+    </ClInclude>
+    <ClInclude Include="gfx\gl\gl-mesh.hpp">
+      <Filter>backend\gl</Filter>
+    </ClInclude>
+    <ClInclude Include="gfx\gl\gl-nvg.hpp">
+      <Filter>backend\gl</Filter>
+    </ClInclude>
+    <ClInclude Include="gfx\gl\gl-procedural-mesh.hpp">
+      <Filter>backend\gl</Filter>
+    </ClInclude>
+    <ClInclude Include="gfx\gl\gl-procedural-sky.hpp">
+      <Filter>backend\gl</Filter>
+    </ClInclude>
+    <ClInclude Include="gfx\gl\gl-renderable-grid.hpp">
+      <Filter>backend\gl</Filter>
+    </ClInclude>
+    <ClInclude Include="gfx\gl\gl-renderable-meshline.hpp">
+      <Filter>backend\gl</Filter>
+    </ClInclude>
+    <ClInclude Include="gfx\gl\gl-shader-monitor.hpp">
+      <Filter>backend\gl</Filter>
+    </ClInclude>
+    <ClInclude Include="gfx\gl\gl-texture-view.hpp">
+      <Filter>backend\gl</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="backend">
+      <UniqueIdentifier>{a82ad854-e988-4334-a62f-dc832c053c15}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="backend\gl">
+      <UniqueIdentifier>{cc4e37ef-4ac0-47f3-adcd-a38cf9cd4708}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
