@@ -12,21 +12,20 @@
 #include <string>
 
 #if defined(POLYMER_PLATFORM_WINDOWS)
-#define GLEW_STATIC
-#define GL_GLEXT_PROTOTYPES
-#include "glew.h"
+    #define GLEW_STATIC
+    #define GL_GLEXT_PROTOTYPES
+    #include "glew.h"
+    #pragma warning(push)
+    #pragma warning(disable : 4800)
 #endif
 
 #define GLFW_INCLUDE_GLU
 #include <GLFW/glfw3.h>
 
-#if defined(POLYMER_PLATFORM_WINDOWS)
-#pragma warning(push)
-#pragma warning(disable : 4800)
-#endif
-
 namespace polymer
 {
+
+    // fixme - move to events file
     struct UpdateEvent
     {
         double elapsed_s;
@@ -35,6 +34,7 @@ namespace polymer
         uint64_t elapsedFrames;
     };
 
+    // fixme - move to events file
     struct InputEvent
     {
         enum Type { CURSOR, MOUSE, KEY, CHAR, SCROLL };

@@ -211,7 +211,7 @@ scene_editor_app::~scene_editor_app()
 
 void scene_editor_app::on_drop(std::vector<std::string> filepaths)
 {
-    for (auto path : filepaths)
+    for (const auto & path : filepaths)
     {
         std::transform(path.begin(), path.end(), path.begin(), ::tolower);
         const std::string fileExtension = get_extension(path);
@@ -243,27 +243,6 @@ void scene_editor_app::on_drop(std::vector<std::string> filepaths)
             create_handle_for_asset(std::string(get_filename_without_extension(path) + "-" + m.first).c_str(), make_mesh_from_geometry(importedMesh));
             create_handle_for_asset(std::string(get_filename_without_extension(path) + "-" + m.first).c_str(), std::move(importedMesh));
         }
-
-        /*
-        if (fileExtension == "ply")
-        {
-            auto plyImport = load_geometry_from_ply(path);
-            rescale_geometry(plyImport, 1.f);
-            create_handle_for_asset(get_filename_without_extension(path).c_str(), make_mesh_from_geometry(plyImport));
-            create_handle_for_asset(get_filename_without_extension(path).c_str(), std::move(plyImport));
-        }
-
-        if (fileExtension == "obj")
-        {
-            auto objImport = load_geometry_from_obj_no_texture(path);
-            for (auto & mesh : objImport)
-            {
-                rescale_geometry(mesh, 1.f);
-                create_handle_for_asset(get_filename_without_extension(path).c_str(), make_mesh_from_geometry(mesh));
-                create_handle_for_asset(get_filename_without_extension(path).c_str(), std::move(mesh));
-            }
-        }
-        */
     }
 }
 
@@ -302,6 +281,7 @@ void scene_editor_app::on_input(const InputEvent & event)
             {
                 editor->clear();
             }
+
             // Focus on currently selected object
             if (event.value[0] == GLFW_KEY_F && event.action == GLFW_RELEASE)
             {
@@ -314,20 +294,12 @@ void scene_editor_app::on_input(const InputEvent & event)
                     flycam.update_yaw_pitch();
                 }
             }
+
             // Togle drawing ImGUI
             if (event.value[0] == GLFW_KEY_TAB && event.action == GLFW_RELEASE)
             {
                 showUI = !showUI;
             }
-
-            /*
-            if (event.value[0] == GLFW_KEY_SPACE && event.action == GLFW_RELEASE)
-            {
-                glfwShowWindow(window);
-                glfwFocusWindow(window);
-                glfwRequestWindowAttention(window);
-            }
-            */
         }
 
         // Raycast for editor/gizmo selection on mouse up
@@ -422,6 +394,7 @@ void scene_editor_app::on_draw()
 
     {
         editorProfiler.begin("gather-scene");
+
         // Single-viewport camera
         sceneData.views.push_back(view_data(0, cameraPose, projectionMatrix));
 
