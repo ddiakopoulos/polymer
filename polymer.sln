@@ -24,7 +24,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lib-engine", "lib-engine\li
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{0B054E41-2F3E-4230-8488-B44C3643F315}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gl-render", "samples\gl-render.vcxproj", "{20F2353F-E1EE-4825-B1BC-F99446F24954}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gl-render", "samples\gl-render\gl-render.vcxproj", "{20F2353F-E1EE-4825-B1BC-F99446F24954}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
