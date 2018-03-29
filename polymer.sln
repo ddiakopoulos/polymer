@@ -22,6 +22,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vr-environment", "app-vr-en
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lib-engine", "lib-engine\lib-engine.vcxproj", "{71F00A1A-C67D-4CB9-9F37-98D4975FA5C7}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{0B054E41-2F3E-4230-8488-B44C3643F315}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gl-render", "samples\gl-render.vcxproj", "{20F2353F-E1EE-4825-B1BC-F99446F24954}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -52,6 +56,10 @@ Global
 		{71F00A1A-C67D-4CB9-9F37-98D4975FA5C7}.Debug|x64.Build.0 = Debug|x64
 		{71F00A1A-C67D-4CB9-9F37-98D4975FA5C7}.Release|x64.ActiveCfg = Release|x64
 		{71F00A1A-C67D-4CB9-9F37-98D4975FA5C7}.Release|x64.Build.0 = Release|x64
+		{20F2353F-E1EE-4825-B1BC-F99446F24954}.Debug|x64.ActiveCfg = Debug|x64
+		{20F2353F-E1EE-4825-B1BC-F99446F24954}.Debug|x64.Build.0 = Debug|x64
+		{20F2353F-E1EE-4825-B1BC-F99446F24954}.Release|x64.ActiveCfg = Release|x64
+		{20F2353F-E1EE-4825-B1BC-F99446F24954}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -63,6 +71,7 @@ Global
 		{516363FB-3F0D-463F-9CE5-8B739253C9E3} = {E4F5BE92-478B-4514-9F4C-1709C40EF65B}
 		{8935AE6A-79E7-421D-B215-C1DEEB35EBA3} = {E4F5BE92-478B-4514-9F4C-1709C40EF65B}
 		{71F00A1A-C67D-4CB9-9F37-98D4975FA5C7} = {25969120-2DC7-47EA-827F-41616989B284}
+		{20F2353F-E1EE-4825-B1BC-F99446F24954} = {0B054E41-2F3E-4230-8488-B44C3643F315}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {E2D0793D-BD41-4F42-A6AA-DAB3D17A46BE}
