@@ -7,7 +7,7 @@
 #include "uniforms.hpp"
 #include "assets.hpp"
 #include "scene.hpp"
-#include "gui.hpp"
+#include "editor-ui.hpp"
 
 static inline Pose to_linalg(tinygizmo::rigid_transform & t)
 {

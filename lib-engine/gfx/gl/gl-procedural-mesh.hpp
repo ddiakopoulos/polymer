@@ -33,13 +33,6 @@ namespace polymer
     {
         return make_mesh_from_geometry(make_3d_ring(innerRadius, outerRadius, length));
     }
-
-    inline GlMesh make_frustum_mesh(float aspectRatio = 1.33333f)
-    {
-        auto frustumMesh = make_mesh_from_geometry(make_frustum(aspectRatio));
-        frustumMesh.set_non_indexed(GL_LINES);
-        return frustumMesh;
-    }
    
     inline GlMesh make_torus_mesh(int radial_segments = 8)
     {
@@ -60,7 +53,29 @@ namespace polymer
     {
         return make_mesh_from_geometry(make_curved_plane());
     }
+
+    inline GlMesh make_icosahedron_mesh()
+    {
+        return make_mesh_from_geometry(make_icosahedron());
+    }
+
+    inline GlMesh make_octohedron_mesh()
+    {
+        return make_mesh_from_geometry(make_octohedron());
+    }
+
+    inline GlMesh make_tetrahedron_mesh()
+    {
+        return make_mesh_from_geometry(make_tetrahedron());
+    }
     
+    inline GlMesh make_frustum_mesh(float aspectRatio = 1.33333f)
+    {
+        auto frustumMesh = make_mesh_from_geometry(make_frustum(aspectRatio));
+        frustumMesh.set_non_indexed(GL_LINES);
+        return frustumMesh;
+    }
+
     inline GlMesh make_axis_mesh()
     {
         auto axisMesh = make_mesh_from_geometry(make_axis());
@@ -82,22 +97,7 @@ namespace polymer
         sprialMesh.set_non_indexed(GL_LINE_STRIP);
         return sprialMesh;
     }
-    
-    inline GlMesh make_icosahedron_mesh()
-    {
-        return make_mesh_from_geometry(make_icosahedron());
-    }
-    
-    inline GlMesh make_octohedron_mesh()
-    {
-        return make_mesh_from_geometry(make_octohedron());
-    }
-    
-    inline GlMesh make_tetrahedron_mesh()
-    {
-        return make_mesh_from_geometry(make_tetrahedron());
-    }
-    
+
     inline GlMesh make_fullscreen_quad_ndc()
     {
         Geometry g;

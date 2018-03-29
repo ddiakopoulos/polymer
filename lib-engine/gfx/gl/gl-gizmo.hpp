@@ -39,7 +39,7 @@ struct GlGizmo : public Noncopyable
     GlShader program;
     GlMesh mesh;
 
-    polymer::float4x4 viewProjectionMatrix;
+    float4x4 viewProjectionMatrix;
         
     GlGizmo()
     {

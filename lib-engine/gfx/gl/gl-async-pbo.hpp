@@ -30,7 +30,7 @@ struct AsyncRead1
         glDeleteBuffers(1, &pbo[1]);
     }
 
-    polymer::float4 download()
+    float4 download()
     {
         int current = idx, next = 1 - idx;
 
@@ -40,7 +40,7 @@ struct AsyncRead1
         glBindBuffer(GL_PIXEL_PACK_BUFFER, pbo[next]);
         GLubyte * v = (GLubyte*)glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
 
-        polymer::float4 result;
+        float4 result;
 
         if (v != NULL)
         {

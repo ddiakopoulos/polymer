@@ -105,7 +105,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="editor-app.hpp" />
-    <ClInclude Include="gui.hpp" />
+    <ClInclude Include="editor-ui.hpp" />
     <ClInclude Include="win32.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

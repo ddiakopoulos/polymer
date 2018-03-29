@@ -1,13 +1,13 @@
 #include "index.hpp"
 #include "editor-app.hpp"
-#include "gui.hpp"
+#include "editor-ui.hpp"
 #include "serialization.hpp"
 #include "logging.hpp"
 #include "win32.hpp"
 
 using namespace polymer;
 
-scene_editor_app::scene_editor_app() : GLFWApp(1920, 1080, "Scene Editor")
+scene_editor_app::scene_editor_app() : GLFWApp(1920, 1080, "Polymer Editor")
 {
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
@@ -271,6 +271,12 @@ void scene_editor_app::on_window_resize(int2 size)
 { 
     uiSurface.bounds = { 0, 0, (float)size.x, (float)size.y };
     uiSurface.layout();
+
+    renderer.reset();
+
+    renderer_settings settings;
+    settings.renderSize = float2(size.x, size.y);
+    renderer.reset(new forward_renderer(settings));
 }
 
 void scene_editor_app::on_input(const InputEvent & event)

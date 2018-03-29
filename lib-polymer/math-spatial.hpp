@@ -316,7 +316,7 @@ namespace polymer
     // (Nx, Ny, Nz) is the normal vector of given plane.
     inline float4x4 make_reflection_matrix(const float4 plane)
     {
-        static const polymer::float4x4 Zero4x4 = { { 0, 0, 0, 0 },{ 0, 0, 0, 0 },{ 0, 0, 0, 0 },{ 0, 0, 0, 0 } };
+        static const float4x4 Zero4x4 = { { 0, 0, 0, 0 },{ 0, 0, 0, 0 },{ 0, 0, 0, 0 },{ 0, 0, 0, 0 } };
         float4x4 reflectionMat = Zero4x4;
 
         reflectionMat[0][0] = (1.f - 2.0f * plane[0] * plane[0]);
