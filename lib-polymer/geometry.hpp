@@ -4,7 +4,7 @@
 #include "math-core.hpp"
 #include "../lib-model-io/model-io.hpp"
 
-using namespace avl;
+using namespace polymer;
 
 typedef runtime_mesh Geometry;
 

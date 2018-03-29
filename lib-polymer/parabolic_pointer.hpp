@@ -5,7 +5,7 @@
 #ifndef parabolic_pointer_hpp
 #define parabolic_pointer_hpp
 
-using namespace avl;
+using namespace polymer;
 
 #include "util.hpp"
 #include "math-core.hpp"

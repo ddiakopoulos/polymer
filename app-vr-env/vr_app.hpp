@@ -10,7 +10,7 @@
 #include "algo_misc.hpp"
 #include "gl-imgui.hpp"
 
-using namespace avl;
+using namespace polymer;
 
 struct ScreenViewport
 {

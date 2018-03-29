@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef AVL_IMGUI_H
-#define AVL_IMGUI_H
+#ifndef polymer_imgui_hpp
+#define polymer_imgui_hpp
 
 #include <memory>
 #include <map>
@@ -12,18 +12,18 @@
 
 // Implicit casts for linalg types
 #define IM_VEC2_CLASS_EXTRA                                             \
-ImVec2(const avl::float2 & f) { x = f.x; y = f.y; }                     \
-operator avl::float2() const { return avl::float2(x,y); }               \
-ImVec2(const avl::int2 & f) { x = f.x; y = f.y; }                       \
-operator avl::int2() const { return avl::int2(x,y); }
+ImVec2(const polymer::float2 & f) { x = f.x; y = f.y; }                     \
+operator polymer::float2() const { return polymer::float2(x,y); }               \
+ImVec2(const polymer::int2 & f) { x = f.x; y = f.y; }                       \
+operator polymer::int2() const { return polymer::int2(x,y); }
 
 #define IM_VEC4_CLASS_EXTRA                                             \
-ImVec4(const avl::float4 & f) { x = f.x; y = f.y; z = f.z; w = f.w; }   \
-operator avl::float4() const { return avl::float4(x,y,z,w); }
+ImVec4(const polymer::float4 & f) { x = f.x; y = f.y; z = f.z; w = f.w; }   \
+operator polymer::float4() const { return polymer::float4(x,y,z,w); }
 
 #include "imgui/imgui.h"
 
-using namespace avl;
+using namespace polymer;
 
 struct ui_rect
 {
@@ -32,7 +32,7 @@ struct ui_rect
 };
 
 struct GlTexture2D;
-namespace avl
+namespace polymer
 {
     class GLFWApp;
     struct InputEvent;
@@ -66,7 +66,7 @@ namespace gui
         imgui_wrapper(GLFWwindow * win);
         ~imgui_wrapper();
         void add_font(const std::vector<uint8_t> & font);
-        void update_input(const avl::InputEvent & e);
+        void update_input(const polymer::InputEvent & e);
         void begin_frame();
         void end_frame();
     };
@@ -187,4 +187,4 @@ namespace gui
 
 }
 
-#endif // AVL_IMGUI_H
+#endif // polymer_imgui_hpp

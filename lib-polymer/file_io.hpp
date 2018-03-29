@@ -7,7 +7,7 @@
 #include <fstream>
 #include <streambuf>
 
-namespace avl
+namespace polymer
 {
     
     inline std::vector<uint8_t> read_file_binary(const std::string pathToFile)

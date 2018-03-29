@@ -7,7 +7,7 @@
 
 #include "gl-api.hpp"
 
-namespace avl
+namespace polymer
 {
 
 class GlRenderableMeshline

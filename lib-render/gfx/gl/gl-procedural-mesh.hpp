@@ -6,7 +6,7 @@
 
 #include <assert.h>
 
-namespace avl
+namespace polymer
 {
     
     inline GlMesh make_cube_mesh()

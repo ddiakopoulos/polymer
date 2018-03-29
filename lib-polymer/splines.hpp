@@ -7,7 +7,7 @@
 
 #include "math-core.hpp"
 
-namespace avl
+namespace polymer
 {
     
     struct SplinePoint

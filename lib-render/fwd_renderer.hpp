@@ -17,7 +17,7 @@
 #include "bloom_pass.hpp"
 #include "shadow_pass.hpp"
 
-using namespace avl;
+using namespace polymer;
 
 struct renderer_settings
 {

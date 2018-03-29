@@ -7,7 +7,7 @@
 #include "gl-api.hpp"
 #include "procedural_mesh.hpp"
 
-using namespace avl;
+using namespace polymer;
 
 class DebugLineRenderer
 {

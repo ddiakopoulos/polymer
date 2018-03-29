@@ -7,7 +7,7 @@
 #include "math-core.hpp"
 #include "assets.hpp"
 
-namespace avl
+namespace polymer
 {
 
     struct Material
@@ -64,6 +64,6 @@ namespace avl
 
 }
 
-typedef AssetHandle<std::shared_ptr<avl::Material>> MaterialHandle;
+typedef AssetHandle<std::shared_ptr<polymer::Material>> MaterialHandle;
 
 #endif // end vr_material_hpp

@@ -26,7 +26,7 @@ constexpr const char gridFragmentShader[] = R"(#version 330
     }
 )";
 
-namespace avl
+namespace polymer
 {
 
 class RenderableGrid

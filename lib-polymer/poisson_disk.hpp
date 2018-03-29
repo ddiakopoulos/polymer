@@ -10,14 +10,14 @@
 #include <functional>
 #include <vector>
 
-#if defined(ANVIL_PLATFORM_WINDOWS)
+#if defined(POLYMER_PLATFORM_WINDOWS)
 #pragma warning(push)
 #pragma warning(disable : 4244)
 #endif
 
 namespace poisson
 {
-    using namespace avl;
+    using namespace polymer;
 
     class Grid 
     {
@@ -169,7 +169,7 @@ namespace poisson
                 for (int i = 0; i < k; i++)
                 {
                     float randRadius = separation * (1.0f + r.random_float());
-                    float randAngle = r.random_float() * ANVIL_PI * 2.0f;
+                    float randAngle = r.random_float() * POLYMER_PI * 2.0f;
                     float2 newPoint = center + float2(cos(randAngle), sin(randAngle)) * randRadius;
                     
                     // check if the new random point is in the window bounds
@@ -231,8 +231,8 @@ namespace poisson
                 for (int i = 0; i < k; i++)
                 {
                     float randRadius = separation * (1.0f + r.random_float());
-                    float angle1 = r.random_float() * ANVIL_PI * 2.0f;
-                    float angle2 = r.random_float() * ANVIL_PI * 2.0f;
+                    float angle1 = r.random_float() * POLYMER_PI * 2.0f;
+                    float angle2 = r.random_float() * POLYMER_PI * 2.0f;
                     
                     float newX = center.x + randRadius * cos(angle1) * sin(angle2);
                     float newY = center.y + randRadius * sin(angle1) * sin(angle2);

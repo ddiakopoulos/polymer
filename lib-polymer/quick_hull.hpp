@@ -21,7 +21,7 @@
 #include <assert.h>
 #include <deque>
 
-using namespace avl;
+using namespace polymer;
 
 namespace quickhull 
 {

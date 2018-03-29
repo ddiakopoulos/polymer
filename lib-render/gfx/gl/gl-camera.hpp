@@ -6,7 +6,7 @@
 
 #include "stb/stb_image_write.h"
 
-namespace avl
+namespace polymer
 {
 
     ////////////////////////////////////////////////

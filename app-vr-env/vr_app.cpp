@@ -43,8 +43,6 @@ VirtualRealityApp::~VirtualRealityApp()
 
 void VirtualRealityApp::setup_physics()
 {
-    AVL_SCOPED_TIMER("setup_physics");
-
     physicsEngine.reset(new BulletEngineVR());
 
     physicsDebugRenderer.reset(new PhysicsDebugRenderer()); // Sets up a few gl objects

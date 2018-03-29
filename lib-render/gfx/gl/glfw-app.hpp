@@ -11,7 +11,7 @@
 #include <codecvt>
 #include <string>
 
-#if defined(ANVIL_PLATFORM_WINDOWS)
+#if defined(POLYMER_PLATFORM_WINDOWS)
 #define GLEW_STATIC
 #define GL_GLEXT_PROTOTYPES
 #include "glew.h"
@@ -20,12 +20,12 @@
 #define GLFW_INCLUDE_GLU
 #include <GLFW/glfw3.h>
 
-#if defined(ANVIL_PLATFORM_WINDOWS)
+#if defined(POLYMER_PLATFORM_WINDOWS)
 #pragma warning(push)
 #pragma warning(disable : 4800)
 #endif
 
-namespace avl
+namespace polymer
 {
     struct UpdateEvent
     {
@@ -127,10 +127,10 @@ namespace avl
         
     extern int Main(int argc, char * argv[]);
         
-} // end namespace avl
+} // end namespace polymer
 
 #endif
 
 #pragma warning(pop)
 
-#define IMPLEMENT_MAIN(...) namespace avl { int main(int argc, char * argv[]); } int main(int argc, char * argv[]) { return avl::Main(argc, argv); } int avl::Main(__VA_ARGS__)
+#define IMPLEMENT_MAIN(...) namespace polymer { int main(int argc, char * argv[]); } int main(int argc, char * argv[]) { return polymer::Main(argc, argv); } int polymer::Main(__VA_ARGS__)

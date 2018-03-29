@@ -6,7 +6,7 @@
 #include "gl-camera.hpp"
 #include "tiny-gizmo.hpp"
 
-using namespace avl;
+using namespace polymer;
 
 constexpr const char gl_gizmo_vert[] = R"(#version 330
     layout(location = 0) in vec3 vertex;
@@ -39,7 +39,7 @@ struct GlGizmo : public Noncopyable
     GlShader program;
     GlMesh mesh;
 
-    avl::float4x4 viewProjectionMatrix;
+    polymer::float4x4 viewProjectionMatrix;
         
     GlGizmo()
     {
@@ -89,7 +89,7 @@ struct GlGizmo : public Noncopyable
         gizmo_state.hotkey_scale = false;
     }
 
-    void update(const GlCamera & cam, const avl::float2 windowSize)
+    void update(const GlCamera & cam, const polymer::float2 windowSize)
     {
         const Pose p = cam.get_pose();
         viewProjectionMatrix = mul(cam.get_projection_matrix(windowSize.x / windowSize.y), cam.get_view_matrix());

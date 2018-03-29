@@ -14,13 +14,13 @@
 #include <algorithm>
 #include <assert.h>
 
-#if defined(ANVIL_PLATFORM_WINDOWS)
+#if defined(POLYMER_PLATFORM_WINDOWS)
 #pragma warning(push)
 #pragma warning(disable : 4244)
 #pragma warning(disable : 4267)
 #endif
 
-namespace avl
+namespace polymer
 {
     inline GlMesh make_mesh_from_geometry(const Geometry & geometry, const GLenum usage = GL_STATIC_DRAW)
     {

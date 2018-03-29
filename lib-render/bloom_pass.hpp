@@ -11,7 +11,7 @@
 #include "file_io.hpp"
 #include "procedural_mesh.hpp"
 
-using namespace avl;
+using namespace polymer;
 
 struct BloomPass
 {

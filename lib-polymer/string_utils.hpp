@@ -8,7 +8,7 @@
 #include <cctype>
 #include <algorithm>
 
-namespace avl
+namespace polymer
 {
 
     inline std::vector<std::string> split(const std::string & s, char delim) 

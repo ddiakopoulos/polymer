@@ -16,7 +16,7 @@ struct Sine
 {
     inline static float ease_in_out(float t)
     {
-        return -0.5f * (std::cos((float)ANVIL_PI * t) - 1.f);
+        return -0.5f * (std::cos((float)POLYMER_PI * t) - 1.f);
     }
 };
 

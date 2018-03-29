@@ -31,7 +31,7 @@
  * [ ] Performance profiling
  */
 
-using namespace avl;
+using namespace polymer;
 
 struct StableCascadedShadowPass
 {

@@ -14,7 +14,7 @@
 #include <Commdlg.h>
 #include <tchar.h>
 
-using namespace avl;
+using namespace polymer;
 
 std::wstring utf8_to_windows(const std::string & str)
 {

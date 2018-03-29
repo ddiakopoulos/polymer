@@ -9,7 +9,7 @@
 #include "stb/stb_easy_font.h"
 #include "btBulletCollisionCommon.h"
 
-using namespace avl;
+using namespace polymer;
 
 class PhysicsDebugRenderer : public btIDebugDraw
 {

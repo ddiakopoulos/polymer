@@ -12,7 +12,7 @@
 #include "math-core.hpp"
 #include "solvers.hpp"
 
-using namespace avl;
+using namespace polymer;
 
 // Calculate the maximum range that a ballistic projectile can be fired on given speed and gravity.
 //
@@ -25,7 +25,7 @@ inline float ballistic_range(float speed, float gravity, float initial_height)
 {
     if (speed < 0 || gravity < 0 || initial_height <= 0) throw std::range_error("invalid initial conditions");
 
-    float angle = 45.0 * ANVIL_DEG_TO_RAD; // no air resistence, so 45 degrees provides maximum range
+    float angle = 45.0 * POLYMER_DEG_TO_RAD; // no air resistence, so 45 degrees provides maximum range
     float cos = std::cos(angle);
     float sin = std::sin(angle);
 

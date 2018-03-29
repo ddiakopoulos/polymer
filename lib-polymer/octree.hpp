@@ -11,7 +11,7 @@
 #include <list>
 #include <memory>
 
-using namespace avl;
+using namespace polymer;
 
 /*
  * An octree is a tree data structure in which each internal node has exactly

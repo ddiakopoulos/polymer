@@ -91,7 +91,7 @@ static const char s_textureFrag3D[] = R"(#version 330
     }
 )";
 
-namespace avl
+namespace polymer
 {
 
     struct GLTextureView : public Noncopyable

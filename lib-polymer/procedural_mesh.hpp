@@ -7,13 +7,13 @@
 #include "algo_misc.hpp"
 #include <assert.h>
 
-#if defined(ANVIL_PLATFORM_WINDOWS)
+#if defined(POLYMER_PLATFORM_WINDOWS)
 #pragma warning(push)
 #pragma warning(disable : 4244)
 #pragma warning(disable : 4305)
 #endif
 
-namespace avl
+namespace polymer
 {
     
     inline Geometry make_cube()
@@ -62,8 +62,8 @@ namespace avl
         {
             for (uint32_t vi = 0; vi < V; ++vi)
             {
-                float u = float(ui) / (U - 1) * float(ANVIL_PI);
-                float v = float(vi) / (V - 1) * 2 * float(ANVIL_PI);
+                float u = float(ui) / (U - 1) * float(POLYMER_PI);
+                float v = float(vi) / (V - 1) * 2 * float(POLYMER_PI);
                 float3 normal = cartsesian_coord(u, v);
                 sphereGeom.vertices.push_back({normal * radius});
                 sphereGeom.normals.push_back(normal);
@@ -107,9 +107,9 @@ namespace avl
                 
                 float3 vertex;
                 
-                vertex.x = radius * sin(u * float(ANVIL_TAU));
+                vertex.x = radius * sin(u * float(POLYMER_TAU));
                 vertex.y = -v * height + heightHalf;
-                vertex.z = radius * cos(u * float(ANVIL_TAU));
+                vertex.z = radius * cos(u * float(POLYMER_TAU));
                 
                 cylinderGeom.vertices.push_back(vertex);
                 newRow.push_back((int) cylinderGeom.vertices.size() - 1);
@@ -226,7 +226,7 @@ namespace avl
         uint32_t phiSegments = 2;
         
         float thetaStart = 0.0;
-        float thetaLength = ANVIL_TAU;
+        float thetaLength = POLYMER_TAU;
         
         float radius = innerRadius;
         float radiusStep = ((outerRadius - innerRadius) / (float) phiSegments);
@@ -296,7 +296,7 @@ namespace avl
         // Inner Ring
         for (uint32_t i = 0; i < rs2; i++)
         {
-            float angle = i * ANVIL_TAU / rs;
+            float angle = i * POLYMER_TAU / rs;
             float x = innerRadius * cos(angle);
             float y = innerRadius * sin(angle);
             float z = (i < rs) ? -(length * 0.5f) : (length * 0.5f);
@@ -313,7 +313,7 @@ namespace avl
         // Outer Ring
         for (uint32_t i = 0; i < rs2; i++)
         {
-            float angle = i * ANVIL_TAU / rs;
+            float angle = i * POLYMER_TAU / rs;
             float x = outerRadius * cos(angle);
             float y = outerRadius * sin(angle);
             float z = (i < rs)?  -(length * 0.5f) : (length * 0.5f);
@@ -370,10 +370,10 @@ namespace avl
         
         for (uint32_t i = 0; i <= radial_segments; ++i)
         {
-            auto a = make_rotation_quat_axis_angle({0,1,0}, (i % radial_segments) * ANVIL_TAU / radial_segments);
+            auto a = make_rotation_quat_axis_angle({0,1,0}, (i % radial_segments) * POLYMER_TAU / radial_segments);
             for (uint32_t j = 0; j <= radial_segments; ++j)
             {
-                auto b = make_rotation_quat_axis_angle({0,0,1}, (j % radial_segments) * ANVIL_TAU / radial_segments);
+                auto b = make_rotation_quat_axis_angle({0,0,1}, (j % radial_segments) * POLYMER_TAU / radial_segments);
                 torus.vertices.push_back(qrot(a, qrot(b, float3(1,0,0)) + float3(3,0,0)));
                 torus.texcoord0.push_back({i * 8.0f / radial_segments, j * 4.0f / radial_segments});
                 if (i > 0 && j > 0)
@@ -416,8 +416,8 @@ namespace avl
         
         for (int i = 1; i < segments; ++i)
         {
-            float r = sinf(i * ANVIL_PI / segments) * radius;
-            float y = cosf(i * ANVIL_PI / segments);
+            float r = sinf(i * POLYMER_PI / segments) * radius;
+            float y = cosf(i * POLYMER_PI / segments);
             float ty = y * radius;
             
             if (i < segments/2)
@@ -431,8 +431,8 @@ namespace avl
             
             for (int j = 1; j < doubleSegments; ++j)
             {
-                float x = sinf(j * ANVIL_TAU / doubleSegments);
-                float z = -cosf(j * ANVIL_TAU / doubleSegments);
+                float x = sinf(j * POLYMER_TAU / doubleSegments);
+                float z = -cosf(j * POLYMER_TAU / doubleSegments);
                 float ty = y * radius;
                 
                 if (i < segments/2)
@@ -667,8 +667,8 @@ namespace avl
         float off = 1.0 / resolution;
         for (float i = 0.0; i < 1.0 + off; i += off)
         {
-            float s = cos(i * 2.0 * ANVIL_PI + ANVIL_PI) * 0.5f + 0.5f;
-            spiral.vertices.push_back({cosf(i * ANVIL_PI * freq) * s, i, sinf(i * ANVIL_PI * freq) * s});
+            float s = cos(i * 2.0 * POLYMER_PI + POLYMER_PI) * 0.5f + 0.5f;
+            spiral.vertices.push_back({cosf(i * POLYMER_PI * freq) * s, i, sinf(i * POLYMER_PI * freq) * s});
         }
         return spiral;
     }
@@ -736,15 +736,15 @@ namespace avl
         SuperFormula f1(m, n1, n2, n3, a, b);
         SuperFormula f2(m, n1, n2, n3, a, b);
 
-        float theta = -ANVIL_PI;
-        float lon_inc = ANVIL_TAU / segments;
-        float lat_inc = ANVIL_PI / segments;
+        float theta = -POLYMER_PI;
+        float lon_inc = POLYMER_TAU / segments;
+        float lat_inc = POLYMER_PI / segments;
 
         // Longitude
         for (int i = 0; i < segments + 1; ++i)
         {
             const float r1 = f1(theta);
-            float phi = -ANVIL_PI / 2.0f; // reset phi 
+            float phi = -POLYMER_PI / 2.0f; // reset phi 
 
             // Latitude
             for (int j = 0; j < segments + 1; ++j)
@@ -834,8 +834,8 @@ namespace avl
         for (size_t i = 0; i < ico.normals.size(); ++i)
         {
             const float3 & normal = ico.normals[i];
-            ico.texcoord0[i].x = 0.5f - 0.5f * std::atan2(normal.x, -normal.z) / float(ANVIL_PI);
-            ico.texcoord0[i].y = 1.0f - std::acos(normal.y) / float(ANVIL_PI);
+            ico.texcoord0[i].x = 0.5f - 0.5f * std::atan2(normal.x, -normal.z) / float(POLYMER_PI);
+            ico.texcoord0[i].y = 1.0f - std::acos(normal.y) / float(POLYMER_PI);
         }
 
         auto add_unique_vertex = [&](size_t i, uint32_t component, const float2 & uv) 

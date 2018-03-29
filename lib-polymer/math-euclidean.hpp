@@ -13,7 +13,7 @@
 
 #include "math-common.hpp"
 
-namespace avl
+namespace polymer
 {
     /////////////////////////////////
     // Axis-Aligned Bounding Areas //

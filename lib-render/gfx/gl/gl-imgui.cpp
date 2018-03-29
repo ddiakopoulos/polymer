@@ -6,7 +6,7 @@
 #include "gl-api.hpp"
 #include "glfw-app.hpp"
 
-using namespace avl;
+using namespace polymer;
 
 namespace gui
 {
@@ -64,7 +64,7 @@ namespace gui
         ImGui::Shutdown(data.context);
     }
     
-    void imgui_wrapper::update_input(const avl::InputEvent & e)
+    void imgui_wrapper::update_input(const polymer::InputEvent & e)
     {
         ImGui::SetCurrentContext(data.context);
 

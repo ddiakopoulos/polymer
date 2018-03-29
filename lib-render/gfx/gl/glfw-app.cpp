@@ -5,7 +5,7 @@
 #include "stb/stb_image_write.h"
 #include "human_time.hpp"
 
-using namespace avl;
+using namespace polymer;
 
 static InputEvent generate_input_event(GLFWwindow * window, InputEvent::Type type, const float2 & cursor, int action)
 {
@@ -43,7 +43,7 @@ GLFWApp::GLFWApp(int width, int height, const std::string title, int glfwSamples
     glfwWindowHint(GLFW_SAMPLES, glfwSamples);
     glfwWindowHint(GLFW_SRGB_CAPABLE, true);
     
-#if defined(ANVIL_PLATFORM_OSX)
+#if defined(POLYMER_PLATFORM_OSX)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
@@ -60,22 +60,22 @@ GLFWApp::GLFWApp(int width, int height, const std::string title, int glfwSamples
 
     if (!window) 
     {
-        ANVIL_ERROR("Failed to open GLFW window");
+        POLYMER_ERROR("Failed to open GLFW window");
         glfwTerminate();
         ::exit(EXIT_FAILURE);
     }
 
     glfwMakeContextCurrent(window);
     
-    ANVIL_INFO("GL_VERSION =  " << (char *)glGetString(GL_VERSION));
-    ANVIL_INFO("GL_VENDOR =   " << (char *)glGetString(GL_VENDOR));
-    ANVIL_INFO("GL_RENDERER = " << (char *)glGetString(GL_RENDERER));
+    POLYMER_INFO("GL_VERSION =  " << (char *)glGetString(GL_VERSION));
+    POLYMER_INFO("GL_VENDOR =   " << (char *)glGetString(GL_VENDOR));
+    POLYMER_INFO("GL_RENDERER = " << (char *)glGetString(GL_RENDERER));
 
-#if defined(ANVIL_PLATFORM_WINDOWS)
+#if defined(POLYMER_PLATFORM_WINDOWS)
     glewExperimental = GL_TRUE;
     if (GLenum err = glewInit()) 
        throw std::runtime_error(std::string("glewInit() failed - ") + (const char *)glewGetErrorString(err));
-    ANVIL_INFO("GLEW_VERSION = " << (char *)glewGetString(GLEW_VERSION));
+    POLYMER_INFO("GLEW_VERSION = " << (char *)glewGetString(GLEW_VERSION));
 #endif
 
     std::vector<std::pair<std::string, bool>> extensions{
@@ -309,7 +309,7 @@ int GLFWApp::get_mods() const
     return mods;
 }
 
-namespace avl
+namespace polymer
 {
     int main(int argc, char * argv[]) 
     {
@@ -322,11 +322,11 @@ namespace avl
         }
         catch (const std::exception & e) 
         { 
-            ANVIL_ERROR("[Fatal] Caught exception: \n" << e.what());
+            POLYMER_ERROR("[Fatal] Caught exception: \n" << e.what());
         }
         catch (...) 
         { 
-            ANVIL_ERROR("[Fatal] Caught unknown exception.");
+            POLYMER_ERROR("[Fatal] Caught unknown exception.");
         }
 
         glfwTerminate();
@@ -370,7 +370,7 @@ int2 get_screen_size(GLFWwindow * window)
     return {0, 0};
 }
 
-#if defined (ANVIL_PLATFORM_WINDOWS)
+#if defined (POLYMER_PLATFORM_WINDOWS)
 
 #undef APIENTRY
 #define GLFW_EXPOSE_NATIVE_WIN32
@@ -416,7 +416,7 @@ void GLFWApp::exit_fullscreen(GLFWwindow * window, const int2 & windowedSize, co
     glfwSetWindowSize(window, windowedSize.x + 4, windowedSize.y + 4);
 }
 
-#elif defined(ANVIL_PLATFORM_OSX)
+#elif defined(POLYMER_PLATFORM_OSX)
 
 #define GLFW_EXPOSE_NATIVE_COCOA
 #define GLFW_EXPOSE_NATIVE_NSGL

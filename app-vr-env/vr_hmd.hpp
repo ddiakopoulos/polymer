@@ -8,7 +8,7 @@
 #include "geometry.hpp"
 #include "gl-api.hpp"
 
-using namespace avl;
+using namespace polymer;
 
 inline Pose make_pose(const vr::HmdMatrix34_t & m)
 {

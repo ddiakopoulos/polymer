@@ -5,7 +5,7 @@
 #include "util.hpp"
 #include "geometry.hpp"
 
-namespace avl
+namespace polymer
 {
 
 	// Force sphere point to be perpendicular to axis

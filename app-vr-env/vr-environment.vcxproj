@@ -54,10 +54,11 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\third_party;$(ProjectDir)..\third_party\glew;$(ProjectDir)..\third_party\glfw3\include;$(ProjectDir)third_party;$(ProjectDir)third_party\bullet3\src\;$(ProjectDir)third_party\bullet3\src\LinearMath;$(ProjectDir)third_party\bullet3\src\Bullet3Collision;$(ProjectDir)third_party\bullet3\src\Bullet3Common;$(ProjectDir)third_party\bullet3\src\Bullet3Dynamics;$(ProjectDir)third_party\bullet3\src\Bullet3Geometry;$(ProjectDir)third_party\bullet3\src\BulletCollision;$(ProjectDir)third_party\bullet3\src\BulletDynamics;$(ProjectDir)third_party\bullet3\src\BulletInverseDynamics;$(ProjectDir)third_party\bullet3\src\BulletSoftBody;$(ProjectDir)..\lib-render\gfx\gl;$(ProjectDir)..\lib-polymer</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;__WINDOWS_DS__;NOMINMAX;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DisableSpecificWarnings>4703</DisableSpecificWarnings>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(ProjectDir)..\third_party\glew\lib\$(Platform);$(ProjectDir)third_party\openvr\lib\$(Platform)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -73,7 +74,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\third_party;$(ProjectDir)..\third_party\glew;$(ProjectDir)..\third_party\glfw3\include;$(ProjectDir)third_party;$(ProjectDir)third_party\bullet3\src\;$(ProjectDir)third_party\bullet3\src\LinearMath;$(ProjectDir)third_party\bullet3\src\Bullet3Collision;$(ProjectDir)third_party\bullet3\src\Bullet3Common;$(ProjectDir)third_party\bullet3\src\Bullet3Dynamics;$(ProjectDir)third_party\bullet3\src\Bullet3Geometry;$(ProjectDir)third_party\bullet3\src\BulletCollision;$(ProjectDir)third_party\bullet3\src\BulletDynamics;$(ProjectDir)third_party\bullet3\src\BulletInverseDynamics;$(ProjectDir)third_party\bullet3\src\BulletSoftBody;$(ProjectDir)..\lib-render\gfx\gl;$(ProjectDir)..\lib-polymer</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;__WINDOWS_DS__;NOMINMAX;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DisableSpecificWarnings>4703</DisableSpecificWarnings>

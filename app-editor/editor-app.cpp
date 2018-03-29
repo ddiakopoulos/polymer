@@ -5,7 +5,7 @@
 #include "logging.hpp"
 #include "win32.hpp"
 
-using namespace avl;
+using namespace polymer;
 
 scene_editor_app::scene_editor_app() : GLFWApp(1920, 1080, "Scene Editor")
 {

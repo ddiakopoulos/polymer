@@ -11,7 +11,7 @@ namespace spd = spdlog;
 namespace spdlog { class logger; };
 typedef std::shared_ptr<spdlog::logger> Log;
 
-struct Logger : public avl::Singleton<Logger>
+struct Logger : public polymer::Singleton<Logger>
 {
     const size_t qSize = 256;
     std::vector<spdlog::sink_ptr> sinks;
@@ -31,10 +31,10 @@ struct Logger : public avl::Singleton<Logger>
         assetLog = std::make_shared<spdlog::logger>("asset_log", std::begin(sinks), std::end(sinks));
     }
 
-    friend class avl::Singleton<Logger>;
+    friend class polymer::Singleton<Logger>;
 };
 
 // Implement singleton
-template<> Logger * avl::Singleton<Logger>::single = nullptr;
+template<> Logger * polymer::Singleton<Logger>::single = nullptr;
 
 #endif // end render_logging_hpp

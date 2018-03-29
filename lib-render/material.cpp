@@ -1,7 +1,7 @@
 #include "material.hpp"
 #include "fwd_renderer.hpp"
 
-using namespace avl;
+using namespace polymer;
 
 //////////////////////////////////////////////////////
 //   Physically-Based Metallic-Roughness Material   //

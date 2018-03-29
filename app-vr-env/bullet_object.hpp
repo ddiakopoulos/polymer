@@ -10,7 +10,7 @@
 #include "bullet_utils.hpp"
 #include <functional>
 
-using namespace avl;
+using namespace polymer;
 
 struct CollideCallback : public btCollisionWorld::ContactResultCallback
 {

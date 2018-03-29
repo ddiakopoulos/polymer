@@ -22,7 +22,7 @@ inline system_clock::time_point write_time(const std::string & file_path)
     catch (...) { return system_clock::time_point::min(); };
 }
 
-namespace avl
+namespace polymer
 {
     // 32 bit Fowler–Noll–Vo Hash
     inline uint32_t hash_fnv1a(const std::string & str)

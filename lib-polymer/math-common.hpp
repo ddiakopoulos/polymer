@@ -19,28 +19,28 @@
 
 #include "linalg.h"
 
-#define ANVIL_PI            3.1415926535897931
-#define ANVIL_HALF_PI       1.5707963267948966
-#define ANVIL_QUARTER_PI    0.7853981633974483
-#define ANVIL_TWO_PI        6.2831853071795862
-#define ANVIL_TAU           ANVIL_TWO_PI
-#define ANVIL_INV_PI        0.3183098861837907
-#define ANVIL_INV_TWO_PI    0.1591549430918953
-#define ANVIL_INV_HALF_PI   0.6366197723675813
+#define POLYMER_PI            3.1415926535897931
+#define POLYMER_HALF_PI       1.5707963267948966
+#define POLYMER_QUARTER_PI    0.7853981633974483
+#define POLYMER_TWO_PI        6.2831853071795862
+#define POLYMER_TAU           POLYMER_TWO_PI
+#define POLYMER_INV_PI        0.3183098861837907
+#define POLYMER_INV_TWO_PI    0.1591549430918953
+#define POLYMER_INV_HALF_PI   0.6366197723675813
 
-#define ANVIL_DEG_TO_RAD    0.0174532925199433
-#define ANVIL_RAD_TO_DEG    57.295779513082321
+#define POLYMER_DEG_TO_RAD    0.0174532925199433
+#define POLYMER_RAD_TO_DEG    57.295779513082321
 
-#define ANVIL_SQRT_2        1.4142135623730951
-#define ANVIL_INV_SQRT_2    0.7071067811865475
-#define ANVIL_LN_2          0.6931471805599453
-#define ANVIL_INV_LN_2      1.4426950408889634
-#define ANVIL_LN_10         2.3025850929940459
-#define ANVIL_INV_LN_10     0.43429448190325176
+#define POLYMER_SQRT_2        1.4142135623730951
+#define POLYMER_INV_SQRT_2    0.7071067811865475
+#define POLYMER_LN_2          0.6931471805599453
+#define POLYMER_INV_LN_2      1.4426950408889634
+#define POLYMER_LN_10         2.3025850929940459
+#define POLYMER_INV_LN_10     0.43429448190325176
 
-#define ANVIL_GOLDEN        1.61803398874989484820
+#define POLYMER_GOLDEN        1.61803398874989484820
 
-namespace avl
+namespace polymer
 {
     using namespace linalg::aliases;
 
@@ -60,10 +60,10 @@ namespace avl
     template<class T, int N> std::ostream & operator << (std::ostream & a, const linalg::mat<T, 3, N> & b) { return a << '\n' << b.row(0) << '\n' << b.row(1) << '\n' << b.row(2) << '\n'; }
     template<class T, int N> std::ostream & operator << (std::ostream & a, const linalg::mat<T, 4, N> & b) { return a << '\n' << b.row(0) << '\n' << b.row(1) << '\n' << b.row(2) << '\n' << b.row(3) << '\n'; }
 
-    inline float to_radians(const float degrees) { return degrees * float(ANVIL_PI) / 180.0f; }
-    inline float to_degrees(const float radians) { return radians * 180.0f / float(ANVIL_PI); }
-    inline double to_radians(const double degrees) { return degrees * ANVIL_PI / 180.0; }
-    inline double to_degrees(const double radians) { return radians * 180.0 / ANVIL_PI; }
+    inline float to_radians(const float degrees) { return degrees * float(POLYMER_PI) / 180.0f; }
+    inline float to_degrees(const float radians) { return radians * 180.0f / float(POLYMER_PI); }
+    inline double to_radians(const double degrees) { return degrees * POLYMER_PI / 180.0; }
+    inline double to_degrees(const double radians) { return radians * 180.0 / POLYMER_PI; }
 
     template<typename T, typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type> T min(const T & x, const T & y) { return ((x) < (y) ? (x) : (y)); }
     template<typename T, typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type> T max(const T & x, const T & y) { return ((x) > (y) ? (x) : (y)); }

@@ -8,7 +8,7 @@
 #include <type_traits>
 #include "math-core.hpp"
 
-using namespace avl;
+using namespace polymer;
 
 template <typename T>
 class CircularBuffer

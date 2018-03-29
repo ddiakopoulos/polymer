@@ -10,28 +10,28 @@
 #include <mutex>
 
 #if (defined(__linux) || defined(__unix) || defined(__posix) || defined(__LINUX__) || defined(__linux__))
-    #define ANVIL_PLATFORM_LINUX 1
+    #define POLYMER_PLATFORM_LINUX 1
 #elif (defined(_WIN64) || defined(_WIN32) || defined(__CYGWIN32__) || defined(__MINGW32__))
-    #define ANVIL_PLATFORM_WINDOWS 1
+    #define POLYMER_PLATFORM_WINDOWS 1
 #elif (defined(MACOSX) || defined(__DARWIN__) || defined(__APPLE__))
-    #define ANVIL_PLATFORM_OSX 1
+    #define POLYMER_PLATFORM_OSX 1
 #endif
 
 #if (defined(WIN_32) || defined(__i386__) || defined(i386) || defined(__x86__))
-    #define ANVIL_ARCH_32 1
+    #define POLYMER_ARCH_32 1
 #elif (defined(__amd64) || defined(__amd64__) || defined(__x86_64) || defined(__x86_64__) || defined(_M_X64) || defined(__ia64__) || defined(_M_IA64))
-    #define ANVIL_ARCH_64 1
+    #define POLYMER_ARCH_64 1
 #endif
 
 #if (defined(__clang__))
-    #define ANVIL_COMPILER_CLANG 1
+    #define POLYMER_COMPILER_CLANG 1
 #elif (defined(__GNUC__))
-    #define ANVIL_COMPILER_GCC 1
+    #define POLYMER_COMPILER_GCC 1
 #elif (defined _MSC_VER)
-    #define ANVIL_COMPILER_VISUAL_STUDIO 1
+    #define POLYMER_COMPILER_VISUAL_STUDIO 1
 #endif
 
-#if defined (ANVIL_PLATFORM_WINDOWS)
+#if defined (POLYMER_PLATFORM_WINDOWS)
     #define GL_PUSH_ALL_ATTRIB() glPushAttrib(GL_ALL_ATTRIB_BITS);
     #define GL_POP_ATTRIB() glPopAttrib();
 #else
@@ -39,13 +39,13 @@
     #define GL_POP_ATTRIB();
 #endif
 
-#if defined(ANVIL_PLATFORM_WINDOWS)
+#if defined(POLYMER_PLATFORM_WINDOWS)
     #define ALIGNED(n) __declspec(align(n))
 #else
     #define ALIGNED(n) alignas(n)
 #endif
 
-namespace avl
+namespace polymer
 {
     class try_locker
     {
@@ -78,8 +78,6 @@ namespace avl
         void stop() { timestamp = std::chrono::duration<float>(std::chrono::high_resolution_clock::now() - t0).count() * 1000; }
         const double & get() { return timestamp; }
     };
-
-    #define AVL_SCOPED_TIMER(MESSAGE) scoped_timer scoped_timer ## __LINE__(MESSAGE)
 
     class UniformRandomGenerator
     {
@@ -173,7 +171,7 @@ namespace avl
     }
 }
 
-#define ANVIL_ERROR(...) avl::pretty_print(__FILE__, __LINE__, avl::as_string() << __VA_ARGS__)
-#define ANVIL_INFO(...) avl::pretty_print(__FILE__, __LINE__, avl::as_string() << __VA_ARGS__)
+#define POLYMER_ERROR(...) polymer::pretty_print(__FILE__, __LINE__, polymer::as_string() << __VA_ARGS__)
+#define POLYMER_INFO(...) polymer::pretty_print(__FILE__, __LINE__, polymer::as_string() << __VA_ARGS__)
 
 #endif

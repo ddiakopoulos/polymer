@@ -11,7 +11,7 @@
 #include "math-common.hpp"
 #include <random>
 
-#if defined(ANVIL_PLATFORM_WINDOWS)
+#if defined(POLYMER_PLATFORM_WINDOWS)
 #pragma warning(push)
 #pragma warning(disable : 4244)
 #endif
@@ -22,7 +22,7 @@
 namespace noise 
 {
 
-using namespace avl;
+using namespace polymer;
 
 ///////////////////////////////////
 //   Dimensional Simplex Noise   //

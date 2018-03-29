@@ -99,8 +99,8 @@ inline int solve_cubic(const double c0, const double c1, const double c2, const 
         double t = 2.0 * std::sqrt(-p);
 
         s0 =   t * std::cos(phi);
-        s1 = - t * std::cos(phi + ANVIL_PI / 3.0);
-        s2 = - t * std::cos(phi - ANVIL_PI / 3.0);
+        s1 = - t * std::cos(phi + POLYMER_PI / 3.0);
+        s2 = - t * std::cos(phi - POLYMER_PI / 3.0);
         num = 3;
     } 
     else 

@@ -110,7 +110,7 @@ namespace impl
 
         static float alpha(float dt, float cutoff)
         {
-            const float myTau = 1.f / 2.f * ((ANVIL_TAU * 0.5f) * cutoff);
+            const float myTau = 1.f / 2.f * ((POLYMER_TAU * 0.5f) * cutoff);
             return 1.f / (1.f + myTau / dt);
         }
 

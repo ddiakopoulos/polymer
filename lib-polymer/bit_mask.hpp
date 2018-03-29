@@ -3,7 +3,7 @@
 #ifndef bitmask_h
 #define bitmask_h
 
-namespace avl
+namespace polymer
 {
     
     template<typename T>

@@ -13,7 +13,7 @@
 
 #include "bullet_object.hpp"
 
-using namespace avl;
+using namespace polymer;
 
 class BulletEngineVR
 {

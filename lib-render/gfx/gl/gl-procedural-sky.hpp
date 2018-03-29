@@ -8,7 +8,7 @@
 #include "gl-loaders.hpp"
 #include <functional>
 
-#if defined(ANVIL_PLATFORM_WINDOWS)
+#if defined(POLYMER_PLATFORM_WINDOWS)
 #pragma warning(push)
 #pragma warning(disable : 4244)
 #pragma warning(disable : 4305)
@@ -32,12 +32,12 @@ namespace
     double evaluate(const double * dataset, size_t stride, float turbidity, float albedo, float sunTheta)
     {
         // splines are functions of elevation^1/3
-        double elevationK = pow(std::max<float>(0.f, 1.f - sunTheta / (ANVIL_PI / 2.f)), 1.f / 3.0f);
+        double elevationK = pow(std::max<float>(0.f, 1.f - sunTheta / (POLYMER_PI / 2.f)), 1.f / 3.0f);
         
         // table has values for turbidity 1..10
-        int turbidity0 = avl::clamp<int>(static_cast<int>(turbidity), 1, 10);
+        int turbidity0 = polymer::clamp<int>(static_cast<int>(turbidity), 1, 10);
         int turbidity1 = std::min(turbidity0 + 1, 10);
-        float turbidityK = avl::clamp(turbidity - turbidity0, 0.f, 1.f);
+        float turbidityK = polymer::clamp(turbidity - turbidity0, 0.f, 1.f);
         
         const double * datasetA0 = dataset;
         const double * datasetA1 = dataset + stride * 6 * 10;
@@ -50,9 +50,9 @@ namespace
         return a0t0 * (1 - albedo) * (1 - turbidityK) + a1t0 * albedo * (1 - turbidityK) + a0t1 * (1 - albedo) * turbidityK + a1t1 * albedo * turbidityK;
     }
     
-    avl::float3 hosek_wilkie(float cos_theta, float gamma, float cos_gamma, avl::float3 A, avl::float3 B, avl::float3 C, avl::float3 D, avl::float3 E, avl::float3 F, avl::float3 G, avl::float3 H, avl::float3 I)
+    polymer::float3 hosek_wilkie(float cos_theta, float gamma, float cos_gamma, polymer::float3 A, polymer::float3 B, polymer::float3 C, polymer::float3 D, polymer::float3 E, polymer::float3 F, polymer::float3 G, polymer::float3 H, polymer::float3 I)
     {
-        avl::float3 chi = (1.f + cos_gamma * cos_gamma) / pow(1.f + H * H - 2.f * cos_gamma * H, avl::float3(1.5f));
+        polymer::float3 chi = (1.f + cos_gamma * cos_gamma) / pow(1.f + H * H - 2.f * cos_gamma * H, polymer::float3(1.5f));
         return (1.f + A * exp(B / (cos_theta + 0.01f))) * (C + D * exp(E * gamma) + F * (cos_gamma * cos_gamma) + G * chi + I * (float) sqrt(std::max(0.f, cos_theta)));
     }
     
@@ -63,18 +63,18 @@ namespace
     
     float zenith_luminance(float sunTheta, float turbidity)
     {
-        float chi = (4.f / 9.f - turbidity / 120) * (ANVIL_PI - 2 * sunTheta);
+        float chi = (4.f / 9.f - turbidity / 120) * (POLYMER_PI - 2 * sunTheta);
         return (4.0453 * turbidity - 4.9710) * tan(chi) - 0.2155 * turbidity + 2.4192;
     }
     
-    float zenith_chromacity(const avl::float4 & c0, const avl::float4 & c1, const avl::float4 & c2, float sunTheta, float turbidity)
+    float zenith_chromacity(const polymer::float4 & c0, const polymer::float4 & c1, const polymer::float4 & c2, float sunTheta, float turbidity)
     {
-        avl::float4 thetav = avl::float4(sunTheta * sunTheta * sunTheta, sunTheta * sunTheta, sunTheta, 1);
-        return dot(avl::float3(turbidity * turbidity, turbidity, 1), avl::float3(dot(thetav, c0), dot(thetav, c1), dot(thetav, c2)));
+        polymer::float4 thetav = polymer::float4(sunTheta * sunTheta * sunTheta, sunTheta * sunTheta, sunTheta, 1);
+        return dot(polymer::float3(turbidity * turbidity, turbidity, 1), polymer::float3(dot(thetav, c0), dot(thetav, c1), dot(thetav, c2)));
     }
 }
 
-namespace avl
+namespace polymer
 {
 
 // An Analytic Model for Full Spectral Sky-Dome Radiance (Lukas Hosek, Alexander Wilkie)

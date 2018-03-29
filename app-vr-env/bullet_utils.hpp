@@ -6,7 +6,7 @@
 #include "math-core.hpp"
 #include "btBulletCollisionCommon.h"
 
-using namespace avl;
+using namespace polymer;
 
 struct BulletContactPointVR
 {

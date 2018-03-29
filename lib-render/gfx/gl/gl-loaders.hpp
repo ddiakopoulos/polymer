@@ -6,7 +6,7 @@
 #include "stb/stb_image.h" 
 #include "gli/gli.hpp"
 
-using namespace avl;
+using namespace polymer;
 
 inline std::vector<uint8_t> load_image_data(const std::string & path)
 {
@@ -24,7 +24,7 @@ inline std::vector<uint8_t> load_image_data(const std::string & path)
 
 inline GlTexture2D load_image(const std::string & path, bool flip = false)
 {
-    auto binaryFile = avl::read_file_binary(path);
+    auto binaryFile = polymer::read_file_binary(path);
 
     if (flip) stbi_set_flip_vertically_on_load(1);
     else stbi_set_flip_vertically_on_load(0);

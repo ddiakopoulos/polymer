@@ -13,7 +13,7 @@
 #include "math-spatial.hpp"
 #include "math-euclidean.hpp"
 
-namespace avl
+namespace polymer
 {
 
     /////////////

@@ -9,7 +9,7 @@
 
 struct unique_vertex
 {
-    avl::float3 position; avl::float2 texcoord; avl::float3 normal;
+    polymer::float3 position; polymer::float2 texcoord; polymer::float3 normal;
 };
 
 template <typename KeyType, typename ValueType>

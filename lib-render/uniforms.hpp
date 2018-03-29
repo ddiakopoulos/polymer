@@ -6,7 +6,7 @@
 #include "util.hpp"
 #include "math-common.hpp"
 
-using namespace avl;
+using namespace polymer;
 
 // https://www.khronos.org/opengl/wiki/Interface_Block_(GLSL)#Memory_layout
 

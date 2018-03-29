@@ -50,8 +50,8 @@ public:
     {
         nvg = make_nanovg_context(CTX_ANTIALIAS | CTX_STENCIL_STROKES);
         if (!nvg) throw std::runtime_error("error initializing nanovg context");
-        text_fontface = std::make_shared<NvgFont>(nvg, text_font, avl::read_file_binary("../assets/fonts/" + text_font + ".ttf"));
-        icon_fontface = std::make_shared<NvgFont>(nvg, icon_font, avl::read_file_binary("../assets/fonts/" + icon_font + ".ttf"));
+        text_fontface = std::make_shared<NvgFont>(nvg, text_font, polymer::read_file_binary("../assets/fonts/" + text_font + ".ttf"));
+        icon_fontface = std::make_shared<NvgFont>(nvg, icon_font, polymer::read_file_binary("../assets/fonts/" + icon_font + ".ttf"));
     }
 
     ~NvgSurface() { release_nanovg_context(nvg); }
