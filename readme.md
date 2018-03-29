@@ -2,6 +2,18 @@
 
 Polymer is a prototyping toolkit for research in AR/VR spatial computing.
 
+## Building
+
+todo
+
+## Samples
+
+todo
+
+## Documentation
+
+todo 
+
 ## Citing
 
 If you use Polymer in a project that leads to publication or public exhbition, please cite the project. The BibTex entry is: 
