@@ -21,8 +21,8 @@ using namespace polymer;
 
 struct ViewportRaycast
 {
-    GlCamera & cam; float2 viewport;
-    ViewportRaycast(GlCamera & camera, float2 viewport) : cam(camera), viewport(viewport) {}
+    perspective_camera & cam; float2 viewport;
+    ViewportRaycast(perspective_camera & camera, float2 viewport) : cam(camera), viewport(viewport) {}
     Ray from(float2 cursor) { return cam.get_world_ray(cursor, viewport); };
 };
 

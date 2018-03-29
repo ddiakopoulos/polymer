@@ -3,56 +3,21 @@
 
 #include "gl-api.hpp"
 #include "math-core.hpp"
+#include "camera.hpp"
 
 #include "stb/stb_image_write.h"
 
 namespace polymer
 {
 
-    ////////////////////////////////////////////////
-    //   Basic Retained-Mode Perspective Camera   //
-    ////////////////////////////////////////////////
 
-    class GlCamera
-    {
-        Pose pose;
-
-    public:
-
-        float vfov{ 1.3f };
-        float nearclip{ 0.01f };
-        float farclip{ 64.f };
-
-        float4x4 get_view_matrix() const { return pose.view_matrix(); }
-        float4x4 get_projection_matrix(float aspectRatio) const { return make_projection_matrix(vfov, aspectRatio, nearclip, farclip); }
-
-        Pose get_pose() const { return pose; }
-        Pose & get_pose() { return pose; }
-
-        void set_pose(const Pose & p) { pose = p; }
-
-        float3 get_view_direction() const { return -pose.zdir(); }
-        float3 get_eye_point() const { return pose.position; }
-
-        void look_at(const float3 & target) { pose = look_at_pose_rh(pose.position, target); }
-        void look_at(const float3 & eyePoint, const float3 target) { pose = look_at_pose_rh(eyePoint, target); }
-        void look_at(const float3 & eyePoint, float3 const & target, float3 const & worldup) { pose = look_at_pose_rh(eyePoint, target, worldup); }
-        
-        Ray get_world_ray(const float2 cursor, const float2 viewport)
-        {
-            const float aspect = viewport.x / viewport.y;
-            auto cameraRay = ray_from_viewport_pixel(cursor, viewport, get_projection_matrix(aspect));
-            return pose * cameraRay;
-        }
-    };
-    
     /////////////////////////////////////
     //   Standard Free-Flying Camera   //
     /////////////////////////////////////
 
     class FlyCameraController
     {
-        GlCamera * cam;
+        perspective_camera * cam;
         
         float camPitch = 0, camYaw = 0;
         
@@ -67,12 +32,12 @@ namespace polymer
 
         FlyCameraController() {}
         
-        FlyCameraController(GlCamera * cam) : cam(cam)
+        FlyCameraController(perspective_camera * cam) : cam(cam)
         {
             update_yaw_pitch();
         }
         
-        void set_camera(GlCamera * cam)
+        void set_camera(perspective_camera * cam)
         {
             this->cam = cam;
             update_yaw_pitch();
@@ -156,8 +121,8 @@ namespace polymer
                 instantaneousSpeed *= 0.75f;
             }
             
-            float3 & current = cam->get_pose().position;
-            const float3 target = cam->get_pose().transform_coord(move);
+            float3 & current = cam->pose.position;
+            const float3 target = cam->pose.transform_coord(move);
             
             if (enableSpring)
             {
@@ -167,8 +132,7 @@ namespace polymer
             }
             else
             {
-                Pose & camPose = cam->get_pose();
-                camPose.position = target;
+                cam->pose.position = target;
             }
             
             float3 lookVec;

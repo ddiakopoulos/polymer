@@ -211,7 +211,7 @@ scene_editor_app::~scene_editor_app()
 
 void scene_editor_app::on_drop(std::vector<std::string> filepaths)
 {
-    for (const auto & path : filepaths)
+    for (auto & path : filepaths)
     {
         std::transform(path.begin(), path.end(), path.begin(), ::tolower);
         const std::string fileExtension = get_extension(path);
@@ -387,7 +387,7 @@ void scene_editor_app::on_draw()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    const Pose cameraPose = cam.get_pose();
+    const Pose cameraPose = cam.pose;
     const float4x4 projectionMatrix = cam.get_projection_matrix(float(width) / float(height));
     const float4x4 viewMatrix = cam.get_view_matrix();
     const float4x4 viewProjectionMatrix = mul(projectionMatrix, viewMatrix);

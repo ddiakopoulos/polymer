@@ -104,7 +104,7 @@ struct VirtualRealityApp : public GLFWApp
 
     std::unique_ptr<OpenVR_HMD> hmd;
 
-    GlCamera debugCam;
+    perspective_camera debugCam;
     FlyCameraController cameraController;
 
     ShaderMonitor shaderMonitor = { "../assets/" };

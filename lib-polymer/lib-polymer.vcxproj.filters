@@ -156,6 +156,9 @@
     <ClInclude Include="linalg.h">
       <Filter>src\math-core</Filter>
     </ClInclude>
+    <ClInclude Include="camera.hpp">
+      <Filter>src\tools</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\third_party\imgui\imgui.cpp">

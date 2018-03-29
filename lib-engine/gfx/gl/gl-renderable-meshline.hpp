@@ -128,7 +128,7 @@ public:
         mesh = make_line_mesh(vertices);
     }
     
-    void render(const GlCamera & camera, const float4x4 model, const float2 screenDims, const float3 color, const float lineWidth = 24.f)
+    void render(const perspective_camera & camera, const float4x4 model, const float2 screenDims, const float3 color, const float lineWidth = 24.f)
     {
         shader.bind();
 

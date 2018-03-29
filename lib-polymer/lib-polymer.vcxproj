@@ -22,6 +22,7 @@
     <ClInclude Include="algo_misc.hpp" />
     <ClInclude Include="arcball.hpp" />
     <ClInclude Include="bit_mask.hpp" />
+    <ClInclude Include="camera.hpp" />
     <ClInclude Include="circular_buffer.hpp" />
     <ClInclude Include="file_io.hpp" />
     <ClInclude Include="geometry.hpp" />

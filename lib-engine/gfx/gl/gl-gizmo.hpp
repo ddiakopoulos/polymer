@@ -89,9 +89,9 @@ struct GlGizmo : public Noncopyable
         gizmo_state.hotkey_scale = false;
     }
 
-    void update(const GlCamera & cam, const polymer::float2 windowSize)
+    void update(const perspective_camera & cam, const polymer::float2 windowSize)
     {
-        const Pose p = cam.get_pose();
+        const Pose p = cam.pose;
         viewProjectionMatrix = mul(cam.get_projection_matrix(windowSize.x / windowSize.y), cam.get_view_matrix());
         gizmo_state.viewport_size = minalg::float2(windowSize.x, windowSize.y);
         gizmo_state.cam.near_clip = cam.nearclip;

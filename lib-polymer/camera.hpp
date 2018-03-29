@@ -1,0 +1,42 @@
+#ifndef polymer_camera_hpp
+#define polymer_camera_hpp
+
+#include "math-core.hpp"
+#include "util.hpp"
+#include "geometry.hpp"
+
+namespace polymer
+{
+    ////////////////////////////////////////////////
+    //   Basic Retained-Mode Perspective Camera   //
+    ////////////////////////////////////////////////
+
+    struct perspective_camera
+    {
+        Pose pose;
+
+        float vfov{ 1.3f };
+        float nearclip{ 0.01f };
+        float farclip{ 64.f };
+
+        float4x4 get_view_matrix() const { return pose.view_matrix(); }
+        float4x4 get_projection_matrix(float aspectRatio) const { return make_projection_matrix(vfov, aspectRatio, nearclip, farclip); }
+
+        float3 get_view_direction() const { return -pose.zdir(); }
+        float3 get_eye_point() const { return pose.position; }
+
+        void look_at(const float3 & target) { pose = look_at_pose_rh(pose.position, target); }
+        void look_at(const float3 & eyePoint, const float3 target) { pose = look_at_pose_rh(eyePoint, target); }
+        void look_at(const float3 & eyePoint, float3 const & target, float3 const & worldup) { pose = look_at_pose_rh(eyePoint, target, worldup); }
+
+        Ray get_world_ray(const float2 cursor, const float2 viewport)
+        {
+            const float aspect = viewport.x / viewport.y;
+            auto cameraRay = ray_from_viewport_pixel(cursor, viewport, get_projection_matrix(aspect));
+            return pose * cameraRay;
+        }
+    };
+
+} // end namespace polymer
+
+#endif // end polymer_camera_hpp

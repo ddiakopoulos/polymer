@@ -124,7 +124,7 @@ public:
         gizmo.reset_input();
     }
 
-    void on_update(const GlCamera & camera, const float2 viewport_size)
+    void on_update(const perspective_camera & camera, const float2 viewport_size)
     {
         gizmo.update(camera, viewport_size);
         gizmo_active = tinygizmo::transform_gizmo("editor-controller", gizmo.gizmo_ctx, gizmo_selection);
@@ -154,7 +154,7 @@ public:
 
 struct scene_editor_app final : public GLFWApp
 {
-    GlCamera cam;
+    perspective_camera cam;
     FlyCameraController flycam;
     ShaderMonitor shaderMonitor { "../assets/" };
 
