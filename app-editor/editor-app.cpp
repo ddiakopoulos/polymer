@@ -477,6 +477,19 @@ void scene_editor_app::on_draw()
     editorProfiler.begin("imgui-menu");
     igm->begin_frame();
 
+    ImGui::Begin("draw-test");
+    ImGui::GetCurrentWindow()->DrawList->AddRectFilled({ -100, -100 }, { 100, 100 }, ImGui::GetColorU32((ImGuiCol)40));
+    const ImU32 hoverColor = ImGui::ColorConvertFloat4ToU32(GImGui->Style.Colors[ImGuiCol_Button]);
+    const ImU32 hoverColorActive = ImGui::ColorConvertFloat4ToU32(GImGui->Style.Colors[ImGuiCol_ButtonHovered]);
+    std::cout << "Region Min: " << ImGui::GetWindowContentRegionMin().x << ", " << ImGui::GetWindowContentRegionMin().y << std::endl;
+    std::cout << "Region Max: " << ImGui::GetWindowContentRegionMax().x << ", " << ImGui::GetWindowContentRegionMax().y << std::endl;
+    std::cout << "Size: " << ImGui::GetWindowPos().x << ", " << ImGui::GetWindowPos().y << std::endl;
+    ImGui::End();
+
+    if (ImGui::IsItemActive() && ImGui::IsMouseDragging(0))
+    {
+    }
+
     gui::imgui_menu_stack menu(*this, ImGui::GetIO().KeysDown);
     menu.app_menu_begin();
     {
