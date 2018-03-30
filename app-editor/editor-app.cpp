@@ -477,19 +477,6 @@ void scene_editor_app::on_draw()
     editorProfiler.begin("imgui-menu");
     igm->begin_frame();
 
-    ImGui::Begin("draw-test");
-    ImGui::GetCurrentWindow()->DrawList->AddRectFilled({ -100, -100 }, { 100, 100 }, ImGui::GetColorU32((ImGuiCol)40));
-    const ImU32 hoverColor = ImGui::ColorConvertFloat4ToU32(GImGui->Style.Colors[ImGuiCol_Button]);
-    const ImU32 hoverColorActive = ImGui::ColorConvertFloat4ToU32(GImGui->Style.Colors[ImGuiCol_ButtonHovered]);
-    std::cout << "Region Min: " << ImGui::GetWindowContentRegionMin().x << ", " << ImGui::GetWindowContentRegionMin().y << std::endl;
-    std::cout << "Region Max: " << ImGui::GetWindowContentRegionMax().x << ", " << ImGui::GetWindowContentRegionMax().y << std::endl;
-    std::cout << "Size: " << ImGui::GetWindowPos().x << ", " << ImGui::GetWindowPos().y << std::endl;
-    ImGui::End();
-
-    if (ImGui::IsItemActive() && ImGui::IsMouseDragging(0))
-    {
-    }
-
     gui::imgui_menu_stack menu(*this, ImGui::GetIO().KeysDown);
     menu.app_menu_begin();
     {
@@ -575,13 +562,13 @@ void scene_editor_app::on_draw()
     if (showUI)
     {
         static int horizSplit = 380;
-        static int rightSplit1 = (height / 3) - 17;
+        static int rightSplit1 = (height / 3) - 17; // 17 pixels is the offset of the top menu
         static int rightSplit2 = ((height / 3) - 17);
 
         // Define a split region between the whole window and the right panel
-        auto rightRegion = ImGui::Split({ { 0.f ,17.f },{ (float)width, (float)height } }, &horizSplit, ImGui::SplitType::Right);
-        auto split2 = ImGui::Split(rightRegion.second, &rightSplit1, ImGui::SplitType::Top);
-        auto split3 = ImGui::Split(split2.first, &rightSplit2, ImGui::SplitType::Top); // split again by the same amount
+        auto rightRegion = ImGui::Split({ { 0.f, 17.f },{ (float)width, (float)height } }, &horizSplit, SplitType::Right);
+        auto split2 = ImGui::Split(rightRegion.second, &rightSplit1, SplitType::Top);
+        auto split3 = ImGui::Split(split2.first, &rightSplit2, SplitType::Top); // split again by the same amount
 
         ui_rect topRightPane = { { int2(split2.second.min()) }, { int2(split2.second.max()) } };    // top 1/3rd and `the rest`
         ui_rect middleRightPane = { { int2(split3.first.min()) },{ int2(split3.first.max()) } };    // `the rest` split by the same amount
@@ -591,7 +578,11 @@ void scene_editor_app::on_draw()
         active_imgui_regions.push_back(middleRightPane);
         active_imgui_regions.push_back(bottomRightPane);
 
-        gui::imgui_fixed_window_begin("Inspector", topRightPane);
+        gui::imgui_fixed_window_begin("Inspector", topRightPane, SplitType::Right);
+        //ImGui::GetCurrentWindow()->DrawList->AddRectFilled({ rightRegion.first._max.x, 17 }, { rightRegion.first._max.x + 16, rightRegion.first._max.y }, ImGui::GetColorU32((ImGuiCol)40));
+        //std::cout << "Region Min: " << rightRegion.first._max.x << ", " << "17" << std::endl;
+        //std::cout << "Region Max: " << rightRegion.first._max.x + 8 << ", " << rightRegion.first._max.y << std::endl;
+
         if (editor->get_selection().size() >= 1)
         {
             InspectGameObjectPolymorphic(nullptr, editor->get_selection()[0]);
@@ -655,8 +646,8 @@ void scene_editor_app::on_draw()
         // Define a split region between the whole window and the left panel
         static int leftSplit = 380;
         static int leftSplit1 = (height / 2);
-        auto leftRegionSplit = ImGui::Split({ { 0.f,17.f },{ (float)width, (float)height } }, &leftSplit, ImGui::SplitType::Left);
-        auto lsplit2 = ImGui::Split(leftRegionSplit.second, &leftSplit1, ImGui::SplitType::Top);
+        auto leftRegionSplit = ImGui::Split({ { 0.f,17.f },{ (float)width, (float)height } }, &leftSplit, SplitType::Left);
+        auto lsplit2 = ImGui::Split(leftRegionSplit.second, &leftSplit1, SplitType::Top);
         ui_rect topLeftPane = { { int2(lsplit2.second.min()) },{ int2(lsplit2.second.max()) } };
         ui_rect bottomLeftPane = { { int2(lsplit2.first.min()) },{ int2(lsplit2.first.max()) } };
 

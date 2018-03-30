@@ -108,21 +108,11 @@ namespace ImGui
         return ListBox(label, currIndex, vector_getter, static_cast<void*>(&values), values.size());
     }
 
-    enum SplitType : uint32_t
-    {
-        Left,
-        Right,
-        Top,
-        Bottom
-    };
-
     typedef std::pair<Bounds2D, Bounds2D> SplitRegion;
 
     SplitRegion Split(const Bounds2D & r, int * v, SplitType t)
     {
         ImGuiWindow * window = ImGui::GetCurrentWindowRead();
-
-        //window->DrawList->AddRectFilled({ -100, -100 }, { 100, 100 }, ImGui::GetColorU32((ImGuiCol)40));
 
         const ImGuiID id = window->GetID(v);
         const auto & io = ImGui::GetIO();
@@ -154,10 +144,48 @@ namespace ImGui
         // Define the interactable split region
         switch (t)
         {
-        case Left:   result.first._min.x = (result.second._max.x = r.min().x + *v) + 8; break;
-        case Right:  result.first._max.x = (result.second._min.x = r.max().x - *v) - 8; break;
-        case Top:    result.first._min.y = (result.second._max.y = r.min().y + *v) + 8; break;
-        case Bottom: result.first._max.y = (result.second._min.y = r.max().y - *v) - 8; break;
+            case Left:   
+            {
+                result.first._min.x = (result.second._max.x = r.min().x + *v) + 8; 
+                break;
+            }
+            case Right:  
+            {
+                result.first._max.x = (result.second._min.x = r.max().x - *v) - 8; 
+                //std::cout << "Region Min: " << result.first._max.x << ", " << "17" << std::endl;
+                //std::cout << "Region Max: " << result.first._max.x - 16 << ", " << result.first._max.y << std::endl;
+                window->DrawList->AddRectFilled({ result.first._max.x, 17 }, { result.first._max.x + 8 , result.first._max.y }, ImGui::GetColorU32((ImGuiCol)40));
+                break;
+            }
+            case Top:   
+            {
+                result.first._min.y = (result.second._max.y = r.min().y + *v) + 8; 
+                break;
+            }
+            case Bottom: 
+            {
+                result.first._max.y = (result.second._min.y = r.max().y - *v) - 8; 
+                break;
+            }
+        }
+
+        const ImU32 hoverColor = ImGui::ColorConvertFloat4ToU32(GImGui->Style.Colors[ImGuiCol_Button]);
+        const ImU32 hoverColorActive = ImGui::ColorConvertFloat4ToU32(GImGui->Style.Colors[ImGuiCol_ButtonHovered]);
+        //std::cout << "Region Min: " << ImGui::GetWindowContentRegionMin().x << ", " << ImGui::GetWindowContentRegionMin().y << std::endl;
+        //std::cout << "Region Max: " << ImGui::GetWindowContentRegionMax().x << ", " << ImGui::GetWindowContentRegionMax().y << std::endl;
+        //std::cout << "Size: " << ImGui::GetWindowPos().x << ", " << ImGui::GetWindowPos().y << std::endl;
+
+        //std::cout << *v << std::endl;
+
+        // in screen space
+        //window->DrawList->AddRectFilled({ result.first._max.x, 0 }, { result.first._max.x + 8 , result.first._max.y }, ImGui::GetColorU32((ImGuiCol)40));
+
+        //std::cout << "Region Min: " << result.first._max.x << ", " << "0" << std::endl;
+        //std::cout << "Region Max: " << result.first._max.x + 8 << ", " << result.first._max.y << std::endl;
+
+        //std::cout << "-------\n";
+        if (ImGui::IsItemActive() && ImGui::IsMouseDragging(0))
+        {
         }
 
         if (r.contains(cursor) && !result.first.contains(cursor) && !result.second.contains(cursor))

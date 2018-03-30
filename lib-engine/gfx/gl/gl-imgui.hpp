@@ -22,8 +22,18 @@ ImVec4(const polymer::float4 & f) { x = f.x; y = f.y; z = f.z; w = f.w; }   \
 operator polymer::float4() const { return polymer::float4(x,y,z,w); }
 
 #include "imgui/imgui.h"
+#include "imgui/imgui_internal.h"
 
 using namespace polymer;
+
+enum SplitType : uint32_t
+{
+    None,
+    Left,
+    Right,
+    Top,
+    Bottom
+};
 
 struct ui_rect
 {
@@ -167,16 +177,28 @@ namespace gui
         void app_menu_end();
     };
 
-    inline void imgui_fixed_window_begin(const char * name, const ui_rect & r)
+    inline void imgui_fixed_window_begin(const char * name, const ui_rect & r, const SplitType split = SplitType::None)
     {
         ImGui::SetNextWindowPos(r.min);
         ImGui::SetNextWindowSize(r.max - r.min);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(0, 0));
         bool result = ImGui::Begin(name, NULL, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
+
+        if (split == SplitType::Right)
+        {
+            //std::cout << "Size: " << ImGui::GetWindowPos().x << ", " << ImGui::GetWindowPos().y << std::endl;
+
+            auto pos = ImGui::GetWindowPos();
+            ImGui::GetCurrentWindow()->DrawList->AddRectFilled({ pos.x - 8, pos.y }, { pos.x + 8, ImGui::GetWindowHeight() }, ImGui::GetColorU32((ImGuiCol)40));
+            std::cout << "Region Min: " << pos.x << ", " << pos.y << std::endl;
+            std::cout << "Region Max: " << "8" << ", " << ImGui::GetWindowHeight() << std::endl;
+        }
+
         ImGui::TextColored({ 0, 0, 0,1 }, name);
         ImGui::Separator();
         assert(result);
+
     }
 
     inline void imgui_fixed_window_end()
