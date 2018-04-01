@@ -33,139 +33,14 @@ static void s_error_callback(int error, const char * description)
 
 #define CATCH_CURRENT app->exceptions.push_back(std::current_exception())
 
-GLFWApp::GLFWApp(int width, int height, const std::string title, int glfwSamples, bool usingImgui)
+GLFWApp::GLFWApp(int width, int height, const std::string title, int glfwSamples)
 {
-    if (!glfwInit())
-        ::exit(EXIT_FAILURE);
 
-    glfwWindowHint(GLFW_DEPTH_BITS, 24);
-    glfwWindowHint(GLFW_STENCIL_BITS, 8);
-    glfwWindowHint(GLFW_SAMPLES, glfwSamples);
-    glfwWindowHint(GLFW_SRGB_CAPABLE, true);
-    
-#if defined(POLYMER_PLATFORM_OSX)
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-#endif
-    
-#ifdef _DEBUG
-    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
-#endif
-
-    glfwSetErrorCallback(s_error_callback);
-    
-    window = glfwCreateWindow(width, height, title.c_str(), NULL, NULL);
-
-    if (!window) 
-    {
-        POLYMER_ERROR("Failed to open GLFW window");
-        glfwTerminate();
-        ::exit(EXIT_FAILURE);
-    }
-
-    glfwMakeContextCurrent(window);
-    
-    POLYMER_INFO("GL_VERSION =  " << (char *)glGetString(GL_VERSION));
-    POLYMER_INFO("GL_VENDOR =   " << (char *)glGetString(GL_VENDOR));
-    POLYMER_INFO("GL_RENDERER = " << (char *)glGetString(GL_RENDERER));
-
-#if defined(POLYMER_PLATFORM_WINDOWS)
-    glewExperimental = GL_TRUE;
-    if (GLenum err = glewInit()) 
-       throw std::runtime_error(std::string("glewInit() failed - ") + (const char *)glewGetErrorString(err));
-    POLYMER_INFO("GLEW_VERSION = " << (char *)glewGetString(GLEW_VERSION));
-#endif
-
-    std::vector<std::pair<std::string, bool>> extensions{
-        { "GL_EXT_direct_state_access", false },
-        { "GL_KHR_debug", false },
-        { "GL_EXT_blend_equation_separate", false },
-        { "GL_EXT_framebuffer_sRGB", false },
-        { "GL_EXT_pixel_buffer_object", false },
-    };
-    has_gl_extension(extensions);
-
-    std::ostringstream ss;
-    ss << "Unsupported extensions: ";
-
-    bool anyUnsupported = false;
-    for (auto & e : extensions)
-    {
-        if (!e.second)
-        {
-            ss << ' ' << e.first;
-            anyUnsupported = true;
-        }
-    }
-    if (anyUnsupported) { throw std::runtime_error(ss.str()); }
-
-#ifdef _DEBUG
-    glEnable(GL_DEBUG_OUTPUT);
-    glDebugMessageCallback(&gl_debug_callback, nullptr);
-#endif
-    
-    glfwSetWindowUserPointer(window, this);
-    
-    glfwSetWindowFocusCallback  (window, [](GLFWwindow * window, int focused)
-    {
-        auto app = (GLFWApp *)(glfwGetWindowUserPointer(window)); try { app->on_window_focus(!!focused);} catch(...) { CATCH_CURRENT; }
-    });
-    
-    glfwSetWindowSizeCallback (window, [](GLFWwindow * window, int width, int height)
-    {
-        auto app = (GLFWApp *)(glfwGetWindowUserPointer(window)); try { app->on_window_resize({width, height});} catch(...) { CATCH_CURRENT; }
-    });
-    
-    glfwSetCharCallback (window, [](GLFWwindow * window, unsigned int codepoint)
-    {
-        auto app = (GLFWApp *)(glfwGetWindowUserPointer(window)); try { app->consume_character(codepoint);} catch(...) { CATCH_CURRENT; }
-    });
-    
-    glfwSetKeyCallback (window, [](GLFWwindow * window, int key, int, int action, int)
-    {
-        auto app = (GLFWApp *)(glfwGetWindowUserPointer(window)); try { app->consume_key(key, action);} catch(...) { CATCH_CURRENT; }
-    });
-    
-    glfwSetMouseButtonCallback (window, [](GLFWwindow * window, int button, int action, int)
-    {
-        auto app = (GLFWApp *)(glfwGetWindowUserPointer(window)); try { app->consume_mousebtn(button, action);} catch(...) { CATCH_CURRENT; }
-    });
-    
-    glfwSetCursorPosCallback (window, [](GLFWwindow * window, double xpos, double ypos)
-    {
-        auto app = (GLFWApp *)(glfwGetWindowUserPointer(window)); try { app->consume_cursor(xpos, ypos);} catch(...) { CATCH_CURRENT; }
-    });
-    
-    glfwSetScrollCallback (window, [](GLFWwindow * window, double deltaX, double deltaY)
-    {
-        auto app = (GLFWApp *)(glfwGetWindowUserPointer(window)); try { app->consume_scroll(deltaX, deltaY); }
-        catch (...) { CATCH_CURRENT; }
-    });
-    
-    glfwSetDropCallback (window, [](GLFWwindow * window, int count, const char * names[])
-    {
-        auto app = (GLFWApp *)(glfwGetWindowUserPointer(window)); try { app->on_drop({names, names+count});} catch(...) { CATCH_CURRENT; }
-    });
-
-    /*
-    glfwSetWindowIconifyCallback(window, [](GLFWwindow * window, int)
-    {
-        auto app = (GLFWApp *)(glfwGetWindowUserPointer(window)); 
-        
-        try 
-        { 
-            glfwMakeContextCurrent(window);
-        }
-        catch (...) { CATCH_CURRENT; }
-    });
-    */
 }
 
 GLFWApp::~GLFWApp() 
 {
-    if (window) glfwDestroyWindow(window);
+
 }
 
 void GLFWApp::preprocess_input(InputEvent & event)
@@ -281,11 +156,6 @@ void GLFWApp::main_loop()
             on_uncaught_exception(std::current_exception());
         }
     }
-}
-
-void GLFWApp::on_uncaught_exception(std::exception_ptr e)
-{
-    rethrow_exception(e);
 }
 
 float2 GLFWApp::get_cursor_position() const

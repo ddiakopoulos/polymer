@@ -25,6 +25,117 @@
 namespace polymer
 {
 
+    struct gl_context
+    {
+
+    };
+
+    class glfw_window
+    {
+
+        void consume_character(uint32_t codepoint);
+        void consume_key(int key, int action);
+        void consume_mousebtn(int button, int action);
+        void consume_cursor(double xpos, double ypos);
+        void consume_scroll(double xoffset, double yoffset);
+
+    protected:
+
+        GLFWwindow * window;
+
+    public:
+
+        glfw_window(int w, int h, const std::string title, int glfwSamples = 1)
+        {
+            if (!glfwInit()) std::exit(EXIT_FAILURE);
+
+            glfwWindowHint(GLFW_SAMPLES, glfwSamples);
+            glfwWindowHint(GLFW_SRGB_CAPABLE, true);
+
+#ifdef _DEBUG
+            glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
+#endif
+
+            glfwSetErrorCallback(s_error_callback);
+
+            window = glfwCreateWindow(w, h, title.c_str(), NULL, NULL);
+
+            if (!window)
+            {
+                POLYMER_ERROR("Failed to open GLFW window");
+                glfwTerminate();
+                ::exit(EXIT_FAILURE);
+            }
+
+            glfwMakeContextCurrent(window);
+
+            POLYMER_INFO("GL_VERSION =  " << (char *)glGetString(GL_VERSION));
+            POLYMER_INFO("GL_VENDOR =   " << (char *)glGetString(GL_VENDOR));
+            POLYMER_INFO("GL_RENDERER = " << (char *)glGetString(GL_RENDERER));
+
+#if defined(POLYMER_PLATFORM_WINDOWS)
+            glewExperimental = GL_TRUE;
+            if (GLenum err = glewInit())
+                throw std::runtime_error(std::string("glewInit() failed - ") + (const char *)glewGetErrorString(err));
+            POLYMER_INFO("GLEW_VERSION = " << (char *)glewGetString(GLEW_VERSION));
+#endif
+
+            std::vector<std::pair<std::string, bool>> extensions{
+                { "GL_EXT_direct_state_access", false },
+                { "GL_KHR_debug", false },
+                { "GL_EXT_blend_equation_separate", false },
+                { "GL_EXT_framebuffer_sRGB", false },
+                { "GL_EXT_pixel_buffer_object", false },
+            };
+            has_gl_extension(extensions);
+
+            std::ostringstream ss;
+            ss << "Unsupported extensions: ";
+
+            bool anyUnsupported = false;
+            for (auto & e : extensions)
+            {
+                if (!e.second)
+                {
+                    ss << ' ' << e.first;
+                    anyUnsupported = true;
+                }
+            }
+            if (anyUnsupported) { throw std::runtime_error(ss.str()); }
+
+#ifdef _DEBUG
+            glEnable(GL_DEBUG_OUTPUT);
+            glDebugMessageCallback(&gl_debug_callback, nullptr);
+#endif
+
+            glfwSetWindowUserPointer(window, this);
+            glfwSetWindowFocusCallback(window, [](GLFWwindow * window, int focused) { auto win = (glfw_window *)(glfwGetWindowUserPointer(window)); win->on_window_focus(!!focused); });
+            glfwSetWindowSizeCallback(window, [](GLFWwindow * window, int width, int height) { auto win = (glfw_window *)(glfwGetWindowUserPointer(window)); win->on_window_resize({ width, height }); });
+            glfwSetCharCallback(window, [](GLFWwindow * window, unsigned int codepoint) { auto win = (glfw_window *)(glfwGetWindowUserPointer(window)); win->consume_character(codepoint);  });
+            glfwSetKeyCallback(window, [](GLFWwindow * window, int key, int, int action, int) { auto win = (glfw_window *)(glfwGetWindowUserPointer(window)); win->consume_key(key, action); });
+            glfwSetMouseButtonCallback(window, [](GLFWwindow * window, int button, int action, int) { auto win = (glfw_window *)(glfwGetWindowUserPointer(window)); win->consume_mousebtn(button, action);  });
+            glfwSetCursorPosCallback(window, [](GLFWwindow * window, double xpos, double ypos) { auto win = (glfw_window *)(glfwGetWindowUserPointer(window)); win->consume_cursor(xpos, ypos); });
+            glfwSetScrollCallback(window, [](GLFWwindow * window, double deltaX, double deltaY) { auto win = (glfw_window *)(glfwGetWindowUserPointer(window)); win->consume_scroll(deltaX, deltaY); });
+            glfwSetDropCallback(window, [](GLFWwindow * window, int count, const char * names[]) { auto win = (glfw_window *)(glfwGetWindowUserPointer(window)); win->on_drop({ names, names + count }); });
+        }
+
+        ~glfw_window()
+        {
+            if (window) glfwDestroyWindow(window);
+        }
+
+        virtual void on_update(const UpdateEvent & e) { }
+        virtual void on_draw() { }
+        virtual void on_window_focus(bool focused) { }
+        virtual void on_window_resize(int2 size) { }
+        virtual void on_input(const InputEvent & event) { }
+        virtual void on_drop(std::vector<std::string> names) { }
+        virtual void on_uncaught_exception(std::exception_ptr e)
+        {
+            rethrow_exception(e);
+        }
+    };
+
     // fixme - move to events file
     struct UpdateEvent
     {
@@ -60,22 +171,14 @@ namespace polymer
         bool using_super_key() const { return mods & GLFW_MOD_SUPER; };
     };
         
-    class GLFWApp
+    class GLFWApp : public glfw_window
     {
     public:
 
-        GLFWApp(int w, int h, const std::string windowTitle, int glfwSamples = 2, bool usingImgui = false);
+        GLFWApp(int w, int h, const std::string windowTitle, int glfwSamples = 1);
         virtual ~GLFWApp();
 
         void main_loop();
-
-        virtual void on_update(const UpdateEvent & e) {}
-        virtual void on_draw() {}
-        virtual void on_window_focus(bool focused) {}
-        virtual void on_window_resize(int2 size) {}
-        virtual void on_input(const InputEvent & event) {}
-        virtual void on_drop(std::vector<std::string> names) {}
-        virtual void on_uncaught_exception(std::exception_ptr e);
 
         float2 get_cursor_position() const;
 
@@ -90,20 +193,9 @@ namespace polymer
 
         void set_window_title(const std::string & str);
 
-    protected:
-
-        GLFWwindow * window;
-
     private:
         
         bool isDragging = false;
-        
-        void consume_character(uint32_t codepoint);
-        void consume_key(int key, int action);
-        void consume_mousebtn(int button, int action);
-        void consume_cursor(double xpos, double ypos);
-        void consume_scroll(double xoffset, double yoffset);
-        void on_iconify();
 
         void take_screenshot_impl();
         std::string screenshotPath;
