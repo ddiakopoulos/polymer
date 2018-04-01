@@ -14,7 +14,7 @@ namespace gui
     //   Wrapper Implementation   //
     ////////////////////////////////
 
-    imgui_instance::imgui_instance(GLFWwindow * win)
+    imgui_instance::imgui_instance(GLFWwindow * win, bool use_default_font)
     {
         data.window = win;
         data.context = ImGui::CreateContext();
@@ -43,7 +43,10 @@ namespace gui
         io.KeyMap[ImGuiKey_Y] = GLFW_KEY_Y;
         io.KeyMap[ImGuiKey_Z] = GLFW_KEY_Z;
         
-        //io.Fonts->AddFontDefault(); // fixme
+        if (use_default_font)
+        {
+            io.Fonts->AddFontDefault();
+        }
     }
 
     std::vector<uint8_t> fontBuffer;

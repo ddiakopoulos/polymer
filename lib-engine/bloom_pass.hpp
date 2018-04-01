@@ -132,10 +132,10 @@ struct BloomPass
         hdr_lumShader.unbind();
 
         // Readback luminance value
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, luminance[4]);
-        float4 lumValue = avgLuminance.download();
-        glBindTexture(GL_TEXTURE_2D, 0);
+        //glActiveTexture(GL_TEXTURE0);
+        //glBindTexture(GL_TEXTURE_2D, luminance[4]);
+        //float4 lumValue = avgLuminance.download();
+        //glBindTexture(GL_TEXTURE_2D, 0);
 
         float4 tonemap = { middleGrey, whitePoint * whitePoint, threshold, 0.0f };
 

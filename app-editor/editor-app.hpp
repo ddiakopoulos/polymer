@@ -11,7 +11,17 @@
 
 struct aux_window final : public glfw_window
 {
-    aux_window(gl_context * context, int w, int h, const std::string title, int samples) : glfw_window(context, w, h, title, samples) { }
+    std::unique_ptr<gui::imgui_instance> auxImgui;
+
+    aux_window(gl_context * context, int w, int h, const std::string title, int samples) : glfw_window(context, w, h, title, samples) 
+    { 
+        auxImgui.reset(new gui::imgui_instance(window));
+    }
+
+    virtual void on_input(const polymer::InputEvent & e) override final
+    {
+        if (e.window == window) auxImgui->update_input(e);
+    }
 
     virtual void on_window_close() override final
     {
@@ -33,10 +43,14 @@ struct aux_window final : public glfw_window
             glfwGetWindowSize(window, &width, &height);
 
             glViewport(0, 0, width, height);
-            glClearColor(0.0f, 1.0f, 0.0f, 1.0f);
+            glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            on_draw();
+            auxImgui->begin_frame();
+            gui::imgui_fixed_window_begin("asset-browser", { {0, 0}, {width, height} });
+
+            gui::imgui_fixed_window_end();
+            auxImgui->end_frame();
 
             glfwSwapBuffers(window);
         }
@@ -210,7 +224,6 @@ struct scene_editor_app final : public polymer_app
     profiler<SimpleTimer> editorProfiler;
 
     std::unique_ptr<aux_window> auxWindow;
-    std::unique_ptr<gui::imgui_instance> auxImgui;
 
     std::unique_ptr<gui::imgui_instance> igm;
     std::unique_ptr<editor_controller<GameObject>> editor;

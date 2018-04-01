@@ -306,13 +306,16 @@ void forward_renderer::render_frame(const scene_data & scene)
     std::priority_queue<Renderable *, std::vector<Renderable*>, decltype(materialSortFunc)> renderQueueMaterial(materialSortFunc);
     std::priority_queue<Renderable *, std::vector<Renderable*>, decltype(distanceSortFunc)> renderQueueDefault(distanceSortFunc);
 
+    cpuProfiler.begin("push-queue");
     for (auto obj : scene.renderSet)
     {
         // Can't sort by material if the renderable doesn't *have* a material; bucket all other objects 
         if (obj->get_material() != nullptr) renderQueueMaterial.push(obj);
         else renderQueueDefault.push(obj);
     }
+    cpuProfiler.end("push-queue");
 
+    cpuProfiler.begin("flatten-queue");
     // Resolve render queues into flat lists
     std::vector<Renderable *> materialRenderList;
     while (!renderQueueMaterial.empty())
@@ -329,6 +332,7 @@ void forward_renderer::render_frame(const scene_data & scene)
         renderQueueDefault.pop();
         defaultRenderList.push_back(top);
     }
+    cpuProfiler.end("flatten-queue");
 
     for (int camIdx = 0; camIdx < settings.cameraCount; ++camIdx)
     {
@@ -355,8 +359,12 @@ void forward_renderer::render_frame(const scene_data & scene)
         }
 
         gpuProfiler.begin("forward pass");
-        run_skybox_pass(scene.views[camIdx], scene);
-        run_forward_pass(materialRenderList, defaultRenderList, scene.views[camIdx], scene);
+            cpuProfiler.begin("skybox");
+                run_skybox_pass(scene.views[camIdx], scene);
+            cpuProfiler.end("skybox");
+            cpuProfiler.begin("forward");
+                run_forward_pass(materialRenderList, defaultRenderList, scene.views[camIdx], scene);
+            cpuProfiler.end("forward");
         gpuProfiler.end("forward pass");
 
         glDisable(GL_MULTISAMPLE);
@@ -384,10 +392,12 @@ void forward_renderer::render_frame(const scene_data & scene)
     // Execute the post passes after having resolved the multisample framebuffers
     {
         gpuProfiler.begin("postprocess");
+        cpuProfiler.begin("post");
         for (int camIdx = 0; camIdx < settings.cameraCount; ++camIdx)
         {
             run_post_pass(scene.views[camIdx], scene);
         }
+        cpuProfiler.end("post");
         gpuProfiler.end("postprocess");
     }
 

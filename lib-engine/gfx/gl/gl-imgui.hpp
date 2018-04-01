@@ -63,7 +63,7 @@ namespace gui
         void destroy_render_objects();
         imgui_data data;
     public:
-        imgui_instance(GLFWwindow * win);
+        imgui_instance(GLFWwindow * win, bool use_default_font = false);
         ~imgui_instance();
         void add_font(const std::vector<uint8_t> & font);
         void update_input(const polymer::InputEvent & e);

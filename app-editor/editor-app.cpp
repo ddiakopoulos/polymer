@@ -303,8 +303,7 @@ void scene_editor_app::on_input(const InputEvent & event)
 
             if (event.value[0] == GLFW_KEY_SPACE && event.action == GLFW_RELEASE)
             {
-                auxWindow.reset(new aux_window(get_shared_gl_context(), 200, 200, "aux-window", 1));
-                auxImgui.reset(new gui::imgui_instance(auxWindow->get_window()));
+                auxWindow.reset(new aux_window(get_shared_gl_context(), 300, 600, "assets", 1));
             }
         }
 
@@ -591,9 +590,9 @@ void scene_editor_app::on_draw()
         ui_rect middleRightPane = { { int2(split3.first.min()) },{ int2(split3.first.max()) } };    // `the rest` split by the same amount
         ui_rect bottomRightPane = { { int2(split3.second.min()) },{ int2(split3.second.max()) } };  // remainder
 
-        active_imgui_regions.push_back(topRightPane);
-        active_imgui_regions.push_back(middleRightPane);
-        active_imgui_regions.push_back(bottomRightPane);
+        //active_imgui_regions.push_back(topRightPane);
+        //active_imgui_regions.push_back(middleRightPane);
+        //active_imgui_regions.push_back(bottomRightPane);
 
         gui::imgui_fixed_window_begin("Inspector", topRightPane);
         if (editor->get_selection().size() >= 1)
