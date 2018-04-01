@@ -25,51 +25,59 @@
 namespace polymer
 {
 
-    struct gl_context
-    {
 
+    // fixme - move to events file
+    struct UpdateEvent
+    {
+        double elapsed_s;
+        float timestep_ms;
+        float framesPerSecond;
+        uint64_t elapsedFrames;
     };
 
-    class glfw_window
+    // fixme - move to events file
+    struct InputEvent
     {
-
-        void consume_character(uint32_t codepoint);
-        void consume_key(int key, int action);
-        void consume_mousebtn(int button, int action);
-        void consume_cursor(double xpos, double ypos);
-        void consume_scroll(double xoffset, double yoffset);
-
-    protected:
+        enum Type { CURSOR, MOUSE, KEY, CHAR, SCROLL };
 
         GLFWwindow * window;
+        int2 windowSize;
 
-    public:
+        Type type;
+        int action;
+        int mods;
 
-        glfw_window(int w, int h, const std::string title, int glfwSamples = 1)
+        float2 cursor;
+        bool drag = false;
+
+        int2 value; // button, key, codepoint, scrollX, scrollY
+
+        bool is_down() const { return action != GLFW_RELEASE; }
+        bool is_up() const { return action == GLFW_RELEASE; }
+
+        bool using_shift_key() const { return mods & GLFW_MOD_SHIFT; };
+        bool using_control_key() const { return mods & GLFW_MOD_CONTROL; };
+        bool using_alt_key() const { return mods & GLFW_MOD_ALT; };
+        bool using_super_key() const { return mods & GLFW_MOD_SUPER; };
+    };
+
+    struct gl_context
+    {
+        GLFWwindow * hidden_window;
+
+        gl_context()
         {
-            if (!glfwInit()) std::exit(EXIT_FAILURE);
-
-            glfwWindowHint(GLFW_SAMPLES, glfwSamples);
-            glfwWindowHint(GLFW_SRGB_CAPABLE, true);
-
-#ifdef _DEBUG
-            glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
-#endif
-
-            glfwSetErrorCallback(s_error_callback);
-
-            window = glfwCreateWindow(w, h, title.c_str(), NULL, NULL);
-
-            if (!window)
-            {
-                POLYMER_ERROR("Failed to open GLFW window");
-                glfwTerminate();
-                ::exit(EXIT_FAILURE);
-            }
-
-            glfwMakeContextCurrent(window);
+            glfwDefaultWindowHints();
+            glfwWindowHint(GLFW_VISIBLE, 0);
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+            glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_TRUE);
+            hidden_window = glfwCreateWindow(1, 1, "", nullptr, nullptr);
+            if (!hidden_window) throw std::runtime_error("glfwCreateWindow(...) failed");
+            glfwMakeContextCurrent(hidden_window);
 
             POLYMER_INFO("GL_VERSION =  " << (char *)glGetString(GL_VERSION));
+            POLYMER_INFO("GL_SHADING_LANGUAGE_VERSION =  " << (char *)glGetString(GL_SHADING_LANGUAGE_VERSION));
             POLYMER_INFO("GL_VENDOR =   " << (char *)glGetString(GL_VENDOR));
             POLYMER_INFO("GL_RENDERER = " << (char *)glGetString(GL_RENDERER));
 
@@ -80,7 +88,7 @@ namespace polymer
             POLYMER_INFO("GLEW_VERSION = " << (char *)glewGetString(GLEW_VERSION));
 #endif
 
-            std::vector<std::pair<std::string, bool>> extensions{
+            std::vector<std::pair<std::string, bool>> extensions {
                 { "GL_EXT_direct_state_access", false },
                 { "GL_KHR_debug", false },
                 { "GL_EXT_blend_equation_separate", false },
@@ -102,6 +110,58 @@ namespace polymer
                 }
             }
             if (anyUnsupported) { throw std::runtime_error(ss.str()); }
+        }
+
+
+        ~gl_context()
+        {
+            if (hidden_window) glfwDestroyWindow(hidden_window);
+        }
+    };
+
+    class glfw_window
+    {
+        bool isDragging{ false };
+        void consume_character(uint32_t codepoint);
+        void consume_key(int key, int action);
+        void consume_mousebtn(int button, int action);
+        void consume_cursor(double xpos, double ypos);
+        void consume_scroll(double xoffset, double yoffset);
+
+        void preprocess_input(InputEvent & event)
+        {
+            if (event.type == InputEvent::MOUSE)
+            {
+                if (event.is_down()) isDragging = true;
+                else if (event.is_up()) isDragging = false;
+            }
+            event.drag = isDragging;
+            on_input(event);
+        }
+
+    protected:
+
+        GLFWwindow * window;
+
+    public:
+
+        glfw_window(gl_context * context, int w, int h, const std::string title, int samples = 1)
+        {
+            if (!glfwInit()) std::exit(EXIT_FAILURE);
+
+            glfwWindowHint(GLFW_SAMPLES, samples);
+            glfwWindowHint(GLFW_SRGB_CAPABLE, true);
+
+#ifdef _DEBUG
+            glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
+#endif
+
+            glfwSetErrorCallback(s_error_callback);
+
+            window = glfwCreateWindow(w, h, title.c_str(), NULL, context->hidden_window);
+            if (!window) throw std::runtime_error("failed to open glfw window...");
+
+            glfwMakeContextCurrent(window);
 
 #ifdef _DEBUG
             glEnable(GL_DEBUG_OUTPUT);
@@ -124,6 +184,7 @@ namespace polymer
             if (window) glfwDestroyWindow(window);
         }
 
+        int get_mods() const;
         virtual void on_update(const UpdateEvent & e) { }
         virtual void on_draw() { }
         virtual void on_window_focus(bool focused) { }
@@ -135,86 +196,30 @@ namespace polymer
             rethrow_exception(e);
         }
     };
-
-    // fixme - move to events file
-    struct UpdateEvent
+        
+    class polymer_app : public glfw_window
     {
-        double elapsed_s;
-        float timestep_ms;
-        float framesPerSecond;
-        uint64_t elapsedFrames;
-    };
-
-    // fixme - move to events file
-    struct InputEvent
-    {
-        enum Type { CURSOR, MOUSE, KEY, CHAR, SCROLL };
-        
-        GLFWwindow * window;
-        int2 windowSize;
-        
-        Type type;
-        int action;
-        int mods;
-        
-        float2 cursor;
-        bool drag = false;
-        
-        int2 value; // button, key, codepoint, scrollX, scrollY
-        
-        bool is_down() const { return action != GLFW_RELEASE; }
-        bool is_up() const { return action == GLFW_RELEASE; }
-        
-        bool using_shift_key() const { return mods & GLFW_MOD_SHIFT; };
-        bool using_control_key() const { return mods & GLFW_MOD_CONTROL; };
-        bool using_alt_key() const { return mods & GLFW_MOD_ALT; };
-        bool using_super_key() const { return mods & GLFW_MOD_SUPER; };
-    };
-        
-    class GLFWApp : public glfw_window
-    {
-    public:
-
-        GLFWApp(int w, int h, const std::string windowTitle, int glfwSamples = 1);
-        virtual ~GLFWApp();
-
-        void main_loop();
-
-        float2 get_cursor_position() const;
-
-        void exit();
-
-        void set_fullscreen(bool state);
-        bool get_fullscreen();
-
-        void take_screenshot(const std::string & filename);
-
-        int get_mods() const;
-
-        void set_window_title(const std::string & str);
-
-    private:
-        
-        bool isDragging = false;
+        uint64_t elapsedFrames{ 0 };
+        double fps{ 0 };
+        double fpsTime{ 0 };
+        bool fullscreenState{ false };
 
         void take_screenshot_impl();
         std::string screenshotPath;
-        
-        void preprocess_input(InputEvent & event);
-
         static void enter_fullscreen(GLFWwindow * window, int2 & windowedSize, int2 & windowedPos);
         static void exit_fullscreen(GLFWwindow * window, const int2 & windowedSize, const int2 & windowedPos);
+        int2 windowedSize, windowedPos;
 
-        uint64_t elapsedFrames = 0;
-        uint64_t fps = 0;
-        double fpsTime = 0;
-        int lastButton = 0;
-        bool fullscreenState = false; 
+    public:
 
-        int2 windowedSize; 
-        int2 windowedPos;
+        polymer_app(int w, int h, const std::string windowTitle, int glfwSamples = 1);
+        ~polymer_app();
 
-        std::vector<std::exception_ptr> exceptions;
+        void main_loop();
+        void exit();
+        void set_fullscreen(bool state);
+        bool get_fullscreen();
+        void request_screenshot(const std::string & filename);
     };
         
     extern int Main(int argc, char * argv[]);

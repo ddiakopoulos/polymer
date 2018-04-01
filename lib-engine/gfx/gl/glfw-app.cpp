@@ -7,6 +7,7 @@
 
 using namespace polymer;
 
+
 static InputEvent generate_input_event(GLFWwindow * window, InputEvent::Type type, const float2 & cursor, int action)
 {
     InputEvent e;
@@ -15,7 +16,7 @@ static InputEvent generate_input_event(GLFWwindow * window, InputEvent::Type typ
     e.cursor = cursor;
     e.action = action;
     e.mods = 0;
-    
+
     glfwGetWindowSize(window, &e.windowSize.x, &e.windowSize.y);
 
     if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) | glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT)) e.mods |= GLFW_MOD_SHIFT;
@@ -31,75 +32,81 @@ static void s_error_callback(int error, const char * description)
     std::cerr << description << std::endl;
 }
 
-#define CATCH_CURRENT app->exceptions.push_back(std::current_exception())
+/////////////////////
+//   glfw_window   //
+/////////////////////
 
-GLFWApp::GLFWApp(int width, int height, const std::string title, int glfwSamples)
+float2 get_cursor_position(GLFWwindow * win)
 {
-
+    double xpos, ypos;
+    glfwGetCursorPos(win, &xpos, &ypos);
+    return { (float)xpos, (float)ypos };
 }
 
-GLFWApp::~GLFWApp() 
-{
-
-}
-
-void GLFWApp::preprocess_input(InputEvent & event)
-{
-    if (event.type == InputEvent::MOUSE)
-    {
-        if (event.is_down()) isDragging = true;
-        else if (event.is_up()) isDragging = false;
-    }
-    event.drag = isDragging;
-    on_input(event);
-}
-
-void GLFWApp::set_window_title(const std::string & str)
-{
-    glfwSetWindowTitle(window, str.c_str());
-}
-
-void GLFWApp::consume_character(uint32_t codepoint)
+void glfw_window::consume_character(uint32_t codepoint)
 {
     auto e = generate_input_event(window, InputEvent::CHAR, get_cursor_position(), 0);
     e.value[0] = codepoint;
     preprocess_input(e);
 }
 
-void GLFWApp::consume_key(int key, int action)
+void glfw_window::consume_key(int key, int action)
 {
     auto e = generate_input_event(window, InputEvent::KEY, get_cursor_position(), action);
     e.value[0] = key;
     preprocess_input(e);
 }
 
-void GLFWApp::consume_mousebtn(int button, int action)
+void glfw_window::consume_mousebtn(int button, int action)
 {
     auto e = generate_input_event(window, InputEvent::MOUSE, get_cursor_position(), action);
     e.value[0] = button;
     preprocess_input(e);
 }
 
-void GLFWApp::consume_cursor(double xpos, double ypos)
+void glfw_window::consume_cursor(double xpos, double ypos)
 {
-    auto e = generate_input_event(window, InputEvent::CURSOR, {(float)xpos, (float)ypos}, 0);
+    auto e = generate_input_event(window, InputEvent::CURSOR, { (float)xpos, (float)ypos }, 0);
     preprocess_input(e);
 }
 
-void GLFWApp::consume_scroll(double deltaX, double deltaY)
+void glfw_window::consume_scroll(double deltaX, double deltaY)
 {
     auto e = generate_input_event(window, InputEvent::SCROLL, get_cursor_position(), 0);
-    e.value[0] = (float) deltaX;
-    e.value[1] = (float) deltaY;
+    e.value[0] = (float)deltaX;
+    e.value[1] = (float)deltaY;
     preprocess_input(e);
 }
 
-void GLFWApp::take_screenshot(const std::string & filename)
+int glfw_window::get_mods() const
+{
+    int mods = 0;
+    if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) || glfwGetKey(window, GLFW_KEY_RIGHT_CONTROL)) mods |= GLFW_MOD_CONTROL;
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) || glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT)) mods |= GLFW_MOD_SHIFT;
+    if (glfwGetKey(window, GLFW_KEY_LEFT_ALT) || glfwGetKey(window, GLFW_KEY_RIGHT_ALT)) mods |= GLFW_MOD_ALT;
+    return mods;
+}
+
+/////////////////////
+//   polymer_app   //
+/////////////////////
+
+polymer_app::polymer_app(int w, int h, const std::string title, int samples) : glfw_window(w, h, title, samples)
+{
+
+}
+
+polymer_app::~polymer_app() 
+{
+
+}
+
+void polymer_app::take_screenshot(const std::string & filename)
 {
     screenshotPath = filename;
 }
 
-void GLFWApp::take_screenshot_impl()
+void polymer_app::take_screenshot_impl()
 {
     int width, height;
     glfwGetWindowSize(window, &width, &height);
@@ -114,14 +121,12 @@ void GLFWApp::take_screenshot_impl()
     screenshotPath.clear();
 }
 
-void GLFWApp::main_loop() 
+void polymer_app::main_loop() 
 {
     auto t0 = std::chrono::high_resolution_clock::now();
     
     while (!glfwWindowShouldClose(window)) 
     {
-        for (auto & e : exceptions) on_uncaught_exception(e);
-
         try
         {
             auto t1 = std::chrono::high_resolution_clock::now();
@@ -153,30 +158,14 @@ void GLFWApp::main_loop()
         }
         catch(...)
         {
-            on_uncaught_exception(std::current_exception());
+            // ...
         }
     }
 }
 
-float2 GLFWApp::get_cursor_position() const
-{
-    double xpos, ypos;
-    glfwGetCursorPos(window, &xpos, &ypos);
-    return {(float)xpos, (float)ypos};
-}
-
-void GLFWApp::exit()
+void polymer_app::exit()
 {
     glfwSetWindowShouldClose(window, 1);
-}
-
-int GLFWApp::get_mods() const
-{
-    int mods = 0;
-    if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) || glfwGetKey(window, GLFW_KEY_RIGHT_CONTROL)) mods |= GLFW_MOD_CONTROL;
-    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) || glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT)) mods |= GLFW_MOD_SHIFT;
-    if (glfwGetKey(window, GLFW_KEY_LEFT_ALT) || glfwGetKey(window, GLFW_KEY_RIGHT_ALT)) mods |= GLFW_MOD_ALT;
-    return mods;
 }
 
 namespace polymer
@@ -186,17 +175,12 @@ namespace polymer
         int returnCode = EXIT_FAILURE;
         try
         {
-            if (!glfwInit()) 
-                throw std::runtime_error("glfwInit() failed.");
+            if (!glfwInit())  throw std::runtime_error("glfwInit() failed.");
             returnCode = main(argc, argv);
         }
         catch (const std::exception & e) 
         { 
             POLYMER_ERROR("[Fatal] Caught exception: \n" << e.what());
-        }
-        catch (...) 
-        { 
-            POLYMER_ERROR("[Fatal] Caught unknown exception.");
         }
 
         glfwTerminate();
@@ -248,7 +232,7 @@ int2 get_screen_size(GLFWwindow * window)
 #include <GLFW/glfw3native.h>
 #include <shellapi.h>
 
-void GLFWApp::enter_fullscreen(GLFWwindow * window, int2 & windowedSize, int2 & windowedPos)
+void polymer_app::enter_fullscreen(GLFWwindow * window, int2 & windowedSize, int2 & windowedPos)
 {
     glfwGetWindowSize(window, &windowedSize.x, &windowedSize.y);
     glfwGetWindowPos(window, &windowedPos.x, &windowedPos.y);
@@ -270,7 +254,7 @@ void GLFWApp::enter_fullscreen(GLFWwindow * window, int2 & windowedSize, int2 & 
     SetWindowPos(hwnd, HWND_TOPMOST, xpos, ypos, (int) newScreenWidth, (int) newScreenHeight, SWP_SHOWWINDOW);
 }
 
-void GLFWApp::exit_fullscreen(GLFWwindow * window, const int2 & windowedSize, const int2 & windowedPos)
+void polymer_app::exit_fullscreen(GLFWwindow * window, const int2 & windowedSize, const int2 & windowedPos)
 {
     HWND hwnd = glfwGetWin32Window(window);
     DWORD EX_STYLE = WS_EX_OVERLAPPEDWINDOW;
@@ -284,46 +268,6 @@ void GLFWApp::exit_fullscreen(GLFWwindow * window, const int2 & windowedSize, co
     // glfw/os bug: window shrinks by 4 pixels in x and y
     glfwSetWindowPos(window, windowedPos.x - 2, windowedPos.y - 2);
     glfwSetWindowSize(window, windowedSize.x + 4, windowedSize.y + 4);
-}
-
-#elif defined(POLYMER_PLATFORM_OSX)
-
-#define GLFW_EXPOSE_NATIVE_COCOA
-#define GLFW_EXPOSE_NATIVE_NSGL
-#include "GLFW/glfw3native.h"
-
-void GLFWApp::enter_fullscreen(GLFWwindow * window, int2 & windowedSize, int2 & windowedPos)
-{
-    glfwGetWindowSize(window, &windowedSize.x, &windowedSize.y);
-    glfwGetWindowPos(window, &windowedPos.x, &windowedPos.y);
-    
-    [NSApp setPresentationOptions:NSApplicationPresentationHideMenuBar | NSApplicationPresentationHideDock];
-    NSWindow * cocoaWindow = glfwGetCocoaWindow(window);
-    [cocoaWindow setStyleMask:NSBorderlessWindowMask];
-    
-    int32_t newScreenWidth = get_screen_size(window).x;
-    int32_t newScreenHeight = get_screen_size(window).y;
-    
-    int monitorCount;
-    GLFWmonitor** monitors = glfwGetMonitors(&monitorCount);
-    int currentMonitor = get_current_monitor(window);
-    int xpos, ypos;
-    glfwGetMonitorPos(monitors[currentMonitor], &xpos, &ypos);
-    
-    glfwSetWindowSize(window, newScreenWidth, newScreenHeight);
-    glfwSetWindowPos(window, windowedPos.x, windowedPos.y);
-
-    [cocoaWindow makeFirstResponder:cocoaWindow.contentView];
-}
-
-void GLFWApp::exit_fullscreen(GLFWwindow * window, const int2 & windowedSize, const int2 & windowedPos)
-{
-    [NSApp setPresentationOptions:NSApplicationPresentationDefault];
-    NSWindow * cocoaWindow = glfwGetCocoaWindow(window);
-    [cocoaWindow setStyleMask:NSTitledWindowMask | NSClosableWindowMask | NSMiniaturizableWindowMask | NSResizableWindowMask];
-    [cocoaWindow makeFirstResponder:cocoaWindow.contentView];
-    glfwSetWindowPos(window, windowedPos.x, windowedPos.y);
-    glfwSetWindowSize(window, windowedSize.x, windowedSize.y);
 }
 
 #endif // end platform specific
