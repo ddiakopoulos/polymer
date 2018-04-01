@@ -7,6 +7,8 @@ using namespace polymer;
 //   Compile-Time Constant Hashing   //
 ///////////////////////////////////////
 
+// https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function
+
 using HashValue = uint64_t;
 constexpr HashValue hash_offset_basis = 0x84222325;
 constexpr HashValue hash_prime_multiplier = 0x000001b3;
@@ -29,6 +31,31 @@ inline constexpr HashValue ConstHash(const char(&str)[N])
     return N <= 1 ? 0 : detail::ConstHash(str, 0, hash_offset_basis);
 }
 
+HashValue Hash(HashValue basis, const char * str, size_t len)
+{
+    if (str == nullptr || *str == 0 || len == 0) return 0;
+
+    size_t count = 0;
+    HashValue value = basis;
+    while (*str && count < len)
+    {
+        value = (value ^ static_cast<unsigned char>(*str++)) * hash_prime_multiplier;
+        ++count;
+    }
+    return value;
+}
+
+HashValue Hash(const char * str, size_t len)
+{
+    return Hash(hash_offset_basis, str, len);
+}
+
+HashValue Hash(const char * str)
+{
+    const size_t npos = -1;
+    return Hash(str, npos);
+}
+
 // Functor for hashable types in STL containers.
 struct Hasher 
 {
@@ -42,7 +69,7 @@ struct Hasher
 
 // An Entity is an uniquely identifiable object in the Polymer runtime.
 using Entity = uint64_t;
-constexpr Entity NULL_ENTITY = 0;
+constexpr Entity kInvalidEntity = 0;
 
 //////////////////////////////////////
 //   Custom TypeId Implementation   //
@@ -204,6 +231,63 @@ template <>                                    \
  {
      return type_name_generator::generate<T>() == std::string(name);
  }
+
+ ////////////////////////
+ //   Example System   //
+ ////////////////////////
+
+ struct ExampleSystem : public System
+ {
+     std::unordered_map<Entity, std::string> entity_to_name_;
+     std::unordered_map<Entity, HashValue> entity_to_hash_;
+
+     ExampleSystem(EntityFactory * f) : System(f) { }
+     ~ExampleSystem() override
+     {
+
+     }
+
+     // Associates |entity| with a name. Removes any existing name associated with this entity.
+     void create(Entity entity, HashValue type, void * data) override final
+     {
+         if (type != ConstHash("NameDefinition")) 
+         {
+             std::cout << "Invalid definition type, expecting NameDefinition." << std::endl;
+             return;
+         }
+
+         // todo - set name based on data
+     }
+
+     // Disassociates any name from |entity|.
+     void destroy(Entity entity) override final
+     {
+
+     }
+
+     // Finds the name associated with |entity|. Returns empty string if no name is found.
+     std::string get_name(Entity entity) const
+     {
+         const auto iter = entity_to_name_.find(entity);
+         return iter != entity_to_name_.end() ? iter->second : "";
+     }
+
+     void set_name(Entity entity, const std::string & name) 
+     {
+         if (entity == kInvalidEntity) 
+         {
+             std::cout << "Invalid Entity" << std::endl;
+             return;
+         }
+
+         const auto hash = Hash(name.c_str());
+         entity_to_name_[entity] = name;
+         entity_to_hash_[entity] = hash;
+     }
+
+
+ };
+ POLYMER_SETUP_TYPEID(ExampleSystem);
 
 IMPLEMENT_MAIN(int argc, char * argv[])
 {
