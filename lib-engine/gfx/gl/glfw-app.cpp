@@ -32,10 +32,6 @@ static void s_error_callback(int error, const char * description)
     std::cerr << description << std::endl;
 }
 
-/////////////////////
-//   glfw_window   //
-/////////////////////
-
 float2 get_cursor_position(GLFWwindow * win)
 {
     double xpos, ypos;
@@ -43,23 +39,133 @@ float2 get_cursor_position(GLFWwindow * win)
     return { (float)xpos, (float)ypos };
 }
 
+////////////////////
+//   gl_context   //
+////////////////////
+
+gl_context::gl_context()
+{
+    if (!glfwInit()) throw std::runtime_error("could not initialize glfw...");
+
+    glfwDefaultWindowHints();
+    glfwWindowHint(GLFW_VISIBLE, 0);
+    glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_TRUE);
+
+    hidden_window = glfwCreateWindow(1, 1, "", nullptr, nullptr);
+    if (!hidden_window) throw std::runtime_error("glfwCreateWindow(...) failed");
+    glfwMakeContextCurrent(hidden_window);
+
+    POLYMER_INFO("GL_VERSION =  " << (char *)glGetString(GL_VERSION));
+    POLYMER_INFO("GL_SHADING_LANGUAGE_VERSION =  " << (char *)glGetString(GL_SHADING_LANGUAGE_VERSION));
+    POLYMER_INFO("GL_VENDOR =   " << (char *)glGetString(GL_VENDOR));
+    POLYMER_INFO("GL_RENDERER = " << (char *)glGetString(GL_RENDERER));
+
+#if defined(POLYMER_PLATFORM_WINDOWS)
+    glewExperimental = GL_TRUE;
+    if (GLenum err = glewInit())
+        throw std::runtime_error(std::string("glewInit() failed - ") + (const char *)glewGetErrorString(err));
+    POLYMER_INFO("GLEW_VERSION = " << (char *)glewGetString(GLEW_VERSION));
+#endif
+
+    std::vector<std::pair<std::string, bool>> extensions{
+        { "GL_EXT_direct_state_access", false },
+    { "GL_KHR_debug", false },
+    { "GL_EXT_blend_equation_separate", false },
+    { "GL_EXT_framebuffer_sRGB", false },
+    { "GL_EXT_pixel_buffer_object", false },
+    };
+    has_gl_extension(extensions);
+
+    std::ostringstream ss;
+    ss << "Unsupported extensions: ";
+
+    bool anyUnsupported = false;
+    for (auto & e : extensions)
+    {
+        if (!e.second)
+        {
+            ss << ' ' << e.first;
+            anyUnsupported = true;
+        }
+    }
+    if (anyUnsupported) { throw std::runtime_error(ss.str()); }
+}
+
+gl_context::~gl_context()
+{
+    if (hidden_window) glfwDestroyWindow(hidden_window);
+}
+
+/////////////////////
+//   glfw_window   //
+/////////////////////
+
+glfw_window::glfw_window(gl_context * context, int w, int h, const std::string title, int samples = 1)
+{
+    glfwWindowHint(GLFW_VISIBLE, 1);
+    glfwWindowHint(GLFW_SAMPLES, samples);
+    glfwWindowHint(GLFW_SRGB_CAPABLE, true);
+
+#ifdef _DEBUG
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
+#endif
+
+    glfwSetErrorCallback(s_error_callback);
+
+    window = glfwCreateWindow(w, h, title.c_str(), NULL, context->hidden_window);
+    if (!window) throw std::runtime_error("failed to open glfw window...");
+
+    glfwMakeContextCurrent(window);
+
+#ifdef _DEBUG
+    glEnable(GL_DEBUG_OUTPUT);
+    glDebugMessageCallback(&gl_debug_callback, nullptr);
+#endif
+
+    glfwSetWindowUserPointer(window, this);
+    glfwSetWindowFocusCallback(window, [](GLFWwindow * window, int focused) { auto win = (glfw_window *)(glfwGetWindowUserPointer(window)); win->on_window_focus(!!focused); });
+    glfwSetWindowSizeCallback(window, [](GLFWwindow * window, int width, int height) { auto win = (glfw_window *)(glfwGetWindowUserPointer(window)); win->on_window_resize({ width, height }); });
+    glfwSetCharCallback(window, [](GLFWwindow * window, unsigned int codepoint) { auto win = (glfw_window *)(glfwGetWindowUserPointer(window)); win->consume_character(codepoint);  });
+    glfwSetKeyCallback(window, [](GLFWwindow * window, int key, int, int action, int) { auto win = (glfw_window *)(glfwGetWindowUserPointer(window)); win->consume_key(key, action); });
+    glfwSetMouseButtonCallback(window, [](GLFWwindow * window, int button, int action, int) { auto win = (glfw_window *)(glfwGetWindowUserPointer(window)); win->consume_mousebtn(button, action);  });
+    glfwSetCursorPosCallback(window, [](GLFWwindow * window, double xpos, double ypos) { auto win = (glfw_window *)(glfwGetWindowUserPointer(window)); win->consume_cursor(xpos, ypos); });
+    glfwSetScrollCallback(window, [](GLFWwindow * window, double deltaX, double deltaY) { auto win = (glfw_window *)(glfwGetWindowUserPointer(window)); win->consume_scroll(deltaX, deltaY); });
+    glfwSetDropCallback(window, [](GLFWwindow * window, int count, const char * names[]) { auto win = (glfw_window *)(glfwGetWindowUserPointer(window)); win->on_drop({ names, names + count }); });
+}
+
+glfw_window::~glfw_window()
+{
+    if (window) glfwDestroyWindow(window);
+}
+
+void glfw_window::preprocess_input(InputEvent & event)
+{
+    if (event.type == InputEvent::MOUSE)
+    {
+        if (event.is_down()) isDragging = true;
+        else if (event.is_up()) isDragging = false;
+    }
+    event.drag = isDragging;
+    on_input(event);
+}
+
 void glfw_window::consume_character(uint32_t codepoint)
 {
-    auto e = generate_input_event(window, InputEvent::CHAR, get_cursor_position(), 0);
+    auto e = generate_input_event(window, InputEvent::CHAR, get_cursor_position(window), 0);
     e.value[0] = codepoint;
     preprocess_input(e);
 }
 
 void glfw_window::consume_key(int key, int action)
 {
-    auto e = generate_input_event(window, InputEvent::KEY, get_cursor_position(), action);
+    auto e = generate_input_event(window, InputEvent::KEY, get_cursor_position(window), action);
     e.value[0] = key;
     preprocess_input(e);
 }
 
 void glfw_window::consume_mousebtn(int button, int action)
 {
-    auto e = generate_input_event(window, InputEvent::MOUSE, get_cursor_position(), action);
+    auto e = generate_input_event(window, InputEvent::MOUSE, get_cursor_position(window), action);
     e.value[0] = button;
     preprocess_input(e);
 }
@@ -72,7 +178,7 @@ void glfw_window::consume_cursor(double xpos, double ypos)
 
 void glfw_window::consume_scroll(double deltaX, double deltaY)
 {
-    auto e = generate_input_event(window, InputEvent::SCROLL, get_cursor_position(), 0);
+    auto e = generate_input_event(window, InputEvent::SCROLL, get_cursor_position(window), 0);
     e.value[0] = (float)deltaX;
     e.value[1] = (float)deltaY;
     preprocess_input(e);
@@ -101,12 +207,12 @@ polymer_app::~polymer_app()
 
 }
 
-void polymer_app::take_screenshot(const std::string & filename)
+void polymer_app::request_screenshot(const std::string & filename)
 {
     screenshotPath = filename;
 }
 
-void polymer_app::take_screenshot_impl()
+void polymer_app::screenshot_impl()
 {
     int width, height;
     glfwGetWindowSize(window, &width, &height);
@@ -152,7 +258,7 @@ void polymer_app::main_loop()
             on_update(e);
             on_draw();
 
-            if (screenshotPath.size() > 0)take_screenshot_impl();
+            if (screenshotPath.size() > 0) screenshot_impl();
 
             glfwPollEvents();
         }
