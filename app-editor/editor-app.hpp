@@ -160,19 +160,20 @@ struct scene_editor_app final : public polymer_app
 
     uint32_t pbrProgramAsset = -1;
 
-    Scene scene;
-
     GlShaderHandle wireframeHandle{ "wireframe" };
     GlShaderHandle iblHandle{ "ibl" };
     GlMeshHandle cubeHandle{ "cube" };
 
     profiler<SimpleTimer> editorProfiler;
 
-    std::unique_ptr<gui::imgui_wrapper> igm;
+    std::unique_ptr<glfw_window> auxWindow;
+    std::unique_ptr<gui::imgui_instance> auxImgui;
 
+    std::unique_ptr<gui::imgui_instance> igm;
     std::unique_ptr<editor_controller<GameObject>> editor;
-
     std::unique_ptr<forward_renderer> renderer;
+
+    Scene scene;
     scene_data sceneData;
 
     ImGui::ImGuiAppLog log;
@@ -189,6 +190,4 @@ struct scene_editor_app final : public polymer_app
     void on_update(const UpdateEvent & e) override;
     void on_draw() override;
     void on_drop(std::vector <std::string> filepaths) override;
-
-    bool shouldHandleRaycast = false;
 };

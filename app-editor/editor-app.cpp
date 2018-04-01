@@ -18,7 +18,10 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
 
     auto droidSansTTFBytes = read_file_binary("../assets/fonts/droid_sans.ttf");
 
-    igm.reset(new gui::imgui_wrapper(window));
+    auxWindow.reset(new glfw_window(get_shared_gl_context(), 200, 200, "aux-window", 1));
+    //auxImgui.reset(new gui::imgui_instance(auxWindow->get_window()));
+
+    igm.reset(new gui::imgui_instance(window));
     gui::make_light_theme();
     igm->add_font(droidSansTTFBytes);
 
@@ -477,6 +480,7 @@ void scene_editor_app::on_draw()
     editorProfiler.begin("imgui-menu");
     igm->begin_frame();
 
+    /*
     ImGui::Begin("draw-test");
     ImGui::GetCurrentWindow()->DrawList->AddRectFilled({ -100, -100 }, { 100, 100 }, ImGui::GetColorU32((ImGuiCol)40));
     const ImU32 hoverColor = ImGui::ColorConvertFloat4ToU32(GImGui->Style.Colors[ImGuiCol_Button]);
@@ -485,10 +489,8 @@ void scene_editor_app::on_draw()
     std::cout << "Region Max: " << ImGui::GetWindowContentRegionMax().x << ", " << ImGui::GetWindowContentRegionMax().y << std::endl;
     std::cout << "Size: " << ImGui::GetWindowPos().x << ", " << ImGui::GetWindowPos().y << std::endl;
     ImGui::End();
-
-    if (ImGui::IsItemActive() && ImGui::IsMouseDragging(0))
-    {
-    }
+    if (ImGui::IsItemActive() && ImGui::IsMouseDragging(0)) { }
+    */
 
     gui::imgui_menu_stack menu(*this, ImGui::GetIO().KeysDown);
     menu.app_menu_begin();
@@ -502,7 +504,7 @@ void scene_editor_app::on_draw()
             {
                 scene.objects.clear();
                 cereal::deserialize_from_json(selected_open_path, scene.objects);
-                set_window_title(selected_open_path);
+                // set_window_title(selected_open_path);
             }
 
         }
@@ -512,7 +514,7 @@ void scene_editor_app::on_draw()
             if (!save_path.empty())
             {
                 write_file_text(save_path, cereal::serialize_to_json(scene.objects));
-                set_window_title(save_path);
+                //set_window_title(save_path);
             }
         }
         if (menu.item("New Scene", GLFW_MOD_CONTROL, GLFW_KEY_N, mod_enabled))
@@ -521,8 +523,7 @@ void scene_editor_app::on_draw()
         }
         if (menu.item("Take Screenshot", GLFW_MOD_CONTROL, GLFW_KEY_EQUAL, mod_enabled))
         {
-
-            take_screenshot("scene-editor");
+            request_screenshot("scene-editor");
         }
         if (menu.item("Exit", GLFW_MOD_ALT, GLFW_KEY_F4)) exit();
         menu.end();

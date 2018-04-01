@@ -95,6 +95,7 @@ namespace polymer
         virtual void on_input(const InputEvent & event) { }
         virtual void on_drop(std::vector<std::string> names) { }
         gl_context * get_shared_gl_context() const { return gl_ctx; }
+        GLFWwindow * get_window() const { return window; }
     };
         
     class polymer_app : public glfw_window

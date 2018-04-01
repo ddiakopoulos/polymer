@@ -339,7 +339,6 @@ void forward_renderer::render_frame(const scene_data & scene)
         v.eyePos = float4(scene.views[camIdx].pose.position, 1);
         perView.set_buffer_data(sizeof(v), &v, GL_STREAM_DRAW);
 
-
         // Render into multisampled fbo
         glEnable(GL_MULTISAMPLE);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, multisampleFramebuffer);

@@ -14,7 +14,7 @@ namespace gui
     //   Wrapper Implementation   //
     ////////////////////////////////
 
-    imgui_wrapper::imgui_wrapper(GLFWwindow * win)
+    imgui_instance::imgui_instance(GLFWwindow * win)
     {
         data.window = win;
         data.context = ImGui::CreateContext();
@@ -47,7 +47,7 @@ namespace gui
     }
 
     std::vector<uint8_t> fontBuffer;
-    void imgui_wrapper::add_font(const std::vector<uint8_t> & buffer)
+    void imgui_instance::add_font(const std::vector<uint8_t> & buffer)
     {
         ImGuiIO & io = ImGui::GetIO();
         fontBuffer = buffer;
@@ -57,14 +57,14 @@ namespace gui
         IM_ASSERT(font != NULL);
     }
 
-    imgui_wrapper::~imgui_wrapper()
+    imgui_instance::~imgui_instance()
     {
         ImGui::SetCurrentContext(data.context);
         destroy_render_objects();
         ImGui::Shutdown(data.context);
     }
     
-    void imgui_wrapper::update_input(const polymer::InputEvent & e)
+    void imgui_instance::update_input(const polymer::InputEvent & e)
     {
         ImGui::SetCurrentContext(data.context);
 
@@ -108,7 +108,7 @@ namespace gui
 
     }
 
-    bool imgui_wrapper::create_fonts_texture()
+    bool imgui_instance::create_fonts_texture()
     {
         ImGui::SetCurrentContext(data.context);
 
@@ -136,7 +136,7 @@ namespace gui
         return true;
     }
     
-    bool imgui_wrapper::create_render_objects()
+    bool imgui_instance::create_render_objects()
     {
         ImGui::SetCurrentContext(data.context);
 
@@ -216,7 +216,7 @@ namespace gui
         return true;
     }
     
-    void imgui_wrapper::destroy_render_objects()
+    void imgui_instance::destroy_render_objects()
     {
         ImGui::SetCurrentContext(data.context);
 
@@ -244,7 +244,7 @@ namespace gui
         }
     }
     
-    void imgui_wrapper::begin_frame()
+    void imgui_instance::begin_frame()
     {
         ImGui::SetCurrentContext(data.context);
         if (!data.FontTexture) create_render_objects();
@@ -285,7 +285,7 @@ namespace gui
         ImGui::NewFrame();
     }
     
-    void imgui_wrapper::end_frame()
+    void imgui_instance::end_frame()
     {
         ImGui::SetCurrentContext(data.context);
         ImGui::Render();

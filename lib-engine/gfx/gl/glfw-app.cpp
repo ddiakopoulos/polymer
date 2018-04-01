@@ -27,11 +27,6 @@ static InputEvent generate_input_event(GLFWwindow * window, InputEvent::Type typ
     return e;
 }
 
-static void s_error_callback(int error, const char * description)
-{
-    std::cerr << description << std::endl;
-}
-
 float2 get_cursor_position(GLFWwindow * win)
 {
     double xpos, ypos;
@@ -47,11 +42,8 @@ gl_context::gl_context()
 {
     if (!glfwInit()) throw std::runtime_error("could not initialize glfw...");
 
-    glfwDefaultWindowHints();
     glfwWindowHint(GLFW_VISIBLE, 0);
-    glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_TRUE);
-
-    hidden_window = glfwCreateWindow(1, 1, "", nullptr, nullptr);
+    hidden_window = glfwCreateWindow(1, 1, "hidden-window", nullptr, nullptr);
     if (!hidden_window) throw std::runtime_error("glfwCreateWindow(...) failed");
     glfwMakeContextCurrent(hidden_window);
 
@@ -70,10 +62,10 @@ gl_context::gl_context()
 
     std::vector<std::pair<std::string, bool>> extensions{
         { "GL_EXT_direct_state_access", false },
-    { "GL_KHR_debug", false },
-    { "GL_EXT_blend_equation_separate", false },
-    { "GL_EXT_framebuffer_sRGB", false },
-    { "GL_EXT_pixel_buffer_object", false },
+        { "GL_KHR_debug", false },
+        { "GL_EXT_blend_equation_separate", false },
+        { "GL_EXT_framebuffer_sRGB", false },
+        { "GL_EXT_pixel_buffer_object", false },
     };
     has_gl_extension(extensions);
 
@@ -95,6 +87,7 @@ gl_context::gl_context()
 gl_context::~gl_context()
 {
     if (hidden_window) glfwDestroyWindow(hidden_window);
+    glfwTerminate();
 }
 
 /////////////////////
@@ -109,21 +102,24 @@ glfw_window::glfw_window(gl_context * context, int w, int h, const std::string t
     glfwWindowHint(GLFW_SAMPLES, samples);
     glfwWindowHint(GLFW_SRGB_CAPABLE, true);
 
-#ifdef _DEBUG
-    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
-#endif
+    std::cout << "Hidden Window: " << gl_ctx->hidden_window << std::endl;
 
-    glfwSetErrorCallback(s_error_callback);
+    glfwSetErrorCallback([](int err, const char* desc) {
+        printf("glfw error - %i, desc: %s\n", err, desc);
+    });
 
-    window = glfwCreateWindow(w, h, title.c_str(), NULL, gl_ctx->hidden_window);
+    window = glfwCreateWindow(w, h, title.c_str(), nullptr, nullptr);
     if (!window) throw std::runtime_error("failed to open glfw window: " + title);
 
     glfwMakeContextCurrent(window);
 
+    /*
 #ifdef _DEBUG
     glEnable(GL_DEBUG_OUTPUT);
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
     glDebugMessageCallback(&gl_debug_callback, nullptr);
 #endif
+    */
 
     glfwSetWindowUserPointer(window, this);
     glfwSetWindowFocusCallback(window, [](GLFWwindow * window, int focused) { auto win = (glfw_window *)(glfwGetWindowUserPointer(window)); win->on_window_focus(!!focused); });
@@ -208,7 +204,7 @@ polymer_app::polymer_app(int w, int h, const std::string title, int samples) : g
 
 polymer_app::~polymer_app() 
 {
-    if (window) glfwDestroyWindow(window);
+
 }
 
 void polymer_app::request_screenshot(const std::string & filename)
@@ -237,6 +233,8 @@ void polymer_app::main_loop()
     
     while (!glfwWindowShouldClose(window)) 
     {
+        glfwMakeContextCurrent(window);
+
         try
         {
             auto t1 = std::chrono::high_resolution_clock::now();
@@ -275,6 +273,7 @@ void polymer_app::main_loop()
 
 void polymer_app::exit()
 {
+    glfwMakeContextCurrent(window);
     glfwSetWindowShouldClose(window, 1);
 }
 
@@ -283,17 +282,8 @@ namespace polymer
     int main(int argc, char * argv[]) 
     {
         int returnCode = EXIT_FAILURE;
-        try
-        {
-            if (!glfwInit())  throw std::runtime_error("glfwInit() failed.");
-            returnCode = main(argc, argv);
-        }
-        catch (const std::exception & e) 
-        { 
-            POLYMER_ERROR("[Fatal] Caught exception: \n" << e.what());
-        }
-
-        glfwTerminate();
+        try { returnCode = main(argc, argv); }
+        catch (const std::exception & e) { POLYMER_ERROR("[Fatal] Caught exception: \n" << e.what()); }
         return returnCode;
     }
 }

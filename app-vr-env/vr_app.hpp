@@ -118,7 +118,7 @@ struct VirtualRealityApp : public polymer_app
     std::shared_ptr<BulletEngineVR> physicsEngine;
     std::unique_ptr<PhysicsDebugRenderer> physicsDebugRenderer;
 
-    std::unique_ptr<gui::imgui_wrapper> igm;
+    std::unique_ptr<gui::imgui_instance> igm;
 
     VirtualRealityApp();
     ~VirtualRealityApp();

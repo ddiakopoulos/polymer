@@ -56,15 +56,15 @@ namespace gui
         uint32_t     FontTexture = 0;
     };
 
-    class imgui_wrapper
+    class imgui_instance
     {
         bool create_fonts_texture();
         bool create_render_objects();
         void destroy_render_objects();
         imgui_data data;
     public:
-        imgui_wrapper(GLFWwindow * win);
-        ~imgui_wrapper();
+        imgui_instance(GLFWwindow * win);
+        ~imgui_instance();
         void add_font(const std::vector<uint8_t> & font);
         void update_input(const polymer::InputEvent & e);
         void begin_frame();

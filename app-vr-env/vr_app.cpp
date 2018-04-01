@@ -10,7 +10,7 @@ VirtualRealityApp::VirtualRealityApp() : polymer_app(1280, 800, "VR Sandbox")
     int windowWidth, windowHeight;
     glfwGetWindowSize(window, &windowWidth, &windowHeight);
 
-    igm.reset(new gui::imgui_wrapper(window));
+    igm.reset(new gui::imgui_instance(window));
 
     cameraController.set_camera(&debugCam);
 
