@@ -19,7 +19,7 @@ static inline uint64_t system_time_ns()
 
 // Note that the asset of `UniqueAsset` must be default constructable.
 template<typename T>
-struct UniqueAsset : public no_copy
+struct UniqueAsset : public non_copyable
 {
     T asset;
     bool assigned{ false };

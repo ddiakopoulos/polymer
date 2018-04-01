@@ -94,7 +94,7 @@ static const char s_textureFrag3D[] = R"(#version 330
 namespace polymer
 {
 
-    struct GLTextureView : public no_copy
+    struct GLTextureView : public non_copyable
     {
         GlShader program;
         GlMesh mesh = make_fullscreen_quad_screenspace();
@@ -136,7 +136,7 @@ namespace polymer
         
     };
     
-    class GLTextureView3D : public no_copy
+    class GLTextureView3D : public non_copyable
     {
         GlShader program;
         GlMesh mesh = make_fullscreen_quad_screenspace(); 

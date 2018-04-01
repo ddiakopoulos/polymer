@@ -1,4 +1,5 @@
 #include "index.hpp"
+#include <unordered_map>
 
 using namespace polymer;
 
@@ -47,7 +48,7 @@ constexpr Entity NULL_ENTITY = 0;
 //   Custom TypeId Implementation   //
 //////////////////////////////////////
 
-using TypeId = unsigned int;
+using TypeId = uint64_t;
 
 template <typename T>
 const char * GetTypeName() 
@@ -145,14 +146,10 @@ template <>                                    \
      Entity operator()(const Component& c) const { return c.get_entity(); }
  };
 
- struct EntityFactory
- {
-
- };
-
  // Systems are responsible for storing the component data instances associated with Entities.
  // They also perform all the logic for manipulating and processing their Components.
  // This base class provides an API for an EntityFactory to associate Components with Entities in a data-driven manner.
+ struct EntityFactory;
  struct System : public non_copyable
  {
      EntityFactory * factory;
@@ -174,9 +171,33 @@ template <>                                    \
      template <typename S>
      void RegisterDef(S * system, DefinitionType type) { RegisterDef(GetTypeId<S>(), type); }
 
-     // Associates the System with the DefType in the EntityFactory.
-     void RegisterDef(TypeId system_type, DefinitionType type) { factory->RegisterDef(system_type, type); }
+     void RegisterDef(TypeId system_type, DefinitionType type);
  };
+
+ struct EntityFactory
+ {
+     using SystemMap = std::unordered_map<TypeId, System*>;                 // System TypeId to System instance map.
+     using TypeMap = std::unordered_map<System::DefinitionType, TypeId>;    // ComponentDef type (hashed) to System TypeId map.
+     using TypeList = std::vector<System::DefinitionType>;                  // ComponentDef type list used during the entity creation process.
+     SystemMap systems_;                // Map of TypeId to System instances.
+     TypeMap type_map_;                 // Map of ComponentDef type (hash) to System TypeIds.
+     TypeList types_;                   // List of ComponentDef types used during the creation process.
+     Entity entity_generator_ { 0 };    // Autoincrementing value to generate unique Entity IDs.
+
+     void RegisterDef(TypeId system_type, HashValue def_type) 
+     {
+         type_map_[def_type] = system_type;
+     }
+
+     Entity create() 
+     {
+         const Entity entity = ++entity_generator_;
+         return entity;
+     }
+ };
+
+ // Associates the System with the DefType in the EntityFactory.
+ void System::RegisterDef(TypeId system_type, DefinitionType type) { factory->RegisterDef(system_type, type); }
 
  template <typename T>
  bool verify_typename(const char * name) 
