@@ -53,9 +53,8 @@ template <typename T>
 const char * GetTypeName() 
 {
     assert(false);
-    // If you get a compiler error that complains about TYPEID_NOT_SETUP, then
-    // you have not added POLYMER_SETUP_TYPEID(T) such that the compilation unit
-    // being compiled uses it.
+    // If you get a compiler error that complains about TYPEID_NOT_SETUP, then you have not added 
+    // POLYMER_SETUP_TYPEID(T) such that the compilation unit  being compiled uses it.
     return T::TYPEID_NOT_SETUP;
 }
 
@@ -89,6 +88,27 @@ template <>                                    \
 
  };
 
+ /////////////////////////
+ //   TypeId Registry   //
+ /////////////////////////
+
+ // Used for SFINAE on other types we haven't setup yet (stl containers)
+ template <typename T>
+ struct has_typename { static const bool value = true; };
+
+ class type_name_generator 
+ {
+     template <typename T>
+     static auto generate_impl() -> typename std::enable_if<has_typename<T>::value, std::string>::type
+     {
+         return GetTypeName<T>();
+     }
+ public:
+     /// Returns the name of the specified type |T|.
+     template <typename T>
+     static std::string generate()  { return generate_impl<T>(); }
+ };
+
  // Basic Types
  POLYMER_SETUP_TYPEID(bool);
  POLYMER_SETUP_TYPEID(int8_t);
@@ -102,7 +122,7 @@ template <>                                    \
  POLYMER_SETUP_TYPEID(float);
  POLYMER_SETUP_TYPEID(double);
 
- // Linalg + Polymer Types
+ // Linalg & Polymer Types
  POLYMER_SETUP_TYPEID(float2);
  POLYMER_SETUP_TYPEID(float3);
  POLYMER_SETUP_TYPEID(float4);
@@ -120,7 +140,18 @@ template <>                                    \
  POLYMER_SETUP_TYPEID(Bounds2D);
  POLYMER_SETUP_TYPEID(Bounds3D);
 
+ template <typename T>
+ bool verify_typename(const char * name) 
+ {
+     return type_name_generator::generate<T>() == std::string(name);
+ }
+
 IMPLEMENT_MAIN(int argc, char * argv[])
 {
+    std::cout << "verify: bool - " << verify_typename<bool>("bool") << std::endl;
+    std::cout << "verify: uint64_t - " << verify_typename<uint64_t>("uint64_t") << std::endl;
+    std::cout << "verify: float2 - " << verify_typename<float2>("float2") << std::endl;
+    std::cout << "verify: Bounds2D - " << verify_typename<Bounds2D>("Bounds2D") << std::endl;
+
     return EXIT_SUCCESS;
 }
