@@ -80,6 +80,7 @@ namespace polymer
     protected:
 
         GLFWwindow * window;
+        gl_context * gl_ctx;
 
     public:
 
@@ -93,6 +94,7 @@ namespace polymer
         virtual void on_window_resize(int2 size) { }
         virtual void on_input(const InputEvent & event) { }
         virtual void on_drop(std::vector<std::string> names) { }
+        gl_context * get_shared_gl_context() const { return gl_ctx; }
     };
         
     class polymer_app : public glfw_window

@@ -5,7 +5,7 @@ using namespace polymer;
 struct sample_gl_render_offscreen final : public polymer_app
 {
     perspective_camera cam;
-    FlyCameraController flycam;
+    fps_camera_controller flycam;
 
     sample_gl_render_offscreen();
     ~sample_gl_render_offscreen();

@@ -152,7 +152,7 @@ namespace polymer
         return GlComputeProgram(preprocess_version(compute.str()));
     }
 
-    class ShaderMonitor
+    class gl_shader_monitor
     {
 
         struct ShaderAsset
@@ -225,7 +225,7 @@ namespace polymer
                         }
                     }
 
-                    // Each shader keeps a list of the files it includes. ShaderMonitor watches a base path,
+                    // Each shader keeps a list of the files it includes. gl_shader_monitor watches a base path,
                     // so we should be able to recompile shaders dependent on common includes
                     for (auto & includePath : asset.second.includes)
                     {
@@ -254,7 +254,7 @@ namespace polymer
 
     public:
 
-        ShaderMonitor(const std::string & root_path) : root_path(root_path) 
+        gl_shader_monitor(const std::string & root_path) : root_path(root_path) 
         {
             watch_thread = std::thread([this, root_path]()
             {
@@ -274,7 +274,7 @@ namespace polymer
             });
         }
 
-        ~ShaderMonitor()
+        ~gl_shader_monitor()
         {
             watch_should_exit = true;
             if (watch_thread.joinable()) watch_thread.join();

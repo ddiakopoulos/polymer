@@ -5,7 +5,7 @@ using namespace polymer;
 struct sample_gl_render final : public polymer_app
 {
     perspective_camera cam;
-    FlyCameraController flycam;
+    fps_camera_controller flycam;
 
     sample_gl_render();
     ~sample_gl_render();

@@ -103,6 +103,8 @@ gl_context::~gl_context()
 
 glfw_window::glfw_window(gl_context * context, int w, int h, const std::string title, int samples)
 {
+    gl_ctx = context;
+
     glfwWindowHint(GLFW_VISIBLE, 1);
     glfwWindowHint(GLFW_SAMPLES, samples);
     glfwWindowHint(GLFW_SRGB_CAPABLE, true);
@@ -113,8 +115,8 @@ glfw_window::glfw_window(gl_context * context, int w, int h, const std::string t
 
     glfwSetErrorCallback(s_error_callback);
 
-    window = glfwCreateWindow(w, h, title.c_str(), NULL, context->hidden_window);
-    if (!window) throw std::runtime_error("failed to open glfw window...");
+    window = glfwCreateWindow(w, h, title.c_str(), NULL, gl_ctx->hidden_window);
+    if (!window) throw std::runtime_error("failed to open glfw window: " + title);
 
     glfwMakeContextCurrent(window);
 

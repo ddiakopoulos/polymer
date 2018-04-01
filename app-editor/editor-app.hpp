@@ -155,8 +155,8 @@ public:
 struct scene_editor_app final : public polymer_app
 {
     perspective_camera cam;
-    FlyCameraController flycam;
-    ShaderMonitor shaderMonitor { "../assets/" };
+    fps_camera_controller flycam;
+    gl_shader_monitor shaderMonitor { "../assets/" };
 
     uint32_t pbrProgramAsset = -1;
 

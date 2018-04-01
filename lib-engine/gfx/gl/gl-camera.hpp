@@ -15,7 +15,7 @@ namespace polymer
     //   Standard Free-Flying Camera   //
     /////////////////////////////////////
 
-    class FlyCameraController
+    class fps_camera_controller
     {
         perspective_camera * cam;
         
@@ -30,9 +30,9 @@ namespace polymer
         float movementSpeed = 14.0f;
         float3 velocity;
 
-        FlyCameraController() {}
+        fps_camera_controller() {}
         
-        FlyCameraController(perspective_camera * cam) : cam(cam)
+        fps_camera_controller(perspective_camera * cam) : cam(cam)
         {
             update_yaw_pitch();
         }

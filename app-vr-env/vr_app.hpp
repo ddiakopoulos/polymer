@@ -105,9 +105,9 @@ struct VirtualRealityApp : public polymer_app
     std::unique_ptr<OpenVR_HMD> hmd;
 
     perspective_camera debugCam;
-    FlyCameraController cameraController;
+    fps_camera_controller cameraController;
 
-    ShaderMonitor shaderMonitor = { "../assets/" };
+    gl_shader_monitor shaderMonitor = { "../assets/" };
     
     std::vector<ScreenViewport> viewports;
     Scene scene;
