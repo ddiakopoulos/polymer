@@ -161,7 +161,7 @@ template <>                                    \
  // Provide a consistent way to retrieve an Entity to which a component belongs. 
  class Component 
  {
-     Entity ent;
+     Entity ent{ kInvalidEntity };
  public:
      explicit Component(Entity e) : ent(e) { }
      Entity get_entity() const { return ent; }
@@ -203,61 +203,25 @@ template <>                                    \
 
  struct EntityFactory
  {
-     using SystemMap = std::unordered_map<TypeId, System*>;                 // System TypeId to System instance map.
      using TypeMap = std::unordered_map<System::DefinitionType, TypeId>;    // ComponentDef type (hashed) to System TypeId map.
-     using TypeList = std::vector<System::DefinitionType>;                  // ComponentDef type list used during the entity creation process.
-     SystemMap systems_;                // Map of TypeId to System instances.
-     TypeMap type_map_;                 // Map of ComponentDef type (hash) to System TypeIds.
-     TypeList types_;                   // List of ComponentDef types used during the creation process.
-     Entity entity_generator_ { 0 };    // Autoincrementing value to generate unique Entity IDs.
+     TypeMap type_map_;                                                     // Map of ComponentDef type (hash) to System TypeIds.
+     Entity entity_generator_ { 0 };                                        // Autoincrementing value to generate unique Entity IDs.
 
      void RegisterDef(TypeId system_type, HashValue def_type) 
      {
          type_map_[def_type] = system_type;
      }
 
-     Entity create() 
+     Entity create()
      {
          const Entity entity = ++entity_generator_;
          return entity;
      }
-
-     // Creates a System of type |T| using the Registry and caches the instance
-     // internally for use during Entity creation.
-     template <typename T, typename... Args>
-     T * CreateSystem(Args&&... args);
-
-     // Caches the System mapped to the type.
-     void AddSystem(TypeId system_type, System * system) 
-     {
-         if (!system) return;
-         auto iter = systems_.find(system_type);
-         if (iter == systems_.end()) systems_.emplace(system_type, system);
-     }
-
-     System * GetSystem(const System::DefinitionType t) 
-     {
-         // Do not pollute the type and systems maps with null values.
-         const auto type_id = type_map_.find(t);
-         if (type_id == type_map_.end()) { return nullptr; }
-         const auto system = systems_.find(type_id->second);
-         if (system == systems_.end()) return nullptr; 
-         return system->second;
-     }
-
  };
 
  // Associates the System with the DefType in the EntityFactory.
  void System::RegisterDef(TypeId system_type, DefinitionType type) { factory->RegisterDef(system_type, type); }
 
- template <typename T, typename... Args>
- T * EntityFactory::CreateSystem(Args&&... args) 
- {
-     T * system = registry_->Create<T>(registry_, std::forward<Args>(args)...);
-     AddSystem(GetTypeId<T>(), system);
-     return system;
-
- }
  template <typename T>
  bool verify_typename(const char * name) 
  {
@@ -351,21 +315,122 @@ template <>                                    \
  };
  POLYMER_SETUP_TYPEID(ExampleSystem);
 
+ ////////////////////////
+ ////
+ ////////////////////////
+
+ // Systems operate on one or more Components to provide Entities with specific behaviours.
+ // Entities have Components assigned by systems.
+ struct ExampleRenderComponent : public Component
+ {
+     ExampleRenderComponent() : Component(kInvalidEntity) { }
+     explicit ExampleRenderComponent(Entity e) : Component(e) { }
+     std::string name{ "render-component" };
+ };
+
+ /*
+ struct ExamplePhysicsComponent : public Component
+ {
+     ExamplePhysicsComponent(Entity e) : Component(e) { }
+     std::string name{ "physics-component" };
+ };
+
+ struct ExampleTransformComponent : public Component
+ {
+     ExampleTransformComponent(Entity e) : Component(e) { }
+     std::string name{ "transform-component" };
+ };
+ */
+
+ struct ExampleRenderSystem : public System
+ {
+     ExampleRenderSystem(EntityFactory * f) : System(f)
+     {
+         RegisterDef(this, Hash("RenderDefinition"));
+     }
+
+     ~ExampleRenderSystem() override { }
+
+     void create(Entity entity, HashValue type, void * data) override final
+     {
+         if (type != Hash("RenderDefinition"))
+         {
+             std::cout << "Invalid definition type, expecting NameDefinition." << std::endl;
+             return;
+         }
+
+         if (components_.find(entity) != components_.end())
+         {
+             std::cout << "Component Already Exists..." << std::endl;
+             auto data = components_[entity];
+         }
+         else
+         {
+             std::cout << "Inserting Component... " << entity << std::endl;
+             components_.emplace(entity, ExampleRenderComponent(entity));
+         }
+     }
+
+     void destroy(Entity entity) override final
+     {
+         auto iter = components_.find(entity);
+         if (iter != components_.end())
+         {
+             std::cout << "Erasing Entity " << entity << std::endl;
+             components_.erase(iter);
+         }
+     }
+
+     std::string get_renderable_name(Entity e) 
+     {
+         auto iter = components_.find(e);
+         if (iter != components_.end()) return iter->second.name;
+         else std::cout << "Did not find component for entity " << e << std::endl;
+         return {};
+     }
+
+     // Entities added to this list have components
+     std::unordered_map<Entity, ExampleRenderComponent> components_;
+ };
+ POLYMER_SETUP_TYPEID(ExampleRenderSystem);
+
 IMPLEMENT_MAIN(int argc, char * argv[])
 {
+    /*
     EntityFactory factory;
     ExampleSystem system(&factory);
 
     const Entity exampleEntity = factory.create();
 
-    system.set_name(exampleEntity, "trigger");
+    system.set_name(exampleEntity, "static_mesh");
     std::cout << "Lookup By Name:   " << system.get_name(exampleEntity) << std::endl;
-    std::cout << "Lookup By Entity: " << system.find_entity("trigger") << std::endl;
+    std::cout << "Lookup By Entity: " << system.find_entity("static_mesh") << std::endl;
 
     std::cout << "verify: bool - " << verify_typename<bool>("bool") << std::endl;
     std::cout << "verify: uint64_t - " << verify_typename<uint64_t>("uint64_t") << std::endl;
     std::cout << "verify: float2 - " << verify_typename<float2>("float2") << std::endl;
     std::cout << "verify: Bounds2D - " << verify_typename<Bounds2D>("Bounds2D") << std::endl;
+    */
+
+    EntityFactory factory;
+
+    ExampleRenderSystem renderSystem(&factory);
+
+    // Create new entities
+    const Entity renderableOne = factory.create();
+    const Entity renderableTwo = factory.create();
+    const Entity renderableThree = factory.create();
+
+    // Associate |ExampleRenderComponent| with these entities
+    renderSystem.create(renderableOne, Hash("RenderDefinition"), nullptr);
+    renderSystem.create(renderableTwo, Hash("RenderDefinition"), nullptr);
+
+    renderSystem.get_renderable_name(renderableOne);
+    renderSystem.get_renderable_name(renderableTwo);
+    renderSystem.get_renderable_name(renderableThree);
+
+    renderSystem.destroy(renderableOne);
+    renderSystem.get_renderable_name(renderableOne);
 
     return EXIT_SUCCESS;
 }
