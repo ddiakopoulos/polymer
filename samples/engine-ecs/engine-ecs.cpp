@@ -240,12 +240,10 @@ template <>                                    \
  {
      std::unordered_map<Entity, std::string> entity_to_name_;
      std::unordered_map<Entity, HashValue> entity_to_hash_;
+     std::unordered_map<HashValue, Entity> hash_to_entity_;
 
      ExampleSystem(EntityFactory * f) : System(f) { }
-     ~ExampleSystem() override
-     {
-
-     }
+     ~ExampleSystem() override { }
 
      // Associates |entity| with a name. Removes any existing name associated with this entity.
      void create(Entity entity, HashValue type, void * data) override final
@@ -262,7 +260,13 @@ template <>                                    \
      // Disassociates any name from |entity|.
      void destroy(Entity entity) override final
      {
-
+         auto iter = entity_to_hash_.find(entity);
+         if (iter != entity_to_hash_.end()) 
+         {
+             hash_to_entity_.erase(iter->second);
+             entity_to_hash_.erase(iter);
+         }
+         entity_to_name_.erase(entity);
      }
 
      // Finds the name associated with |entity|. Returns empty string if no name is found.
@@ -274,23 +278,55 @@ template <>                                    \
 
      void set_name(Entity entity, const std::string & name) 
      {
-         if (entity == kInvalidEntity) 
+         if (entity == kInvalidEntity)
          {
              std::cout << "Invalid Entity" << std::endl;
              return;
          }
 
+         const auto existing_name = get_name(entity);
+         if (existing_name == name) { return; } // No need to proceed if current name and desired name are identical
+
+         // Ensure a different entity with the same name does not already exist. This
+         // may happen if an entity with the name had not been properly deleted or
+         // the same entity had been created multiple times.
+         if (find_entity(name) != kInvalidEntity) 
+         {
+             std::cout << "entity " << name << " already exists..." << std::endl;
+             return;
+
+         }
+
          const auto hash = Hash(name.c_str());
+
+         hash_to_entity_.erase(Hash(existing_name.c_str()));
+         hash_to_entity_[hash] = entity;
+
          entity_to_name_[entity] = name;
          entity_to_hash_[entity] = hash;
      }
 
+     Entity find_entity(const std::string & name) const 
+     {
+         const auto hash = Hash(name.c_str());
+         const auto iter = hash_to_entity_.find(hash);
+         return iter != hash_to_entity_.end() ? iter->second : kInvalidEntity;
+     }
 
  };
  POLYMER_SETUP_TYPEID(ExampleSystem);
 
 IMPLEMENT_MAIN(int argc, char * argv[])
 {
+    EntityFactory factory;
+    ExampleSystem system(&factory);
+
+    const Entity exampleEntity = factory.create();
+
+    system.set_name(exampleEntity, "trigger");
+    std::cout << "Lookup By Name:   " << system.get_name(exampleEntity) << std::endl;
+    std::cout << "Lookup By Entity: " << system.find_entity("trigger") << std::endl;
+
     std::cout << "verify: bool - " << verify_typename<bool>("bool") << std::endl;
     std::cout << "verify: uint64_t - " << verify_typename<uint64_t>("uint64_t") << std::endl;
     std::cout << "verify: float2 - " << verify_typename<float2>("float2") << std::endl;
