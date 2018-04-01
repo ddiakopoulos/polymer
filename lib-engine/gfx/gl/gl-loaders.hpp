@@ -8,6 +8,21 @@
 
 using namespace polymer;
 
+inline void flip_image_inplace(unsigned char * pixels, const uint32_t width, const uint32_t height, const uint32_t bytes_per_pixel)
+{
+    const size_t stride = width * bytes_per_pixel;
+    std::vector<unsigned char> row(stride);
+    unsigned char * low = pixels;
+    unsigned char * high = &pixels[(height - 1) * stride];
+
+    for (; low < high; low += stride, high -= stride)
+    {
+        memcpy(row.data(), low, stride);
+        memcpy(low, high, stride);
+        memcpy(high, row.data(), stride);
+    }
+}
+
 inline std::vector<uint8_t> load_image_data(const std::string & path)
 {
     auto binaryFile = read_file_binary(path);

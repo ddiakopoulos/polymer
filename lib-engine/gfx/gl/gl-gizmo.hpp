@@ -31,7 +31,7 @@ constexpr const char gl_gizmo_frag[] = R"(#version 330
     }
 )";
 
-struct GlGizmo : public Noncopyable
+struct GlGizmo : public no_copy
 {
     tinygizmo::gizmo_application_state gizmo_state;
     tinygizmo::gizmo_context gizmo_ctx;

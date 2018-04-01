@@ -133,7 +133,7 @@ namespace poisson
             std::vector<float2> processingList;
             std::vector<float2> outputList;
             Grid grid(bounds, 3);
-            UniformRandomGenerator r;
+            uniform_random_gen r;
             
             // add the initial points
             for (auto p : initialSet)
@@ -193,7 +193,7 @@ namespace poisson
     {
         std::function<float(const float3)> distFunction;
         std::function<bool(const float3)> boundsFunction;
-        UniformRandomGenerator r;
+        uniform_random_gen r;
 
         std::vector<float3> build(const Bounds3D & bounds, const std::vector<float3> & initialSet, int k, float separation = 1.0)
         {

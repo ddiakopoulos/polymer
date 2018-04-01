@@ -47,15 +47,6 @@
 
 namespace polymer
 {
-    class try_locker
-    {
-        std::mutex & mutex;
-        bool locked{ false };
-    public:
-        try_locker(std::mutex & m) : mutex(m) { if (mutex.try_lock()) locked = true; }
-        ~try_locker() { if (locked) mutex.unlock(); }
-        bool is_locked() const { return locked; }
-    };
 
     class scoped_timer
     {
@@ -79,7 +70,7 @@ namespace polymer
         const double & get() { return timestamp; }
     };
 
-    class UniformRandomGenerator
+    class uniform_random_gen
     {
         std::random_device rd;
         std::mt19937_64 gen;
@@ -87,7 +78,7 @@ namespace polymer
         std::uniform_real_distribution<float> safe { 0.001f, 0.999f };
         std::uniform_real_distribution<float> two_pi { 0.f, float(6.2831853071795862) };
     public:
-        UniformRandomGenerator() : rd(), gen(rd()) { }
+        uniform_random_gen() : rd(), gen(rd()) { }
         float random_float() { return full(gen); }
         float random_float(float max) { std::uniform_real_distribution<float> custom(0.f, max); return custom(gen); }
         float random_float(float min, float max) { std::uniform_real_distribution<float> custom(min, max); return custom(gen); }
@@ -95,40 +86,37 @@ namespace polymer
         float random_float_safe() { return safe(gen); }
         uint32_t random_int(uint32_t max) { std::uniform_int_distribution<uint32_t> dInt(0, max); return dInt(gen); }
     };
-    
-    struct as_string
-    {
-        std::ostringstream ss;
-        operator std::string() const { return ss.str(); }
-        template<class T> as_string & operator << (const T & val) { ss << val; return *this; }
-    };
 
-    inline void pretty_print(const char * file, const int line, const std::string & message)
-    {
-        std::cout << file << " : " << line << " - " << message << std::endl;
-    }
-    
-    class Noncopyable
+    class no_copy
     {
     protected:
-        Noncopyable() = default;
-        ~Noncopyable() = default;
-        Noncopyable (const Noncopyable& r) = delete;
-        Noncopyable & operator = (const Noncopyable& r) = delete;
+        no_copy() = default;
+        ~no_copy() = default;
+        no_copy (const no_copy& r) = delete;
+        no_copy & operator = (const no_copy& r) = delete;
     };
      
     template <typename T>
-    class Singleton : public Noncopyable
+    class singleton : public no_copy
     {
-    private:
-        Singleton(const Singleton<T> &);
-        Singleton & operator = (const Singleton<T> &);
+        singleton(const singleton<T> &);
+        singleton & operator = (const singleton<T> &);
     protected:
         static T * single;
-        Singleton() = default;
-        ~Singleton() = default;
+        singleton() = default;
+        ~singleton() = default;
     public:
         static T * get_instance() { if (!single) single = new T(); return single; };
+    };
+
+    class try_locker
+    {
+        std::mutex & mutex;
+        bool locked{ false };
+    public:
+        try_locker(std::mutex & m) : mutex(m) { if (mutex.try_lock()) locked = true; }
+        ~try_locker() { if (locked) mutex.unlock(); }
+        bool is_locked() const { return locked; }
     };
 
     inline std::string codepoint_to_utf8(uint32_t codepoint)
@@ -154,24 +142,21 @@ namespace polymer
         
         return str;
     }
-    
-    inline void flip_image(unsigned char * pixels, const uint32_t width, const uint32_t height, const uint32_t bytes_per_pixel)
-    {
-        const size_t stride = width * bytes_per_pixel;
-        std::vector<unsigned char> row(stride);
-        unsigned char * low = pixels;
-        unsigned char * high = &pixels[(height - 1) * stride];
-        
-        for (; low < high; low += stride, high -= stride)
-        {
-            memcpy(row.data(), low, stride);
-            memcpy(low, high, stride);
-            memcpy(high, row.data(), stride);
-        }
-    }
-}
 
-#define POLYMER_ERROR(...) polymer::pretty_print(__FILE__, __LINE__, polymer::as_string() << __VA_ARGS__)
-#define POLYMER_INFO(...) polymer::pretty_print(__FILE__, __LINE__, polymer::as_string() << __VA_ARGS__)
+    struct as_string
+    {
+        std::ostringstream ss;
+        operator std::string() const { return ss.str(); }
+        template<class T> as_string & operator << (const T & val) { ss << val; return *this; }
+    };
+
+    inline void pretty_print(const char * file, const int line, const std::string & message)
+    {
+        std::cout << file << " : " << line << " - " << message << std::endl;
+    }
+
+    #define POLYMER_ERROR(...) polymer::pretty_print(__FILE__, __LINE__, polymer::as_string() << __VA_ARGS__)
+    #define POLYMER_INFO(...) polymer::pretty_print(__FILE__, __LINE__, polymer::as_string() << __VA_ARGS__)
+}
 
 #endif
