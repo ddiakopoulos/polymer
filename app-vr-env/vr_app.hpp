@@ -98,7 +98,7 @@ struct Scene
 
 };
 
-struct VirtualRealityApp : public GLFWApp
+struct VirtualRealityApp : public polymer_app
 {
     uint64_t frameCount = 0;
 

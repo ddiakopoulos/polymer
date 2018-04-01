@@ -59,6 +59,7 @@ gl_context::gl_context()
     POLYMER_INFO("GL_SHADING_LANGUAGE_VERSION =  " << (char *)glGetString(GL_SHADING_LANGUAGE_VERSION));
     POLYMER_INFO("GL_VENDOR =   " << (char *)glGetString(GL_VENDOR));
     POLYMER_INFO("GL_RENDERER = " << (char *)glGetString(GL_RENDERER));
+    POLYMER_INFO("GLFW_VERSION = " << glfwGetVersionString());
 
 #if defined(POLYMER_PLATFORM_WINDOWS)
     glewExperimental = GL_TRUE;
@@ -100,7 +101,7 @@ gl_context::~gl_context()
 //   glfw_window   //
 /////////////////////
 
-glfw_window::glfw_window(gl_context * context, int w, int h, const std::string title, int samples = 1)
+glfw_window::glfw_window(gl_context * context, int w, int h, const std::string title, int samples)
 {
     glfwWindowHint(GLFW_VISIBLE, 1);
     glfwWindowHint(GLFW_SAMPLES, samples);
@@ -197,14 +198,15 @@ int glfw_window::get_mods() const
 //   polymer_app   //
 /////////////////////
 
-polymer_app::polymer_app(int w, int h, const std::string title, int samples) : glfw_window(w, h, title, samples)
+// fixme -- technically gl_context is leaky
+polymer_app::polymer_app(int w, int h, const std::string title, int samples) : glfw_window(new gl_context(), w, h, title, samples)
 {
 
 }
 
 polymer_app::~polymer_app() 
 {
-
+    if (window) glfwDestroyWindow(window);
 }
 
 void polymer_app::request_screenshot(const std::string & filename)

@@ -2,7 +2,7 @@
 
 using namespace polymer;
 
-struct sample_gl_render final : public GLFWApp
+struct sample_gl_render final : public polymer_app
 {
     perspective_camera cam;
     FlyCameraController flycam;
@@ -16,7 +16,7 @@ struct sample_gl_render final : public GLFWApp
     void on_draw() override;
 };
 
-sample_gl_render::sample_gl_render() : GLFWApp(1280, 720, "sample-gl-render")
+sample_gl_render::sample_gl_render() : polymer_app(1280, 720, "sample-gl-render")
 {
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);

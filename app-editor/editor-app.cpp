@@ -7,7 +7,7 @@
 
 using namespace polymer;
 
-scene_editor_app::scene_editor_app() : GLFWApp(1920, 1080, "Polymer Editor")
+scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
 {
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);

@@ -152,7 +152,7 @@ public:
     }
 };
 
-struct scene_editor_app final : public GLFWApp
+struct scene_editor_app final : public polymer_app
 {
     perspective_camera cam;
     FlyCameraController flycam;

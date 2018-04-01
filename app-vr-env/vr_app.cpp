@@ -3,7 +3,7 @@
 #include "gl-loaders.hpp"
 #include "math-core.hpp"
 
-VirtualRealityApp::VirtualRealityApp() : GLFWApp(1280, 800, "VR Sandbox")
+VirtualRealityApp::VirtualRealityApp() : polymer_app(1280, 800, "VR Sandbox")
 {
     scoped_timer t("constructor");
 

@@ -34,7 +34,7 @@ struct ui_rect
 struct GlTexture2D;
 namespace polymer
 {
-    class GLFWApp;
+    class polymer_app;
     struct InputEvent;
 }
 
@@ -159,7 +159,7 @@ namespace gui
         int current_mods;
         std::vector<bool> open;
     public:
-        imgui_menu_stack(const GLFWApp & app, bool * keys);
+        imgui_menu_stack(const polymer_app & app, bool * keys);
         void app_menu_begin();
         void begin(const char * label, bool enabled = true);
         bool item(const char * label, int mods = 0, int key = 0, bool enabled = true);

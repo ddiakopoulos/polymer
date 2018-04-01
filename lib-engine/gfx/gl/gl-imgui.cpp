@@ -447,7 +447,7 @@ namespace gui
     //   Menu Stack   //
     ////////////////////
 
-    imgui_menu_stack::imgui_menu_stack(const GLFWApp & app, bool * keys) : current_mods(app.get_mods()), keys(keys) { }
+    imgui_menu_stack::imgui_menu_stack(const polymer_app & app, bool * keys) : current_mods(app.get_mods()), keys(keys) { }
 
     void imgui_menu_stack::app_menu_begin()
     {
