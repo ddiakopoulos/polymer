@@ -303,8 +303,8 @@ void scene_editor_app::on_input(const InputEvent & event)
 
             if (event.value[0] == GLFW_KEY_SPACE && event.action == GLFW_RELEASE)
             {
-                auxWindow.reset(new glfw_window(get_shared_gl_context(), 200, 200, "aux-window", 1));
-                //auxImgui.reset(new gui::imgui_instance(auxWindow->get_window()));
+                auxWindow.reset(new aux_window(get_shared_gl_context(), 200, 200, "aux-window", 1));
+                auxImgui.reset(new gui::imgui_instance(auxWindow->get_window()));
             }
         }
 
@@ -772,9 +772,9 @@ void scene_editor_app::on_draw()
         editorProfiler.end("gizmo_on_draw");
     }
 
-    gl_check_error(__FILE__, __LINE__);
+    if (auxWindow) auxWindow->run();
 
-    glfwSwapBuffers(window); 
+    gl_check_error(__FILE__, __LINE__);
 }
 
 IMPLEMENT_MAIN(int argc, char * argv[])

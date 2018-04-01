@@ -9,6 +9,49 @@
 #include "scene.hpp"
 #include "editor-ui.hpp"
 
+struct aux_window final : public glfw_window
+{
+    aux_window(gl_context * context, int w, int h, const std::string title, int samples) : glfw_window(context, w, h, title, samples) { }
+
+    virtual void on_window_close() override final
+    {
+        if (window)
+        {
+            glfwDestroyWindow(window);
+            window = nullptr;
+        }
+    }
+
+    void run()
+    {
+        if (!window) return;
+        if (!glfwWindowShouldClose(window))
+        {
+            glfwMakeContextCurrent(window);
+
+            int width, height;
+            glfwGetWindowSize(window, &width, &height);
+
+            glViewport(0, 0, width, height);
+            glClearColor(0.0f, 1.0f, 0.0f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            on_draw();
+
+            glfwSwapBuffers(window);
+        }
+    }
+
+    ~aux_window() 
+    { 
+        if (window)
+        {
+            glfwDestroyWindow(window);
+            window = nullptr;
+        }
+    }
+};
+
 static inline Pose to_linalg(tinygizmo::rigid_transform & t)
 {
     return{ reinterpret_cast<float4 &>(t.orientation), reinterpret_cast<float3 &>(t.position) };
@@ -166,7 +209,7 @@ struct scene_editor_app final : public polymer_app
 
     profiler<SimpleTimer> editorProfiler;
 
-    std::unique_ptr<glfw_window> auxWindow;
+    std::unique_ptr<aux_window> auxWindow;
     std::unique_ptr<gui::imgui_instance> auxImgui;
 
     std::unique_ptr<gui::imgui_instance> igm;
