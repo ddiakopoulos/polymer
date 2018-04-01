@@ -221,11 +221,43 @@ template <>                                    \
          const Entity entity = ++entity_generator_;
          return entity;
      }
+
+     // Creates a System of type |T| using the Registry and caches the instance
+     // internally for use during Entity creation.
+     template <typename T, typename... Args>
+     T * CreateSystem(Args&&... args);
+
+     // Caches the System mapped to the type.
+     void AddSystem(TypeId system_type, System * system) 
+     {
+         if (!system) return;
+         auto iter = systems_.find(system_type);
+         if (iter == systems_.end()) systems_.emplace(system_type, system);
+     }
+
+     System * GetSystem(const System::DefinitionType t) 
+     {
+         // Do not pollute the type and systems maps with null values.
+         const auto type_id = type_map_.find(t);
+         if (type_id == type_map_.end()) { return nullptr; }
+         const auto system = systems_.find(type_id->second);
+         if (system == systems_.end()) return nullptr; 
+         return system->second;
+     }
+
  };
 
  // Associates the System with the DefType in the EntityFactory.
  void System::RegisterDef(TypeId system_type, DefinitionType type) { factory->RegisterDef(system_type, type); }
 
+ template <typename T, typename... Args>
+ T * EntityFactory::CreateSystem(Args&&... args) 
+ {
+     T * system = registry_->Create<T>(registry_, std::forward<Args>(args)...);
+     AddSystem(GetTypeId<T>(), system);
+     return system;
+
+ }
  template <typename T>
  bool verify_typename(const char * name) 
  {
@@ -242,13 +274,17 @@ template <>                                    \
      std::unordered_map<Entity, HashValue> entity_to_hash_;
      std::unordered_map<HashValue, Entity> hash_to_entity_;
 
-     ExampleSystem(EntityFactory * f) : System(f) { }
+     ExampleSystem(EntityFactory * f) : System(f) 
+     {
+         RegisterDef(this, Hash("NameDefinition"));
+     }
+
      ~ExampleSystem() override { }
 
      // Associates |entity| with a name. Removes any existing name associated with this entity.
      void create(Entity entity, HashValue type, void * data) override final
      {
-         if (type != ConstHash("NameDefinition")) 
+         if (type != Hash("NameDefinition")) 
          {
              std::cout << "Invalid definition type, expecting NameDefinition." << std::endl;
              return;
@@ -294,7 +330,6 @@ template <>                                    \
          {
              std::cout << "entity " << name << " already exists..." << std::endl;
              return;
-
          }
 
          const auto hash = Hash(name.c_str());
