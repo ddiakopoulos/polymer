@@ -7,15 +7,15 @@ namespace polymer
 {
     
     template<typename T>
-    class BitMask 
+    class bit_mask 
     {
         T maskField;
     public:
 
-        BitMask() : maskField(0) {}
-        BitMask(T value) : maskField(value) {}
+        bit_mask() : maskField(0) {}
+        bit_mask(T value) : maskField(value) {}
 
-        bool operator == (const BitMask& other) const;
+        bool operator == (const bit_mask& other) const;
         bool operator == (T mask) const;
 
         operator T( void ) const;
@@ -37,49 +37,49 @@ namespace polymer
     };
     
     template<typename T>
-    bool BitMask<T>::operator == (const BitMask& other) const
+    bool bit_mask<T>::operator == (const bit_mask& other) const
     {
         return maskField == other.maskField;
     }
 
     template<typename T>
-    bool BitMask<T>::operator == (T mask) const
+    bool bit_mask<T>::operator == (T mask) const
     {
         return maskField == mask;
     }
 
     template<typename T>
-    BitMask<T>::operator T () const
+    bit_mask<T>::operator T () const
     {
         return maskField;
     }
 
     template<typename T>
-    inline void BitMask<T>::set(T mask, bool set) 
+    inline void bit_mask<T>::set(T mask, bool set) 
     {
         maskField = set ? (maskField | mask) : (maskField & ~mask);
     }
 
     template<typename T>
-    inline void BitMask<T>::on(T mask) 
+    inline void bit_mask<T>::on(T mask) 
     {
         maskField = maskField | mask;
     }
 
     template<typename T>
-    inline void BitMask<T>::off(T mask) 
+    inline void bit_mask<T>::off(T mask) 
     {
         maskField = maskField & ~mask;
     }
 
     template<typename T>
-    inline bool BitMask<T>::isSet(T mask) const
+    inline bool bit_mask<T>::isSet(T mask) const
     {
         return (maskField & mask) ? true : false;
     }
     
     template<typename T>
-    inline bool BitMask<T>::isNotSet(T mask) const
+    inline bool bit_mask<T>::isNotSet(T mask) const
     {
         return (maskField & mask) ? false : true;
     }

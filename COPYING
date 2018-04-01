@@ -20,9 +20,6 @@ Authored by Sterling G. Orsten, 2015+
 https://github.com/nvpro-samples/shared_sources/blob/master/noise/noise1234.h (Public Domain)
 Authored by Stefan Gustavson, 2011
 
-https://en.wikipedia.org/wiki/MurmurHash (Public Domain)
-Authored by Austin Appleby, 2008
-
 https://github.com/emilk/emilib (Public Domain)
 Authored by Emil Ernerfeldt, 2015
 
@@ -84,14 +81,8 @@ Copyright (C) Casey Duncan, 2008
 https://hal.inria.fr/hal-00670496/ (One Euro Filter) (Boost)
 Copyright (C) Reviatech, 2012
 
-https://github.com/mattdesl/glsl-fxaa/blob/master/fxaa.glsl (BSD 3-Clause)
-Copyright (C) Armin Ronacher, 2011
-
 https://github.com/spite/THREE.MeshLine (MIT)
 Copyright (C) Jaume Sanchez Elias, 2015
-
-https://github.com/spite/THREE.DecalGeometry (MIT)
-Copyright (C) Jaume Sanchez Elias, 2014
 
 https://github.com/simongeilfus/PoissonDiskDistribution (MIT)
 Copyright (C) Simon Geilfus, 2015
@@ -113,6 +104,18 @@ Copyright (C) Facebook, Inc., 2017+
 
 https://github.com/facebookincubator/FBX2glTF (BSD 3-Clause)
 Copyright (C) Facebook, Inc., 2017+
+
+https://github.com/google/lullaby (Apache 2.0)
+Copyright (C) Google, 2018 
+
+https://github.com/abseil/abseil-cpp (Apache 2.0)
+Copyright (C) Google, 2018 
+
+https://github.com/Microsoft/GSL (MIT)
+Copyright (C) Microsoft Corporation, 2015 
+
+https://github.com/papaboo/Cogwheel (BSD 3-Clause)
+Copyright (C), Cogwheel, 2017
 
 ///////////////////////////////
 //   Acadenuc Publications   //
