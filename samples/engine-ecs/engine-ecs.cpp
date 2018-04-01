@@ -78,16 +78,6 @@ template <>                                    \
     return ConstHash(#Type);                   \
 }                                          
 
- struct Registry
- {
-
- };
-
- struct System
- {
-
- };
-
  /////////////////////////
  //   TypeId Registry   //
  /////////////////////////
@@ -111,6 +101,8 @@ template <>                                    \
 
  // Basic Types
  POLYMER_SETUP_TYPEID(bool);
+ POLYMER_SETUP_TYPEID(float);
+ POLYMER_SETUP_TYPEID(double);
  POLYMER_SETUP_TYPEID(int8_t);
  POLYMER_SETUP_TYPEID(uint8_t);
  POLYMER_SETUP_TYPEID(int16_t);
@@ -119,8 +111,6 @@ template <>                                    \
  POLYMER_SETUP_TYPEID(uint32_t);
  POLYMER_SETUP_TYPEID(int64_t);
  POLYMER_SETUP_TYPEID(uint64_t);
- POLYMER_SETUP_TYPEID(float);
- POLYMER_SETUP_TYPEID(double);
 
  // Linalg & Polymer Types
  POLYMER_SETUP_TYPEID(float2);
@@ -139,6 +129,54 @@ template <>                                    \
  POLYMER_SETUP_TYPEID(Pose);
  POLYMER_SETUP_TYPEID(Bounds2D);
  POLYMER_SETUP_TYPEID(Bounds3D);
+
+ // Provide a consistent way to retrieve an Entity to which a component belongs. 
+ class Component 
+ {
+     Entity ent;
+ public:
+     explicit Component(Entity e) : ent(e) { }
+     Entity get_entity() const { return ent; }
+ };
+
+ // Hash functor for Components so they can be used in unordered containers. It uses the Component's Entity as the key value.
+ struct ComponentHash 
+ {
+     Entity operator()(const Component& c) const { return c.get_entity(); }
+ };
+
+ struct EntityFactory
+ {
+
+ };
+
+ // Systems are responsible for storing the component data instances associated with Entities.
+ // They also perform all the logic for manipulating and processing their Components.
+ // This base class provides an API for an EntityFactory to associate Components with Entities in a data-driven manner.
+ struct System : public non_copyable
+ {
+     EntityFactory * factory;
+
+     explicit System(EntityFactory * f) : factory(f) { }
+     virtual ~System() { }
+
+     // The Hash of the actual type used for safely casting the DefinitionType to a concrete type for extracting data.
+     using DefinitionType = HashValue;
+
+     // Associates Component(s) with the Entity using the serialized data
+     virtual void create(Entity e, DefinitionType type, void * data) { }
+
+     // Disassociates all Component data from the Entity.
+     virtual void destroy(Entity e) { }
+
+     // Helper function to associate the System with DefType in the EntityFactory.
+     // Example usage: RegisterDef(this, Hash("MyComponentDef"));
+     template <typename S>
+     void RegisterDef(S * system, DefinitionType type) { RegisterDef(GetTypeId<S>(), type); }
+
+     // Associates the System with the DefType in the EntityFactory.
+     void RegisterDef(TypeId system_type, DefinitionType type) { factory->RegisterDef(system_type, type); }
+ };
 
  template <typename T>
  bool verify_typename(const char * name) 

@@ -87,17 +87,17 @@ namespace polymer
         uint32_t random_int(uint32_t max) { std::uniform_int_distribution<uint32_t> dInt(0, max); return dInt(gen); }
     };
 
-    class no_copy
+    class non_copyable
     {
     protected:
-        no_copy() = default;
-        ~no_copy() = default;
-        no_copy (const no_copy& r) = delete;
-        no_copy & operator = (const no_copy& r) = delete;
+        non_copyable() = default;
+        ~non_copyable() = default;
+        non_copyable (const non_copyable& r) = delete;
+        non_copyable & operator = (const non_copyable& r) = delete;
     };
      
     template <typename T>
-    class singleton : public no_copy
+    class singleton : public non_copyable
     {
         singleton(const singleton<T> &);
         singleton & operator = (const singleton<T> &);
