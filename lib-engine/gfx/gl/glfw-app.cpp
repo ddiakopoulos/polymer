@@ -94,6 +94,8 @@ gl_context::~gl_context()
 //   glfw_window   //
 /////////////////////
 
+static glfw_window & get(GLFWwindow * window) { return *reinterpret_cast<glfw_window *>(glfwGetWindowUserPointer(window)); }
+
 glfw_window::glfw_window(gl_context * context, int w, int h, const std::string title, int samples)
 {
     gl_ctx = context;
@@ -108,28 +110,26 @@ glfw_window::glfw_window(gl_context * context, int w, int h, const std::string t
         printf("glfw error - %i, desc: %s\n", err, desc);
     });
 
-    window = glfwCreateWindow(w, h, title.c_str(), nullptr, nullptr);
+    window = glfwCreateWindow(w, h, title.c_str(), nullptr, gl_ctx->hidden_window);
     if (!window) throw std::runtime_error("failed to open glfw window: " + title);
 
     glfwMakeContextCurrent(window);
 
-    /*
 #ifdef _DEBUG
     glEnable(GL_DEBUG_OUTPUT);
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
     glDebugMessageCallback(&gl_debug_callback, nullptr);
 #endif
-    */
 
     glfwSetWindowUserPointer(window, this);
-    glfwSetWindowFocusCallback(window, [](GLFWwindow * window, int focused) { auto win = (glfw_window *)(glfwGetWindowUserPointer(window)); win->on_window_focus(!!focused); });
-    glfwSetWindowSizeCallback(window, [](GLFWwindow * window, int width, int height) { auto win = (glfw_window *)(glfwGetWindowUserPointer(window)); win->on_window_resize({ width, height }); });
-    glfwSetCharCallback(window, [](GLFWwindow * window, unsigned int codepoint) { auto win = (glfw_window *)(glfwGetWindowUserPointer(window)); win->consume_character(codepoint);  });
-    glfwSetKeyCallback(window, [](GLFWwindow * window, int key, int, int action, int) { auto win = (glfw_window *)(glfwGetWindowUserPointer(window)); win->consume_key(key, action); });
-    glfwSetMouseButtonCallback(window, [](GLFWwindow * window, int button, int action, int) { auto win = (glfw_window *)(glfwGetWindowUserPointer(window)); win->consume_mousebtn(button, action);  });
-    glfwSetCursorPosCallback(window, [](GLFWwindow * window, double xpos, double ypos) { auto win = (glfw_window *)(glfwGetWindowUserPointer(window)); win->consume_cursor(xpos, ypos); });
-    glfwSetScrollCallback(window, [](GLFWwindow * window, double deltaX, double deltaY) { auto win = (glfw_window *)(glfwGetWindowUserPointer(window)); win->consume_scroll(deltaX, deltaY); });
-    glfwSetDropCallback(window, [](GLFWwindow * window, int count, const char * names[]) { auto win = (glfw_window *)(glfwGetWindowUserPointer(window)); win->on_drop({ names, names + count }); });
+    glfwSetWindowFocusCallback(window, [](GLFWwindow * window, int focused) { get(window).on_window_focus(!!focused); });
+    glfwSetWindowSizeCallback(window, [](GLFWwindow * window, int width, int height) {get(window).on_window_resize({ width, height }); });
+    glfwSetCharCallback(window, [](GLFWwindow * window, unsigned int codepoint) { get(window).consume_character(codepoint);  });
+    glfwSetKeyCallback(window, [](GLFWwindow * window, int key, int, int action, int) { get(window).consume_key(key, action); });
+    glfwSetMouseButtonCallback(window, [](GLFWwindow * window, int button, int action, int) { get(window).consume_mousebtn(button, action);  });
+    glfwSetCursorPosCallback(window, [](GLFWwindow * window, double xpos, double ypos) { get(window).consume_cursor(xpos, ypos); });
+    glfwSetScrollCallback(window, [](GLFWwindow * window, double deltaX, double deltaY) { get(window).consume_scroll(deltaX, deltaY); });
+    glfwSetDropCallback(window, [](GLFWwindow * window, int count, const char * names[]) { get(window).on_drop({ names, names + count }); });
 }
 
 glfw_window::~glfw_window()

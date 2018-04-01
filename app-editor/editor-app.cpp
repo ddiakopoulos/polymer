@@ -18,9 +18,6 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
 
     auto droidSansTTFBytes = read_file_binary("../assets/fonts/droid_sans.ttf");
 
-    auxWindow.reset(new glfw_window(get_shared_gl_context(), 200, 200, "aux-window", 1));
-    //auxImgui.reset(new gui::imgui_instance(auxWindow->get_window()));
-
     igm.reset(new gui::imgui_instance(window));
     gui::make_light_theme();
     igm->add_font(droidSansTTFBytes);
@@ -302,6 +299,12 @@ void scene_editor_app::on_input(const InputEvent & event)
             if (event.value[0] == GLFW_KEY_TAB && event.action == GLFW_RELEASE)
             {
                 showUI = !showUI;
+            }
+
+            if (event.value[0] == GLFW_KEY_SPACE && event.action == GLFW_RELEASE)
+            {
+                auxWindow.reset(new glfw_window(get_shared_gl_context(), 200, 200, "aux-window", 1));
+                //auxImgui.reset(new gui::imgui_instance(auxWindow->get_window()));
             }
         }
 
