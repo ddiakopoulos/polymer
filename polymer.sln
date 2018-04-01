@@ -28,9 +28,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gl-render", "samples\gl-ren
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gl-render-offscreen", "samples\gl-render-offscreen\gl-render-offscreen.vcxproj", "{EFC8C9CF-5417-4D08-BCFD-7EEA59A2853E}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "core-types", "samples\core-types\core-types.vcxproj", "{896644C3-3E50-4E9D-B64C-E7B18EF08CA4}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "polymer-types", "samples\polymer-types\polymer-types.vcxproj", "{896644C3-3E50-4E9D-B64C-E7B18EF08CA4}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "core-utilities", "samples\core-utilities\core-utilities.vcxproj", "{6D75520D-264F-4EFC-948D-EA01065601D2}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "polymer-utilities", "samples\polymer-utilities\polymer-utilities.vcxproj", "{6D75520D-264F-4EFC-948D-EA01065601D2}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "engine-ecs", "samples\engine-ecs\engine-ecs.vcxproj", "{8C0809F1-CE41-49D3-8286-062D673D887D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -78,6 +80,10 @@ Global
 		{6D75520D-264F-4EFC-948D-EA01065601D2}.Debug|x64.Build.0 = Debug|x64
 		{6D75520D-264F-4EFC-948D-EA01065601D2}.Release|x64.ActiveCfg = Release|x64
 		{6D75520D-264F-4EFC-948D-EA01065601D2}.Release|x64.Build.0 = Release|x64
+		{8C0809F1-CE41-49D3-8286-062D673D887D}.Debug|x64.ActiveCfg = Debug|x64
+		{8C0809F1-CE41-49D3-8286-062D673D887D}.Debug|x64.Build.0 = Debug|x64
+		{8C0809F1-CE41-49D3-8286-062D673D887D}.Release|x64.ActiveCfg = Release|x64
+		{8C0809F1-CE41-49D3-8286-062D673D887D}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -93,6 +99,7 @@ Global
 		{EFC8C9CF-5417-4D08-BCFD-7EEA59A2853E} = {0B054E41-2F3E-4230-8488-B44C3643F315}
 		{896644C3-3E50-4E9D-B64C-E7B18EF08CA4} = {0B054E41-2F3E-4230-8488-B44C3643F315}
 		{6D75520D-264F-4EFC-948D-EA01065601D2} = {0B054E41-2F3E-4230-8488-B44C3643F315}
+		{8C0809F1-CE41-49D3-8286-062D673D887D} = {0B054E41-2F3E-4230-8488-B44C3643F315}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {E2D0793D-BD41-4F42-A6AA-DAB3D17A46BE}

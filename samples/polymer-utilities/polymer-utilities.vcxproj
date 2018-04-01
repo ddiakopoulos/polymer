@@ -12,7 +12,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{6D75520D-264F-4EFC-948D-EA01065601D2}</ProjectGuid>
-    <RootNamespace>core-utilities</RootNamespace>
+    <RootNamespace>polymer-utilities</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -86,7 +86,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="core-utilities.cpp" />
+    <ClCompile Include="polymer-utilities.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\lib-polymer\lib-polymer.vcxproj">

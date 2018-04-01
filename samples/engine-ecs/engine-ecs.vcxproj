@@ -11,8 +11,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{896644C3-3E50-4E9D-B64C-E7B18EF08CA4}</ProjectGuid>
-    <RootNamespace>core-types</RootNamespace>
+    <ProjectGuid>{8C0809F1-CE41-49D3-8286-062D673D887D}</ProjectGuid>
+    <RootNamespace>engine-ecs</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -86,7 +86,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="core-types.cpp" />
+    <ClCompile Include="engine-ecs.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\lib-polymer\lib-polymer.vcxproj">
