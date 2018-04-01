@@ -42,7 +42,11 @@ struct Hasher
 // An Entity is an uniquely identifiable object in the Polymer runtime.
 using Entity = uint64_t;
 constexpr Entity NULL_ENTITY = 0;
- 
+
+//////////////////////////////////////
+//   Custom TypeId Implementation   //
+//////////////////////////////////////
+
 using TypeId = unsigned int;
 
 template <typename T>
@@ -84,6 +88,37 @@ template <>                                    \
  {
 
  };
+
+ // Basic Types
+ POLYMER_SETUP_TYPEID(bool);
+ POLYMER_SETUP_TYPEID(int8_t);
+ POLYMER_SETUP_TYPEID(uint8_t);
+ POLYMER_SETUP_TYPEID(int16_t);
+ POLYMER_SETUP_TYPEID(uint16_t);
+ POLYMER_SETUP_TYPEID(int32_t);
+ POLYMER_SETUP_TYPEID(uint32_t);
+ POLYMER_SETUP_TYPEID(int64_t);
+ POLYMER_SETUP_TYPEID(uint64_t);
+ POLYMER_SETUP_TYPEID(float);
+ POLYMER_SETUP_TYPEID(double);
+
+ // Linalg + Polymer Types
+ POLYMER_SETUP_TYPEID(float2);
+ POLYMER_SETUP_TYPEID(float3);
+ POLYMER_SETUP_TYPEID(float4);
+ POLYMER_SETUP_TYPEID(int2);
+ POLYMER_SETUP_TYPEID(int3);
+ POLYMER_SETUP_TYPEID(int4);
+ POLYMER_SETUP_TYPEID(uint2);
+ POLYMER_SETUP_TYPEID(uint3);
+ POLYMER_SETUP_TYPEID(uint4);
+ POLYMER_SETUP_TYPEID(float2x2);
+ POLYMER_SETUP_TYPEID(float3x3);
+ POLYMER_SETUP_TYPEID(float4x4);
+ POLYMER_SETUP_TYPEID(Frustum);
+ POLYMER_SETUP_TYPEID(Pose);
+ POLYMER_SETUP_TYPEID(Bounds2D);
+ POLYMER_SETUP_TYPEID(Bounds3D);
 
 IMPLEMENT_MAIN(int argc, char * argv[])
 {
