@@ -60,16 +60,8 @@ HashValue Hash(const char * str)
 struct Hasher 
 {
     template <class T>
-    std::size_t operator()(const T& value) const { return Hash(value); }
+    std::size_t operator()(const T & value) const { return Hash(value); }
 };
-
-//////////////////
-//   Entities   //
-//////////////////
-
-// An Entity is an uniquely identifiable object in the Polymer runtime.
-using Entity = uint64_t;
-constexpr Entity kInvalidEntity = 0;
 
 //////////////////////////////////////
 //   Custom TypeId Implementation   //
@@ -82,7 +74,7 @@ const char * GetTypeName()
 {
     assert(false);
     // If you get a compiler error that complains about TYPEID_NOT_SETUP, then you have not added 
-    // POLYMER_SETUP_TYPEID(T) such that the compilation unit  being compiled uses it.
+    // POLYMER_SETUP_TYPEID(T) such that the compilation unit being compiled uses it.
     return T::TYPEID_NOT_SETUP;
 }
 
@@ -126,6 +118,14 @@ template <>                                    \
      template <typename T>
      static std::string generate()  { return generate_impl<T>(); }
  };
+
+ //////////////////
+ //   Entities   //
+ //////////////////
+
+ // An Entity is an uniquely identifiable object in the Polymer runtime.
+ using Entity = uint64_t;
+ constexpr Entity kInvalidEntity = 0;
 
  // Basic Types
  POLYMER_SETUP_TYPEID(bool);
@@ -190,37 +190,41 @@ template <>                                    \
      // Associates Component(s) with the Entity using the serialized data
      virtual void create(Entity e, DefinitionType type, void * data) { }
 
+     /* todo - create with default-constructed component */
+
      // Disassociates all Component data from the Entity.
      virtual void destroy(Entity e) { }
 
      // Helper function to associate the System with DefType in the EntityFactory.
-     // Example usage: RegisterDef(this, Hash("MyComponentDef"));
+     // Example usage: register_system_for_type(this, Hash("MyComponentDef"));
      template <typename S>
-     void RegisterDef(S * system, DefinitionType type) { RegisterDef(GetTypeId<S>(), type); }
-
-     void RegisterDef(TypeId system_type, DefinitionType type);
+     void register_system_for_type(S * system, DefinitionType type) { register_system_for_type(GetTypeId<S>(), type); }
+     void register_system_for_type(TypeId system_type, DefinitionType type);
  };
 
  struct EntityFactory
  {
-     using TypeMap = std::unordered_map<System::DefinitionType, TypeId>;    // ComponentDef type (hashed) to System TypeId map.
-     TypeMap type_map_;                                                     // Map of ComponentDef type (hash) to System TypeIds.
-     Entity entity_generator_ { 0 };                                        // Autoincrementing value to generate unique Entity IDs.
+     std::mutex createMutex;
 
-     void RegisterDef(TypeId system_type, HashValue def_type) 
+     using TypeMap = std::unordered_map<System::DefinitionType, TypeId>;    // ComponentDef type (hashed) to System TypeId map.
+     TypeMap system_type_map;                                               // Map of ComponentDef type (hash) to System TypeIds.
+     Entity entity_counter { 0 };                                           // Autoincrementing value to generate unique Entity IDs.
+
+     void register_system_for_type(TypeId system_type, HashValue def_type) 
      {
-         type_map_[def_type] = system_type;
+         system_type_map[def_type] = system_type;
      }
 
      Entity create()
      {
-         const Entity entity = ++entity_generator_;
-         return entity;
+         std::lock_guard<std::mutex> guard(createMutex);
+         const Entity e = ++entity_counter;
+         return e;
      }
  };
 
  // Associates the System with the DefType in the EntityFactory.
- void System::RegisterDef(TypeId system_type, DefinitionType type) { factory->RegisterDef(system_type, type); }
+ void System::register_system_for_type(TypeId system_type, DefinitionType type) { factory->register_system_for_type(system_type, type); }
 
  template <typename T>
  bool verify_typename(const char * name) 
@@ -240,7 +244,7 @@ template <>                                    \
 
      ExampleSystem(EntityFactory * f) : System(f) 
      {
-         RegisterDef(this, Hash("NameDefinition"));
+         register_system_for_type(this, Hash("NameDefinition"));
      }
 
      ~ExampleSystem() override { }
@@ -284,7 +288,7 @@ template <>                                    \
              return;
          }
 
-         const auto existing_name = get_name(entity);
+         const std::string existing_name = get_name(entity);
          if (existing_name == name) { return; } // No need to proceed if current name and desired name are identical
 
          // Ensure a different entity with the same name does not already exist. This
@@ -320,7 +324,7 @@ template <>                                    \
  ////////////////////////
 
  // Systems operate on one or more Components to provide Entities with specific behaviours.
- // Entities have Components assigned by systems.
+ // Entities have Components assigned by systems. 
  struct ExampleRenderComponent : public Component
  {
      ExampleRenderComponent() : Component(kInvalidEntity) { }
@@ -328,25 +332,11 @@ template <>                                    \
      std::string name{ "render-component" };
  };
 
- /*
- struct ExamplePhysicsComponent : public Component
- {
-     ExamplePhysicsComponent(Entity e) : Component(e) { }
-     std::string name{ "physics-component" };
- };
-
- struct ExampleTransformComponent : public Component
- {
-     ExampleTransformComponent(Entity e) : Component(e) { }
-     std::string name{ "transform-component" };
- };
- */
-
  struct ExampleRenderSystem : public System
  {
      ExampleRenderSystem(EntityFactory * f) : System(f)
      {
-         RegisterDef(this, Hash("RenderDefinition"));
+         register_system_for_type(this, Hash("RenderDefinition"));
      }
 
      ~ExampleRenderSystem() override { }
@@ -393,6 +383,26 @@ template <>                                    \
      std::unordered_map<Entity, ExampleRenderComponent> components_;
  };
  POLYMER_SETUP_TYPEID(ExampleRenderSystem);
+
+ /* 
+  * Implement: Component Pool
+  * Implement: PolymerEngineContext (Registry for Systems)
+  * [Systems]
+  * - Render
+  * - Light
+  * - Collision/Raycast
+  * - Name
+  * - Dispatcher (Events)
+  * - Physics
+  * - Transform (Scene Graph)
+  * [Components / Defs]
+  * 
+  *
+  *
+  *
+  *
+  *
+  */
 
 IMPLEMENT_MAIN(int argc, char * argv[])
 {
