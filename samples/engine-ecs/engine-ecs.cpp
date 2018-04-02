@@ -240,21 +240,27 @@ using namespace polymer;
  /* 
   * Implement: Component Pool
   * Implement: PolymerEngineContext (Registry for Systems)
+
   * [Systems]
+  * - Name
+  * - Transform (scenegraph)
   * - Render
   * - Light
-  * - Collision/Raycast
-  * - Name
-  * - Dispatcher (Events)
-  * - Physics
-  * - Transform (Scene Graph)
+  * - Collision + Raycast
+  * - Dispatcher (events)
+  * - Physics (Bullet3)
+
   * [Components / Defs]
-  * 
-  *
-  *
-  *
-  *
-  *
+  * - Point Lights
+  * - Directional Lights
+  * - Spot Lights
+  * - Static Meshes
+  * - Skinned Meshes
+  * - VR Controller
+  * - Reticle
+  * - World Anchor
+  * - Teleport Destination
+  * - Teleport Navigator
   */
 
 IMPLEMENT_MAIN(int argc, char * argv[])
