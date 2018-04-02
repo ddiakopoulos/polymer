@@ -41,17 +41,17 @@ using namespace polymer;
      using DefinitionType = HashValue;
 
      // Associates a default-constructed component with an entity
-     virtual void create(entity e, DefinitionType type) {}
+     virtual bool create(entity e, DefinitionType component_name_hash) = 0;
 
      // Associates component with the Entity using the serialized data
-     virtual void create(entity e, DefinitionType type, void * data) {}
+     virtual bool create(entity e, DefinitionType component_name_hash, void * data) = 0;
 
      /* todo - create with default-constructed component */
 
-     // Disassociates all Component data from the Entity.
-     virtual void destroy(entity e) {}
+     // Disassociates all component data from the entity in this system
+     virtual void destroy(entity e) = 0;
 
-     // Helper function to associate the System with DefType in the entity_manager.
+     // Helper function to signal to the entity manager that this system operates on these types of components
      template <typename S>
      void register_system_for_type(S * system, DefinitionType type) { register_system_for_type(get_typeid<S>(), type); }
      void register_system_for_type(TypeId system_type, DefinitionType type);
@@ -88,31 +88,28 @@ using namespace polymer;
  }
 
  ////////////////////////
- //   Example System   //
+ //   name/id system   //
  ////////////////////////
 
- struct ExampleSystem : public system
+ struct name_system final : public system
  {
-     std::unordered_map<entity, std::string> entity_to_name_;
-     std::unordered_map<entity, HashValue> entity_to_hash_;
-     std::unordered_map<HashValue, entity> hash_to_entity_;
-
-     ExampleSystem(entity_manager * f) : system(f) 
+     name_system(entity_manager * f) : system(f)
      {
          register_system_for_type(this, hash_fnv1a("NameDefinition"));
      }
 
-     ~ExampleSystem() override { }
+     ~name_system() override { }
+
+     bool create(entity e, DefinitionType component_name_hash) override final
+     {
+         return false;
+     }
 
      // Associates |entity| with a name. Removes any existing name associated with this entity.
-     void create(entity entity, HashValue type, void * data) override final
+     bool create(entity entity, HashValue type, void * data) override final
      {
-         if (type != hash_fnv1a("NameDefinition")) 
-         {
-             std::cout << "Invalid definition type, expecting NameDefinition." << std::endl;
-             return;
-         }
-
+         if (type != const_hash_fnv1a("NameDefinition"))  { return false; }
+         return true;
          // todo - set name based on data
      }
 
@@ -137,11 +134,7 @@ using namespace polymer;
 
      void set_name(entity entity, const std::string & name) 
      {
-         if (entity == kInvalidEntity)
-         {
-             std::cout << "Invalid Entity" << std::endl;
-             return;
-         }
+         if (entity == kInvalidEntity) { return; }
 
          const std::string existing_name = get_name(entity);
          if (existing_name == name) { return; } // No need to proceed if current name and desired name are identical
@@ -171,73 +164,78 @@ using namespace polymer;
          return iter != hash_to_entity_.end() ? iter->second : kInvalidEntity;
      }
 
+     std::unordered_map<entity, std::string> entity_to_name_;
+     std::unordered_map<entity, HashValue> entity_to_hash_;
+     std::unordered_map<HashValue, entity> hash_to_entity_;
  };
- POLYMER_SETUP_TYPEID(ExampleSystem);
+ POLYMER_SETUP_TYPEID(name_system);
 
- ////////////////////////
- ////
- ////////////////////////
+ ///////////////////////////////
+ //   Example Render System   //
+ ///////////////////////////////
 
  // Systems operate on one or more Components to provide Entities with specific behaviours.
  // Entities have Components assigned by systems. 
- struct ExampleRenderComponent : public component
+ struct ex_render_component final : public component
  {
-     ExampleRenderComponent() : component(kInvalidEntity) { }
-     explicit ExampleRenderComponent(entity e) : component(e) { }
+     ex_render_component() : component(kInvalidEntity) { }
+     explicit ex_render_component(entity e) : component(e) { }
      std::string name{ "render-component" };
  };
 
- struct ExampleRenderSystem : public system
+ struct ex_render_system : public system
  {
-     ExampleRenderSystem(entity_manager * f) : system(f)
+     ex_render_system(entity_manager * f) : system(f)
      {
          register_system_for_type(this, hash_fnv1a("RenderDefinition"));
      }
 
-     ~ExampleRenderSystem() override { }
+     ~ex_render_system() override { }
 
-     void create(entity entity, HashValue type, void * data) override final
+     bool create(entity e, DefinitionType component_name_hash) override final
      {
-         if (type != hash_fnv1a("RenderDefinition"))
-         {
-             std::cout << "Invalid definition type, expecting NameDefinition." << std::endl;
-             return;
-         }
+         return false;
+     }
+
+     bool create(entity entity, HashValue type, void * data) override final
+     {
+         if (type != hash_fnv1a("RenderDefinition")) { return false; }
 
          if (components_.find(entity) != components_.end())
          {
-             std::cout << "Component Already Exists..." << std::endl;
+             // update existing component
              auto data = components_[entity];
          }
          else
          {
-             std::cout << "Inserting Component... " << entity << std::endl;
-             components_.emplace(entity, ExampleRenderComponent(entity));
+             // create new component
+             components_.emplace(entity, ex_render_component(entity));
          }
+         return true;
      }
-
+     
+     // find & erase
      void destroy(entity entity) override final
      {
          auto iter = components_.find(entity);
          if (iter != components_.end())
          {
-             std::cout << "Erasing Entity " << entity << std::endl;
              components_.erase(iter);
          }
      }
 
+     // returns a zero length string if not found
      std::string get_renderable_name(entity e) 
      {
          auto iter = components_.find(e);
          if (iter != components_.end()) return iter->second.name;
-         else std::cout << "Did not find component for entity " << e << std::endl;
          return {};
      }
 
      // Entities added to this list have components
-     std::unordered_map<entity, ExampleRenderComponent> components_;
+     std::unordered_map<entity, ex_render_component> components_;
  };
- POLYMER_SETUP_TYPEID(ExampleRenderSystem);
+ POLYMER_SETUP_TYPEID(ex_render_system);
 
  /* 
   * Implement: Component Pool
@@ -261,32 +259,33 @@ using namespace polymer;
 
 IMPLEMENT_MAIN(int argc, char * argv[])
 {
-    /*
     entity_manager factory;
-    ExampleSystem system(&factory);
 
-    const Entity exampleEntity = factory.create();
+    // ----
 
-    system.set_name(exampleEntity, "static_mesh");
-    std::cout << "Lookup By Name:   " << system.get_name(exampleEntity) << std::endl;
+    name_system system(&factory);
+
+    const entity mesh = factory.create();
+
+    system.set_name(mesh, "static_mesh");
+    std::cout << "Lookup By Name:   " << system.get_name(mesh) << std::endl;
     std::cout << "Lookup By Entity: " << system.find_entity("static_mesh") << std::endl;
 
     std::cout << "verify: bool - " << verify_typename<bool>("bool") << std::endl;
     std::cout << "verify: uint64_t - " << verify_typename<uint64_t>("uint64_t") << std::endl;
     std::cout << "verify: float2 - " << verify_typename<float2>("float2") << std::endl;
     std::cout << "verify: Bounds2D - " << verify_typename<Bounds2D>("Bounds2D") << std::endl;
-    */
 
-    entity_manager factory;
+    // ----
 
-    ExampleRenderSystem renderSystem(&factory);
+    ex_render_system renderSystem(&factory);
 
     // Create new entities
     const entity renderableOne = factory.create();
     const entity renderableTwo = factory.create();
     const entity renderableThree = factory.create();
 
-    // Associate |ExampleRenderComponent| with these entities
+    // Associate |ex_render_component| with these entities
     renderSystem.create(renderableOne, hash_fnv1a("RenderDefinition"), nullptr);
     renderSystem.create(renderableTwo, hash_fnv1a("RenderDefinition"), nullptr);
 
