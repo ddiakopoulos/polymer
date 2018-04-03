@@ -504,9 +504,10 @@ void scene_editor_app::on_draw()
             const auto selected_open_path = windows_file_dialog("anvil scene", "json", true);
             if (!selected_open_path.empty())
             {
+                editor->clear();
                 scene.objects.clear();
                 cereal::deserialize_from_json(selected_open_path, scene.objects);
-                // set_window_title(selected_open_path);
+                glfwSetWindowTitle(window, selected_open_path.c_str());
             }
 
         }
@@ -515,12 +516,14 @@ void scene_editor_app::on_draw()
             const auto save_path = windows_file_dialog("anvil scene", "json", false);
             if (!save_path.empty())
             {
+                editor->clear();
                 write_file_text(save_path, cereal::serialize_to_json(scene.objects));
-                //set_window_title(save_path);
+                glfwSetWindowTitle(window, save_path.c_str());
             }
         }
         if (menu.item("New Scene", GLFW_MOD_CONTROL, GLFW_KEY_N, mod_enabled))
         {
+            editor->clear();
             scene.objects.clear();
         }
         if (menu.item("Take Screenshot", GLFW_MOD_CONTROL, GLFW_KEY_EQUAL, mod_enabled))

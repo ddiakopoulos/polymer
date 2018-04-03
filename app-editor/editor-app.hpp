@@ -9,6 +9,35 @@
 #include "scene.hpp"
 #include "editor-ui.hpp"
 
+template<typename AssetHandleType>
+void draw_listbox(const std::string & label, ImGuiTextFilter & filter)
+{
+    std::vector<std::string> assets;
+    for (auto & m : AssetHandleType::list()) assets.push_back(m.name);
+
+    static int selectedAsset = -1;
+
+    ImGui::Text(label.c_str());
+
+    ImGui::PushItemWidth(-1);
+    if (ImGui::ListBoxHeader("##assets"))
+    {
+        for (int n = 0; n < assets.size(); ++n)
+        {
+            const std::string name = assets[n];
+            if (!filter.PassFilter(name.c_str())) continue;
+            if (ImGui::Selectable(name.c_str(), n == selectedAsset))
+            {
+                selectedAsset = n;
+            }
+        }
+
+        ImGui::ListBoxFooter();
+    }
+    ImGui::PopItemWidth();
+}
+
+
 struct aux_window final : public glfw_window
 {
     std::unique_ptr<gui::imgui_instance> auxImgui;
@@ -56,87 +85,28 @@ struct aux_window final : public glfw_window
 
             ImGui::Dummy({ 0, 12 });
 
+            ImGui::PushItemWidth(-1);
+            std::vector<std::string> assetTypes = { {"Shaders", "Materials", "Textures", "GPU Mesh", "CPU Geometry"} };
+            static int assetTypeSelection = -1;
+            gui::Combo("##asset_type", &assetTypeSelection, assetTypes);
+            ImGui::PopItemWidth();
+
+            ImGui::Dummy({ 0, 12 });
+
             ImGuiTextFilter textFilter;
             textFilter.Draw(ICON_FA_FILTER "  Filter");
 
             ImGui::Dummy({ 0, 12 });
 
-            std::vector<std::string> shaders;
-            for (auto & m : GlShaderHandle::list()) shaders.push_back(m.name);
-
-            static int selectedShader = -1;
-
-            ImGui::PushItemWidth(-1);
-            if (ImGui::ListBoxHeader("##shaders"))
+            switch (assetTypeSelection)
             {
-                for (int n = 0; n < shaders.size(); ++n)
-                {
-                    const std::string name = shaders[n];
-                    if (!textFilter.PassFilter(name.c_str())) continue;
-                    if (ImGui::Selectable(name.c_str(), n == selectedShader))
-                    {
-                        selectedShader = n;
-                    }
-                }
-
-                ImGui::ListBoxFooter();
+                case 0: draw_listbox<GlShaderHandle>("Shaders", textFilter); break;
+                case 1: draw_listbox<MaterialHandle>("Materials", textFilter); break;
+                case 2: draw_listbox<GlTextureHandle>("Textures", textFilter); break;
+                case 3: draw_listbox<GlMeshHandle>("GPU Geometry", textFilter); break;
+                case 4: draw_listbox<GeometryHandle>("CPU Geometry", textFilter); break;
+                default: break;
             }
-            ImGui::PopItemWidth();
-
-            {
-                //ImGui::Text("Shader Assets");
-                //ImGui::PushItemWidth(-1);
-                //std::vector<std::string> shaders;
-                //for (auto & m : GlShaderHandle::list()) shaders.push_back(m.name);
-                //ImGui::ListBox("##shaders", &selectedShader, shaders);
-                //ImGui::PopItemWidth();
-            }
-
-            /*
-            ImGui::Dummy({ 0, 12 });
-            {
-                ImGui::Text("Materials Assets");
-                ImGui::PushItemWidth(-1);
-                std::vector<std::string> mats;
-                for (auto & m : MaterialHandle::list()) mats.push_back(m.name);
-                static int selectedMaterial = 1;
-                ImGui::ListBox("##materials", &selectedMaterial, mats);
-                ImGui::PopItemWidth();
-            }
-            ImGui::Dummy({ 0, 12 });
-            {
-                ImGui::Text("GPU Mesh Assets");
-                ImGui::PushItemWidth(-1);
-                std::vector<std::string> meshes;
-                for (auto & m : GlMeshHandle::list()) meshes.push_back(m.name);
-                static int selectedMesh = 1;
-                ImGui::ListBox("##meshes", &selectedMesh, meshes);
-                ImGui::PopItemWidth();
-            }
-            ImGui::Dummy({ 0, 12 });
-            {
-                ImGui::Text("CPU Geometry Assets");
-                ImGui::PushItemWidth(-1);
-                std::vector<std::string> geom;
-                for (auto & m : GeometryHandle::list()) geom.push_back(m.name);
-                static int selectedGeometry = 1;
-                ImGui::ListBox("##geometries", &selectedGeometry, geom);
-                ImGui::PopItemWidth();
-            }
-            ImGui::Dummy({ 0, 12 });
-            {
-                ImGui::Text("GPU Texture Assets");
-                ImGui::PushItemWidth(-1);
-                std::vector<std::string> tex;
-                for (auto & m : GlTextureHandle::list()) tex.push_back(m.name);
-                static int selectedTexture = 1;
-                ImGui::ListBox("##textures", &selectedTexture, tex);
-                ImGui::PopItemWidth();
-            }
-
-            ImGui::Dummy({ 0, 12 });
- 
-            */
             gui::imgui_fixed_window_end();
             auxImgui->end_frame();
 

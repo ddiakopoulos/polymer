@@ -195,6 +195,7 @@ const T * unpack() { return nullptr; }
 template<class T> struct range_metadata { T min, max; };
 template<class T> struct degree_metadata { T min, max; };
 struct editor_hidden { };
+struct input_field { };
 
 inline bool Edit(const char * label, std::string & s)
 {
@@ -227,7 +228,9 @@ template<class... A>
 inline bool Edit(const char * label, int & v, const A & ... metadata)
 { 
     auto * rangeData = unpack<range_metadata<int>>(metadata...);
-    if (rangeData) return ImGui::SliderInt(label, &v, rangeData->min, rangeData->max);
+    auto * useInput = unpack<input_field>(metadata...);
+
+    if (rangeData && !useInput) return ImGui::SliderInt(label, &v, rangeData->min, rangeData->max);
     else return ImGui::InputInt(label, &v);
 }
 
@@ -235,7 +238,8 @@ template<class... A>
 inline bool Edit(const char * label, int2 & v, const A & ... metadata)
 { 
     auto * intRange = unpack<range_metadata<int>>(metadata...);
-    if (intRange) return ImGui::SliderInt2(label, &v[0], intRange->min, intRange->max);
+    auto * useInput = unpack<input_field>(metadata...);
+    if (intRange && !useInput) return ImGui::SliderInt2(label, &v[0], intRange->min, intRange->max);
     else return ImGui::InputInt2(label, &v.x); 
 }
 

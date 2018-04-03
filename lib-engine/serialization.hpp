@@ -111,7 +111,7 @@ template<class F> void visit_fields(MetallicRoughnessMaterial & o, F f)
     f("occulusion_strength", o.occlusionStrength, range_metadata<float>{ 0.f, 1.f });
     f("ambient_strength", o.ambientStrength, range_metadata<float>{ 0.f, 1.f });
     f("shadow_opacity", o.shadowOpacity, range_metadata<float>{ 0.f, 1.f });
-    f("texcoord_scale", o.texcoordScale, range_metadata<int>{ -32, 32 });
+    f("texcoord_scale", o.texcoordScale, input_field{}, range_metadata<int>{ -32, 32 });
 
     f("albedo_handle", o.albedo);
     f("normal_handle", o.normal);
