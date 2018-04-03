@@ -7,18 +7,19 @@
 #include <map>
 #include <string>
 
+#include "IconsFontAwesome4.h"
 #include "math-common.hpp"
 #include "util.hpp"
 
 // Implicit casts for linalg types
-#define IM_VEC2_CLASS_EXTRA                                             \
-ImVec2(const polymer::float2 & f) { x = f.x; y = f.y; }                     \
+#define IM_VEC2_CLASS_EXTRA                                                     \
+ImVec2(const polymer::float2 & f) { x = f.x; y = f.y; }                         \
 operator polymer::float2() const { return polymer::float2(x,y); }               \
-ImVec2(const polymer::int2 & f) { x = f.x; y = f.y; }                       \
+ImVec2(const polymer::int2 & f) { x = f.x; y = f.y; }                           \
 operator polymer::int2() const { return polymer::int2(x,y); }
 
-#define IM_VEC4_CLASS_EXTRA                                             \
-ImVec4(const polymer::float4 & f) { x = f.x; y = f.y; z = f.z; w = f.w; }   \
+#define IM_VEC4_CLASS_EXTRA                                                     \
+ImVec4(const polymer::float4 & f) { x = f.x; y = f.y; z = f.z; w = f.w; }       \
 operator polymer::float4() const { return polymer::float4(x,y,z,w); }
 
 #include "imgui/imgui.h"
@@ -66,6 +67,7 @@ namespace gui
         imgui_instance(GLFWwindow * win, bool use_default_font = false);
         ~imgui_instance();
         void add_font(const std::vector<uint8_t> & font);
+        void append_icon_font(const std::vector<uint8_t> & font);
         void update_input(const polymer::InputEvent & e);
         void begin_frame();
         void end_frame();

@@ -303,7 +303,7 @@ void scene_editor_app::on_input(const InputEvent & event)
 
             if (event.value[0] == GLFW_KEY_SPACE && event.action == GLFW_RELEASE)
             {
-                auxWindow.reset(new aux_window(get_shared_gl_context(), 300, 600, "assets", 1));
+                auxWindow.reset(new aux_window(get_shared_gl_context(), 400, 800, "", 1));
             }
         }
 
@@ -605,7 +605,9 @@ void scene_editor_app::on_draw()
         std::vector<std::string> mats;
         for (auto & m : AssetHandle<std::shared_ptr<Material>>::list()) mats.push_back(m.name);
         static int selectedMaterial = 1;
+        ImGui::PushItemWidth(-1);
         ImGui::ListBox("Material", &selectedMaterial, mats);
+        ImGui::PopItemWidth();
         if (mats.size() >= 1)
         {
             auto w = AssetHandle<std::shared_ptr<Material>>::list()[selectedMaterial].get();

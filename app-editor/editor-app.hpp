@@ -15,7 +15,12 @@ struct aux_window final : public glfw_window
 
     aux_window(gl_context * context, int w, int h, const std::string title, int samples) : glfw_window(context, w, h, title, samples) 
     { 
-        auxImgui.reset(new gui::imgui_instance(window));
+        auxImgui.reset(new gui::imgui_instance(window, true));
+
+        auto fontAwesomeBytes = read_file_binary("../assets/fonts/font_awesome_4.ttf");
+        auxImgui->append_icon_font(fontAwesomeBytes);
+
+        gui::make_light_theme();
     }
 
     virtual void on_input(const polymer::InputEvent & e) override final
@@ -49,6 +54,89 @@ struct aux_window final : public glfw_window
             auxImgui->begin_frame();
             gui::imgui_fixed_window_begin("asset-browser", { {0, 0}, {width, height} });
 
+            ImGui::Dummy({ 0, 12 });
+
+            ImGuiTextFilter textFilter;
+            textFilter.Draw(ICON_FA_FILTER "  Filter");
+
+            ImGui::Dummy({ 0, 12 });
+
+            std::vector<std::string> shaders;
+            for (auto & m : GlShaderHandle::list()) shaders.push_back(m.name);
+
+            static int selectedShader = -1;
+
+            ImGui::PushItemWidth(-1);
+            if (ImGui::ListBoxHeader("##shaders"))
+            {
+                for (int n = 0; n < shaders.size(); ++n)
+                {
+                    const std::string name = shaders[n];
+                    if (!textFilter.PassFilter(name.c_str())) continue;
+                    if (ImGui::Selectable(name.c_str(), n == selectedShader))
+                    {
+                        selectedShader = n;
+                    }
+                }
+
+                ImGui::ListBoxFooter();
+            }
+            ImGui::PopItemWidth();
+
+            {
+                //ImGui::Text("Shader Assets");
+                //ImGui::PushItemWidth(-1);
+                //std::vector<std::string> shaders;
+                //for (auto & m : GlShaderHandle::list()) shaders.push_back(m.name);
+                //ImGui::ListBox("##shaders", &selectedShader, shaders);
+                //ImGui::PopItemWidth();
+            }
+
+            /*
+            ImGui::Dummy({ 0, 12 });
+            {
+                ImGui::Text("Materials Assets");
+                ImGui::PushItemWidth(-1);
+                std::vector<std::string> mats;
+                for (auto & m : MaterialHandle::list()) mats.push_back(m.name);
+                static int selectedMaterial = 1;
+                ImGui::ListBox("##materials", &selectedMaterial, mats);
+                ImGui::PopItemWidth();
+            }
+            ImGui::Dummy({ 0, 12 });
+            {
+                ImGui::Text("GPU Mesh Assets");
+                ImGui::PushItemWidth(-1);
+                std::vector<std::string> meshes;
+                for (auto & m : GlMeshHandle::list()) meshes.push_back(m.name);
+                static int selectedMesh = 1;
+                ImGui::ListBox("##meshes", &selectedMesh, meshes);
+                ImGui::PopItemWidth();
+            }
+            ImGui::Dummy({ 0, 12 });
+            {
+                ImGui::Text("CPU Geometry Assets");
+                ImGui::PushItemWidth(-1);
+                std::vector<std::string> geom;
+                for (auto & m : GeometryHandle::list()) geom.push_back(m.name);
+                static int selectedGeometry = 1;
+                ImGui::ListBox("##geometries", &selectedGeometry, geom);
+                ImGui::PopItemWidth();
+            }
+            ImGui::Dummy({ 0, 12 });
+            {
+                ImGui::Text("GPU Texture Assets");
+                ImGui::PushItemWidth(-1);
+                std::vector<std::string> tex;
+                for (auto & m : GlTextureHandle::list()) tex.push_back(m.name);
+                static int selectedTexture = 1;
+                ImGui::ListBox("##textures", &selectedTexture, tex);
+                ImGui::PopItemWidth();
+            }
+
+            ImGui::Dummy({ 0, 12 });
+ 
+            */
             gui::imgui_fixed_window_end();
             auxImgui->end_frame();
 

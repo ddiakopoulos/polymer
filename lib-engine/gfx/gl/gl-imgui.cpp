@@ -60,6 +60,20 @@ namespace gui
         IM_ASSERT(font != NULL);
     }
 
+    std::vector<uint8_t> iconFontBuffer;
+    void imgui_instance::append_icon_font(const std::vector<uint8_t> & buffer)
+    {
+        ImGuiIO & io = ImGui::GetIO();
+        iconFontBuffer = buffer;
+        static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
+        ImFontConfig icons_config; 
+        icons_config.MergeMode = true; 
+        icons_config.PixelSnapH = true;
+        icons_config.FontDataOwnedByAtlas = false;
+        auto font = io.Fonts->AddFontFromMemoryTTF((void *)iconFontBuffer.data(), (int)iconFontBuffer.size(), 15.f, &icons_config, icons_ranges);
+        IM_ASSERT(font != NULL);
+    }
+
     imgui_instance::~imgui_instance()
     {
         ImGui::SetCurrentContext(data.context);
