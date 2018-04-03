@@ -10,12 +10,10 @@
 #include "editor-ui.hpp"
 
 template<typename AssetHandleType>
-void draw_listbox(const std::string & label, ImGuiTextFilter & filter)
+void draw_listbox(const std::string & label, ImGuiTextFilter & filter, int & selection)
 {
     std::vector<std::string> assets;
     for (auto & m : AssetHandleType::list()) assets.push_back(m.name);
-
-    static int selectedAsset = -1;
 
     ImGui::Text(label.c_str());
 
@@ -26,9 +24,9 @@ void draw_listbox(const std::string & label, ImGuiTextFilter & filter)
         {
             const std::string name = assets[n];
             if (!filter.PassFilter(name.c_str())) continue;
-            if (ImGui::Selectable(name.c_str(), n == selectedAsset))
+            if (ImGui::Selectable(name.c_str(), n == selection))
             {
-                selectedAsset = n;
+                selection = n;
             }
         }
 
@@ -41,6 +39,7 @@ void draw_listbox(const std::string & label, ImGuiTextFilter & filter)
 struct aux_window final : public glfw_window
 {
     std::unique_ptr<gui::imgui_instance> auxImgui;
+    int assetSelection = -1;
 
     aux_window(gl_context * context, int w, int h, const std::string title, int samples) : glfw_window(context, w, h, title, samples) 
     { 
@@ -85,26 +84,32 @@ struct aux_window final : public glfw_window
 
             ImGui::Dummy({ 0, 12 });
 
+            ImGui::Text(ICON_FA_FILE_IMAGE_O " Asset Types");
+            ImGui::Dummy({ 0, 6 });
             ImGui::PushItemWidth(-1);
             std::vector<std::string> assetTypes = { {"Shaders", "Materials", "Textures", "GPU Mesh", "CPU Geometry"} };
             static int assetTypeSelection = -1;
             gui::Combo("##asset_type", &assetTypeSelection, assetTypes);
             ImGui::PopItemWidth();
 
-            ImGui::Dummy({ 0, 12 });
+            ImGui::Dummy({ 0, 8 });
+
+            ImGui::Separator();
+
+            ImGui::Dummy({ 0, 8 });
 
             ImGuiTextFilter textFilter;
-            textFilter.Draw(ICON_FA_FILTER "  Filter");
+            textFilter.Draw(" " ICON_FA_SEARCH "  ");
 
             ImGui::Dummy({ 0, 12 });
 
             switch (assetTypeSelection)
             {
-                case 0: draw_listbox<GlShaderHandle>("Shaders", textFilter); break;
-                case 1: draw_listbox<MaterialHandle>("Materials", textFilter); break;
-                case 2: draw_listbox<GlTextureHandle>("Textures", textFilter); break;
-                case 3: draw_listbox<GlMeshHandle>("GPU Geometry", textFilter); break;
-                case 4: draw_listbox<GeometryHandle>("CPU Geometry", textFilter); break;
+                case 0: draw_listbox<GlShaderHandle>("Shaders", textFilter, assetSelection); break;
+                case 1: draw_listbox<MaterialHandle>("Materials", textFilter, assetSelection); break;
+                case 2: draw_listbox<GlTextureHandle>("Textures", textFilter, assetSelection); break;
+                case 3: draw_listbox<GlMeshHandle>("GPU Geometry", textFilter, assetSelection); break;
+                case 4: draw_listbox<GeometryHandle>("CPU Geometry", textFilter, assetSelection); break;
                 default: break;
             }
             gui::imgui_fixed_window_end();
