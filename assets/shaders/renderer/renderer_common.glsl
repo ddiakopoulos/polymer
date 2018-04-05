@@ -145,7 +145,10 @@ float specular_power_to_roughness(in float s)
     return sqrt(2.0 / (s + 2.0));
 }
 
-// specular aliasing
+// specular aliasing - based on http://blog.selfshadow.com/2011/07/22/specular-showdown/
+// far future todo - can be computed as part of asset compilation pipeline
+// http://www.selfshadow.com/talks/rock_solid_shading_v1.pdf
+// http://selfshadow.com/sandbox/gloss.html
 float geometric_aa_toksvig(in float roughness, in vec3 normalWS, in float factor)
 {
     roughness = max(roughness, 0.05);

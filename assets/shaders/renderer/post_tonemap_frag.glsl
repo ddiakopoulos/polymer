@@ -24,7 +24,7 @@ vec3 aces_film_tonemap(in vec3 x)
 void main()
 {
     vec3 color = texture(s_texColor, v_texcoord0).rgb * exposure;
-    //color += texture(s_bloom, v_texcoord0).rgb; // bright sample
+    color += texture(s_bloom, v_texcoord0).rgb; // bright sample
     //f_color = vec4(aces_film_tonemap(color), 1.0);
 
     // Reinhard tonemapping operator - see: "Photographic Tone Reproduction for Digital Images", eq. 4

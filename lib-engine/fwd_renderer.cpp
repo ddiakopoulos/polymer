@@ -69,7 +69,7 @@ void forward_renderer::run_skybox_pass(const view_data & view, const scene_data 
     glDisable(GL_DEPTH_TEST);
     glDepthMask(GL_FALSE);
 
-    /*
+    /* fixme
     auto & program = GlShaderHandle("ibl").get();
     program.bind();
     program.uniform("u_mvp", mul(view.projectionMatrix, rotation_matrix(qconj(view.pose.orientation))));

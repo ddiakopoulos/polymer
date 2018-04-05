@@ -7,6 +7,24 @@
 
 using namespace polymer;
 
+void load_editor_intrinsic_assets(path root)
+{
+    scoped_timer t("load_editor_intrinsic_assets");
+    for (auto & entry : recursive_directory_iterator(root))
+    {
+        const size_t root_len = root.string().length(), ext_len = entry.path().extension().string().length();
+        auto path = entry.path().string(), name = path.substr(root_len + 1, path.size() - root_len - ext_len - 1);
+        for (auto & chr : path) if (chr == '\\') chr = '/';
+
+        if (entry.path().extension().string() == ".mesh")
+        {
+            auto geo_import = import_mesh_binary(path);
+            create_handle_for_asset(std::string("poly-" + get_filename_without_extension(path)).c_str(), make_mesh_from_geometry(geo_import));
+            create_handle_for_asset(std::string("poly-" + get_filename_without_extension(path)).c_str(), std::move(geo_import));
+        }
+    }
+};
+
 scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
 {
     glfwMakeContextCurrent(window);
@@ -28,6 +46,8 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
     flycam.set_camera(&cam);
 
     Logger::get_instance()->add_sink(std::make_shared<ImGui::LogWindowSink>(log));
+
+    load_editor_intrinsic_assets("../assets/models/runtime/");
 
     auto wireframeProgram = GlShader(
         read_file_text("../assets/shaders/wireframe_vert.glsl"),
