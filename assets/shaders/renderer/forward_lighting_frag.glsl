@@ -240,7 +240,7 @@ void main()
 
     #ifdef USE_IMAGE_BASED_LIGHTING
     {
-        const int NUM_MIP_LEVELS = 8;
+        const int NUM_MIP_LEVELS = 6;
         float mipLevel = NUM_MIP_LEVELS - 1.0 + log2(roughness);
         vec3 cubemapLookup = fix_cube_lookup(-reflect(V, N), 512, mipLevel);
 

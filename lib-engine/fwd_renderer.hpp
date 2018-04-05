@@ -314,6 +314,9 @@ class forward_renderer
 
 public:
 
+    std::vector<GlFramebuffer> postFramebuffers;
+    std::vector<GlTexture2D> postTextures;
+
     renderer_settings settings;
     profiler<SimpleTimer> cpuProfiler;
     profiler<GlGpuTimer> gpuProfiler;

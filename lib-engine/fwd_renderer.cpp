@@ -17,6 +17,10 @@ void forward_renderer::update_per_object_uniform_buffer(Renderable * r, const vi
 uint32_t forward_renderer::get_color_texture(const uint32_t idx) const
 {
     assert(idx <= settings.cameraCount);
+    if (settings.tonemapEnabled)
+    {
+        return postTextures[idx];
+    }
     return eyeTextures[idx];
 }
 
@@ -152,9 +156,12 @@ void forward_renderer::run_post_pass(const view_data & view, const scene_data & 
 
     if (settings.tonemapEnabled)
     {
+        glBindFramebuffer(GL_FRAMEBUFFER, postFramebuffers[view.index]);
+        glViewport(0, 0, settings.renderSize.x, settings.renderSize.y);
+
         auto & tonemapProgram = hdr_tonemapShader.get();
         tonemapProgram.bind();
-        tonemapProgram.texture("s_texColor", 0, eyeFramebuffers[view.index], GL_TEXTURE_2D);
+        tonemapProgram.texture("s_texColor", 0, eyeTextures[view.index], GL_TEXTURE_2D);
         post_quad.draw_elements();
         tonemapProgram.unbind();
     }
@@ -172,8 +179,11 @@ forward_renderer::forward_renderer(const renderer_settings settings) : settings(
     eyeTextures.resize(settings.cameraCount);
     eyeDepthTextures.resize(settings.cameraCount);
 
+    postFramebuffers.resize(settings.cameraCount);
+    postTextures.resize(settings.cameraCount);
+
     // Generate multisample render buffers for color and depth, attach to multi-sampled framebuffer target
-    glNamedRenderbufferStorageMultisampleEXT(multisampleRenderbuffers[0], settings.msaaSamples, GL_RGBA8, settings.renderSize.x, settings.renderSize.y);
+    glNamedRenderbufferStorageMultisampleEXT(multisampleRenderbuffers[0], settings.msaaSamples, GL_RGBA, settings.renderSize.x, settings.renderSize.y);
     glNamedFramebufferRenderbufferEXT(multisampleFramebuffer, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, multisampleRenderbuffers[0]);
     glNamedRenderbufferStorageMultisampleEXT(multisampleRenderbuffers[1], settings.msaaSamples, GL_DEPTH_COMPONENT, settings.renderSize.x, settings.renderSize.y);
     glNamedFramebufferRenderbufferEXT(multisampleFramebuffer, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, multisampleRenderbuffers[1]);
@@ -183,7 +193,8 @@ forward_renderer::forward_renderer(const renderer_settings settings) : settings(
     // Generate textures and framebuffers for `settings.cameraCount`
     for (int camIdx = 0; camIdx < settings.cameraCount; ++camIdx)
     {
-        eyeTextures[camIdx].setup(settings.renderSize.x, settings.renderSize.y, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE, nullptr, false);
+        //GL_RGBA8
+        eyeTextures[camIdx].setup(settings.renderSize.x, settings.renderSize.y, GL_RGBA, GL_RGBA, GL_FLOAT, nullptr, false);
         glTextureParameteriEXT(eyeTextures[camIdx], GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTextureParameteriEXT(eyeTextures[camIdx], GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTextureParameteriEXT(eyeTextures[camIdx], GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
@@ -194,6 +205,16 @@ forward_renderer::forward_renderer(const renderer_settings settings) : settings(
         glNamedFramebufferTexture2DEXT(eyeFramebuffers[camIdx], GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, eyeDepthTextures[camIdx], 0);
 
         eyeFramebuffers[camIdx].check_complete();
+    }
+
+    for (int camIdx = 0; camIdx < settings.cameraCount; ++camIdx)
+    {
+        postTextures[camIdx].setup(settings.renderSize.x, settings.renderSize.y, GL_RGBA, GL_RGBA, GL_FLOAT, nullptr, false);
+        glTextureParameteriEXT(postTextures[camIdx], GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTextureParameteriEXT(postTextures[camIdx], GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTextureParameteriEXT(postTextures[camIdx], GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
+        glNamedFramebufferTexture2DEXT(postFramebuffers[camIdx], GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, postTextures[camIdx], 0);
+        postFramebuffers[camIdx].check_complete();
     }
 
     post_quad = make_fullscreen_quad();
