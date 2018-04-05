@@ -723,14 +723,6 @@ void scene_editor_app::on_draw()
 
             ImGui::Dummy({ 0, 10 });
 
-            if (ImGui::TreeNode("Bloom + Tonemap"))
-            {
-                Edit("bloom", renderer->get_bloom_pass());
-                ImGui::TreePop();
-            }
-
-            ImGui::Dummy({ 0, 10 });
-
             if (ImGui::TreeNode("Cascaded Shadow Mapping"))
             {
                 Edit("shadows", renderer->get_shadow_pass());

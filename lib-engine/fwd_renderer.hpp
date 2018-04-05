@@ -14,7 +14,6 @@
 #include "gl-procedural-sky.hpp"
 
 #include "scene.hpp"
-#include "bloom_pass.hpp"
 #include "shadow_pass.hpp"
 
 using namespace polymer;
@@ -26,7 +25,7 @@ struct renderer_settings
     int msaaSamples = 4;
     bool performanceProfiling = true;
     bool useDepthPrepass = false;
-    bool bloomEnabled = true;
+    bool tonemapEnabled = true;
     bool shadowsEnabled = true;
 };
 
@@ -113,10 +112,12 @@ class forward_renderer
     std::vector<GlTexture2D> eyeTextures;
     std::vector<GlTexture2D> eyeDepthTextures;
 
-    std::unique_ptr<BloomPass> bloom;
     std::unique_ptr<StableCascadedShadowPass> shadow;
 
+    GlMesh post_quad;
+
     GlShaderHandle earlyZPass = { "depth-prepass" };
+    GlShaderHandle hdr_tonemapShader = { "post-tonemap" };
 
     // Update per-object uniform buffer
     void update_per_object_uniform_buffer(Renderable * top, const view_data & d);
@@ -133,7 +134,7 @@ public:
     profiler<SimpleTimer> cpuProfiler;
     profiler<GlGpuTimer> gpuProfiler;
 
-    forward_renderer(const renderer_settings & settings);
+    forward_renderer(const renderer_settings settings);
     ~forward_renderer();
 
     void render_frame(const scene_data & scene);
@@ -142,7 +143,6 @@ public:
     uint32_t get_depth_texture(const uint32_t idx) const;
 
     StableCascadedShadowPass & get_shadow_pass() const;
-    BloomPass & get_bloom_pass() const;
 };
 
 template<class F> void visit_fields(forward_renderer & o, F f)
@@ -152,7 +152,7 @@ template<class F> void visit_fields(forward_renderer & o, F f)
     f("render_size", o.settings.renderSize);
     f("performance_profiling", o.settings.performanceProfiling);
     f("depth_prepass", o.settings.useDepthPrepass);
-    f("bloom_pass", o.settings.bloomEnabled);
+    f("tonemap_pass", o.settings.tonemapEnabled);
     f("shadow_pass", o.settings.shadowsEnabled);
 };
 

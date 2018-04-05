@@ -31,11 +31,6 @@ StableCascadedShadowPass & forward_renderer::get_shadow_pass() const
     return *shadow;
 }
 
-BloomPass & forward_renderer::get_bloom_pass() const
-{
-    return *bloom;
-}
-
 void forward_renderer::run_depth_prepass(const view_data & view, const scene_data & scene)
 {
     GLboolean colorMask[4];
@@ -157,19 +152,20 @@ void forward_renderer::run_post_pass(const view_data & view, const scene_data & 
     glDisable(GL_CULL_FACE);
     glDisable(GL_DEPTH_TEST);
 
-    if (settings.bloomEnabled)
+    if (settings.tonemapEnabled)
     {
-        bloom->execute(eyeTextures[view.index]);
-        glBlitNamedFramebuffer(bloom->get_output_framebuffer(), eyeFramebuffers[view.index], 0, 0,
-            settings.renderSize.x, settings.renderSize.y, 0, 0,
-            settings.renderSize.x, settings.renderSize.y, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+        auto & tonemapProgram = hdr_tonemapShader.get();
+        tonemapProgram.bind();
+        tonemapProgram.texture("s_texColor", 0, eyeFramebuffers[view.index], GL_TEXTURE_2D);
+        post_quad.draw_elements();
+        tonemapProgram.unbind();
     }
 
     if (wasCullingEnabled) glEnable(GL_CULL_FACE);
     if (wasDepthTestingEnabled) glEnable(GL_DEPTH_TEST);
 }
 
-forward_renderer::forward_renderer(const renderer_settings & settings) : settings(settings)
+forward_renderer::forward_renderer(const renderer_settings settings) : settings(settings)
 {
     assert(settings.renderSize.x > 0 && settings.renderSize.y > 0);
     assert(settings.cameraCount >= 1);
@@ -202,8 +198,9 @@ forward_renderer::forward_renderer(const renderer_settings & settings) : setting
         eyeFramebuffers[camIdx].check_complete();
     }
 
+    post_quad = make_fullscreen_quad();
+
     shadow.reset(new StableCascadedShadowPass());
-    bloom.reset(new BloomPass(settings.renderSize));
 
     timer.start();
 }
@@ -360,14 +357,14 @@ void forward_renderer::render_frame(const scene_data & scene)
             gpuProfiler.end("depth-prepass");
         }
 
-        gpuProfiler.begin("forward pass");
-            cpuProfiler.begin("skybox");
-                run_skybox_pass(scene.views[camIdx], scene);
-            cpuProfiler.end("skybox");
-            cpuProfiler.begin("forward");
-                run_forward_pass(materialRenderList, defaultRenderList, scene.views[camIdx], scene);
-            cpuProfiler.end("forward");
-        gpuProfiler.end("forward pass");
+        gpuProfiler.begin("forward-pass");
+        cpuProfiler.begin("skybox");
+        run_skybox_pass(scene.views[camIdx], scene);
+        cpuProfiler.end("skybox");
+        cpuProfiler.begin("forward");
+        run_forward_pass(materialRenderList, defaultRenderList, scene.views[camIdx], scene);
+        cpuProfiler.end("forward");
+        gpuProfiler.end("forward-pass");
 
         glDisable(GL_MULTISAMPLE);
 

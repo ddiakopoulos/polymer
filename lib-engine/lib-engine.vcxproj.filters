@@ -15,7 +15,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="assets.hpp" />
-    <ClInclude Include="bloom_pass.hpp" />
     <ClInclude Include="fwd_renderer.hpp" />
     <ClInclude Include="logging.hpp" />
     <ClInclude Include="material.hpp" />
