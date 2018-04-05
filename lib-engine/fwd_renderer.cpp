@@ -26,7 +26,7 @@ uint32_t forward_renderer::get_depth_texture(const uint32_t idx) const
     return eyeDepthTextures[idx];
 }
 
-StableCascadedShadowPass & forward_renderer::get_shadow_pass() const
+stable_cascaded_shadows & forward_renderer::get_shadow_pass() const
 {
     return *shadow;
 }
@@ -92,14 +92,12 @@ void forward_renderer::run_shadow_pass(const view_data & view, const scene_data 
 
     shadow->pre_draw();
 
-    gl_check_error(__FILE__, __LINE__);
-
     for (Renderable * obj : scene.renderSet)
     {
         if (obj->get_cast_shadow())
         {
             float4x4 modelMatrix = mul(obj->get_pose().matrix(), make_scaling_matrix(obj->get_scale()));
-            shadow->program.get().uniform("u_modelShadowMatrix", modelMatrix);
+            shadow->get_program().uniform("u_modelShadowMatrix", modelMatrix);
             obj->draw();
         }
     }
@@ -200,7 +198,7 @@ forward_renderer::forward_renderer(const renderer_settings settings) : settings(
 
     post_quad = make_fullscreen_quad();
 
-    shadow.reset(new StableCascadedShadowPass());
+    shadow.reset(new stable_cascaded_shadows());
 
     timer.start();
 }

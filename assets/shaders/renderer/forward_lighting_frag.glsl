@@ -132,7 +132,7 @@ void main()
     float metallic = u_metallic;
 
 #ifdef HAS_NORMAL_MAP
-    vec3 nSample = (texture(s_normal, v_texcoord).xyz * 2.0 - 1.0);
+    vec3 nSample = normalize(texture(s_normal, v_texcoord).xyz * 2.0 - 1.0);
     N = normalize(calc_normal_map(v_normal, normalize(v_tangent), normalize(v_bitangent), normalize(nSample)).xyz);
     //N = normalize( (normalize(v_tangent) * nSample.x) + (normalize(v_bitangent) * nSample.y) + (normalize(v_normal) * nSample.z)); // alternate
 #endif
@@ -150,7 +150,7 @@ void main()
     albedo *= sRGBToLinear(texture(s_albedo, v_texcoord).rgb, DEFAULT_GAMMA); 
 #endif
 
-    roughness = geometric_aa_toksvig(roughness, nSample, 0.25);
+    roughness = geometric_aa_toksvig(roughness, nSample, 0.5);
 
     // Roughness is authored as perceptual roughness; as is convention,
     // convert to material roughness by squaring the perceptual roughness [2].

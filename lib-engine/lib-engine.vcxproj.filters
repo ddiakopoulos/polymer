@@ -20,7 +20,6 @@
     <ClInclude Include="material.hpp" />
     <ClInclude Include="scene.hpp" />
     <ClInclude Include="serialization.hpp" />
-    <ClInclude Include="shadow_pass.hpp" />
     <ClInclude Include="uniforms.hpp" />
     <ClInclude Include="gfx\gl\gl-api.hpp">
       <Filter>gfx\gl</Filter>
