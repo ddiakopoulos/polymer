@@ -111,6 +111,7 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
         create_handle_for_asset("post-tonemap", std::move(shader));
     });
 
+    fullscreen_surface.reset(new fullscreen_texture());
     renderer_settings settings;
     settings.renderSize = float2(width, height);
     renderer.reset(new forward_renderer(settings));
@@ -460,16 +461,7 @@ void scene_editor_app::on_draw()
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, width, height);
 
-        glActiveTexture(GL_TEXTURE0);
-        glEnable(GL_TEXTURE_2D);
-        glBindTexture(GL_TEXTURE_2D, renderer->get_color_texture(0));
-        glBegin(GL_QUADS);
-        glTexCoord2f(0, 0); glVertex2f(-1, -1);
-        glTexCoord2f(1, 0); glVertex2f(+1, -1);
-        glTexCoord2f(1, 1); glVertex2f(+1, +1);
-        glTexCoord2f(0, 1); glVertex2f(-1, +1);
-        glEnd();
-        glDisable(GL_TEXTURE_2D);
+        fullscreen_surface->draw(renderer->get_color_texture(0));
 
         gl_check_error(__FILE__, __LINE__);
     }
