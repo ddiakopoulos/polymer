@@ -7,6 +7,9 @@
 
 using namespace polymer;
 
+// The Polymer editor has a number of "intrinsic" mesh assets that are loaded from disk at runtime. These primarily
+// add to the number of objects that can be quickly prototyped with, along with the usual set of procedural mesh functions
+// included with Polymer.
 void load_editor_intrinsic_assets(path root)
 {
     scoped_timer t("load_editor_intrinsic_assets");
