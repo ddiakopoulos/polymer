@@ -74,50 +74,9 @@ struct LightingInfo
     vec3 specularColor;           // color contribution from specular lighting
 };
 
-vec2 get_shadow_offsets(vec3 N, vec3 L) 
-{
-  float cos_alpha = clamp(dot(N, L), 0.0, 1.0);
-  float offset_scale_N = sqrt(1 - cos_alpha*cos_alpha); // sin(acos(L·N))
-  float offset_scale_L = offset_scale_N / cos_alpha;    // tan(acos(L·N))
-  return vec2(offset_scale_N, min(2, offset_scale_L));
-}
-
-// Offsets a position based on slope and normal
-vec3 get_biased_position(vec3 pos, float slope_bias, float normal_bias, vec3 normal, vec3 light)
-{
-    vec2 offsets = get_shadow_offsets(normal, light);
-    pos += normal * offsets.x * normal_bias;
-    pos += light  * offsets.y * slope_bias;
-    return pos;
-}
-
-// https://imdoingitwrong.wordpress.com/2011/01/31/light-attenuation/
-// https://imdoingitwrong.wordpress.com/2011/02/10/improved-light-attenuation/
-float point_light_attenuation(float radius, float intensity, float cutoff, float dist)
-{
-    float d = max(dist - radius, 0.0);
-    float denom = d / radius + 1.0;
-    float attenuation = 0.0;
-    attenuation = intensity / (denom * denom);
-    attenuation = (attenuation - cutoff) / (1.0 - cutoff);
-    attenuation = max(attenuation, 0.0);
-    return attenuation;
-}
-
-// http://blog.selfshadow.com/publications/blending-in-detail/
-vec3 blend_normals_unity(vec3 geometric, vec3 detail)
-{
-    vec3 n1 = geometric;
-    vec3 n2 = detail;
-    mat3 nBasis = mat3(
-        vec3(n1.z, n1.y, -n1.x), 
-        vec3(n1.x, n1.z, -n1.y),
-        vec3(n1.x, n1.y,  n1.z));
-    return normalize(n2.x*nBasis[0] + n2.y*nBasis[1] + n2.z*nBasis[2]);
-}
-
 // The following equation models the Fresnel reflectance term of the spec equation (aka F())
 // Implementation of fresnel from [4], Equation 15
+// Shlick's approximation of the Fresnel factor.
 vec3 specular_reflection(LightingInfo data)
 {
     return data.reflectance0 + (data.reflectance90 - data.reflectance0) * pow(clamp(1.0 - data.VdotH, 0.0, 1.0), 5.0);
@@ -141,9 +100,13 @@ float geometric_occlusion(LightingInfo data)
 // Implementation from "Average Irregularity Representation of a Roughened Surface for Ray Reflection" by T. S. Trowbridge, and K. P. Reitz
 // Follows the distribution function recommended in the SIGGRAPH 2013 course notes from Epic
 // http://blog.selfshadow.com/publications/s2013-shading-course/karis/s2013_pbs_epic_notes_v2.pdf
+// GGX/Towbridge-Reitz normal distribution function.
+// Disney's reparametrization of alpha = roughness^2.
 float microfacet_distribution(LightingInfo data)
 {
     float roughnessSq = data.alphaRoughness * data.alphaRoughness; // squared?
+    //float denom = (data.NdotH * data.NdotH) * (roughnessSq - 1.0) + 1.0;
+    //return roughnessSq / (PI * denom * denom);
     float f = (data.NdotH * roughnessSq - data.NdotH) * data.NdotH + 1.0;
     return roughnessSq / (PI * f * f);
 }
@@ -157,44 +120,6 @@ void compute_cook_torrance(LightingInfo data, float attenuation, out vec3 diffus
     // Calculation of analytical lighting contribution
     diffuseContribution = ((1.0 - F) * (data.diffuseColor / PI)) * attenuation; 
     specularContribution = ((F * G * D) / ((4.0 * data.NdotL * data.NdotV) + 0.001)) * attenuation;
-}
-
-// http://the-witness.net/news/2012/02/seamless-cube-map-filtering/
-vec3 fix_cube_lookup(vec3 v, float cubeSize, float lod)
-{
-    float M = max(max(abs(v.x), abs(v.y)), abs(v.z));
-    float scale = 1 - exp2(lod) / cubeSize;
-    if (abs(v.x) != M) v.x *= scale;
-    if (abs(v.y) != M) v.y *= scale;
-    if (abs(v.z) != M) v.z *= scale;
-    return v;
-}
- 
-// https://www.unrealengine.com/blog/physically-based-shading-on-mobile
-// todo - this is typically precomputed using Monte-Carlo and stored as a 2d LUT.
-vec3 env_brdf_approx(vec3 specularColor, float roughness, float NoV)
-{
-    const vec4 c0 = vec4(-1, -0.0275, -0.572, 0.022);
-    const vec4 c1 = vec4(1, 0.0425, 1.04, -0.04);
-    vec4 r = roughness * c0 + c1;
-    float a004 = min(r.x * r.x, exp2(-9.28 * NoV)) * r.x + r.y;
-    vec2 AB = vec2(-1.04, 1.04) * a004 + r.zw;
-    return specularColor * AB.x + AB.y;
-}
-
-vec3 blend_rnm(vec3 n1, vec3 n2)
-{
-    vec3 t = n1.xyz*vec3( 2,  2, 2) + vec3(-1, -1,  0);
-    vec3 u = n2.xyz*vec3(-2, -2, 2) + vec3( 1,  1, -1);
-    vec3 r = t*dot(t, u) - u*t.z;
-    return normalize(r);
-}
-
-// todo - can compute TBN in vertex shader
-vec4 calc_normal_map(vec3 normal, vec3 tangent, vec3 bitangent, vec3 sampledMap)
-{
-    const mat3 TBN = mat3(tangent, bitangent, normal);
-    return vec4(TBN * sampledMap, 1.0); 
 }
 
 void main()
@@ -225,6 +150,8 @@ void main()
     albedo *= sRGBToLinear(texture(s_albedo, v_texcoord).rgb, DEFAULT_GAMMA); 
 #endif
 
+    roughness = geometric_aa_toksvig(roughness, nSample, 1.0);
+
     // Roughness is authored as perceptual roughness; as is convention,
     // convert to material roughness by squaring the perceptual roughness [2].
     const float alphaRoughness = roughness * roughness;
@@ -237,9 +164,8 @@ void main()
     vec3 diffuseColor = albedo * (vec3(1.0) - F0);
     //diffuseColor *= 1.0 - metallic;
 
+    // Fresnel reflectance at normal incidence (for metals use albedo color).
     vec3 specularColor = mix(F0, albedo, metallic);
-
-    // Compute reflectance.
     float reflectance = max(max(specularColor.r, specularColor.g), specularColor.b);
 
     // For typical incident reflectance range (between 4% to 100%) set the grazing reflectance to 100% for typical fresnel effect.
@@ -346,6 +272,7 @@ void main()
     //f_color = vec4(mix(vec3(shadowVisibility), vec3(debugShadowColor), 0.5), 1.0);
     //f_color = vec4(vec3(shadowVisibility), u_opacity); 
     //f_color = vec4(nSample, 1.0);
+    //f_color = vec4(vec3(roughness), 1.0);
 
     // Combine direct lighting, IBL, and shadow visbility
     f_color = vec4(Lo * shadowVisibility, u_opacity); 
