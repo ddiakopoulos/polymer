@@ -271,6 +271,7 @@ struct scene_data
     std::vector<uniforms::point_light> pointLights;
     uniforms::directional_light sunlight;
     std::vector<view_data> views;
+    float4 clear_color{ 1, 0, 0, 1 };
 };
 
 /////////////////////////////////////////

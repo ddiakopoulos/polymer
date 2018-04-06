@@ -98,6 +98,8 @@ struct aux_window final : public glfw_window
     std::unique_ptr<forward_renderer> preview_renderer;
     std::unique_ptr<gui::imgui_instance> auxImgui;
     std::unique_ptr<StaticMesh> previewMesh;
+    std::unique_ptr<arcball_controller> arcball;
+
     perspective_camera previewCam;
     scene_data previewSceneData;
 
@@ -110,9 +112,9 @@ struct aux_window final : public glfw_window
         fullscreen_surface.reset(new fullscreen_texture());
 
         // These are created on the this individual context and cached as global variables. It will be re-assigned...
-        auto cube = make_cube();
-        create_handle_for_asset("preview-cube", make_mesh_from_geometry(cube));
-        create_handle_for_asset("preview-cube", std::move(cube));
+        auto cap = make_icosasphere(3);
+        create_handle_for_asset("preview-cube", make_mesh_from_geometry(cap));
+        create_handle_for_asset("preview-cube", std::move(cap));
 
         previewMesh.reset(new StaticMesh());
         previewMesh->mesh = "preview-cube";
@@ -135,12 +137,24 @@ struct aux_window final : public glfw_window
         auto fontAwesomeBytes = read_file_binary("../assets/fonts/font_awesome_4.ttf");
         auxImgui->append_icon_font(fontAwesomeBytes);
 
+        arcball.reset(new arcball_controller({ (float)w, (float)h }));
+
         gui::make_light_theme();
     }
 
     virtual void on_input(const polymer::InputEvent & e) override final
     {
         if (e.window == window) auxImgui->update_input(e);
+
+        if (e.type == InputEvent::MOUSE && e.is_down())
+        {
+            arcball->mouse_down(e.cursor);
+        }
+        else if (e.type == InputEvent::CURSOR && e.drag)
+        {
+            arcball->mouse_drag(e.cursor);
+            previewMesh->pose.orientation = safe_normalize(qmul(arcball->currentQuat, previewMesh->pose.orientation));
+        }
     }
 
     virtual void on_window_close() override final
@@ -184,6 +198,7 @@ struct aux_window final : public glfw_window
 
             // Single-viewport camera
             previewSceneData = {};
+            previewSceneData.clear_color = float4(0, 0, 0, 1);
             previewSceneData.renderSet.push_back(previewMesh.get());
             previewSceneData.views.push_back(view_data(0, previewCam.pose, previewCam.get_projection_matrix(width / float(height))));
             preview_renderer->render_frame(previewSceneData);

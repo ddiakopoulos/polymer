@@ -266,7 +266,7 @@ void forward_renderer::render_frame(const scene_data & scene)
     b.directional_light.amount = scene.sunlight.amount;
     for (int i = 0; i < (int) std::min(scene.pointLights.size(), size_t(uniforms::MAX_POINT_LIGHTS)); ++i) b.point_lights[i] = scene.pointLights[i];
 
-    GLfloat defaultColor[] = { 1.0f, 0.0f, 0.f, 1.0f };
+    GLfloat defaultColor[] = { scene.clear_color.x, scene.clear_color.y, scene.clear_color.z, scene.clear_color.w };
     GLfloat defaultDepth = 1.f;
 
     view_data shadowAndCullingView = scene.views[0];
