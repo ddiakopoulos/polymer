@@ -109,8 +109,7 @@ struct aux_window final : public glfw_window
 
         fullscreen_surface.reset(new fullscreen_texture());
 
-        // These are created on the this individual context and cached as global variables. 
-        // They need to be flushed! 
+        // These are created on the this individual context and cached as global variables. It will be re-assigned...
         auto cube = make_cube();
         create_handle_for_asset("preview-cube", make_mesh_from_geometry(cube));
         create_handle_for_asset("preview-cube", std::move(cube));
@@ -120,6 +119,10 @@ struct aux_window final : public glfw_window
         previewMesh->geom = "preview-cube";
         previewMesh->mat = "pbr-material/floor"; 
         previewMesh->pose.position = float3(0, 0, -2);
+
+        AssetHandle<GlMesh> handle("preview-cube");
+        auto & m = handle.get();
+        std::cout << "VAO Is: " << m.vao << std::endl;
 
         renderer_settings previewSettings;
         previewSettings.renderSize = float2(w, h);
@@ -148,6 +151,19 @@ struct aux_window final : public glfw_window
 
     virtual void on_window_close() override final
     {
+        glfwMakeContextCurrent(window);
+
+        // Why do we do all these resets? Well, the way the GlObject handle system works, the
+        // destructor is called on the context of the destroyer. In the case of a secondary window,
+        // it would be the main thread. Instead, we need to manually clean up everything here. 
+        fullscreen_surface.reset();
+        preview_renderer.reset();
+        auxImgui.reset();
+        previewMesh.reset();
+
+        AssetHandle<GlMesh>::destroy("preview-cube");
+        AssetHandle<Geometry>::destroy("preview-cube");
+
         if (window)
         {
             glfwDestroyWindow(window);

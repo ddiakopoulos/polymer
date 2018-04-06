@@ -123,11 +123,14 @@ public:
 
     static bool destroy(const std::string & asset_id)
     {
-        for (const auto & a : table)
+        auto iter = table.find(asset_id);
+        if (iter != table.end())
         {
-            results.push_back(AssetHandle<T>(a.first, a.second));
+            Logger::get_instance()->assetLog->info("asset type {} with id {} was destroyed", typeid(T).name(), iter->first);
+            table.erase(iter);
+            return true;
         }
-        return results;
+        return false;
     }
 };
 

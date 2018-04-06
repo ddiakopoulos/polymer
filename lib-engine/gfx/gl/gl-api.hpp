@@ -545,8 +545,7 @@ public:
 
 class GlMesh
 {
-    GlVertexArrayObject vao;
-    GlBuffer vertexBuffer, instanceBuffer, indexBuffer;
+
 
     GLenum drawMode = GL_TRIANGLES;
     GLenum indexType = 0;
@@ -554,6 +553,9 @@ class GlMesh
 
 public:
      
+    GlVertexArrayObject vao;
+    GlBuffer vertexBuffer, instanceBuffer, indexBuffer;
+
     GlMesh() {}
     GlMesh(GlMesh && r) { *this = std::move(r); }
     GlMesh(const GlMesh & r) = delete;
