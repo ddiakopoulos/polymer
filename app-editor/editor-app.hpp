@@ -8,6 +8,7 @@
 #include "assets.hpp"
 #include "scene.hpp"
 #include "editor-ui.hpp"
+#include "arcball.hpp"
 
 struct fullscreen_texture
 {
@@ -36,7 +37,7 @@ struct fullscreen_texture
             void main()
             {
                 vec4 sample = texture(s_texture, texCoord);
-                f_color = vec4(sample.rgb, 1.0); 
+                f_color = vec4(sample.rgb, 1.0); //
             }
         )";
 
@@ -93,11 +94,43 @@ void draw_listbox(const std::string & label, ImGuiTextFilter & filter, int & sel
 
 struct aux_window final : public glfw_window
 {
+    std::unique_ptr<fullscreen_texture> fullscreen_surface;
+    std::unique_ptr<forward_renderer> preview_renderer;
     std::unique_ptr<gui::imgui_instance> auxImgui;
+    std::shared_ptr<StaticMesh> previewMesh;
+    perspective_camera previewCam;
+    scene_data previewSceneData;
+
     int assetSelection = -1;
 
     aux_window(gl_context * context, int w, int h, const std::string title, int samples) : glfw_window(context, w, h, title, samples) 
     { 
+        glfwMakeContextCurrent(window);
+
+        fullscreen_surface.reset(new fullscreen_texture());
+
+        auto cube = make_cube();
+        create_handle_for_asset("preview-cube", make_mesh_from_geometry(cube));
+        create_handle_for_asset("preview-cube", std::move(cube));
+
+        previewMesh.reset(new StaticMesh());
+        previewMesh->mesh = "preview-cube";
+        previewMesh->geom = "preview-cube";
+        previewMesh->mat = "pbr-material/floor"; 
+        previewMesh->pose.position = float3(0, 0, -2);
+
+        std::cout << previewMesh->mesh.assigned() << std::endl;
+
+        renderer_settings previewSettings;
+        previewSettings.renderSize = float2(w, h);
+        previewSettings.msaaSamples = 2;
+        previewSettings.performanceProfiling = false;
+        previewSettings.useDepthPrepass = false;
+        previewSettings.tonemapEnabled = false;
+        previewSettings.shadowsEnabled = false;
+        preview_renderer.reset(new forward_renderer(previewSettings));
+
+        previewCam.pose = look_at_pose_rh(float3(0, 0.25f, 4), previewMesh->pose.position);
         auxImgui.reset(new gui::imgui_instance(window, true));
 
         auto fontAwesomeBytes = read_file_binary("../assets/fonts/font_awesome_4.ttf");
@@ -130,10 +163,25 @@ struct aux_window final : public glfw_window
             int width, height;
             glfwGetWindowSize(window, &width, &height);
 
+           //glDisable(GL_CULL_FACE);
+           //glDisable(GL_DEPTH_TEST);
+
+            glEnable(GL_CULL_FACE);
+            glEnable(GL_DEPTH_TEST);
+
             glViewport(0, 0, width, height);
-            glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+            glClearColor(0.0f, 0.0f, 1.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+            // Single-viewport camera
+            previewSceneData = {};
+            previewSceneData.renderSet.push_back(previewMesh.get());
+            previewSceneData.views.push_back(view_data(0, previewCam.pose, previewCam.get_projection_matrix(width / float(height))));
+            preview_renderer->render_frame(previewSceneData);
+
+            fullscreen_surface->draw(preview_renderer->get_color_texture(0));
+
+            /*
             auxImgui->begin_frame();
             gui::imgui_fixed_window_begin("asset-browser", { {0, 0}, {width, height} });
 
@@ -144,7 +192,7 @@ struct aux_window final : public glfw_window
             ImGui::PushItemWidth(-1);
             std::vector<std::string> assetTypes = { {"Shaders", "Materials", "Textures", "GPU Mesh", "CPU Geometry"} };
             static int assetTypeSelection = -1;
-            gui::Combo("##asset_type", &assetTypeSelection, assetTypes);
+            gui::Combo("##asset_type", &assetTypeSelection, assetTypes, 20);
             ImGui::PopItemWidth();
 
             ImGui::Dummy({ 0, 8 });
@@ -169,6 +217,7 @@ struct aux_window final : public glfw_window
             }
             gui::imgui_fixed_window_end();
             auxImgui->end_frame();
+            */
 
             glfwSwapBuffers(window);
         }

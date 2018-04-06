@@ -27,14 +27,14 @@ namespace polymer
 		return onPlane;
 	}
 
-	struct ArcballCamera
+	struct arcball_controller
 	{
 		float2 windowSize;
 		float2 initialMousePos;
 		float4 initialQuat, currentQuat;
 		float3 constraintAxis = { 0, 0, 0 };
 
-		ArcballCamera(float2 windowSize) : windowSize(windowSize) { initialQuat = currentQuat = float4(0, 0, 0, 1); }
+		arcball_controller(float2 windowSize) : windowSize(windowSize) { initialQuat = currentQuat = float4(0, 0, 0, 1); }
 
 		void mouse_down(const float2 & mousePos)
 		{
@@ -53,7 +53,7 @@ namespace polymer
 				b = constrain_to_axis(b, constraintAxis);
 			}
 
-			if (distance(a, b) <= 0.0003) return;
+			if (distance(a, b) <= 0.0005) return;
 			
 			auto rotation = normalize(make_rotation_quat_between_vectors(a, b));
 			auto deltaRotation = normalize(qmul(rotation, qconj(initialQuat)));

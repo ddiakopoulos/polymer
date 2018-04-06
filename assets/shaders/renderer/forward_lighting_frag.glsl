@@ -273,6 +273,7 @@ void main()
     //f_color = vec4(vec3(shadowVisibility), u_opacity); 
     //f_color = vec4(nSample, 1.0);
     //f_color = vec4(vec3(roughness), 1.0);
+    //f_color = vec4(vec3(metallic), 1.0);
 
     // Combine direct lighting, IBL, and shadow visbility
     f_color = vec4(Lo * shadowVisibility, u_opacity); 

@@ -74,7 +74,6 @@ class stable_cascaded_shadows
     * To Do - 3.25.2017
     * [X] Set number of cascades used at compile time (default 2)
     * [X] Configurable filtering modes (ESM, PCF, PCSS + PCF)
-    * [ ] Set shadow map resolution at runtime (default 1024^2)
     * [ ] Frustum depth-split is a good candidate for compute shader experimentation (default far-near/4)
     * [ ] Blending / overlap between cascades
     * [ ] Performance profiling
@@ -86,8 +85,8 @@ class stable_cascaded_shadows
 
 public:
 
-    float resolution = 4096; // shadowmap resolution
-    float splitLambda = 0.33f;  // frustum split constant
+    float resolution = 4096;        // cascade resolution
+    float splitLambda = 0.675f;     // frustum split constant
 
     std::vector<float2> splitPlanes;
     std::vector<float> nearPlanes;
@@ -158,7 +157,7 @@ public:
                 sphereRadius = std::max(sphereRadius, dist);
             }
 
-            sphereRadius = (std::ceil(sphereRadius * 8.0f) / 8.0f);
+            sphereRadius = (std::ceil(sphereRadius * 32.0f) / 32.0f);
 
             const float3 maxExtents = float3(sphereRadius, sphereRadius, sphereRadius);
             const float3 minExtents = -maxExtents;

@@ -104,6 +104,11 @@ glfw_window::glfw_window(gl_context * context, int w, int h, const std::string t
     glfwWindowHint(GLFW_SAMPLES, samples);
     glfwWindowHint(GLFW_SRGB_CAPABLE, true);
 
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_FALSE);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
     std::cout << "Hidden Window: " << gl_ctx->hidden_window << std::endl;
 
     glfwSetErrorCallback([](int err, const char* desc) {
@@ -235,7 +240,7 @@ void polymer_app::main_loop()
     
     while (!glfwWindowShouldClose(window)) 
     {
-        glfwMakeContextCurrent(window);
+        //glfwMakeContextCurrent(window);
 
         try
         {
@@ -261,8 +266,6 @@ void polymer_app::main_loop()
 
             on_update(e);
             on_draw();
-
-            glfwSwapBuffers(window);
 
             if (screenshotPath.size() > 0) screenshot_impl();
 

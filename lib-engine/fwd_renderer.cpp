@@ -126,9 +126,16 @@ void forward_renderer::run_forward_pass(std::vector<Renderable *> & renderQueueM
 
         Material * mat = r->get_material();
         mat->update_uniforms();
-        if (auto * mr = dynamic_cast<MetallicRoughnessMaterial*>(mat)) mr->update_cascaded_shadow_array_handle(shadow->get_output_texture());
+        if (auto * mr = dynamic_cast<MetallicRoughnessMaterial*>(mat))
+        {
+            if (settings.shadowsEnabled)
+            {
+                mr->update_cascaded_shadow_array_handle(shadow->get_output_texture());
+            }
+        }
         mat->use();
 
+        std::cout << "Drawing! " << r->get_pose() << std::endl;
         r->draw();
     }
 
@@ -147,6 +154,8 @@ void forward_renderer::run_forward_pass(std::vector<Renderable *> & renderQueueM
 
 void forward_renderer::run_post_pass(const view_data & view, const scene_data & scene)
 {
+    if (!settings.tonemapEnabled) return;
+
     GLboolean wasCullingEnabled = glIsEnabled(GL_CULL_FACE);
     GLboolean wasDepthTestingEnabled = glIsEnabled(GL_DEPTH_TEST);
 
@@ -154,17 +163,14 @@ void forward_renderer::run_post_pass(const view_data & view, const scene_data & 
     glDisable(GL_CULL_FACE);
     glDisable(GL_DEPTH_TEST);
 
-    if (settings.tonemapEnabled)
-    {
-        glBindFramebuffer(GL_FRAMEBUFFER, postFramebuffers[view.index]);
-        glViewport(0, 0, settings.renderSize.x, settings.renderSize.y);
+    glBindFramebuffer(GL_FRAMEBUFFER, postFramebuffers[view.index]);
+    glViewport(0, 0, settings.renderSize.x, settings.renderSize.y);
 
-        auto & tonemapProgram = hdr_tonemapShader.get();
-        tonemapProgram.bind();
-        tonemapProgram.texture("s_texColor", 0, eyeTextures[view.index], GL_TEXTURE_2D);
-        post_quad.draw_elements();
-        tonemapProgram.unbind();
-    }
+    auto & tonemapProgram = hdr_tonemapShader.get();
+    tonemapProgram.bind();
+    tonemapProgram.texture("s_texColor", 0, eyeTextures[view.index], GL_TEXTURE_2D);
+    post_quad.draw_elements();
+    tonemapProgram.unbind();
 
     if (wasCullingEnabled) glEnable(GL_CULL_FACE);
     if (wasDepthTestingEnabled) glEnable(GL_DEPTH_TEST);
@@ -179,15 +185,11 @@ forward_renderer::forward_renderer(const renderer_settings settings) : settings(
     eyeTextures.resize(settings.cameraCount);
     eyeDepthTextures.resize(settings.cameraCount);
 
-    postFramebuffers.resize(settings.cameraCount);
-    postTextures.resize(settings.cameraCount);
-
     // Generate multisample render buffers for color and depth, attach to multi-sampled framebuffer target
     glNamedRenderbufferStorageMultisampleEXT(multisampleRenderbuffers[0], settings.msaaSamples, GL_RGBA, settings.renderSize.x, settings.renderSize.y);
     glNamedFramebufferRenderbufferEXT(multisampleFramebuffer, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, multisampleRenderbuffers[0]);
     glNamedRenderbufferStorageMultisampleEXT(multisampleRenderbuffers[1], settings.msaaSamples, GL_DEPTH_COMPONENT, settings.renderSize.x, settings.renderSize.y);
     glNamedFramebufferRenderbufferEXT(multisampleFramebuffer, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, multisampleRenderbuffers[1]);
-
     multisampleFramebuffer.check_complete();
 
     // Generate textures and framebuffers for `settings.cameraCount`
@@ -207,19 +209,27 @@ forward_renderer::forward_renderer(const renderer_settings settings) : settings(
         eyeFramebuffers[camIdx].check_complete();
     }
 
-    for (int camIdx = 0; camIdx < settings.cameraCount; ++camIdx)
+    if (settings.tonemapEnabled)
     {
-        postTextures[camIdx].setup(settings.renderSize.x, settings.renderSize.y, GL_RGBA, GL_RGBA, GL_FLOAT, nullptr, false);
-        glTextureParameteriEXT(postTextures[camIdx], GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTextureParameteriEXT(postTextures[camIdx], GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTextureParameteriEXT(postTextures[camIdx], GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
-        glNamedFramebufferTexture2DEXT(postFramebuffers[camIdx], GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, postTextures[camIdx], 0);
-        postFramebuffers[camIdx].check_complete();
+        postFramebuffers.resize(settings.cameraCount);
+        postTextures.resize(settings.cameraCount);
+        post_quad = make_fullscreen_quad();
+
+        for (int camIdx = 0; camIdx < settings.cameraCount; ++camIdx)
+        {
+            postTextures[camIdx].setup(settings.renderSize.x, settings.renderSize.y, GL_RGBA, GL_RGBA, GL_FLOAT, nullptr, false);
+            glTextureParameteriEXT(postTextures[camIdx], GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTextureParameteriEXT(postTextures[camIdx], GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glTextureParameteriEXT(postTextures[camIdx], GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
+            glNamedFramebufferTexture2DEXT(postFramebuffers[camIdx], GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, postTextures[camIdx], 0);
+            postFramebuffers[camIdx].check_complete();
+        }
     }
 
-    post_quad = make_fullscreen_quad();
-
-    shadow.reset(new stable_cascaded_shadows());
+    if (settings.shadowsEnabled)
+    {
+        shadow.reset(new stable_cascaded_shadows());
+    }
 
     timer.start();
 }
@@ -327,6 +337,7 @@ void forward_renderer::render_frame(const scene_data & scene)
     cpuProfiler.begin("push-queue");
     for (auto obj : scene.renderSet)
     {
+        std::cout << obj->get_material() << std::endl;
         // Can't sort by material if the renderable doesn't *have* a material; bucket all other objects 
         if (obj->get_material() != nullptr) renderQueueMaterial.push(obj);
         else renderQueueDefault.push(obj);
@@ -352,6 +363,8 @@ void forward_renderer::render_frame(const scene_data & scene)
     }
     cpuProfiler.end("flatten-queue");
 
+    std::cout << "Material Render List Size:  " << renderQueueMaterial.size() << std::endl;
+
     for (int camIdx = 0; camIdx < settings.cameraCount; ++camIdx)
     {
         // Update per-view uniform buffer
@@ -368,6 +381,7 @@ void forward_renderer::render_frame(const scene_data & scene)
         glClearNamedFramebufferfv(multisampleFramebuffer, GL_COLOR, 0, &defaultColor[0]);
         glClearNamedFramebufferfv(multisampleFramebuffer, GL_DEPTH, 0, &defaultDepth);
 
+        /*
         // Execute the forward passes
         if (settings.useDepthPrepass)
         {
@@ -375,6 +389,7 @@ void forward_renderer::render_frame(const scene_data & scene)
             run_depth_prepass(scene.views[camIdx], scene);
             gpuProfiler.end("depth-prepass");
         }
+        */
 
         gpuProfiler.begin("forward-pass");
         cpuProfiler.begin("skybox");

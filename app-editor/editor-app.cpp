@@ -403,6 +403,8 @@ void scene_editor_app::on_draw()
 
     glfwMakeContextCurrent(window);
 
+    /*
+
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
 
@@ -753,6 +755,7 @@ void scene_editor_app::on_draw()
 
     igm->end_frame();
     editorProfiler.end("imgui-editor");
+    */
 
     // Debug Views
     /*
@@ -771,6 +774,8 @@ void scene_editor_app::on_draw()
         editor->on_draw();
         editorProfiler.end("gizmo_on_draw");
     }
+
+    glfwSwapBuffers(window);
 
     if (auxWindow) auxWindow->run();
 

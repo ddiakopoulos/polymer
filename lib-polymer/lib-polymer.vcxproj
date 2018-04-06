@@ -19,6 +19,7 @@
     <ClInclude Include="..\third_party\nanovg_gl.h" />
     <ClInclude Include="..\third_party\nanovg_gl_utils.h" />
     <ClInclude Include="..\third_party\tiny-gizmo.hpp" />
+    <ClInclude Include="..\third_party\tinyexr\tinyexr.h" />
     <ClInclude Include="algo_misc.hpp" />
     <ClInclude Include="arcball.hpp" />
     <ClInclude Include="bit_mask.hpp" />
@@ -60,6 +61,7 @@
     <ClCompile Include="..\third_party\imgui\imgui_draw.cpp" />
     <ClCompile Include="..\third_party\nanovg.cpp" />
     <ClCompile Include="..\third_party\tiny-gizmo.cpp" />
+    <ClCompile Include="..\third_party\tinyexr\tinyexr.cc" />
     <ClCompile Include="impl.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

@@ -28,6 +28,9 @@
     <Filter Include="src\math-core">
       <UniqueIdentifier>{912ca261-d758-4be2-9f0e-4c906ab3c952}</UniqueIdentifier>
     </Filter>
+    <Filter Include="third_party\tinyexr">
+      <UniqueIdentifier>{15dd50a4-cda1-4457-b1a3-663180403753}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\third_party\imgui\imconfig.h">
@@ -159,6 +162,9 @@
     <ClInclude Include="camera.hpp">
       <Filter>src\tools</Filter>
     </ClInclude>
+    <ClInclude Include="..\third_party\tinyexr\tinyexr.h">
+      <Filter>third_party\tinyexr</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\third_party\imgui\imgui.cpp">
@@ -175,6 +181,9 @@
     </ClCompile>
     <ClCompile Include="impl.cpp">
       <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\third_party\tinyexr\tinyexr.cc">
+      <Filter>third_party\tinyexr</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
