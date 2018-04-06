@@ -128,14 +128,11 @@ void forward_renderer::run_forward_pass(std::vector<Renderable *> & renderQueueM
         mat->update_uniforms();
         if (auto * mr = dynamic_cast<MetallicRoughnessMaterial*>(mat))
         {
-            if (settings.shadowsEnabled)
-            {
-                mr->update_cascaded_shadow_array_handle(shadow->get_output_texture());
-            }
+            // ideally compile this out from the shader if not using shadows
+            mr->update_cascaded_shadow_array_handle(shadow->get_output_texture());
         }
         mat->use();
 
-        std::cout << "Drawing! " << r->get_pose() << std::endl;
         r->draw();
     }
 
@@ -226,10 +223,13 @@ forward_renderer::forward_renderer(const renderer_settings settings) : settings(
         }
     }
 
-    if (settings.shadowsEnabled)
-    {
-        shadow.reset(new stable_cascaded_shadows());
-    }
+    gl_check_error(__FILE__, __LINE__);
+
+    // The pipeline still requires shadow resources to be valid even if we're not using them.
+    // This could be improved.
+    shadow.reset(new stable_cascaded_shadows());
+
+    gl_check_error(__FILE__, __LINE__);
 
     timer.start();
 }
@@ -256,7 +256,7 @@ void forward_renderer::render_frame(const scene_data & scene)
 
     // Update per-scene uniform buffer
     uniforms::per_scene b = {};
-    b.time = timer.milliseconds().count() / 1000.f; // millisecond resolution expressed as seconds
+    b.time = timer.milliseconds().count() / 1000.f; // expressed in seconds
     b.resolution = settings.renderSize;
     b.invResolution = 1.f / b.resolution;
     b.activePointLights = scene.pointLights.size();
@@ -337,7 +337,6 @@ void forward_renderer::render_frame(const scene_data & scene)
     cpuProfiler.begin("push-queue");
     for (auto obj : scene.renderSet)
     {
-        std::cout << obj->get_material() << std::endl;
         // Can't sort by material if the renderable doesn't *have* a material; bucket all other objects 
         if (obj->get_material() != nullptr) renderQueueMaterial.push(obj);
         else renderQueueDefault.push(obj);
@@ -363,8 +362,6 @@ void forward_renderer::render_frame(const scene_data & scene)
     }
     cpuProfiler.end("flatten-queue");
 
-    std::cout << "Material Render List Size:  " << renderQueueMaterial.size() << std::endl;
-
     for (int camIdx = 0; camIdx < settings.cameraCount; ++camIdx)
     {
         // Update per-view uniform buffer
@@ -381,7 +378,6 @@ void forward_renderer::render_frame(const scene_data & scene)
         glClearNamedFramebufferfv(multisampleFramebuffer, GL_COLOR, 0, &defaultColor[0]);
         glClearNamedFramebufferfv(multisampleFramebuffer, GL_DEPTH, 0, &defaultDepth);
 
-        /*
         // Execute the forward passes
         if (settings.useDepthPrepass)
         {
@@ -389,7 +385,6 @@ void forward_renderer::render_frame(const scene_data & scene)
             run_depth_prepass(scene.views[camIdx], scene);
             gpuProfiler.end("depth-prepass");
         }
-        */
 
         gpuProfiler.begin("forward-pass");
         cpuProfiler.begin("skybox");

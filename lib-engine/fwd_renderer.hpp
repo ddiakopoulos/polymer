@@ -53,6 +53,12 @@ struct profiler
     }
 };
 
+#undef near
+#undef far
+
+////////////////////////////////////////
+//   Stable Cascaded Shadow Mapping   //
+////////////////////////////////////////
 
 // http://developer.download.nvidia.com/SDK/10.5/opengl/src/cascaded_shadow_maps/doc/cascaded_shadow_maps.pdf
 // https://www.gamedev.net/forums/topic/497259-stable-cascaded-shadow-maps/
@@ -60,13 +66,6 @@ struct profiler
 // https://github.com/TheRealMJP/Shadows/blob/master/Shadows/MeshRenderer.cpp
 // http://the-witness.net/news/2010/03/graphics-tech-shadow-maps-part-1/
 // https://chetanjags.wordpress.com/2015/02/05/real-time-shadows-cascaded-shadow-maps/
-
-#undef near
-#undef far
-
-////////////////////////////////////////
-//   Stable Cascaded Shadow Mapping   //
-////////////////////////////////////////
 
 class stable_cascaded_shadows
 {

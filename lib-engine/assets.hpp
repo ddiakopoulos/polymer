@@ -120,6 +120,15 @@ public:
         for (const auto & a : table) results.push_back(AssetHandle<T>(a.first, a.second));
         return results;
     }
+
+    static bool destroy(const std::string & asset_id)
+    {
+        for (const auto & a : table)
+        {
+            results.push_back(AssetHandle<T>(a.first, a.second));
+        }
+        return results;
+    }
 };
 
 template<class T> 

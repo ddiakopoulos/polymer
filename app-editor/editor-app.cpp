@@ -403,8 +403,6 @@ void scene_editor_app::on_draw()
 
     glfwMakeContextCurrent(window);
 
-    /*
-
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
 
@@ -755,7 +753,6 @@ void scene_editor_app::on_draw()
 
     igm->end_frame();
     editorProfiler.end("imgui-editor");
-    */
 
     // Debug Views
     /*
@@ -766,7 +763,6 @@ void scene_editor_app::on_draw()
         debugViews[1]->draw(uiSurface.children[1]->bounds, float2(width, height), renderer->get_output_texture(TextureType::DEPTH, 0));
         glEnable(GL_DEPTH_TEST);
     }
-    */
 
     {
         editorProfiler.begin("gizmo_on_draw");
@@ -774,12 +770,13 @@ void scene_editor_app::on_draw()
         editor->on_draw();
         editorProfiler.end("gizmo_on_draw");
     }
-
-    glfwSwapBuffers(window);
-
-    if (auxWindow) auxWindow->run();
+    */
 
     gl_check_error(__FILE__, __LINE__);
+
+    glFlush();
+    if (auxWindow) auxWindow->run();
+    glfwSwapBuffers(window);
 }
 
 IMPLEMENT_MAIN(int argc, char * argv[])

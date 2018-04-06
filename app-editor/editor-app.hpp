@@ -97,7 +97,7 @@ struct aux_window final : public glfw_window
     std::unique_ptr<fullscreen_texture> fullscreen_surface;
     std::unique_ptr<forward_renderer> preview_renderer;
     std::unique_ptr<gui::imgui_instance> auxImgui;
-    std::shared_ptr<StaticMesh> previewMesh;
+    std::unique_ptr<StaticMesh> previewMesh;
     perspective_camera previewCam;
     scene_data previewSceneData;
 
@@ -109,6 +109,8 @@ struct aux_window final : public glfw_window
 
         fullscreen_surface.reset(new fullscreen_texture());
 
+        // These are created on the this individual context and cached as global variables. 
+        // They need to be flushed! 
         auto cube = make_cube();
         create_handle_for_asset("preview-cube", make_mesh_from_geometry(cube));
         create_handle_for_asset("preview-cube", std::move(cube));
@@ -118,8 +120,6 @@ struct aux_window final : public glfw_window
         previewMesh->geom = "preview-cube";
         previewMesh->mat = "pbr-material/floor"; 
         previewMesh->pose.position = float3(0, 0, -2);
-
-        std::cout << previewMesh->mesh.assigned() << std::endl;
 
         renderer_settings previewSettings;
         previewSettings.renderSize = float2(w, h);
@@ -137,6 +137,8 @@ struct aux_window final : public glfw_window
         auxImgui->append_icon_font(fontAwesomeBytes);
 
         gui::make_light_theme();
+
+        std::cout << "Output Texture: " << preview_renderer->get_color_texture(0) << std::endl;
     }
 
     virtual void on_input(const polymer::InputEvent & e) override final
@@ -163,9 +165,6 @@ struct aux_window final : public glfw_window
             int width, height;
             glfwGetWindowSize(window, &width, &height);
 
-           //glDisable(GL_CULL_FACE);
-           //glDisable(GL_DEPTH_TEST);
-
             glEnable(GL_CULL_FACE);
             glEnable(GL_DEPTH_TEST);
 
@@ -179,7 +178,17 @@ struct aux_window final : public glfw_window
             previewSceneData.views.push_back(view_data(0, previewCam.pose, previewCam.get_projection_matrix(width / float(height))));
             preview_renderer->render_frame(previewSceneData);
 
+            glUseProgram(0);
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glViewport(0, 0, width, height);
+
             fullscreen_surface->draw(preview_renderer->get_color_texture(0));
+
+            gl_check_error(__FILE__, __LINE__);
+
+            glFlush();
+
+            glfwSwapBuffers(window);
 
             /*
             auxImgui->begin_frame();
@@ -218,8 +227,6 @@ struct aux_window final : public glfw_window
             gui::imgui_fixed_window_end();
             auxImgui->end_frame();
             */
-
-            glfwSwapBuffers(window);
         }
     }
 

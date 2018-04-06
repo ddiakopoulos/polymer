@@ -244,6 +244,8 @@ void polymer_app::main_loop()
 
         try
         {
+            glfwPollEvents();
+
             auto t1 = std::chrono::high_resolution_clock::now();
             auto timestep = std::chrono::duration<float>(t1 - t0).count();
             t0 = t1;
@@ -269,7 +271,6 @@ void polymer_app::main_loop()
 
             if (screenshotPath.size() > 0) screenshot_impl();
 
-            glfwPollEvents();
         }
         catch(...)
         {
