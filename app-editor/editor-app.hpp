@@ -120,10 +120,6 @@ struct aux_window final : public glfw_window
         previewMesh->mat = "pbr-material/floor"; 
         previewMesh->pose.position = float3(0, 0, -2);
 
-        AssetHandle<GlMesh> handle("preview-cube");
-        auto & m = handle.get();
-        std::cout << "VAO Is: " << m.vao << std::endl;
-
         renderer_settings previewSettings;
         previewSettings.renderSize = float2(w, h);
         previewSettings.msaaSamples = 2;
@@ -140,8 +136,6 @@ struct aux_window final : public glfw_window
         auxImgui->append_icon_font(fontAwesomeBytes);
 
         gui::make_light_theme();
-
-        std::cout << "Output Texture: " << preview_renderer->get_color_texture(0) << std::endl;
     }
 
     virtual void on_input(const polymer::InputEvent & e) override final
