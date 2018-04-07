@@ -164,7 +164,8 @@ struct aux_window final : public glfw_window
 
         // Why do we do all these resets? Well, the way the GlObject handle system works, the
         // destructor is called on the context of the destroyer. In the case of a secondary window,
-        // it would be the main thread. Instead, we need to manually clean up everything here. 
+        // that would be the main thread. Instead, we need to manually clean up everything here before
+        // the destructor is called. 
         fullscreen_surface.reset();
         preview_renderer.reset();
         auxImgui.reset();
@@ -210,13 +211,28 @@ struct aux_window final : public glfw_window
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
             glViewport(0, 0, width, height);
 
-            fullscreen_surface->draw(preview_renderer->get_color_texture(0));
+            auxImgui->begin_frame();
+            gui::imgui_fixed_window_begin("material-editor", { { 0, 0 },{ width, height } });
 
-            gl_check_error(__FILE__, __LINE__);
+            ImGui::Dummy({ 0, 8 });
+            ImGuiTextFilter textFilter;
+            textFilter.Draw(" " ICON_FA_SEARCH "  ");
+            ImGui::Dummy({ 0, 12 });
 
-            glFlush();
+            draw_listbox<MaterialHandle>("Materials", textFilter, assetSelection);
 
-            glfwSwapBuffers(window);
+            ImGui::Dummy({ 0, 12 });
+
+            if (assetSelection >= 0)
+            {
+                auto mat = asset_handle<std::shared_ptr<Material>>::list()[assetSelection].get();
+                inspect_object(nullptr, mat.get());
+            }
+
+            ImGui::Dummy({ 0, 12 });
+
+            gui::imgui_fixed_window_end();
+            auxImgui->end_frame();
 
             /*
             auxImgui->begin_frame();
@@ -255,6 +271,13 @@ struct aux_window final : public glfw_window
             gui::imgui_fixed_window_end();
             auxImgui->end_frame();
             */
+
+
+            //fullscreen_surface->draw(preview_renderer->get_color_texture(0));
+
+            glFlush();
+
+            glfwSwapBuffers(window);
         }
     }
 
