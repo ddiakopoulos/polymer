@@ -104,7 +104,7 @@ struct aux_window final : public glfw_window
     render_payload previewSceneData;
 
     int assetSelection = -1;
-
+    const uint32_t previewHeight = 400;
     aux_window(gl_context * context, int w, int h, const std::string title, int samples) : glfw_window(context, w, h, title, samples) 
     { 
         glfwMakeContextCurrent(window);
@@ -120,10 +120,10 @@ struct aux_window final : public glfw_window
         previewMesh->mesh = "preview-cube";
         previewMesh->geom = "preview-cube";
         previewMesh->mat = "pbr-material/floor"; 
-        previewMesh->pose.position = float3(0, 0, -2);
+        previewMesh->pose.position = float3(0, 0, -1);
 
         renderer_settings previewSettings;
-        previewSettings.renderSize = int2(w, h);
+        previewSettings.renderSize = int2(w, previewHeight);
         previewSettings.msaaSamples = 8;
         previewSettings.performanceProfiling = false;
         previewSettings.useDepthPrepass = false;
@@ -132,7 +132,7 @@ struct aux_window final : public glfw_window
 
         preview_renderer.reset(new forward_renderer(previewSettings));
 
-        previewCam.pose = look_at_pose_rh(float3(0, 0.25f, 4), previewMesh->pose.position);
+        previewCam.pose = look_at_pose_rh(float3(0, 0.25f, 2), previewMesh->pose.position);
         auxImgui.reset(new gui::imgui_instance(window, true));
 
         auto fontAwesomeBytes = read_file_binary("../assets/fonts/font_awesome_4.ttf");
@@ -146,6 +146,11 @@ struct aux_window final : public glfw_window
     virtual void on_input(const polymer::InputEvent & e) override final
     {
         if (e.window == window) auxImgui->update_input(e);
+
+        if (ImGui::GetIO().WantCaptureMouse || ImGui::GetIO().WantCaptureKeyboard)
+        {
+            return;
+        }
 
         if (e.type == InputEvent::MOUSE && e.is_down())
         {
@@ -200,11 +205,11 @@ struct aux_window final : public glfw_window
 
             // Single-viewport camera
             previewSceneData = {};
-            previewSceneData.clear_color = float4(0, 0, 0, 1);
+            previewSceneData.clear_color = float4(0, 0, 0, 0);
             previewSceneData.renderSet.push_back(previewMesh.get());
             previewSceneData.ibl_irradianceCubemap = "wells-irradiance-cubemap";
             previewSceneData.ibl_radianceCubemap = "wells-radiance-cubemap";
-            previewSceneData.views.push_back(view_data(0, previewCam.pose, previewCam.get_projection_matrix(width / float(height))));
+            previewSceneData.views.push_back(view_data(0, previewCam.pose, previewCam.get_projection_matrix(width / float(previewHeight))));
             preview_renderer->render_frame(previewSceneData);
 
             glUseProgram(0);
@@ -212,7 +217,7 @@ struct aux_window final : public glfw_window
             glViewport(0, 0, width, height);
 
             auxImgui->begin_frame();
-            gui::imgui_fixed_window_begin("material-editor", { { 0, 0 },{ width, height } });
+            gui::imgui_fixed_window_begin("material-editor", { { 0, 0 },{ width, int(height - previewHeight) } });
 
             ImGui::Dummy({ 0, 8 });
             ImGuiTextFilter textFilter;
@@ -233,6 +238,9 @@ struct aux_window final : public glfw_window
 
             gui::imgui_fixed_window_end();
             auxImgui->end_frame();
+
+            glViewport(0, 0, width, previewHeight);
+            fullscreen_surface->draw(preview_renderer->get_color_texture(0));
 
             /*
             auxImgui->begin_frame();
@@ -272,8 +280,6 @@ struct aux_window final : public glfw_window
             auxImgui->end_frame();
             */
 
-
-            //fullscreen_surface->draw(preview_renderer->get_color_texture(0));
 
             glFlush();
 

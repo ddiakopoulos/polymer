@@ -329,7 +329,7 @@ void scene_editor_app::on_input(const InputEvent & event)
 
             if (event.value[0] == GLFW_KEY_SPACE && event.action == GLFW_RELEASE)
             {
-                auxWindow.reset(new aux_window(get_shared_gl_context(), 400, 800, "", 1));
+                auxWindow.reset(new aux_window(get_shared_gl_context(), 500, 1000, "", 1));
             }
         }
 
