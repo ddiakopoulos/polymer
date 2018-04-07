@@ -275,9 +275,13 @@ void scene_editor_app::on_window_resize(int2 size)
     uiSurface.bounds = { 0, 0, (float)size.x, (float)size.y };
     uiSurface.layout();
 
-    renderer_settings settings;
-    settings.renderSize = size;
-    reset_renderer(size, settings);
+    // Iconification/minimization triggers an on_window_resize event with a zero size
+    if (size.x > 0 && size.y > 0)
+    {
+        renderer_settings settings;
+        settings.renderSize = size;
+        reset_renderer(size, settings);
+    }
 }
 
 void scene_editor_app::on_input(const InputEvent & event)

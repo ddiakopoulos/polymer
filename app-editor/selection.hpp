@@ -17,7 +17,7 @@ static inline tinygizmo::rigid_transform from_linalg(Pose & p)
     return{ reinterpret_cast<minalg::float4 &>(p.orientation), reinterpret_cast<minalg::float3 &>(p.position) };
 }
 
-template<typename ObjectType>
+template<typename T>
 class selection_controller
 {
     GlGizmo gizmo;
@@ -25,7 +25,7 @@ class selection_controller
     tinygizmo::rigid_transform last_gizmo_selection;
 
     Pose selection;
-    std::vector<ObjectType *> selected_objects;     // Array of selected objects
+    std::vector<T *> selected_objects;     // Array of selected objects
     std::vector<Pose> relative_transforms;          // Pose of the objects relative to the selection
 
     bool gizmo_active = false;
@@ -77,23 +77,23 @@ public:
 
     selection_controller() { }
 
-    bool selected(ObjectType * object) const
+    bool selected(T * object) const
     {
         return std::find(selected_objects.begin(), selected_objects.end(), object) != selected_objects.end();
     }
 
-    std::vector<ObjectType *> & get_selection()
+    std::vector<T *> & get_selection()
     {
         return selected_objects;
     }
 
-    void set_selection(const std::vector<ObjectType *> & new_selection)
+    void set_selection(const std::vector<T *> & new_selection)
     {
         selected_objects = new_selection;
         compute_selection();
     }
 
-    void update_selection(ObjectType * object)
+    void update_selection(T * object)
     {
         auto it = std::find(std::begin(selected_objects), std::end(selected_objects), object);
         if (it == std::end(selected_objects)) selected_objects.push_back(object);
@@ -132,7 +132,7 @@ public:
         {
             for (int i = 0; i < selected_objects.size(); ++i)
             {
-                ObjectType * object = selected_objects[i];
+                T * object = selected_objects[i];
                 auto newPose = to_linalg(gizmo_selection) * relative_transforms[i];
                 object->set_pose(newPose);
             }

@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef vr_renderer_hpp
-#define vr_renderer_hpp
+#ifndef polymer_renderer_hpp
+#define polymer_renderer_hpp
 
 #include "math-core.hpp"
 #include "simple_timer.hpp"
@@ -35,7 +35,6 @@ class stable_cascaded_shadows
     * [ ] Performance profiling
     * - http://developer.download.nvidia.com/SDK/10.5/opengl/src/cascaded_shadow_maps/doc/cascaded_shadow_maps.pdf
     * - https://www.gamedev.net/forums/topic/497259-stable-cascaded-shadow-maps/
-    * - https://github.com/jklarowicz/dx11_samples/blob/master/VarianceShadows11/VarianceShadowsManager.cpp
     * - https://github.com/TheRealMJP/Shadows/blob/master/Shadows/MeshRenderer.cpp
     * - http://the-witness.net/news/2010/03/graphics-tech-shadow-maps-part-1/
     * - https://chetanjags.wordpress.com/2015/02/05/real-time-shadows-cascaded-shadow-maps/
@@ -306,5 +305,5 @@ template<class F> void visit_fields(forward_renderer & o, F f)
     f("shadow_pass", o.settings.shadowsEnabled);
 }
 
-#endif // end vr_renderer_hpp
+#endif // end polymer_renderer_hpp
   

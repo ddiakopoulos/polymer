@@ -129,6 +129,7 @@ struct aux_window final : public glfw_window
         previewSettings.useDepthPrepass = false;
         previewSettings.tonemapEnabled = false;
         previewSettings.shadowsEnabled = false;
+
         preview_renderer.reset(new forward_renderer(previewSettings));
 
         previewCam.pose = look_at_pose_rh(float3(0, 0.25f, 4), previewMesh->pose.position);
@@ -200,6 +201,8 @@ struct aux_window final : public glfw_window
             previewSceneData = {};
             previewSceneData.clear_color = float4(0, 0, 0, 1);
             previewSceneData.renderSet.push_back(previewMesh.get());
+            previewSceneData.ibl_irradianceCubemap = "wells-irradiance-cubemap";
+            previewSceneData.ibl_radianceCubemap = "wells-radiance-cubemap";
             previewSceneData.views.push_back(view_data(0, previewCam.pose, previewCam.get_projection_matrix(width / float(height))));
             preview_renderer->render_frame(previewSceneData);
 
