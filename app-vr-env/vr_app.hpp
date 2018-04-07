@@ -112,8 +112,8 @@ struct VirtualRealityApp : public polymer_app
     std::vector<ScreenViewport> viewports;
     Scene scene;
 
-    SimpleTimer t;
-    GlGpuTimer gpuTimer;
+    simple_cpu_timer t;
+    gl_gpu_timer gpuTimer;
 
     std::shared_ptr<BulletEngineVR> physicsEngine;
     std::unique_ptr<PhysicsDebugRenderer> physicsDebugRenderer;

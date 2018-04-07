@@ -6,7 +6,7 @@
 #include "gl-api.hpp"
 #include "util.hpp"
 
-class GlGpuTimer
+class gl_gpu_timer
 {
     struct query_timer
     {
@@ -20,9 +20,7 @@ class GlGpuTimer
 
 public:
 
-    GlGpuTimer()  { }
-
-    ~GlGpuTimer()
+    ~gl_gpu_timer()
     {
         for (size_t i = 0; i < queries.size(); ++i)
         {

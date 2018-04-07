@@ -193,12 +193,13 @@ template<class T>
 const T * unpack() { return nullptr; }
 
 template<class T> struct range_metadata { T min, max; };
-template<class T> struct degree_metadata { T min, max; };
 struct editor_hidden { };
 struct input_field { };
 
-inline bool Edit(const char * label, std::string & s)
+template<class... A>
+inline bool Edit(const char * label, std::string & s, const A & ... metadata)
 {
+    if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
     char buffer[2048];
     assert(s.size() + 1 < sizeof(buffer));
     std::memcpy(buffer, s.data(), std::min(s.size() + 1, sizeof(buffer)));
@@ -213,12 +214,14 @@ inline bool Edit(const char * label, std::string & s)
 template<class... A>
 inline bool Edit(const char * label, bool & v, const A & ... metadata)
 { 
+    if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
     return ImGui::Checkbox(label, &v); 
 }
 
 template<class... A>
 inline bool Edit(const char * label, float & v, const A & ... metadata)
 { 
+    if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
     auto * rangeData = unpack<range_metadata<float>>(metadata...);
     if (rangeData) return ImGui::SliderFloat(label, &v, rangeData->min, rangeData->max, "%.5f");
     else return ImGui::InputFloat(label, &v); 
@@ -227,6 +230,7 @@ inline bool Edit(const char * label, float & v, const A & ... metadata)
 template<class... A>
 inline bool Edit(const char * label, int & v, const A & ... metadata)
 { 
+    if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
     auto * rangeData = unpack<range_metadata<int>>(metadata...);
     auto * useInput = unpack<input_field>(metadata...);
 
@@ -237,6 +241,7 @@ inline bool Edit(const char * label, int & v, const A & ... metadata)
 template<class... A>
 inline bool Edit(const char * label, int2 & v, const A & ... metadata)
 { 
+    if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
     auto * intRange = unpack<range_metadata<int>>(metadata...);
     auto * useInput = unpack<input_field>(metadata...);
     if (intRange && !useInput) return ImGui::SliderInt2(label, &v[0], intRange->min, intRange->max);
@@ -246,36 +251,43 @@ inline bool Edit(const char * label, int2 & v, const A & ... metadata)
 template<class... A>
 inline bool Edit(const char * label, int3 & v, const A & ... metadata)
 { 
+    if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
     return ImGui::InputInt3(label, &v.x); 
 }
 
 template<class... A>
 inline bool Edit(const char * label, int4 & v, const A & ... metadata)
 { 
+    if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
     return ImGui::InputInt4(label, &v.x); 
 }
 
 template<class... A>
 inline bool Edit(const char * label, float2 & v, const A & ... metadata)
 { 
+    if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
     return ImGui::InputFloat2(label, &v.x); 
 }
 
 template<class... A>
 inline bool Edit(const char * label, float3 & v, const A & ... metadata)
 { 
+    if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
     return ImGui::InputFloat3(label, &v.x);
 }
 
 template<class... A>
 inline bool Edit(const char * label, float4 & v, const A & ... metadata)
 { 
+    if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
     return ImGui::InputFloat4(label, &v.x); 
 }
 
 template<class T, class ... A> 
 bool Edit(const char * label, AssetHandle<T> & h, const A & ... metadata)
 {
+    if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
+
     int index;
     std::vector<std::string> items;
 
@@ -299,11 +311,6 @@ Edit(const char * label, T & object)
     bool r = false;
     visit_fields(object, [&r](const char * name, auto & field, auto... metadata)
     {   
-        auto * hidden = unpack<editor_hidden>(metadata...);
-        if (hidden)
-        {
-            return false;
-        }
         r |= Edit(name, field, metadata...);
     });
     return r;

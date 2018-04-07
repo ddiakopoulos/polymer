@@ -69,6 +69,7 @@
     <ClInclude Include="gfx\gl\gl-texture-view.hpp">
       <Filter>gfx\gl</Filter>
     </ClInclude>
+    <ClInclude Include="profiling.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="gfx">

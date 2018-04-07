@@ -402,8 +402,6 @@ void scene_editor_app::on_update(const UpdateEvent & e)
 
 void scene_editor_app::on_draw()
 {
-    active_imgui_regions.clear();
-
     glfwMakeContextCurrent(window);
 
     glEnable(GL_CULL_FACE);
@@ -600,10 +598,6 @@ void scene_editor_app::on_draw()
         ui_rect middleRightPane = { { int2(split3.first.min()) },{ int2(split3.first.max()) } };    // `the rest` split by the same amount
         ui_rect bottomRightPane = { { int2(split3.second.min()) },{ int2(split3.second.max()) } };  // remainder
 
-        //active_imgui_regions.push_back(topRightPane);
-        //active_imgui_regions.push_back(middleRightPane);
-        //active_imgui_regions.push_back(bottomRightPane);
-
         gui::imgui_fixed_window_begin("Inspector", topRightPane);
         if (editor->get_selection().size() >= 1)
         {
@@ -675,9 +669,6 @@ void scene_editor_app::on_draw()
         ui_rect topLeftPane = { { int2(lsplit2.second.min()) },{ int2(lsplit2.second.max()) } };
         ui_rect bottomLeftPane = { { int2(lsplit2.first.min()) },{ int2(lsplit2.first.max()) } };
 
-        active_imgui_regions.push_back(topLeftPane);
-        active_imgui_regions.push_back(bottomLeftPane);
-
         gui::imgui_fixed_window_begin("Renderer", topLeftPane);
         {
 
@@ -746,13 +737,13 @@ void scene_editor_app::on_draw()
 
             if (renderer->settings.performanceProfiling)
             {
-                for (auto & t : renderer->gpuProfiler.dataPoints) ImGui::Text("[Renderer GPU] %s %f ms", t.first.c_str(), (float)compute_mean(t.second.average));
-                for (auto & t : renderer->cpuProfiler.dataPoints) ImGui::Text("[Renderer CPU] %s %f ms", t.first.c_str(), (float)compute_mean(t.second.average));
+                for (auto & t : renderer->gpuProfiler.get_data()) ImGui::Text("[Renderer GPU] %s %f ms", t.first.c_str(), t.second);
+                for (auto & t : renderer->cpuProfiler.get_data()) ImGui::Text("[Renderer CPU] %s %f ms", t.first.c_str(), t.second);
             }
 
             ImGui::Dummy({ 0, 10 });
 
-            for (auto & t : editorProfiler.dataPoints) ImGui::Text("[Editor] %s %f ms", t.first.c_str(), (float)compute_mean(t.second.average));
+            for (auto & t : editorProfiler.get_data()) ImGui::Text("[Editor] %s %f ms", t.first.c_str(), t.second);
         }
         gui::imgui_fixed_window_end();
 
@@ -776,6 +767,7 @@ void scene_editor_app::on_draw()
         debugViews[1]->draw(uiSurface.children[1]->bounds, float2(width, height), renderer->get_output_texture(TextureType::DEPTH, 0));
         glEnable(GL_DEPTH_TEST);
     }
+    */
 
     {
         editorProfiler.begin("gizmo_on_draw");
@@ -783,7 +775,6 @@ void scene_editor_app::on_draw()
         editor->on_draw();
         editorProfiler.end("gizmo_on_draw");
     }
-    */
 
     gl_check_error(__FILE__, __LINE__);
 

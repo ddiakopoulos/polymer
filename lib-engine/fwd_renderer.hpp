@@ -12,46 +12,10 @@
 #include "gl-camera.hpp"
 #include "gl-async-gpu-timer.hpp"
 #include "gl-procedural-sky.hpp"
-
+#include "profiling.hpp"
 #include "scene.hpp"
 
 using namespace polymer;
-
-template<typename T>
-struct profiler
-{
-    struct data_point
-    {
-        CircularBuffer<double> average{ 30 };
-        T timer;
-    };
-
-    std::unordered_map<std::string, data_point> dataPoints;
-
-    bool enabled{ true };
-
-    profiler() { }
-
-    void set_enabled(bool newState)
-    {
-        enabled = newState;
-        dataPoints.clear();
-    }
-
-    void begin(const std::string & id)
-    {
-        if (!enabled) return;
-        dataPoints[id].timer.start();
-    }
-
-    void end(const std::string & id)
-    {
-        if (!enabled) return;
-        dataPoints[id].timer.stop();
-        const double t = dataPoints[id].timer.elapsed_ms();
-        if (t > 0.0) dataPoints[id].average.put(t);
-    }
-};
 
 #undef near
 #undef far
@@ -59,13 +23,6 @@ struct profiler
 ////////////////////////////////////////
 //   Stable Cascaded Shadow Mapping   //
 ////////////////////////////////////////
-
-// http://developer.download.nvidia.com/SDK/10.5/opengl/src/cascaded_shadow_maps/doc/cascaded_shadow_maps.pdf
-// https://www.gamedev.net/forums/topic/497259-stable-cascaded-shadow-maps/
-// https://github.com/jklarowicz/dx11_samples/blob/master/VarianceShadows11/VarianceShadowsManager.cpp
-// https://github.com/TheRealMJP/Shadows/blob/master/Shadows/MeshRenderer.cpp
-// http://the-witness.net/news/2010/03/graphics-tech-shadow-maps-part-1/
-// https://chetanjags.wordpress.com/2015/02/05/real-time-shadows-cascaded-shadow-maps/
 
 class stable_cascaded_shadows
 {
@@ -76,7 +33,13 @@ class stable_cascaded_shadows
     * [ ] Frustum depth-split is a good candidate for compute shader experimentation (default far-near/4)
     * [ ] Blending / overlap between cascades
     * [ ] Performance profiling
-    */
+    * - http://developer.download.nvidia.com/SDK/10.5/opengl/src/cascaded_shadow_maps/doc/cascaded_shadow_maps.pdf
+    * - https://www.gamedev.net/forums/topic/497259-stable-cascaded-shadow-maps/
+    * - https://github.com/jklarowicz/dx11_samples/blob/master/VarianceShadows11/VarianceShadowsManager.cpp
+    * - https://github.com/TheRealMJP/Shadows/blob/master/Shadows/MeshRenderer.cpp
+    * - http://the-witness.net/news/2010/03/graphics-tech-shadow-maps-part-1/
+    * - https://chetanjags.wordpress.com/2015/02/05/real-time-shadows-cascaded-shadow-maps/
+    */ 
 
     GlTexture3D shadowArrayDepth;
     GlFramebuffer shadowArrayFramebuffer;
@@ -280,7 +243,7 @@ struct render_payload
 
 class forward_renderer
 {
-    SimpleTimer timer;
+    simple_cpu_timer timer;
 
     GlBuffer perScene;
     GlBuffer perView;
@@ -317,8 +280,8 @@ public:
     std::vector<GlTexture2D> postTextures;
 
     renderer_settings settings;
-    profiler<SimpleTimer> cpuProfiler;
-    profiler<GlGpuTimer> gpuProfiler;
+    profiler<simple_cpu_timer> cpuProfiler;
+    profiler<gl_gpu_timer> gpuProfiler;
 
     forward_renderer(const renderer_settings settings);
     ~forward_renderer();
@@ -340,7 +303,7 @@ template<class F> void visit_fields(forward_renderer & o, F f)
     f("depth_prepass", o.settings.useDepthPrepass);
     f("tonemap_pass", o.settings.tonemapEnabled);
     f("shadow_pass", o.settings.shadowsEnabled);
-};
+}
 
 #endif // end vr_renderer_hpp
   

@@ -419,7 +419,7 @@ struct scene_editor_app final : public polymer_app
     GlShaderHandle iblHandle{ "ibl" };
     GlMeshHandle cubeHandle{ "cube" };
 
-    profiler<SimpleTimer> editorProfiler;
+    profiler<simple_cpu_timer> editorProfiler;
 
     std::unique_ptr<aux_window> auxWindow;
 
@@ -435,7 +435,6 @@ struct scene_editor_app final : public polymer_app
     auto_layout uiSurface;
     std::vector<std::shared_ptr<GLTextureView>> debugViews;
     bool showUI = true;
-    std::vector<ui_rect> active_imgui_regions;
 
     scene_editor_app();
     ~scene_editor_app();

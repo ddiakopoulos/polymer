@@ -57,6 +57,7 @@
       <AdditionalIncludeDirectories>$(ProjectDir)..\;$(ProjectDir)..\lib-engine\gfx\gl;$(ProjectDir)..\lib-polymer;$(ProjectDir)..\third_party;$(ProjectDir)..\examples;$(ProjectDir)..\third_party\glew;$(ProjectDir)..\third_party\glfw3\include;$(ProjectDir)..\third_party\cereal\include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;__WINDOWS_DS__;NOMINMAX;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <MinimalRebuild>false</MinimalRebuild>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(ProjectDir)..\third_party\glew\lib\$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -102,6 +103,7 @@
     <ClInclude Include="gfx\gl\glfw-app.hpp" />
     <ClInclude Include="logging.hpp" />
     <ClInclude Include="material.hpp" />
+    <ClInclude Include="profiling.hpp" />
     <ClInclude Include="scene.hpp" />
     <ClInclude Include="serialization.hpp" />
     <ClInclude Include="uniforms.hpp" />
