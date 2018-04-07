@@ -43,7 +43,7 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
     gui::make_light_theme();
     igm->add_font(droidSansTTFBytes);
 
-    editor.reset(new editor_controller<GameObject>());
+    editor.reset(new selection_controller<GameObject>());
 
     cam.look_at({ 0, 9.5f, -6.0f }, { 0, 0.1f, 0 });
     flycam.set_camera(&cam);
