@@ -604,7 +604,7 @@ void scene_editor_app::on_draw()
         gui::imgui_fixed_window_begin("Inspector", topRightPane);
         if (editor->get_selection().size() >= 1)
         {
-            InspectGameObjectPolymorphic(nullptr, editor->get_selection()[0]);
+            inspect_object(nullptr, editor->get_selection()[0]);
         }
         gui::imgui_fixed_window_end();
 
@@ -618,7 +618,7 @@ void scene_editor_app::on_draw()
         if (mats.size() >= 1)
         {
             auto w = asset_handle<std::shared_ptr<Material>>::list()[selectedMaterial].get();
-            InspectGameObjectPolymorphic(nullptr, w.get());
+            inspect_object(nullptr, w.get());
         }
         gui::imgui_fixed_window_end();
 
@@ -681,7 +681,7 @@ void scene_editor_app::on_draw()
             {
                 renderer_settings lastSettings = renderer->settings;
 
-                if (Edit("renderer", *renderer))
+                if (build_imgui("renderer", *renderer))
                 {
                     renderer->gpuProfiler.set_enabled(renderer->settings.performanceProfiling);
                     renderer->cpuProfiler.set_enabled(renderer->settings.performanceProfiling);
@@ -721,7 +721,7 @@ void scene_editor_app::on_draw()
 
             if (ImGui::TreeNode("Procedural Sky"))
             {
-                InspectGameObjectPolymorphic(nullptr, sceneData.skybox);
+                inspect_object(nullptr, sceneData.skybox);
                 ImGui::TreePop();
             }
 
@@ -731,7 +731,7 @@ void scene_editor_app::on_draw()
             {
                 if (ImGui::TreeNode("Cascaded Shadow Mapping"))
                 {
-                    Edit("shadows", *shadows);
+                    build_imgui("shadows", *shadows);
                     ImGui::TreePop();
                 }
             }

@@ -197,7 +197,7 @@ struct editor_hidden { };
 struct input_field { };
 
 template<class... A>
-inline bool Edit(const char * label, std::string & s, const A & ... metadata)
+inline bool build_imgui(const char * label, std::string & s, const A & ... metadata)
 {
     if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
     char buffer[2048];
@@ -212,14 +212,14 @@ inline bool Edit(const char * label, std::string & s, const A & ... metadata)
 }
 
 template<class... A>
-inline bool Edit(const char * label, bool & v, const A & ... metadata)
+inline bool build_imgui(const char * label, bool & v, const A & ... metadata)
 { 
     if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
     return ImGui::Checkbox(label, &v); 
 }
 
 template<class... A>
-inline bool Edit(const char * label, float & v, const A & ... metadata)
+inline bool build_imgui(const char * label, float & v, const A & ... metadata)
 { 
     if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
     auto * rangeData = unpack<range_metadata<float>>(metadata...);
@@ -228,7 +228,7 @@ inline bool Edit(const char * label, float & v, const A & ... metadata)
 }
 
 template<class... A>
-inline bool Edit(const char * label, int & v, const A & ... metadata)
+inline bool build_imgui(const char * label, int & v, const A & ... metadata)
 { 
     if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
     auto * rangeData = unpack<range_metadata<int>>(metadata...);
@@ -239,7 +239,7 @@ inline bool Edit(const char * label, int & v, const A & ... metadata)
 }
 
 template<class... A>
-inline bool Edit(const char * label, int2 & v, const A & ... metadata)
+inline bool build_imgui(const char * label, int2 & v, const A & ... metadata)
 { 
     if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
     auto * intRange = unpack<range_metadata<int>>(metadata...);
@@ -249,42 +249,42 @@ inline bool Edit(const char * label, int2 & v, const A & ... metadata)
 }
 
 template<class... A>
-inline bool Edit(const char * label, int3 & v, const A & ... metadata)
+inline bool build_imgui(const char * label, int3 & v, const A & ... metadata)
 { 
     if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
     return ImGui::InputInt3(label, &v.x); 
 }
 
 template<class... A>
-inline bool Edit(const char * label, int4 & v, const A & ... metadata)
+inline bool build_imgui(const char * label, int4 & v, const A & ... metadata)
 { 
     if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
     return ImGui::InputInt4(label, &v.x); 
 }
 
 template<class... A>
-inline bool Edit(const char * label, float2 & v, const A & ... metadata)
+inline bool build_imgui(const char * label, float2 & v, const A & ... metadata)
 { 
     if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
     return ImGui::InputFloat2(label, &v.x); 
 }
 
 template<class... A>
-inline bool Edit(const char * label, float3 & v, const A & ... metadata)
+inline bool build_imgui(const char * label, float3 & v, const A & ... metadata)
 { 
     if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
     return ImGui::InputFloat3(label, &v.x);
 }
 
 template<class... A>
-inline bool Edit(const char * label, float4 & v, const A & ... metadata)
+inline bool build_imgui(const char * label, float4 & v, const A & ... metadata)
 { 
     if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
     return ImGui::InputFloat4(label, &v.x); 
 }
 
 template<class T, class ... A> 
-bool Edit(const char * label, asset_handle<T> & h, const A & ... metadata)
+bool build_imgui(const char * label, asset_handle<T> & h, const A & ... metadata)
 {
     if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
 
@@ -306,26 +306,26 @@ bool Edit(const char * label, asset_handle<T> & h, const A & ... metadata)
 }
 
 template<class T> std::enable_if_t<std::is_class<T>::value, bool>
-Edit(const char * label, T & object)
+build_imgui(const char * label, T & object)
 {
     bool r = false;
     visit_fields(object, [&r](const char * name, auto & field, auto... metadata)
     {   
-        r |= Edit(name, field, metadata...);
+        r |= build_imgui(name, field, metadata...);
     });
     return r;
 }
 
 template<class T> bool 
-InspectGameObjectPolymorphic(const char * label, T * ptr)
+inspect_object(const char * label, T * ptr)
 {
     bool r = false;
     visit_subclasses(ptr, [&r, label](const char * name, auto * p)
     {
         if (p)
         {
-            if (label) r = Edit((std::string(label) + " - " + name).c_str(), *p);
-            else r = Edit(name, *p);
+            if (label) r = build_imgui((std::string(label) + " - " + name).c_str(), *p);
+            else r = build_imgui(name, *p);
         }
     });
     return r;
