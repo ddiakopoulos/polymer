@@ -1,15 +1,13 @@
 #pragma once
 
-#ifndef asset_handles_hpp
-#define asset_handles_hpp
+#ifndef asset_base_hpp
+#define asset_base_hpp
 
 #include "util.hpp"
 #include "math-core.hpp"
 #include "gl-api.hpp"
 #include "geometry.hpp"
 #include "logging.hpp"
-
-#include <memory>
 #include <unordered_map>
 
 static inline uint64_t system_time_ns()
@@ -17,30 +15,35 @@ static inline uint64_t system_time_ns()
     return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
 }
 
-// Note that the asset of `UniqueAsset` must be default constructable.
+// Note that the asset of `polymer_unique_asset` must be default constructable.
 template<typename T>
-struct UniqueAsset : public non_copyable
+struct polymer_unique_asset : public non_copyable
 {
     T asset;
     bool assigned{ false };
     uint64_t timestamp;
 };
 
+// An asset handle contains static table of string <=> asset mappings. Although unique assets
+// are constructed on the heap at runtime, they are loaned out as references. 
+// Assets stored with the system must be default constructable; this is primarily done for
+// prototyping since it is far more tedious than the alternative of an extensive resolve mechanism.
+// Asset handles are not thread safe, but safety can be added with relative ease. 
 template<typename T>
-class AssetHandle
+class asset_handle
 {
-    static std::unordered_map<std::string, std::shared_ptr<UniqueAsset<T>>> table;
-    mutable std::shared_ptr<UniqueAsset<T>> handle{ nullptr };
-    AssetHandle(const::std::string & id, std::shared_ptr<UniqueAsset<T>> h) : name(id), handle(h) {} // private constructor for the static list() method below
+    static std::unordered_map<std::string, std::shared_ptr<polymer_unique_asset<T>>> table;
+    mutable std::shared_ptr<polymer_unique_asset<T>> handle{ nullptr };
+    asset_handle(const::std::string & id, std::shared_ptr<polymer_unique_asset<T>> h) : name(id), handle(h) {} // private constructor for the static list() method below
 
 public:
 
     std::string name;
 
-    AssetHandle() : AssetHandle("") {}
-    AssetHandle(const std::string & asset_id, T && asset) : AssetHandle(asset_id.c_str()) { assign(std::move(asset)); }
-    AssetHandle(const std::string & asset_id) : AssetHandle(asset_id.c_str()) {}
-    AssetHandle(const char * asset_id)
+    asset_handle() : asset_handle("") {}
+    asset_handle(const std::string & asset_id, T && asset) : asset_handle(asset_id.c_str()) { assign(std::move(asset)); }
+    asset_handle(const std::string & asset_id) : asset_handle(asset_id.c_str()) {}
+    asset_handle(const char * asset_id)
     {
         name = asset_id;
         if (name.empty())
@@ -49,7 +52,7 @@ public:
         }
     }
 
-    AssetHandle(const AssetHandle & r)
+    asset_handle(const asset_handle & r)
     {
         handle = r.handle;
         name = r.name;
@@ -70,7 +73,7 @@ public:
             auto & a = table[name];
             if (!a)
             {
-                a = std::make_shared<UniqueAsset<T>>();
+                a = std::make_shared<polymer_unique_asset<T>>();
                 a->timestamp = system_time_ns();
                 a->assigned = false;
                 Logger::get_instance()->assetLog->info("asset type {} ({}) was default constructed", typeid(T).name(), name);
@@ -87,7 +90,7 @@ public:
         // New asset
         if (!a)
         {
-            a = std::make_shared<UniqueAsset<T>>();
+            a = std::make_shared<polymer_unique_asset<T>>();
             a->timestamp = system_time_ns();
         }
 
@@ -114,10 +117,10 @@ public:
         return false;
     }
 
-    static std::vector<AssetHandle> list()
+    static std::vector<asset_handle> list()
     {
-        std::vector<AssetHandle> results;
-        for (const auto & a : table) results.push_back(AssetHandle<T>(a.first, a.second));
+        std::vector<asset_handle> results;
+        for (const auto & a : table) results.push_back(asset_handle<T>(a.first, a.second));
         return results;
     }
 
@@ -134,30 +137,7 @@ public:
     }
 };
 
-template<class T> 
-std::unordered_map<std::string, std::shared_ptr<UniqueAsset<T>>> AssetHandle<T>::table;
+template<class T>
+std::unordered_map<std::string, std::shared_ptr<polymer_unique_asset<T>>> asset_handle<T>::table;
 
-template<class T> inline AssetHandle<T> create_handle_for_asset(const char * asset_id, T && asset)
-{
-    static_assert(!std::is_pointer<T>::value, "cannot create a handle for a raw pointer");
-    return { AssetHandle<T>(asset_id, std::move(asset)) };
-}
-
-template<> inline AssetHandle<Geometry> create_handle_for_asset(const char * asset_id, Geometry && asset)
-{
-    assert(asset.vertices.size() > 0); // verify that this the geometry is not empty
-    return { AssetHandle<Geometry>(asset_id, std::move(asset)) };
-}
-
-template<> inline AssetHandle<GlMesh> create_handle_for_asset(const char * asset_id, GlMesh && asset)
-{
-    assert(asset.get_vertex_data_buffer() > 0); // verify that this is a well-formed GlMesh object
-    return { AssetHandle<GlMesh>(asset_id, std::move(asset)) };
-}
-
-typedef AssetHandle<GlTexture2D> GlTextureHandle;
-typedef AssetHandle<GlShader> GlShaderHandle;
-typedef AssetHandle<GlMesh> GlMeshHandle;
-typedef AssetHandle<Geometry> GeometryHandle;
-
-#endif // end asset_handles_hpp
+#endif // end asset_base_hpp

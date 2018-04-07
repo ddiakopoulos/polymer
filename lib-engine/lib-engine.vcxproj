@@ -83,7 +83,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="assets.hpp" />
+    <ClInclude Include="asset-defs.hpp" />
+    <ClInclude Include="asset-handle.hpp" />
     <ClInclude Include="fwd_renderer.hpp" />
     <ClInclude Include="gfx\gl\gl-api.hpp" />
     <ClInclude Include="gfx\gl\gl-async-gpu-timer.hpp" />

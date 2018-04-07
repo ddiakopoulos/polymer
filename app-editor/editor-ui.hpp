@@ -5,7 +5,7 @@
 
 #include "gl-api.hpp"
 #include "uniforms.hpp"
-#include "assets.hpp"
+#include "asset-defs.hpp"
 #include "material.hpp"
 #include "gl-imgui.hpp"
 #include "imgui/imgui_internal.h"
@@ -284,14 +284,14 @@ inline bool Edit(const char * label, float4 & v, const A & ... metadata)
 }
 
 template<class T, class ... A> 
-bool Edit(const char * label, AssetHandle<T> & h, const A & ... metadata)
+bool Edit(const char * label, asset_handle<T> & h, const A & ... metadata)
 {
     if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
 
     int index;
     std::vector<std::string> items;
 
-    for (auto & handle : AssetHandle<T>::list())
+    for (auto & handle : asset_handle<T>::list())
     {
         if (handle.name == h.name) index = static_cast<int>(items.size());
         items.push_back(handle.name);

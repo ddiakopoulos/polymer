@@ -5,7 +5,7 @@
 #include "material.hpp"
 #include "fwd_renderer.hpp"
 #include "uniforms.hpp"
-#include "assets.hpp"
+#include "asset-defs.hpp"
 #include "scene.hpp"
 #include "editor-ui.hpp"
 #include "arcball.hpp"
@@ -169,8 +169,8 @@ struct aux_window final : public glfw_window
         auxImgui.reset();
         previewMesh.reset();
 
-        AssetHandle<GlMesh>::destroy("preview-cube");
-        AssetHandle<Geometry>::destroy("preview-cube");
+        asset_handle<GlMesh>::destroy("preview-cube");
+        asset_handle<Geometry>::destroy("preview-cube");
 
         if (window)
         {

@@ -14,7 +14,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="assets.hpp" />
     <ClInclude Include="fwd_renderer.hpp" />
     <ClInclude Include="logging.hpp" />
     <ClInclude Include="material.hpp" />
@@ -70,6 +69,8 @@
       <Filter>gfx\gl</Filter>
     </ClInclude>
     <ClInclude Include="profiling.hpp" />
+    <ClInclude Include="asset-handle.hpp" />
+    <ClInclude Include="asset-defs.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="gfx">

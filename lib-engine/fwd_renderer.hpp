@@ -259,7 +259,6 @@ class forward_renderer
     std::vector<GlTexture2D> eyeDepthTextures;
 
     std::unique_ptr<stable_cascaded_shadows> shadow;
-
     GlMesh post_quad;
 
     GlShaderHandle earlyZPass = { "depth-prepass" };

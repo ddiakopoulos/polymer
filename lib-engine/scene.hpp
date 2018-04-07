@@ -8,7 +8,7 @@
 #include "gl-camera.hpp"
 
 #include "uniforms.hpp"
-#include "assets.hpp"
+#include "asset-defs.hpp"
 #include "material.hpp"
 #include "geometry.hpp"
 #include "gl-mesh.hpp"
@@ -64,7 +64,7 @@ struct Renderable : public GameObject
 
         else return nullptr; 
     }
-    void set_material(AssetHandle<std::shared_ptr<Material>> handle) { mat = handle; }
+    void set_material(asset_handle<std::shared_ptr<Material>> handle) { mat = handle; }
 
     void set_receive_shadow(const bool value) { receive_shadow = value; }
     bool get_receive_shadow() const { return receive_shadow; }

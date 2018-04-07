@@ -194,12 +194,12 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
             bool foundGeom = false;
             bool foundMesh = false;
 
-            for (auto & h : AssetHandle<Geometry>::list())
+            for (auto & h : asset_handle<Geometry>::list())
             {
                 if (h.name == mesh->geom.name) foundGeom = true;
             }
 
-            for (auto & h : AssetHandle<GlMesh>::list())
+            for (auto & h : asset_handle<GlMesh>::list())
             {
                 if (h.name == mesh->mesh.name) foundMesh = true;
             }
@@ -607,14 +607,14 @@ void scene_editor_app::on_draw()
 
         gui::imgui_fixed_window_begin("Materials", middleRightPane);
         std::vector<std::string> mats;
-        for (auto & m : AssetHandle<std::shared_ptr<Material>>::list()) mats.push_back(m.name);
+        for (auto & m : asset_handle<std::shared_ptr<Material>>::list()) mats.push_back(m.name);
         static int selectedMaterial = 1;
         ImGui::PushItemWidth(-1);
         ImGui::ListBox("Material", &selectedMaterial, mats);
         ImGui::PopItemWidth();
         if (mats.size() >= 1)
         {
-            auto w = AssetHandle<std::shared_ptr<Material>>::list()[selectedMaterial].get();
+            auto w = asset_handle<std::shared_ptr<Material>>::list()[selectedMaterial].get();
             InspectGameObjectPolymorphic(nullptr, w.get());
         }
         gui::imgui_fixed_window_end();

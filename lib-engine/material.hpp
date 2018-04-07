@@ -5,7 +5,7 @@
 
 #include "gl-api.hpp"
 #include "math-core.hpp"
-#include "assets.hpp"
+#include "asset-defs.hpp"
 
 namespace polymer
 {
@@ -63,7 +63,5 @@ namespace polymer
     };
 
 }
-
-typedef AssetHandle<std::shared_ptr<polymer::Material>> MaterialHandle;
 
 #endif // end vr_material_hpp
