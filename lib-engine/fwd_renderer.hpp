@@ -264,7 +264,7 @@ struct view_data
     }
 };
 
-struct scene_data
+struct render_payload
 {
     ProceduralSky * skybox{ nullptr };
     std::vector<Renderable *> renderSet;
@@ -305,11 +305,11 @@ class forward_renderer
     // Update per-object uniform buffer
     void update_per_object_uniform_buffer(Renderable * top, const view_data & d);
 
-    void run_depth_prepass(const view_data & view, const scene_data & scene);
-    void run_skybox_pass(const view_data & view, const scene_data & scene);
-    void run_shadow_pass(const view_data & view, const scene_data & scene);
-    void run_forward_pass(std::vector<Renderable *> & renderQueueMaterial, std::vector<Renderable *> & renderQueueDefault, const view_data & view, const scene_data & scene);
-    void run_post_pass(const view_data & view, const scene_data & scene);
+    void run_depth_prepass(const view_data & view, const render_payload & scene);
+    void run_skybox_pass(const view_data & view, const render_payload & scene);
+    void run_shadow_pass(const view_data & view, const render_payload & scene);
+    void run_forward_pass(std::vector<Renderable *> & renderQueueMaterial, std::vector<Renderable *> & renderQueueDefault, const view_data & view, const render_payload & scene);
+    void run_post_pass(const view_data & view, const render_payload & scene);
 
 public:
 
@@ -323,7 +323,7 @@ public:
     forward_renderer(const renderer_settings settings);
     ~forward_renderer();
 
-    void render_frame(const scene_data & scene);
+    void render_frame(const render_payload & scene);
 
     uint32_t get_color_texture(const uint32_t idx) const;
     uint32_t get_depth_texture(const uint32_t idx) const;

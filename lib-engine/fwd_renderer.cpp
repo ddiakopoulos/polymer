@@ -35,7 +35,7 @@ stable_cascaded_shadows & forward_renderer::get_shadow_pass() const
     return *shadow;
 }
 
-void forward_renderer::run_depth_prepass(const view_data & view, const scene_data & scene)
+void forward_renderer::run_depth_prepass(const view_data & view, const render_payload & scene)
 {
     GLboolean colorMask[4];
     glGetBooleanv(GL_COLOR_WRITEMASK, &colorMask[0]);
@@ -58,7 +58,7 @@ void forward_renderer::run_depth_prepass(const view_data & view, const scene_dat
     glColorMask(colorMask[0], colorMask[1], colorMask[2], colorMask[3]);
 }
 
-void forward_renderer::run_skybox_pass(const view_data & view, const scene_data & scene)
+void forward_renderer::run_skybox_pass(const view_data & view, const render_payload & scene)
 {
     if (!scene.skybox) return;
 
@@ -85,7 +85,7 @@ void forward_renderer::run_skybox_pass(const view_data & view, const scene_data 
     if (wasDepthTestingEnabled) glEnable(GL_DEPTH_TEST);
 }
 
-void forward_renderer::run_shadow_pass(const view_data & view, const scene_data & scene)
+void forward_renderer::run_shadow_pass(const view_data & view, const render_payload & scene)
 {
     shadow->update_cascades(view.viewMatrix,
         view.nearClip,
@@ -111,7 +111,7 @@ void forward_renderer::run_shadow_pass(const view_data & view, const scene_data 
     gl_check_error(__FILE__, __LINE__);
 }
 
-void forward_renderer::run_forward_pass(std::vector<Renderable *> & renderQueueMaterial, std::vector<Renderable *> & renderQueueDefault, const view_data & view, const scene_data & scene)
+void forward_renderer::run_forward_pass(std::vector<Renderable *> & renderQueueMaterial, std::vector<Renderable *> & renderQueueDefault, const view_data & view, const render_payload & scene)
 {
     if (settings.useDepthPrepass)
     {
@@ -149,7 +149,7 @@ void forward_renderer::run_forward_pass(std::vector<Renderable *> & renderQueueM
     }
 }
 
-void forward_renderer::run_post_pass(const view_data & view, const scene_data & scene)
+void forward_renderer::run_post_pass(const view_data & view, const render_payload & scene)
 {
     if (!settings.tonemapEnabled) return;
 
@@ -239,7 +239,7 @@ forward_renderer::~forward_renderer()
     timer.stop();
 }
 
-void forward_renderer::render_frame(const scene_data & scene)
+void forward_renderer::render_frame(const render_payload & scene)
 {
     assert(settings.cameraCount == scene.views.size());
 
