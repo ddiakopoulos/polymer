@@ -54,7 +54,9 @@ uniform float u_occlusionStrength = 1.0;
 uniform float u_ambientStrength = 1.0;
 uniform float u_emissiveStrength = 1.0;
 
-uniform sampler2DArray s_csmArray;
+#ifdef ENABLE_SHADOWS
+    uniform sampler2DArray s_csmArray;
+#endif
 
 out vec4 f_color;
 

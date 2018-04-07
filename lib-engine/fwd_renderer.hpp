@@ -234,7 +234,7 @@ template<class F> void visit_fields(stable_cascaded_shadows & o, F f)
 
 struct renderer_settings
 {
-    float2 renderSize{ 0, 0 };
+    int2 renderSize{ 0, 0 };
     int cameraCount = 1;
     int msaaSamples = 4;
     bool performanceProfiling = true;

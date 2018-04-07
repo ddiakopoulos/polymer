@@ -44,9 +44,17 @@ void MetallicRoughnessMaterial::update_uniforms()
 void MetallicRoughnessMaterial::update_cascaded_shadow_array_handle(GLuint handle)
 {
     auto & shader = program.get();
-    shader.bind();
-    shader.texture("s_csmArray", bindpoint++, handle, GL_TEXTURE_2D_ARRAY);
-    shader.unbind();
+
+    if (shader.has_define("ENABLE_SHADOWS"))
+    {
+        shader.bind();
+        shader.texture("s_csmArray", bindpoint++, handle, GL_TEXTURE_2D_ARRAY);
+        shader.unbind();
+    }
+    else
+    {
+        throw std::runtime_error("should not be called unless shadows are defined.");
+    }
 }
 
 void MetallicRoughnessMaterial::use()

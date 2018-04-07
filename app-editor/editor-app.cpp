@@ -113,7 +113,7 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
 
     fullscreen_surface.reset(new fullscreen_texture());
     renderer_settings settings;
-    settings.renderSize = float2(width, height);
+    settings.renderSize = int2(width, height);
     renderer.reset(new forward_renderer(settings));
 
     scene.skybox.reset(new HosekProceduralSky());
@@ -275,11 +275,9 @@ void scene_editor_app::on_window_resize(int2 size)
     uiSurface.bounds = { 0, 0, (float)size.x, (float)size.y };
     uiSurface.layout();
 
-    renderer.reset();
-
     renderer_settings settings;
-    settings.renderSize = float2(size.x, size.y);
-    renderer.reset(new forward_renderer(settings));
+    settings.renderSize = size;
+    reset_renderer(size, settings);
 }
 
 void scene_editor_app::on_input(const InputEvent & event)
@@ -383,6 +381,11 @@ void scene_editor_app::on_input(const InputEvent & event)
 
         }
     }
+}
+
+void scene_editor_app::reset_renderer(int2 size, const renderer_settings & settings)
+{
+    renderer.reset(new forward_renderer(settings));
 }
 
 void scene_editor_app::on_update(const UpdateEvent & e)
@@ -696,15 +699,22 @@ void scene_editor_app::on_draw()
 
                         if (renderer->settings.shadowsEnabled)
                         {
-                            // Check if it's already in there
+                            // Enable, but check if it's already in there first
                             auto itr = std::find(defines.begin(), defines.end(), "ENABLE_SHADOWS");
                             if (itr == defines.end()) defines.push_back("ENABLE_SHADOWS");
+
+                            auto render_settings_copy = renderer->settings;
+                            reset_renderer(renderer->settings.renderSize, render_settings_copy);
                         }
                         else
                         {
+                            // Disable
                             auto & defines = shaderMonitor.get_asset(pbrProgramAsset).defines;
                             auto itr = std::find(defines.begin(), defines.end(), "ENABLE_SHADOWS");
                             if (itr != defines.end()) defines.erase(itr);
+
+                            auto render_settings_copy = renderer->settings;
+                            reset_renderer(renderer->settings.renderSize, render_settings_copy);
                         }
                         shaderAsset.shouldRecompile = true;
                     }
@@ -723,10 +733,13 @@ void scene_editor_app::on_draw()
 
             ImGui::Dummy({ 0, 10 });
 
-            if (ImGui::TreeNode("Cascaded Shadow Mapping"))
+            if (renderer->settings.shadowsEnabled)
             {
-                Edit("shadows", renderer->get_shadow_pass());
-                ImGui::TreePop();
+                if (ImGui::TreeNode("Cascaded Shadow Mapping"))
+                {
+                    Edit("shadows", renderer->get_shadow_pass());
+                    ImGui::TreePop();
+                }
             }
 
             ImGui::Dummy({ 0, 10 });

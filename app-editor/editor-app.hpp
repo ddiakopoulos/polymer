@@ -101,7 +101,7 @@ struct aux_window final : public glfw_window
     std::unique_ptr<arcball_controller> arcball;
 
     perspective_camera previewCam;
-    scene_data previewSceneData;
+    render_payload previewSceneData;
 
     int assetSelection = -1;
 
@@ -123,7 +123,7 @@ struct aux_window final : public glfw_window
         previewMesh->pose.position = float3(0, 0, -2);
 
         renderer_settings previewSettings;
-        previewSettings.renderSize = float2(w, h);
+        previewSettings.renderSize = int2(w, h);
         previewSettings.msaaSamples = 2;
         previewSettings.performanceProfiling = false;
         previewSettings.useDepthPrepass = false;
@@ -430,7 +430,7 @@ struct scene_editor_app final : public polymer_app
     std::unique_ptr<fullscreen_texture> fullscreen_surface;
 
     Scene scene;
-    scene_data sceneData;
+    render_payload sceneData;
 
     ImGui::ImGuiAppLog log;
     auto_layout uiSurface;
@@ -440,6 +440,8 @@ struct scene_editor_app final : public polymer_app
 
     scene_editor_app();
     ~scene_editor_app();
+
+    void reset_renderer(int2 size, const renderer_settings & settings);
 
     void on_window_resize(int2 size) override;
     void on_input(const InputEvent & event) override;

@@ -128,8 +128,11 @@ void forward_renderer::run_forward_pass(std::vector<Renderable *> & renderQueueM
         mat->update_uniforms();
         if (auto * mr = dynamic_cast<MetallicRoughnessMaterial*>(mat))
         {
-            // ideally compile this out from the shader if not using shadows
-            mr->update_cascaded_shadow_array_handle(shadow->get_output_texture());
+            if (settings.shadowsEnabled)
+            {
+                // ideally compile this out from the shader if not using shadows
+                mr->update_cascaded_shadow_array_handle(shadow->get_output_texture());
+            }
         }
         mat->use();
 
@@ -227,7 +230,10 @@ forward_renderer::forward_renderer(const renderer_settings settings) : settings(
 
     // The pipeline still requires shadow resources to be valid even if we're not using them.
     // This could be improved.
-    shadow.reset(new stable_cascaded_shadows());
+    if (settings.shadowsEnabled)
+    {
+        shadow.reset(new stable_cascaded_shadows());
+    }
 
     gl_check_error(__FILE__, __LINE__);
 
@@ -257,7 +263,7 @@ void forward_renderer::render_frame(const render_payload & scene)
     // Update per-scene uniform buffer
     uniforms::per_scene b = {};
     b.time = timer.milliseconds().count() / 1000.f; // expressed in seconds
-    b.resolution = settings.renderSize;
+    b.resolution = float2(settings.renderSize);
     b.invResolution = 1.f / b.resolution;
     b.activePointLights = scene.pointLights.size();
 
