@@ -328,7 +328,7 @@ public:
     uint32_t get_color_texture(const uint32_t idx) const;
     uint32_t get_depth_texture(const uint32_t idx) const;
 
-    stable_cascaded_shadows & get_shadow_pass() const;
+    stable_cascaded_shadows * get_shadow_pass() const;
 };
 
 template<class F> void visit_fields(forward_renderer & o, F f)

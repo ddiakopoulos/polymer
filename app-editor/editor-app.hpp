@@ -37,7 +37,7 @@ struct fullscreen_texture
             void main()
             {
                 vec4 sample = texture(s_texture, texCoord);
-                f_color = vec4(sample.rgb, 1.0); //
+                f_color = vec4(sample.rgb, 1.0);
             }
         )";
 
@@ -91,7 +91,6 @@ void draw_listbox(const std::string & label, ImGuiTextFilter & filter, int & sel
     ImGui::PopItemWidth();
 }
 
-
 struct aux_window final : public glfw_window
 {
     std::unique_ptr<fullscreen_texture> fullscreen_surface;
@@ -124,7 +123,7 @@ struct aux_window final : public glfw_window
 
         renderer_settings previewSettings;
         previewSettings.renderSize = int2(w, h);
-        previewSettings.msaaSamples = 2;
+        previewSettings.msaaSamples = 8;
         previewSettings.performanceProfiling = false;
         previewSettings.useDepthPrepass = false;
         previewSettings.tonemapEnabled = false;

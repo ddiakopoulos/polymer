@@ -733,11 +733,11 @@ void scene_editor_app::on_draw()
 
             ImGui::Dummy({ 0, 10 });
 
-            if (renderer->settings.shadowsEnabled)
+            if (auto * shadows = renderer->get_shadow_pass())
             {
                 if (ImGui::TreeNode("Cascaded Shadow Mapping"))
                 {
-                    Edit("shadows", renderer->get_shadow_pass());
+                    Edit("shadows", *shadows);
                     ImGui::TreePop();
                 }
             }

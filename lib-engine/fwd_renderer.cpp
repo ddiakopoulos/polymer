@@ -30,9 +30,10 @@ uint32_t forward_renderer::get_depth_texture(const uint32_t idx) const
     return eyeDepthTextures[idx];
 }
 
-stable_cascaded_shadows & forward_renderer::get_shadow_pass() const
+stable_cascaded_shadows * forward_renderer::get_shadow_pass() const
 {
-    return *shadow;
+    if (shadow) return shadow.get();
+    return nullptr;
 }
 
 void forward_renderer::run_depth_prepass(const view_data & view, const render_payload & scene)
@@ -228,14 +229,15 @@ forward_renderer::forward_renderer(const renderer_settings settings) : settings(
 
     gl_check_error(__FILE__, __LINE__);
 
-    // The pipeline still requires shadow resources to be valid even if we're not using them.
-    // This could be improved.
+    // Only create shadow resources if the user has requested them. 
     if (settings.shadowsEnabled)
     {
         shadow.reset(new stable_cascaded_shadows());
     }
 
-    gl_check_error(__FILE__, __LINE__);
+    // Respect performance profiling settings on construction
+    gpuProfiler.set_enabled(settings.performanceProfiling);
+    cpuProfiler.set_enabled(settings.performanceProfiling);
 
     timer.start();
 }
