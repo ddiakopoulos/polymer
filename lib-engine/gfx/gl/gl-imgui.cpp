@@ -242,23 +242,24 @@ namespace gui
         if (data.ElementsHandle) glDeleteBuffers(1, &data.ElementsHandle);
         data.VaoHandle = data.VboHandle = data.ElementsHandle = 0;
         
-        glDetachShader(data.ShaderHandle, data.VertHandle);
-        glDeleteShader(data.VertHandle);
+        if (data.ShaderHandle && data.VertHandle) glDetachShader(data.ShaderHandle, data.VertHandle);
+        if (data.VertHandle) glDeleteShader(data.VertHandle);
         data.VertHandle = 0;
         
-        glDetachShader(data.ShaderHandle, data.FragHandle);
-        glDeleteShader(data.FragHandle);
+        if (data.ShaderHandle && data.VertHandle) glDetachShader(data.ShaderHandle, data.FragHandle);
+        if (data.FragHandle) glDeleteShader(data.FragHandle);
         data.FragHandle = 0;
         
         glDeleteProgram(data.ShaderHandle);
         data.ShaderHandle = 0;
-        
+
         if (data.FontTexture)
         {
             glDeleteTextures(1, &data.FontTexture);
             ImGui::GetIO().Fonts->TexID = 0;
             data.FontTexture = 0;
         }
+        gl_check_error(__FILE__, __LINE__);
     }
     
     void imgui_instance::begin_frame()
