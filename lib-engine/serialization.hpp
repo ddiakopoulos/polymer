@@ -41,6 +41,7 @@ template<class F> void visit_fields(HosekProceduralSky & o, F f)
     f("normalized_sun_y",       o.normalizedSunY, range_metadata<float>{ 0.f, (float)POLYMER_PI });
     f("albedo",                 o.albedo, range_metadata<float>{ 0.01f, 4.f});
     f("turbidity",              o.turbidity, range_metadata<float>{ 1.f, 14.f });
+
     o.recompute(o.turbidity, o.albedo, o.normalizedSunY);
 }
 
@@ -120,8 +121,6 @@ template<class F> void visit_fields(MetallicRoughnessMaterial & o, F f)
     f("emissive_handle", o.emissive);
     f("height_handle", o.height);
     f("occlusion_handle", o.occlusion);
-    f("radiance_cubemap_handle", o.radianceCubemap);
-    f("irradiance_cubemap_handle", o.irradianceCubemap);
 
     f("program_handle", o.program);
 }

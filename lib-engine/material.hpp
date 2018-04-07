@@ -30,8 +30,8 @@ namespace polymer
 
     public:
 
-        MetallicRoughnessMaterial() {}
-        void update_cascaded_shadow_array_handle(GLuint handle);
+        void update_uniforms_shadow(GLuint handle);
+        void update_uniforms_ibl(GLuint irradiance, GLuint radiance);
         void update_uniforms() override;
         void use() override;
 
@@ -47,7 +47,7 @@ namespace polymer
         float specularLevel{ 0.04f };
         float occlusionStrength{ 1.f };
         float ambientStrength{ 1.f };
-        float shadowOpacity{ 0.9f };
+        float shadowOpacity{ 1.f };
 
         int2 texcoordScale{ 4, 4 };
 
@@ -58,8 +58,6 @@ namespace polymer
         GlTextureHandle emissive;
         GlTextureHandle height;
         GlTextureHandle occlusion;
-        GlTextureHandle radianceCubemap;
-        GlTextureHandle irradianceCubemap;
     };
 
 }

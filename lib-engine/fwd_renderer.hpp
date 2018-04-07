@@ -235,6 +235,8 @@ struct render_payload
     uniforms::directional_light sunlight;
     std::vector<view_data> views;
     float4 clear_color{ 1, 0, 0, 1 };
+    GlTextureHandle ibl_radianceCubemap;
+    GlTextureHandle ibl_irradianceCubemap;
 };
 
 /////////////////////////////////////////

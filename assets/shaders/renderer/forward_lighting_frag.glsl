@@ -38,10 +38,6 @@ uniform sampler2D s_emissive;
 uniform sampler2D s_height;
 uniform sampler2D s_occlusion;
 
-// Image-Based-Lighting Uniforms
-uniform samplerCube sc_radiance;
-uniform samplerCube sc_irradiance;
-
 // Lighting & Shadowing Uniforms
 uniform float u_pointLightAttenuation = 1.0;
 uniform float u_shadowOpacity = 1.0;
@@ -57,6 +53,10 @@ uniform float u_emissiveStrength = 1.0;
 #ifdef ENABLE_SHADOWS
     uniform sampler2DArray s_csmArray;
 #endif
+
+// Image-Based-Lighting Uniforms
+uniform samplerCube sc_irradiance;
+uniform samplerCube sc_radiance;
 
 out vec4 f_color;
 

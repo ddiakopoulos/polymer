@@ -132,8 +132,10 @@ void forward_renderer::run_forward_pass(std::vector<Renderable *> & renderQueueM
             if (settings.shadowsEnabled)
             {
                 // ideally compile this out from the shader if not using shadows
-                mr->update_cascaded_shadow_array_handle(shadow->get_output_texture());
+                mr->update_uniforms_shadow(shadow->get_output_texture());
             }
+
+            mr->update_uniforms_ibl(scene.ibl_irradianceCubemap.get(), scene.ibl_radianceCubemap.get());
         }
         mat->use();
 

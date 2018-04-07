@@ -425,6 +425,9 @@ void scene_editor_app::on_draw()
     {
         editorProfiler.begin("gather-scene");
 
+        sceneData.ibl_irradianceCubemap = "wells-irradiance-cubemap";
+        sceneData.ibl_radianceCubemap = "wells-radiance-cubemap";
+
         // Gather Lighting
         for (auto & obj : scene.objects)
         {
