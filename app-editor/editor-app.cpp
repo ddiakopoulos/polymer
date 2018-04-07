@@ -149,17 +149,22 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
     create_handle_for_asset("scifi-floor-roughness", load_image("../assets/nonfree/Metal_ScifiHangarFloor_2k_roughness.tga", false));
     create_handle_for_asset("scifi-floor-occlusion", load_image("../assets/nonfree/Metal_ScifiHangarFloor_2k_ao.tga", false));
 
+    scene.materialLib.reset(new polymer::material_library("../assets/materials.json"));
+
+    
+    /*
     std::shared_ptr<DefaultMaterial> default = std::make_shared<DefaultMaterial>();
     create_handle_for_asset("default-material", static_cast<std::shared_ptr<Material>>(default));
-
-    cereal::deserialize_from_json("../assets/materials.json", scene.materialInstances);
+    cereal::deserialize_from_json("../assets/materials.json", scene.instances);
 
     // Register all material instances with the asset system. Since everything is handle-based,
     // we can do this wherever, so long as it's before the first rendered frame
-    for (auto & instance : scene.materialInstances)
+    for (auto & instance : scene.instances)
     {
         create_handle_for_asset(instance.first.c_str(), static_cast<std::shared_ptr<Material>>(instance.second));
     }
+    
+    */
 
     //auto shaderball = load_geometry_from_ply("../assets/models/shaderball/shaderball.ply");
     /*

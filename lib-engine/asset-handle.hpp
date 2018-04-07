@@ -46,6 +46,7 @@ public:
     asset_handle(const char * asset_id)
     {
         name = asset_id;
+        std::cout << "New Asset Handle With Name: " << name << std::endl;
         if (name.empty())
         {
             name = "default";

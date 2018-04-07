@@ -12,6 +12,10 @@
 #include "material.hpp"
 #include "geometry.hpp"
 #include "gl-mesh.hpp"
+#include "material-library.hpp"
+#include "gl-procedural-sky.hpp"
+
+#include <memory>
 
 ///////////////////////
 //   Scene Objects   //
@@ -209,11 +213,16 @@ struct StaticMesh final : public Renderable
 //   Scene Definition   //
 //////////////////////////
 
+namespace polymer
+{
+    struct material_library;
+}
+
 struct Scene
 {
     std::shared_ptr<ProceduralSky> skybox;
+    std::unique_ptr<polymer::material_library> materialLib;
     std::vector<std::shared_ptr<GameObject>> objects;
-    std::map<std::string, std::shared_ptr<Material>> materialInstances;
 };
 
 #endif // end core_scene_hpp

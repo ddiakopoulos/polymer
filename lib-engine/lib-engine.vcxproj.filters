@@ -12,6 +12,7 @@
     <ClCompile Include="gfx\gl\gl-nvg.cpp">
       <Filter>gfx\gl</Filter>
     </ClCompile>
+    <ClCompile Include="material-library.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="fwd_renderer.hpp" />
@@ -71,6 +72,7 @@
     <ClInclude Include="profiling.hpp" />
     <ClInclude Include="asset-handle.hpp" />
     <ClInclude Include="asset-defs.hpp" />
+    <ClInclude Include="material-library.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="gfx">

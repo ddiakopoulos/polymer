@@ -103,6 +103,7 @@
     <ClInclude Include="gfx\gl\gl-texture-view.hpp" />
     <ClInclude Include="gfx\gl\glfw-app.hpp" />
     <ClInclude Include="logging.hpp" />
+    <ClInclude Include="material-library.hpp" />
     <ClInclude Include="material.hpp" />
     <ClInclude Include="profiling.hpp" />
     <ClInclude Include="scene.hpp" />
@@ -114,6 +115,7 @@
     <ClCompile Include="gfx\gl\gl-imgui.cpp" />
     <ClCompile Include="gfx\gl\gl-nvg.cpp" />
     <ClCompile Include="gfx\gl\glfw-app.cpp" />
+    <ClCompile Include="material-library.cpp" />
     <ClCompile Include="material.cpp" />
   </ItemGroup>
   <ItemGroup>

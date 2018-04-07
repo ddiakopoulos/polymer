@@ -103,6 +103,7 @@ struct aux_window final : public glfw_window
     perspective_camera previewCam;
     render_payload previewSceneData;
 
+    std::string stringBuffer;
     int assetSelection = -1;
     const uint32_t previewHeight = 400;
     aux_window(gl_context * context, int w, int h, const std::string title, int samples) : glfw_window(context, w, h, title, samples) 
@@ -146,11 +147,7 @@ struct aux_window final : public glfw_window
     virtual void on_input(const polymer::InputEvent & e) override final
     {
         if (e.window == window) auxImgui->update_input(e);
-
-        if (ImGui::GetIO().WantCaptureMouse || ImGui::GetIO().WantCaptureKeyboard)
-        {
-            return;
-        }
+        if (ImGui::GetIO().WantCaptureMouse || ImGui::GetIO().WantCaptureKeyboard) return;
 
         if (e.type == InputEvent::MOUSE && e.is_down())
         {
@@ -219,7 +216,34 @@ struct aux_window final : public glfw_window
             auxImgui->begin_frame();
             gui::imgui_fixed_window_begin("material-editor", { { 0, 0 },{ width, int(height - previewHeight) } });
 
-            ImGui::Dummy({ 0, 8 });
+            ImGui::Dummy({ 0, 12 });
+            //ImGui::Text("Material Library: %s", )
+            ImGui::Dummy({ 0, 12 });
+
+            ImGui::SameLine();
+            if (ImGui::Button(" " ICON_FA_PLUS " Create Material "))
+            {
+                ImGui::OpenPopup("Create Material");
+            }
+
+            if (ImGui::BeginPopupModal("Create Material", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+            {
+                ImGui::Dummy({ 0, 6 });
+                gui::InputText("Name", &stringBuffer);
+                ImGui::Dummy({ 0, 6 });
+
+                if (ImGui::Button("OK", ImVec2(120, 0))) 
+                { 
+                    ImGui::CloseCurrentPopup(); 
+                }
+
+                ImGui::SetItemDefaultFocus();
+                ImGui::SameLine();
+                if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
+                ImGui::EndPopup();
+            }
+
+            ImGui::Dummy({ 0, 12 });
             ImGuiTextFilter textFilter;
             textFilter.Draw(" " ICON_FA_SEARCH "  ");
             ImGui::Dummy({ 0, 12 });

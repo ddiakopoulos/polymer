@@ -431,7 +431,7 @@ namespace gui
         return result;
     }
 
-    bool InputText(const char* label, std::string* buf, ImGuiInputTextFlags flags, ImGuiTextEditCallback callback, void * user_data)
+    bool InputText(const char* label, std::string * buf, ImGuiInputTextFlags flags, ImGuiTextEditCallback callback, void * user_data)
     {
         char *buffer = new char[buf->size()+128];
         std::strcpy(buffer, buf->c_str());

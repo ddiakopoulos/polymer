@@ -20,9 +20,13 @@ template<> inline asset_handle<GlMesh> create_handle_for_asset(const char * asse
     return { asset_handle<GlMesh>(asset_id, std::move(asset)) };
 }
 
+// Note that the asset_handle system strongly typed, meaning that the difference betweeen 
+// forward-declaring classes/structs is not just a semantic. This comment is basically
+// a reminder that I "fixed" a bug where the following forward declaration was a class,
+// and nothing could find the asset, but all the data and names were correctly setup.
 namespace polymer
 {
-    class Material;
+    struct Material;
 }
 
 typedef asset_handle<GlTexture2D>                        GlTextureHandle;

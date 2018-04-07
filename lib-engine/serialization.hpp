@@ -18,6 +18,29 @@
 #include "cereal/archives/json.hpp"
 #include "cereal/access.hpp"
 
+// Variadic unpacking of the metadata in the style of sgorsten. The tricky bit is the use of SFINAE with `enable_if_t.
+// The compiler will keep bailing out until requested type matches the type in the parameter pack, by either of the two other templates below 
+// This is loosely inspired by `findArg` found here (https://github.com/WyattTechnology/Wyatt-STM/blob/master/wstm/find_arg.h) (BSD-3),
+// but using pointers instead of default-constructed objects.
+template<class T, class A, class... O>
+std::enable_if_t<!std::is_same<T, A>::value, const T *> unpack(const A & first, const O & ... others)
+{
+    // Recursively resolve piece of metadata until `others...` exhausted
+    return unpack<T>(others...);
+}
+
+// Resolves the metadata when provided with a parameter pack. In the case of a single piece of metadata, this is the target.
+template<class T, class... O>
+const T * unpack(const T & meta, const O & ... others) { return &meta; }
+
+// Base template to that is resolved when there's no metadata
+template<class T>
+const T * unpack() { return nullptr; }
+
+template<class T> struct range_metadata { T min, max; };
+struct editor_hidden { };
+struct input_field { };
+
 // There are two distinct but related bits of functionality here. The first is the `visit_fields` and `visit_subclasses` paradigm,
 // reflecting class properties and defining polymorphic relationships, respectively. ImGui uses these definitions to build object
 // interfaces in the scene editor as defined in `gui.hpp`. Furthermore, metadata attributes can be provided as a third argument in `visit_fields`, 
@@ -257,7 +280,8 @@ namespace cereal
 
 namespace cereal
 {
-    template<class Archive> void serialize(Archive & archive, Material & m)
+    template<class Archive> 
+    void serialize(Archive & archive, Material & m)
     {
         visit_subclasses(&m, [&archive](const char * name, auto * p)
         {
