@@ -50,10 +50,12 @@ struct material_editor_window final : public glfw_window
 
     std::string stringBuffer;
     int assetSelection = -1;
-    const uint32_t previewHeight = 400;
+    const uint32_t previewHeight = 360;
     material_library & lib;
-    material_editor_window(gl_context * context, int w, int h, const std::string title, int samples, polymer::material_library & lib)
-        : glfw_window(context, w, h, title, samples), lib(lib)
+    selection_controller<GameObject> & selector;
+
+    material_editor_window(gl_context * context, int w, int h, const std::string title, int samples, polymer::material_library & lib, selection_controller<GameObject> & selector)
+        : glfw_window(context, w, h, title, samples), lib(lib), selector(selector)
     {
         glfwMakeContextCurrent(window);
 
@@ -146,6 +148,33 @@ struct material_editor_window final : public glfw_window
             glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+            auto entitySelection = selector.get_selection();
+
+            // Only one object->material can be edited at once
+            if (entitySelection.size() == 1)
+            {
+                // Produce a list of material instance names. This could also be done by
+                // iterating the keys of instances in the material library, but using
+                // asset_handles is more canonical.
+                std::vector<std::string> materialNames;
+                for (auto & m : asset_handle<std::shared_ptr<Material>>::list()) materialNames.push_back(m.name);
+
+                // Get the object from the selection
+                GameObject * selected_object = entitySelection[0];
+
+                // Can it have a material?
+                if (auto * obj_as_mesh = dynamic_cast<StaticMesh *>(selected_object))
+                {
+                    uint32_t mat_idx = 0;
+                    for (std::string & name : materialNames)
+                    {
+                        if (obj_as_mesh->mat.name == name) assetSelection = mat_idx;
+                        mat_idx++;
+                    }
+
+                }
+            }
+
             // A non-zero asset selection also means the preview mesh would have a valid material
             if (assetSelection > 0)
             {
@@ -161,7 +190,7 @@ struct material_editor_window final : public glfw_window
 
             glUseProgram(0);
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            glViewport(0, 0, width, height);
+            glViewport(0, previewHeight, width, height);
 
             auxImgui->begin_frame();
             gui::imgui_fixed_window_begin("material-editor", { { 0, 0 },{ width, int(height - previewHeight) } });
@@ -209,6 +238,8 @@ struct material_editor_window final : public glfw_window
 
             ImGui::Dummy({ 0, 12 });
 
+            ImGui::Separator();
+
             if (assetSelection >= 0)
             {
                 auto index_to_handle_name = [](const uint32_t index) -> std::string
@@ -225,7 +256,12 @@ struct material_editor_window final : public glfw_window
                 auto mat = asset_handle<std::shared_ptr<Material>>::list()[assetSelection].get();
                 previewMesh->mat = index_to_handle_name(assetSelection);
 
+                // Inspect
+                inspect_object(nullptr, mat.get());
+
+                ImGui::Dummy({ 0, 12 });
                 if (ImGui::Button(" " ICON_FA_TRASH " Delete Material ")) ImGui::OpenPopup("Delete");
+                ImGui::Dummy({ 0, 12 });
 
                 if (ImGui::BeginPopupModal("Delete Material", NULL, ImGuiWindowFlags_AlwaysAutoResize))
                 {
@@ -242,7 +278,6 @@ struct material_editor_window final : public glfw_window
                     ImGui::EndPopup();
                 }
 
-                inspect_object(nullptr, mat.get());
             }
 
             ImGui::Dummy({ 0, 12 });

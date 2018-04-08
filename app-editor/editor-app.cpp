@@ -322,11 +322,12 @@ void scene_editor_app::on_input(const InputEvent & event)
             {
                 if (!material_editor)
                 {
-                    material_editor.reset(new material_editor_window(get_shared_gl_context(), 500, 1000, "", 1, *scene.materialLib.get()));
+                    material_editor.reset(new material_editor_window(get_shared_gl_context(), 500, 1200, "", 1, *scene.materialLib.get(), *gizmo_selector.get()));
                 }
                 else if (!material_editor->get_window())
                 {
-                    material_editor.reset(new material_editor_window(get_shared_gl_context(), 500, 1000, "", 1, *scene.materialLib.get()));
+                    // Workaround since there's no convenient way to reset the material_editor when it's been closed
+                    material_editor.reset(new material_editor_window(get_shared_gl_context(), 500, 1200, "", 1, *scene.materialLib.get(), *gizmo_selector.get()));
                 }
             }
         }
