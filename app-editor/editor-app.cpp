@@ -43,12 +43,12 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
     gui::make_light_theme();
     igm->add_font(droidSansTTFBytes);
 
-    editor.reset(new selection_controller<GameObject>());
+    gizmo_selector.reset(new selection_controller<GameObject>());
 
     cam.look_at({ 0, 9.5f, -6.0f }, { 0, 0.1f, 0 });
     flycam.set_camera(&cam);
 
-    Logger::get_instance()->add_sink(std::make_shared<ImGui::LogWindowSink>(log));
+    Logger::get_instance()->add_sink(std::make_shared<ImGui::spdlog_editor_sink>(log));
 
     load_editor_intrinsic_assets("../assets/models/runtime/");
 
@@ -278,12 +278,12 @@ void scene_editor_app::on_window_resize(int2 size)
 void scene_editor_app::on_input(const InputEvent & event)
 {
     igm->update_input(event);
-    editor->on_input(event);
+    gizmo_selector->on_input(event);
 
     if (ImGui::GetIO().WantCaptureMouse || ImGui::GetIO().WantCaptureKeyboard)
     {
         flycam.reset();
-        editor->reset_input();
+        gizmo_selector->reset_input();
         return;
     }
 
@@ -296,14 +296,14 @@ void scene_editor_app::on_input(const InputEvent & event)
             // De-select all objects
             if (event.value[0] == GLFW_KEY_ESCAPE && event.action == GLFW_RELEASE)
             {
-                editor->clear();
+                gizmo_selector->clear();
             }
 
             // Focus on currently selected object
             if (event.value[0] == GLFW_KEY_F && event.action == GLFW_RELEASE)
             {
-                if (editor->get_selection().size() == 0) return;
-                if (auto * sel = editor->get_selection()[0])
+                if (gizmo_selector->get_selection().size() == 0) return;
+                if (auto * sel = gizmo_selector->get_selection()[0])
                 {
                     auto selectedObjectPose = sel->get_pose();
                     auto focusOffset = selectedObjectPose.position + float3(0.f, 0.5f, 4.f);
@@ -320,7 +320,14 @@ void scene_editor_app::on_input(const InputEvent & event)
 
             if (event.value[0] == GLFW_KEY_SPACE && event.action == GLFW_RELEASE)
             {
-                auxWindow.reset(new aux_window(get_shared_gl_context(), 500, 1000, "", 1, *scene.materialLib.get()));
+                if (!material_editor)
+                {
+                    material_editor.reset(new material_editor_window(get_shared_gl_context(), 500, 1000, "", 1, *scene.materialLib.get()));
+                }
+                else if (!material_editor->get_window())
+                {
+                    material_editor.reset(new material_editor_window(get_shared_gl_context(), 500, 1000, "", 1, *scene.materialLib.get()));
+                }
             }
         }
 
@@ -332,7 +339,7 @@ void scene_editor_app::on_input(const InputEvent & event)
 
             const Ray r = cam.get_world_ray(event.cursor, float2(width, height));
 
-            if (length(r.direction) > 0 && !editor->active())
+            if (length(r.direction) > 0 && !gizmo_selector->active())
             {
                 std::vector<GameObject *> selectedObjects;
                 float best_t = std::numeric_limits<float>::max();
@@ -359,17 +366,17 @@ void scene_editor_app::on_input(const InputEvent & event)
                     // Multi-selection
                     if (event.mods & GLFW_MOD_CONTROL)
                     {
-                        auto existingSelection = editor->get_selection();
+                        auto existingSelection = gizmo_selector->get_selection();
                         for (auto s : selectedObjects)
                         {
-                            if (!editor->selected(s)) existingSelection.push_back(s);
+                            if (!gizmo_selector->selected(s)) existingSelection.push_back(s);
                         }
-                        editor->set_selection(existingSelection);
+                        gizmo_selector->set_selection(existingSelection);
                     }
                     // Single Selection
                     else
                     {
-                        editor->set_selection(selectedObjects);
+                        gizmo_selector->set_selection(selectedObjects);
                     }
                 }
             }
@@ -391,7 +398,7 @@ void scene_editor_app::on_update(const UpdateEvent & e)
     editorProfiler.begin("on_update");
     flycam.update(e.timestep_ms);
     shaderMonitor.handle_recompile();
-    editor->on_update(cam, float2(width, height));
+    gizmo_selector->on_update(cam, float2(width, height));
     editorProfiler.end("on_update");
 }
 
@@ -475,7 +482,7 @@ void scene_editor_app::on_draw()
         program.uniform("u_eyePos", cam.get_eye_point());
         program.uniform("u_viewProjMatrix", viewProjectionMatrix);
 
-        for (auto obj : editor->get_selection())
+        for (auto obj : gizmo_selector->get_selection())
         {
             if (auto * r = dynamic_cast<Renderable*>(obj))
             {
@@ -498,13 +505,13 @@ void scene_editor_app::on_draw()
     menu.app_menu_begin();
     {
         menu.begin("File");
-        bool mod_enabled = !editor->active();
+        bool mod_enabled = !gizmo_selector->active();
         if (menu.item("Open Scene", GLFW_MOD_CONTROL, GLFW_KEY_O, mod_enabled))
         {
             const auto selected_open_path = windows_file_dialog("anvil scene", "json", true);
             if (!selected_open_path.empty())
             {
-                editor->clear();
+                gizmo_selector->clear();
                 scene.objects.clear();
                 cereal::deserialize_from_json(selected_open_path, scene.objects);
                 glfwSetWindowTitle(window, selected_open_path.c_str());
@@ -516,14 +523,14 @@ void scene_editor_app::on_draw()
             const auto save_path = windows_file_dialog("anvil scene", "json", false);
             if (!save_path.empty())
             {
-                editor->clear();
+                gizmo_selector->clear();
                 write_file_text(save_path, cereal::serialize_to_json(scene.objects));
                 glfwSetWindowTitle(window, save_path.c_str());
             }
         }
         if (menu.item("New Scene", GLFW_MOD_CONTROL, GLFW_KEY_N, mod_enabled))
         {
-            editor->clear();
+            gizmo_selector->clear();
             scene.objects.clear();
         }
         if (menu.item("Take Screenshot", GLFW_MOD_CONTROL, GLFW_KEY_EQUAL, mod_enabled))
@@ -539,11 +546,11 @@ void scene_editor_app::on_draw()
         {
             auto it = std::remove_if(std::begin(scene.objects), std::end(scene.objects), [this](std::shared_ptr<GameObject> obj) 
             { 
-                return editor->selected(obj.get());
+                return gizmo_selector->selected(obj.get());
             });
             scene.objects.erase(it, std::end(scene.objects));
 
-            editor->clear();
+            gizmo_selector->clear();
         }
         if (menu.item("Select All", GLFW_MOD_CONTROL, GLFW_KEY_A)) 
         {
@@ -552,7 +559,7 @@ void scene_editor_app::on_draw()
             {
                 selectedObjects.push_back(obj.get());
             }
-            editor->set_selection(selectedObjects);
+            gizmo_selector->set_selection(selectedObjects);
         }
         menu.end();
 
@@ -568,7 +575,7 @@ void scene_editor_app::on_draw()
                 // Newly spawned objects are selected by default
                 std::vector<GameObject *> selectedObjects;
                 selectedObjects.push_back(obj.get());
-                editor->set_selection(selectedObjects);
+                gizmo_selector->set_selection(selectedObjects);
             }
         });
         menu.end();
@@ -594,9 +601,9 @@ void scene_editor_app::on_draw()
         ui_rect bottomRightPane = { { int2(split3.second.min()) },{ int2(split3.second.max()) } };  // remainder
 
         gui::imgui_fixed_window_begin("Inspector", topRightPane);
-        if (editor->get_selection().size() >= 1)
+        if (gizmo_selector->get_selection().size() >= 1)
         {
-            inspect_object(nullptr, editor->get_selection()[0]);
+            inspect_object(nullptr, gizmo_selector->get_selection()[0]);
         }
         gui::imgui_fixed_window_end();
 
@@ -620,19 +627,19 @@ void scene_editor_app::on_draw()
         for (size_t i = 0; i < scene.objects.size(); ++i)
         {
             ImGui::PushID(static_cast<int>(i));
-            bool selected = editor->selected(scene.objects[i].get());
+            bool selected = gizmo_selector->selected(scene.objects[i].get());
 
             // For polymorphic typeids, the trick is to dereference it first
             std::string name = scene.objects[i]->id.size() > 0 ? scene.objects[i]->id : std::string(typeid(*scene.objects[i]).name()); 
 
             if (ImGui::Selectable(name.c_str(), &selected))
             {
-                if (!ImGui::GetIO().KeyCtrl) editor->clear();
-                editor->update_selection(scene.objects[i].get());
+                if (!ImGui::GetIO().KeyCtrl) gizmo_selector->clear();
+                gizmo_selector->update_selection(scene.objects[i].get());
             }
 
             // Update material
-            auto selection = editor->get_selection();
+            auto selection = gizmo_selector->get_selection();
             if (selection.size() == 1)
             {
                 // Get the first
@@ -767,14 +774,14 @@ void scene_editor_app::on_draw()
     {
         editorProfiler.begin("gizmo_on_draw");
         glClear(GL_DEPTH_BUFFER_BIT);
-        editor->on_draw();
+        gizmo_selector->on_draw();
         editorProfiler.end("gizmo_on_draw");
     }
 
     gl_check_error(__FILE__, __LINE__);
 
     glFlush();
-    if (auxWindow) auxWindow->run();
+    if (material_editor && material_editor->get_window()) material_editor->run();
     glfwSwapBuffers(window);
 }
 

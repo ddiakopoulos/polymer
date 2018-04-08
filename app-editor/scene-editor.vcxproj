@@ -106,6 +106,7 @@
   <ItemGroup>
     <ClInclude Include="editor-app.hpp" />
     <ClInclude Include="editor-ui.hpp" />
+    <ClInclude Include="material-editor.hpp" />
     <ClInclude Include="selection.hpp" />
     <ClInclude Include="win32.hpp" />
   </ItemGroup>
