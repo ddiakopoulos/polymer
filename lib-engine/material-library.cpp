@@ -6,11 +6,13 @@
 
 using namespace polymer;
 
+const std::string material_library::kDefaultMaterialId = "default-material";
+
 material_library::material_library(const std::string & library_path) : library_path(library_path)
 {
     // Create a default material
     std::shared_ptr<DefaultMaterial> default = std::make_shared<DefaultMaterial>();
-    create_handle_for_asset("default-material", static_cast<std::shared_ptr<Material>>(default));
+    create_handle_for_asset(kDefaultMaterialId.c_str(), static_cast<std::shared_ptr<Material>>(default));
     cereal::deserialize_from_json(library_path, instances);
 
     // Register all material instances with the asset system. Since everything is handle-based,
@@ -39,7 +41,7 @@ void material_library::create_material(const std::string & name, std::shared_ptr
     }
     create_handle_for_asset(name.c_str(), std::dynamic_pointer_cast<Material>(mat));
     instances[name] = mat;
-    auto jsonString = cereal::serialize_to_json(library_path);
+    auto jsonString = cereal::serialize_to_json(instances);
     polymer::write_file_text(library_path, jsonString);
 }
 
@@ -50,7 +52,7 @@ void material_library::remove_material(const std::string & name)
     {
         instances.erase(itr);
         MaterialHandle::destroy(name);
-        auto jsonString = cereal::serialize_to_json(library_path);
+        auto jsonString = cereal::serialize_to_json(instances);
         polymer::write_file_text(library_path, jsonString);
         Logger::get_instance()->assetLog->info("removing {} from the material list", name);
     }

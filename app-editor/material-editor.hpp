@@ -50,9 +50,10 @@ struct material_editor_window final : public glfw_window
 
     std::string stringBuffer;
     int assetSelection = -1;
-    const uint32_t previewHeight = 360;
+    const uint32_t previewHeight = 420;
     material_library & lib;
     selection_controller<GameObject> & selector;
+    StaticMesh * inspectedObject{ nullptr };
 
     material_editor_window(gl_context * context, int w, int h, const std::string title, int samples, polymer::material_library & lib, selection_controller<GameObject> & selector)
         : glfw_window(context, w, h, title, samples), lib(lib), selector(selector)
@@ -165,14 +166,22 @@ struct material_editor_window final : public glfw_window
                 // Can it have a material?
                 if (auto * obj_as_mesh = dynamic_cast<StaticMesh *>(selected_object))
                 {
+                    inspectedObject = obj_as_mesh;
                     uint32_t mat_idx = 0;
                     for (std::string & name : materialNames)
                     {
-                        if (obj_as_mesh->mat.name == name) assetSelection = mat_idx;
+                        if (obj_as_mesh->mat.name == name)
+                        {
+                            assetSelection = mat_idx;
+                        }
                         mat_idx++;
                     }
-
                 }
+                else inspectedObject = nullptr;
+            }
+            else
+            {
+                inspectedObject = nullptr;
             }
 
             // A non-zero asset selection also means the preview mesh would have a valid material
@@ -254,21 +263,28 @@ struct material_editor_window final : public glfw_window
 
                 // This is by index
                 auto mat = asset_handle<std::shared_ptr<Material>>::list()[assetSelection].get();
-                previewMesh->mat = index_to_handle_name(assetSelection);
+                const std::string material_handle_name =index_to_handle_name(assetSelection);
+                previewMesh->mat = material_handle_name;
+
+                ImGui::Text("Material: %s", material_handle_name.c_str());
+                ImGui::Dummy({ 0, 12 });
 
                 // Inspect
                 inspect_object(nullptr, mat.get());
 
                 ImGui::Dummy({ 0, 12 });
-                if (ImGui::Button(" " ICON_FA_TRASH " Delete Material ")) ImGui::OpenPopup("Delete");
+                if (ImGui::Button(" " ICON_FA_TRASH " Delete Material ")) ImGui::OpenPopup("Delete Material");
                 ImGui::Dummy({ 0, 12 });
 
                 if (ImGui::BeginPopupModal("Delete Material", NULL, ImGuiWindowFlags_AlwaysAutoResize))
                 {
-                    ImGui::Text("Are you sure you want to delete this?");
+                    ImGui::Text("Are you sure you want to delete %s?", material_handle_name.c_str());
 
+                    // Need some kind of missing material shader if material is not assigned (and we render it)
                     if (ImGui::Button("OK", ImVec2(120, 0)))
                     {
+                        if (inspectedObject) inspectedObject->set_material(material_library::kDefaultMaterialId);
+                        lib.remove_material(material_handle_name);
                         ImGui::CloseCurrentPopup();
                     }
 

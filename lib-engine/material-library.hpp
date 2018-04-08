@@ -15,6 +15,7 @@ namespace polymer
     // although all materials also live in the static table of asset_handles.
     struct material_library
     {
+        static const std::string kDefaultMaterialId;
         std::map<std::string, std::shared_ptr<Material>> instances;
         std::string library_path;
         material_library(const std::string & library_path);

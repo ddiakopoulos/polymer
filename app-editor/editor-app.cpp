@@ -570,7 +570,7 @@ void scene_editor_app::on_draw()
             if (menu.item(name))
             {
                 auto obj = std::make_shared<std::remove_reference_t<decltype(*p)>>();
-                obj->set_material("default-material");
+                obj->set_material(material_library::kDefaultMaterialId);
                 scene.objects.push_back(obj);
 
                 // Newly spawned objects are selected by default
