@@ -79,7 +79,7 @@ public:
     }
 };
 
-struct Scene
+struct poly_scene
 {
     RenderableGrid grid {0.25f, 24, 24 };
     Geometry navMesh;
@@ -110,7 +110,7 @@ struct VirtualRealityApp : public polymer_app
     gl_shader_monitor shaderMonitor = { "../assets/" };
     
     std::vector<ScreenViewport> viewports;
-    Scene scene;
+    poly_scene scene;
 
     simple_cpu_timer t;
     gl_gpu_timer gpuTimer;

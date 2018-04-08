@@ -216,7 +216,7 @@ namespace polymer
     struct material_library;
 }
 
-struct Scene
+struct poly_scene
 {
     std::shared_ptr<ProceduralSky> skybox;
     std::unique_ptr<polymer::material_library> materialLib;

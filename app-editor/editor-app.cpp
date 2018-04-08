@@ -138,6 +138,7 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
     create_handle_for_asset("wells-radiance-cubemap", load_cubemap(radianceHandle));
     create_handle_for_asset("wells-irradiance-cubemap", load_cubemap(irradianceHandle));
 
+    /*
     create_handle_for_asset("rusted-iron-albedo", load_image("../assets/nonfree/Metal_ModernMetalIsoDiamondTile_2k_basecolor.tga", false));
     create_handle_for_asset("rusted-iron-normal", load_image("../assets/nonfree/Metal_ModernMetalIsoDiamondTile_2k_n.tga", false));
     create_handle_for_asset("rusted-iron-metallic", load_image("../assets/nonfree/Metal_ModernMetalIsoDiamondTile_2k_metallic.tga", false));
@@ -150,62 +151,16 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
     create_handle_for_asset("scifi-floor-roughness", load_image("../assets/nonfree/Metal_ScifiHangarFloor_2k_roughness.tga", false));
     create_handle_for_asset("scifi-floor-occlusion", load_image("../assets/nonfree/Metal_ScifiHangarFloor_2k_ao.tga", false));
 
-    scene.materialLib.reset(new polymer::material_library("../assets/materials.json"));
-
-    //auto shaderball = load_geometry_from_ply("../assets/models/shaderball/shaderball.ply");
-    /*
-    auto shaderball = load_geometry_from_ply("../assets/models/geometry/TorusKnotUniform.ply");
-    rescale_geometry(shaderball, 1.f);
-    create_handle_for_asset("shaderball", make_mesh_from_geometry(shaderball));
-    create_handle_for_asset("shaderball", std::move(shaderball));
     */
-
-    auto cap = make_icosasphere(3);
-    create_handle_for_asset("shaderball", make_mesh_from_geometry(cap));
-    create_handle_for_asset("shaderball", std::move(cap));
-
-    auto ico = make_icosasphere(5);
-    create_handle_for_asset("icosphere", make_mesh_from_geometry(ico));
-    create_handle_for_asset("icosphere", std::move(ico));
-
-    auto cube = make_cube();
-    create_handle_for_asset("cube", make_mesh_from_geometry(cube));
-    create_handle_for_asset("cube", std::move(cube));
 
     scene.objects.clear();
     cereal::deserialize_from_json("../assets/scene.json", scene.objects);
 
-    std::unordered_map<std::string, uint32_t> missingGeometryAssets;
-    std::unordered_map<std::string, uint32_t> missingMeshAssets;
+    scene.materialLib.reset(new polymer::material_library("../assets/materials.json"));
 
-    for (auto & obj : scene.objects)
-    {
-        if (auto * mesh = dynamic_cast<StaticMesh*>(obj.get()))
-        {
-            bool foundGeom = false;
-            bool foundMesh = false;
-
-            for (auto & h : asset_handle<Geometry>::list())
-            {
-                if (h.name == mesh->geom.name) foundGeom = true;
-            }
-
-            for (auto & h : asset_handle<GlMesh>::list())
-            {
-                if (h.name == mesh->mesh.name) foundMesh = true;
-            }
-
-            if (!foundGeom) missingGeometryAssets[mesh->geom.name] += 1;
-            if (!foundMesh) missingMeshAssets[mesh->mesh.name] += 1;
-
-        }
-    }
-
-    for (auto & e : missingGeometryAssets) std::cout << "Asset table does not have " << e.first << " geometry required by " << e.second << " game object instances" << std::endl;
-    for (auto & e : missingMeshAssets) std::cout << "Asset table does not have " << e.first << " mesh required by " << e.second << " game object instances" << std::endl;
-
-    //if (foundGeom == false) std::cout << "asset table does not have a geometry entry for " << mesh->geom.name << std::endl;
-    //if (foundMesh == false) std::cout << "asset table does not have a mesh entry for " << mesh->mesh.name << std::endl;
+    // Resolve asset_handles to resources on disk
+    resolver.reset(new asset_resolver());
+    resolver->resolve("../assets/", &scene, scene.materialLib.get());
 
     // Setup Debug visualizations
     uiSurface.bounds = { 0, 0, (float)width, (float)height };

@@ -244,7 +244,7 @@ namespace polymer
 
                 }
             }
-        };
+        }
 
         std::string root_path;
         std::unordered_map<uint32_t, ShaderAsset> assets;

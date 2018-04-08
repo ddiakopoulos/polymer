@@ -65,7 +65,8 @@ struct material_editor_window final : public glfw_window
 
         fullscreen_surface.reset(new fullscreen_texture());
 
-        // These are created on the this individual context and cached as global variables. It will be re-assigned...
+        // These are created on the this gl context and cached as global variables in the asset table. It will be re-assigned
+        // every time this window is opened so we don't need to worry about cleaning it up.
         auto cap = make_icosasphere(3);
         create_handle_for_asset("preview-cube", make_mesh_from_geometry(cap));
         create_handle_for_asset("preview-cube", std::move(cap));
@@ -219,6 +220,7 @@ struct material_editor_window final : public glfw_window
                 gui::InputText("Name", &stringBuffer);
                 ImGui::Dummy({ 0, 6 });
 
+                // Make a list of all the material types. (i.e. PBR, etc)
                 std::vector<std::string> materialTypes;
                 visit_subclasses((Material*)nullptr, [&materialTypes](const char * name, auto * p)
                 {
