@@ -5,6 +5,7 @@
 
 namespace polymer
 {
+    // Forward declarations
     struct Material;
     struct DefaultMaterial;
     class MetallicRoughnessMaterial;
@@ -17,8 +18,8 @@ namespace polymer
         std::map<std::string, std::shared_ptr<Material>> instances;
         std::string library_path;
         material_library(const std::string & library_path);
-        ~material_library() = default;
-        void create_pbr_material(const std::string & name, std::shared_ptr<MetallicRoughnessMaterial> mat);
+        ~material_library();
+        void create_material(const std::string & name, std::shared_ptr<MetallicRoughnessMaterial> mat);
         void remove_material(const std::string & name);
     };
 }
