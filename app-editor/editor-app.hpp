@@ -85,7 +85,6 @@ class asset_resolver
                     if (name == filename_no_extension)
                     {
                         create_handle_for_asset(name.c_str(), load_image(path, false));
-                        std::cout << "resolved: " << name << std::endl;
                         Logger::get_instance()->assetLog->info("resolved {} ({})", name, typeid(GlTexture2D).name());
                     }
                 }
