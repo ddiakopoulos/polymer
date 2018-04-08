@@ -66,6 +66,17 @@ struct fullscreen_texture
     }
 };
 
+/*
+if (ImGui::BeginPopupContextItem("item context menu"))
+{
+    if (ImGui::Selectable("Delete"))
+    {
+        std::cout << "Delete Pressed" << std::endl;
+    }
+    ImGui::EndPopup();
+}
+*/
+
 template<typename AssetHandleType>
 void draw_listbox(const std::string & label, ImGuiTextFilter & filter, int & selection)
 {
@@ -106,7 +117,9 @@ struct aux_window final : public glfw_window
     std::string stringBuffer;
     int assetSelection = -1;
     const uint32_t previewHeight = 400;
-    aux_window(gl_context * context, int w, int h, const std::string title, int samples) : glfw_window(context, w, h, title, samples) 
+    material_library & lib;
+    aux_window(gl_context * context, int w, int h, const std::string title, int samples, polymer::material_library & lib) 
+        : glfw_window(context, w, h, title, samples), lib(lib)
     { 
         glfwMakeContextCurrent(window);
 
@@ -217,14 +230,14 @@ struct aux_window final : public glfw_window
             gui::imgui_fixed_window_begin("material-editor", { { 0, 0 },{ width, int(height - previewHeight) } });
 
             ImGui::Dummy({ 0, 12 });
-            //ImGui::Text("Material Library: %s", )
+            ImGui::Text("Material Library: %s", lib.library_path);
             ImGui::Dummy({ 0, 12 });
 
             ImGui::SameLine();
-            if (ImGui::Button(" " ICON_FA_PLUS " Create Material "))
-            {
-                ImGui::OpenPopup("Create Material");
-            }
+            if (ImGui::Button(" " ICON_FA_PLUS " Create Material ")) ImGui::OpenPopup("Create Material");
+
+            //ImGui::SameLine();
+            //if (ImGui::Button(" " ICON_FA_TRASH " Remove Material ")) ImGui::OpenPopup("Remove Material");
 
             if (ImGui::BeginPopupModal("Create Material", NULL, ImGuiWindowFlags_AlwaysAutoResize))
             {
@@ -255,6 +268,24 @@ struct aux_window final : public glfw_window
             if (assetSelection >= 0)
             {
                 auto mat = asset_handle<std::shared_ptr<Material>>::list()[assetSelection].get();
+
+                if (ImGui::Button(" " ICON_FA_TRASH " Delete Material ")) ImGui::OpenPopup("Delete");
+
+                if (ImGui::BeginPopupModal("Delete Material", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+                {
+                    ImGui::Text("Are you sure you want to delete this?");
+
+                    if (ImGui::Button("OK", ImVec2(120, 0)))
+                    {
+                        ImGui::CloseCurrentPopup();
+                    }
+
+                    ImGui::SetItemDefaultFocus();
+                    ImGui::SameLine();
+                    if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
+                    ImGui::EndPopup();
+                }
+
                 inspect_object(nullptr, mat.get());
             }
 

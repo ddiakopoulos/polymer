@@ -15,8 +15,6 @@
 #include "material-library.hpp"
 #include "gl-procedural-sky.hpp"
 
-#include <memory>
-
 ///////////////////////
 //   Scene Objects   //
 ///////////////////////

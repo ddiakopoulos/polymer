@@ -18,7 +18,7 @@ namespace polymer
         std::map<std::string, std::shared_ptr<Material>> instances;
         std::string library_path;
         material_library(const std::string & library_path);
-        ~material_library();
+        //~material_library();
         void create_material(const std::string & name, std::shared_ptr<MetallicRoughnessMaterial> mat);
         void remove_material(const std::string & name);
     };
