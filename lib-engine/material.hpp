@@ -35,13 +35,13 @@ namespace polymer
         void update_uniforms() override;
         void use() override;
 
-        float3 baseAlbedo{ float3(1, 1, 1) };
+        float3 baseAlbedo{1.f, 1.f, 1.f};
         float opacity{ 1.f };
 
         float roughnessFactor{ 0.04f };
         float metallicFactor{ 1.f };
 
-        float3 baseEmissive{ float3(0, 0, 0) };
+        float3 baseEmissive{ 0.f, 0.f, 0.f };
         float emissiveStrength{ 1.f };
 
         float specularLevel{ 0.04f };

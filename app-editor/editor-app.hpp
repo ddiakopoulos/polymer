@@ -132,9 +132,8 @@ struct aux_window final : public glfw_window
 
         previewMesh.reset(new StaticMesh());
         previewMesh->mesh = "preview-cube";
-        previewMesh->geom = "preview-cube";
-        previewMesh->mat = "pbr-material/floor"; 
-        previewMesh->pose.position = float3(0, 0, -1);
+        previewMesh->geom = "preview-cube"; 
+        previewMesh->pose.position = float3(0, 0, 0);
 
         renderer_settings previewSettings;
         previewSettings.renderSize = int2(w, previewHeight);
@@ -210,17 +209,21 @@ struct aux_window final : public glfw_window
             glEnable(GL_DEPTH_TEST);
 
             glViewport(0, 0, width, height);
-            glClearColor(0.0f, 0.0f, 1.0f, 1.0f);
+            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            // Single-viewport camera
-            previewSceneData = {};
-            previewSceneData.clear_color = float4(0, 0, 0, 0);
-            previewSceneData.renderSet.push_back(previewMesh.get());
-            previewSceneData.ibl_irradianceCubemap = "wells-irradiance-cubemap";
-            previewSceneData.ibl_radianceCubemap = "wells-radiance-cubemap";
-            previewSceneData.views.push_back(view_data(0, previewCam.pose, previewCam.get_projection_matrix(width / float(previewHeight))));
-            preview_renderer->render_frame(previewSceneData);
+            // A non-zero asset selection also means the preview mesh would have a valid material
+            if (assetSelection > 0)
+            {
+                // Single-viewport camera
+                previewSceneData = {};
+                previewSceneData.clear_color = float4(0, 0, 0, 0);
+                previewSceneData.renderSet.push_back(previewMesh.get());
+                previewSceneData.ibl_irradianceCubemap = "wells-irradiance-cubemap"; // these handles could be cached
+                previewSceneData.ibl_radianceCubemap = "wells-radiance-cubemap";
+                previewSceneData.views.push_back(view_data(0, previewCam.pose, previewCam.get_projection_matrix(width / float(previewHeight))));
+                preview_renderer->render_frame(previewSceneData);
+            }
 
             glUseProgram(0);
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -230,19 +233,28 @@ struct aux_window final : public glfw_window
             gui::imgui_fixed_window_begin("material-editor", { { 0, 0 },{ width, int(height - previewHeight) } });
 
             ImGui::Dummy({ 0, 12 });
-            ImGui::Text("Material Library: %s", lib.library_path);
+            ImGui::Text("Library: %s", lib.library_path.c_str());
             ImGui::Dummy({ 0, 12 });
 
-            ImGui::SameLine();
-            if (ImGui::Button(" " ICON_FA_PLUS " Create Material ")) ImGui::OpenPopup("Create Material");
-
-            //ImGui::SameLine();
-            //if (ImGui::Button(" " ICON_FA_TRASH " Remove Material ")) ImGui::OpenPopup("Remove Material");
+            if (ImGui::Button(" " ICON_FA_PLUS " Create Material ", { 160, 24 })) ImGui::OpenPopup("Create Material");
 
             if (ImGui::BeginPopupModal("Create Material", NULL, ImGuiWindowFlags_AlwaysAutoResize))
             {
                 ImGui::Dummy({ 0, 6 });
                 gui::InputText("Name", &stringBuffer);
+                ImGui::Dummy({ 0, 6 });
+
+                // Create a temporary material so we can use visit_subclasses to iterate its types
+                auto anyMat = std::make_shared<Material>();
+                std::vector<std::string> materialTypes;
+                visit_subclasses(anyMat.get(), [&materialTypes](const char * name, auto * p)
+                {
+                    materialTypes.push_back(name);
+                });
+
+                static int materialTypeSelection = -1;
+                gui::Combo("Type", &materialTypeSelection, materialTypes);
+
                 ImGui::Dummy({ 0, 6 });
 
                 if (ImGui::Button("OK", ImVec2(120, 0))) 
@@ -267,7 +279,19 @@ struct aux_window final : public glfw_window
 
             if (assetSelection >= 0)
             {
+                auto index_to_handle_name = [](const uint32_t index) -> std::string
+                {
+                    uint32_t idx = 0;
+                    for (auto & m : asset_handle<std::shared_ptr<Material>>::list())
+                    {
+                        if (index == idx) return m.name;
+                        idx++;
+                    }
+                };
+
+                // This is by index
                 auto mat = asset_handle<std::shared_ptr<Material>>::list()[assetSelection].get();
+                previewMesh->mat = index_to_handle_name(assetSelection);
 
                 if (ImGui::Button(" " ICON_FA_TRASH " Delete Material ")) ImGui::OpenPopup("Delete");
 
@@ -294,8 +318,11 @@ struct aux_window final : public glfw_window
             gui::imgui_fixed_window_end();
             auxImgui->end_frame();
 
-            glViewport(0, 0, width, previewHeight);
-            fullscreen_surface->draw(preview_renderer->get_color_texture(0));
+            if (assetSelection > 0)
+            {
+                glViewport(0, 0, width, previewHeight);
+                fullscreen_surface->draw(preview_renderer->get_color_texture(0));
+            }
 
             /*
             auxImgui->begin_frame();
@@ -373,8 +400,8 @@ struct scene_editor_app final : public polymer_app
     std::unique_ptr<forward_renderer> renderer;
     std::unique_ptr<fullscreen_texture> fullscreen_surface;
 
-    Scene scene;
     render_payload sceneData;
+    Scene scene;
 
     ImGui::ImGuiAppLog log;
     auto_layout uiSurface;

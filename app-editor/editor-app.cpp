@@ -116,10 +116,11 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
     settings.renderSize = int2(width, height);
     renderer.reset(new forward_renderer(settings));
 
+    sceneData.ibl_irradianceCubemap = "wells-irradiance-cubemap";
+    sceneData.ibl_radianceCubemap = "wells-radiance-cubemap";
+
     scene.skybox.reset(new HosekProceduralSky());
-
     sceneData.skybox = scene.skybox.get();
-
     scene.skybox->onParametersChanged = [&]
     {
         uniforms::directional_light updatedSun;
@@ -419,8 +420,10 @@ void scene_editor_app::on_draw()
     {
         editorProfiler.begin("gather-scene");
 
-        sceneData.ibl_irradianceCubemap = "wells-irradiance-cubemap";
-        sceneData.ibl_radianceCubemap = "wells-radiance-cubemap";
+        // Remember to clear any transient per-frame data
+        sceneData.pointLights.clear();
+        sceneData.renderSet.clear();
+        sceneData.views.clear();
 
         // Gather Lighting
         for (auto & obj : scene.objects)
@@ -446,15 +449,10 @@ void scene_editor_app::on_draw()
 
         editorProfiler.end("gather-scene");
 
-        editorProfiler.begin("submit-scene");
         // Submit scene to the renderer
+        editorProfiler.begin("submit-scene");
         renderer->render_frame(sceneData);
         editorProfiler.end("submit-scene");
-    
-        // Remember to clear any transient per-frame data
-        sceneData.pointLights.clear();
-        sceneData.renderSet.clear();
-        sceneData.views.clear();
 
         glUseProgram(0);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);

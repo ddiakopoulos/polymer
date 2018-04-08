@@ -176,7 +176,7 @@ void main()
     vec3 specularEnvironmentR0 = specularColor.rgb;
     vec3 specularEnvironmentR90 = vec3(1.0, 1.0, 1.0) * reflectance90;
 
-    vec3 Lo = vec3(0);
+    vec3 Lo = vec3(0, 0, 0);
 
     vec3 debugShadowColor;
     float shadowVisibility = 1;
@@ -276,6 +276,7 @@ void main()
     //f_color = vec4(nSample, 1.0);
     //f_color = vec4(vec3(roughness), 1.0);
     //f_color = vec4(vec3(metallic), 1.0);
+    //f_color = vec4(specularEnvironmentR90, 1.0);
 
     // Combine direct lighting, IBL, and shadow visbility
     f_color = vec4(Lo * shadowVisibility, u_opacity); 
