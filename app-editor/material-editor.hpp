@@ -12,8 +12,9 @@
 #include "gl-texture-view.hpp"
 
 template<typename AssetHandleType>
-void draw_listbox(const std::string & label, ImGuiTextFilter & filter, int & selection)
+bool draw_listbox(const std::string & label, ImGuiTextFilter & filter, int & selection)
 {
+    bool r = false;
     std::vector<std::string> assets;
     for (auto & m : AssetHandleType::list()) assets.push_back(m.name);
 
@@ -29,12 +30,14 @@ void draw_listbox(const std::string & label, ImGuiTextFilter & filter, int & sel
             if (ImGui::Selectable(name.c_str(), n == selection))
             {
                 selection = n;
+                r = true; // made a new selection
             }
         }
 
         ImGui::ListBoxFooter();
     }
     ImGui::PopItemWidth();
+    return r;
 }
 
 struct material_editor_window final : public glfw_window
@@ -238,16 +241,20 @@ struct material_editor_window final : public glfw_window
                 ImGui::EndPopup();
             }
 
-            ImGui::Dummy({ 0, 12 });
-            ImGuiTextFilter textFilter;
-            textFilter.Draw(" " ICON_FA_SEARCH "  ");
-            ImGui::Dummy({ 0, 12 });
+            // Only draw the list of materials if there's no asset selected in the editor. 
+            // This is a bit of a UX hack.
+            if (!inspectedObject)
+            {
+                ImGui::Dummy({ 0, 12 });
+                ImGuiTextFilter textFilter;
+                textFilter.Draw(" " ICON_FA_SEARCH "  ");
+                ImGui::Dummy({ 0, 12 });
 
-            draw_listbox<MaterialHandle>("Materials", textFilter, assetSelection);
-
-            ImGui::Dummy({ 0, 12 });
-
-            ImGui::Separator();
+                // Draw the listbox of materials
+                draw_listbox<MaterialHandle>("Materials", textFilter, assetSelection);
+                ImGui::Dummy({ 0, 12 });
+                ImGui::Separator();
+            }
 
             if (assetSelection >= 0)
             {
@@ -263,7 +270,7 @@ struct material_editor_window final : public glfw_window
 
                 // This is by index
                 auto mat = asset_handle<std::shared_ptr<Material>>::list()[assetSelection].get();
-                const std::string material_handle_name =index_to_handle_name(assetSelection);
+                const std::string material_handle_name = index_to_handle_name(assetSelection);
                 previewMesh->mat = material_handle_name;
 
                 ImGui::Text("Material: %s", material_handle_name.c_str());
@@ -273,14 +280,21 @@ struct material_editor_window final : public glfw_window
                 inspect_object(nullptr, mat.get());
 
                 ImGui::Dummy({ 0, 12 });
-                if (ImGui::Button(" " ICON_FA_TRASH " Delete Material ")) ImGui::OpenPopup("Delete Material");
+
+                // Shouldn't be able to delete the default material from the UI
+                if (material_handle_name != material_library::kDefaultMaterialId)
+                {
+                    if (ImGui::Button(" " ICON_FA_TRASH " Delete Material "))
+                    {
+                        ImGui::OpenPopup("Delete Material");
+                    }
+                }
                 ImGui::Dummy({ 0, 12 });
 
                 if (ImGui::BeginPopupModal("Delete Material", NULL, ImGuiWindowFlags_AlwaysAutoResize))
                 {
-                    ImGui::Text("Are you sure you want to delete %s?", material_handle_name.c_str());
+                    ImGui::Text("Are you sure you want \nto delete %s?", material_handle_name.c_str());
 
-                    // Need some kind of missing material shader if material is not assigned (and we render it)
                     if (ImGui::Button("OK", ImVec2(120, 0)))
                     {
                         if (inspectedObject) inspectedObject->set_material(material_library::kDefaultMaterialId);
