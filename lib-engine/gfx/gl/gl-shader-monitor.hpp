@@ -27,32 +27,135 @@ inline system_clock::time_point write_time(const std::string & file_path)
     catch (...) { return system_clock::time_point::min(); };
 }
 
-// 32 bit Fowler–Noll–Vo Hash
-inline uint32_t hash_fnv1a(const std::string & str)
-{
-    static const uint32_t fnv1aBase32 = 0x811C9DC5u;
-    static const uint32_t fnv1aPrime32 = 0x01000193u;
-
-    uint32_t result = fnv1aBase32;
-
-    for (auto & c : str)
-    {
-        result ^= static_cast<uint32_t>(c);
-        result *= fnv1aPrime32;
-    }
-    return result;
-}
-
 namespace polymer
 {
+    // 32 bit Fowler–Noll–Vo Hash
+    inline uint32_t hash_fnv1a(const std::string & str)
+    {
+        static const uint32_t fnv1aBase32 = 0x811C9DC5u;
+        static const uint32_t fnv1aPrime32 = 0x01000193u;
+
+        uint32_t result = fnv1aBase32;
+
+        for (auto & c : str)
+        {
+            result ^= static_cast<uint32_t>(c);
+            result *= fnv1aPrime32;
+        }
+        return result;
+    }
+
     /*
     { "TWO_CASCADES", "USE_PCF_3X3", "ENABLE_SHADOWS",
         "USE_IMAGE_BASED_LIGHTING",
         "HAS_ROUGHNESS_MAP", "HAS_METALNESS_MAP", "HAS_ALBEDO_MAP", "HAS_NORMAL_MAP", "HAS_OCCLUSION_MAP" }
     */
 
-    // Compile on first handle request
-    // Compile on modified...
+    inline std::string preprocess_includes(const std::string & source, const std::string & includeSearchPath, std::vector<std::string> & includes, int depth)
+    {
+        if (depth > 4) throw std::runtime_error("exceeded max include recursion depth");
+
+        static const std::regex re("^[ ]*#[ ]*include[ ]+[\"<](.*)[\">].*");
+        std::stringstream input;
+        std::stringstream output;
+
+        input << source;
+
+        size_t lineNumber = 1;
+        std::smatch matches;
+        std::string line;
+
+        while (std::getline(input, line))
+        {
+            if (std::regex_search(line, matches, re))
+            {
+                std::string includeFile = matches[1];
+                std::string includeString = read_file_text(includeSearchPath + "/" + includeFile);
+
+                if (!includeFile.empty())
+                {
+                    includes.push_back(includeSearchPath + "/" + includeFile);
+                    output << preprocess_includes(includeString, includeSearchPath, includes, depth++) << std::endl;
+                }
+            }
+            else
+            {
+                output << "#line " << lineNumber << std::endl;
+                output << line << std::endl;
+            }
+            ++lineNumber;
+        }
+        return output.str();
+    }
+
+    inline std::string preprocess_version(const std::string & source)
+    {
+        std::stringstream input;
+        std::stringstream output;
+
+        input << source;
+
+        size_t lineNumber = 1;
+        std::string line;
+        std::string version;
+
+        while (std::getline(input, line))
+        {
+            if (line.find("#version") != std::string::npos) version = line;
+            else output << line << std::endl;
+            ++lineNumber;
+        }
+
+        std::stringstream result;
+        result << version << std::endl << output.str();
+        return result.str();
+    }
+
+    inline GlShader preprocess(
+        const std::string & vertexShader,
+        const std::string & fragmentShader,
+        const std::string & geomShader,
+        const std::string & includeSearchPath,
+        const std::vector<std::string> & defines,
+        std::vector<std::string> & includes)
+    {
+        std::stringstream vertex;
+        std::stringstream fragment;
+        std::stringstream geom;
+
+        for (const auto define : defines)
+        {
+            if (vertexShader.size()) vertex << "#define " << define << std::endl;
+            if (fragmentShader.size()) fragment << "#define " << define << std::endl;
+            if (geomShader.size()) geom << "#define " << define << std::endl;
+        }
+
+        if (vertexShader.size()) vertex << vertexShader;
+        if (fragmentShader.size()) fragment << fragmentShader;
+        if (geomShader.size()) geom << geomShader;
+
+        if (geomShader.size())
+        {
+            return GlShader(
+                preprocess_version(preprocess_includes(vertex.str(), includeSearchPath, includes, 0)),
+                preprocess_version(preprocess_includes(fragment.str(), includeSearchPath, includes, 0)),
+                preprocess_version(preprocess_includes(geom.str(), includeSearchPath, includes, 0)));
+        }
+        else
+        {
+            return GlShader(
+                preprocess_version(preprocess_includes(vertex.str(), includeSearchPath, includes, 0)),
+                preprocess_version(preprocess_includes(fragment.str(), includeSearchPath, includes, 0)));
+        }
+    }
+
+    inline GlComputeProgram preprocess_compute_defines(const std::string & computeShader, const std::vector<std::string> & defines)
+    {
+        std::stringstream compute;
+        for (const auto define : defines) if (computeShader.size()) compute << "#define " << define << std::endl;
+        if (computeShader.size()) compute << computeShader;
+        return GlComputeProgram(preprocess_version(compute.str()));
+    }
 
     struct shader_variant
     {
@@ -137,112 +240,6 @@ namespace polymer
             return std::move(result);
         }
     };
-
-    inline std::string preprocess_includes(const std::string & source, const std::string & includeSearchPath, std::vector<std::string> & includes, int depth)
-    {
-        if (depth > 4) throw std::runtime_error("exceeded max include recursion depth");
-
-        static const std::regex re("^[ ]*#[ ]*include[ ]+[\"<](.*)[\">].*");
-        std::stringstream input;
-        std::stringstream output;
-
-        input << source;
-
-        size_t lineNumber = 1;
-        std::smatch matches;
-        std::string line;
-
-        while (std::getline(input, line))
-        {
-            if (std::regex_search(line, matches, re))
-            {
-                std::string includeFile = matches[1];
-                std::string includeString = read_file_text(includeSearchPath + "/" + includeFile);
-
-                if (!includeFile.empty())
-                {
-                    includes.push_back(includeSearchPath + "/" + includeFile);
-                    output << preprocess_includes(includeString, includeSearchPath, includes, depth++) << std::endl;
-                }
-            }
-            else
-            {
-                output << "#line " << lineNumber << std::endl;
-                output << line << std::endl;
-            }
-            ++lineNumber;
-        }
-        return output.str();
-    }
-
-    inline std::string preprocess_version(const std::string & source)
-    {
-        std::stringstream input;
-        std::stringstream output;
-
-        input << source;
-
-        size_t lineNumber = 1;
-        std::string line;
-        std::string version;
-
-        while (std::getline(input, line))
-        {
-            if (line.find("#version") != std::string::npos) version = line;
-            else output << line << std::endl;
-            ++lineNumber;
-        }
-
-        std::stringstream result;
-        result << version << std::endl << output.str();
-        return result.str();
-    }
-
-    inline GlShader preprocess(
-        const std::string & vertexShader, 
-        const std::string & fragmentShader, 
-        const std::string & geomShader,
-        const std::string & includeSearchPath, 
-        const std::vector<std::string> & defines, 
-        std::vector<std::string> & includes)
-    {
-        std::stringstream vertex;
-        std::stringstream fragment;
-        std::stringstream geom;
-
-        for (const auto define : defines)
-        {
-            if (vertexShader.size()) vertex << "#define " << define << std::endl;
-            if (fragmentShader.size()) fragment << "#define " << define << std::endl;
-            if (geomShader.size()) geom << "#define " << define << std::endl;
-        }
-
-        if (vertexShader.size()) vertex << vertexShader;
-        if (fragmentShader.size()) fragment << fragmentShader;
-        if (geomShader.size()) geom << geomShader;
-
-        if (geomShader.size())
-        {
-            return GlShader(
-                preprocess_version(preprocess_includes(vertex.str(), includeSearchPath, includes, 0)),
-                preprocess_version(preprocess_includes(fragment.str(), includeSearchPath, includes, 0)),
-                preprocess_version(preprocess_includes(geom.str(), includeSearchPath, includes, 0)));
-        }
-        else
-        {
-            return GlShader(
-                preprocess_version(preprocess_includes(vertex.str(), includeSearchPath, includes, 0)),
-                preprocess_version(preprocess_includes(fragment.str(), includeSearchPath, includes, 0)));
-        }
-    }
-
-    inline GlComputeProgram preprocess_compute_defines( const std::string & computeShader, const std::vector<std::string> & defines)
-    {
-        std::stringstream compute;
-        for (const auto define : defines) if (computeShader.size()) compute << "#define " << define << std::endl;
-        if (computeShader.size()) compute << computeShader;
-        return GlComputeProgram(preprocess_version(compute.str()));
-    }
 
     class gl_shader_monitor
     {
@@ -347,16 +344,6 @@ namespace polymer
             const std::string & frag_path)
         {
             assets[name] = std::make_shared<gl_shader_asset>(name, vert_path, frag_path);
-        }
-
-        // Watch vertex, fragment, and geometry
-        void watch(
-            const std::string & name,
-            const std::string & vert_path,
-            const std::string & frag_path,
-            const std::string & geom_path)
-        {
-            assets[name] = std::make_shared<gl_shader_asset>(name, vert_path, frag_path, geom_path);
         }
 
         // Watch vertex and fragment with includes

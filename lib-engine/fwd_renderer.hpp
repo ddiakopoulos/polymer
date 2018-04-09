@@ -42,7 +42,7 @@ class stable_cascaded_shadows
 
     GlTexture3D shadowArrayDepth;
     GlFramebuffer shadowArrayFramebuffer;
-    GlShaderHandle program = { "cascaded-shadows" };
+    ShaderHandle program = { "cascaded-shadows" };
 
 public:
 
@@ -162,7 +162,8 @@ public:
         glViewport(0, 0, resolution, resolution);
         glClear(GL_DEPTH_BUFFER_BIT);
 
-        auto & shader = program.get();
+        auto & shader = program.get()->get_variant()->shader;
+
         shader.bind();
         shader.uniform("u_cascadeViewMatrixArray", uniforms::NUM_CASCADES, viewMatrices);
         shader.uniform("u_cascadeProjMatrixArray", uniforms::NUM_CASCADES, projMatrices);
@@ -170,12 +171,12 @@ public:
     
     GlShader & get_program()
     {
-        return program.get();
+       return program.get()->get_variant()->shader;
     }
 
     void post_draw()
     {
-        auto & shader = program.get();
+        auto & shader = program.get()->get_variant()->shader;
         glCullFace(GL_BACK);
         glEnable(GL_CULL_FACE);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);

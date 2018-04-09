@@ -46,7 +46,7 @@ void forward_renderer::run_depth_prepass(const view_data & view, const render_pa
     glDepthMask(GL_TRUE);       // Need depth mask on
     glColorMask(0, 0, 0, 0);    // Do not write any color
 
-    auto & shader = earlyZPass.get();
+    auto & shader = earlyZPass.get()->get_variant()->shader;
     shader.bind();
     for (auto obj : scene.renderSet)
     {
@@ -169,11 +169,11 @@ void forward_renderer::run_post_pass(const view_data & view, const render_payloa
     glBindFramebuffer(GL_FRAMEBUFFER, postFramebuffers[view.index]);
     glViewport(0, 0, settings.renderSize.x, settings.renderSize.y);
 
-    auto & tonemapProgram = hdr_tonemapShader.get();
-    tonemapProgram.bind();
-    tonemapProgram.texture("s_texColor", 0, eyeTextures[view.index], GL_TEXTURE_2D);
+    auto & shader = hdr_tonemapShader.get()->get_variant()->shader;
+    shader.bind();
+    shader.texture("s_texColor", 0, eyeTextures[view.index], GL_TEXTURE_2D);
     post_quad.draw_elements();
-    tonemapProgram.unbind();
+    shader.unbind();
 
     if (wasCullingEnabled) glEnable(GL_CULL_FACE);
     if (wasDepthTestingEnabled) glEnable(GL_DEPTH_TEST);

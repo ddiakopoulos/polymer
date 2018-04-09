@@ -145,7 +145,7 @@ template<class F> void visit_fields(MetallicRoughnessMaterial & o, F f)
     f("height_handle", o.height);
     f("occlusion_handle", o.occlusion);
 
-    f("program_handle", o.program, editor_hidden{}); // shaders are tied to materials
+    f("program_handle", o.shader, editor_hidden{}); // hidden because shaders are tied to materials
 }
 
 ////////////////////////////////

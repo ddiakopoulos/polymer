@@ -60,6 +60,10 @@ void MetallicRoughnessMaterial::update_uniforms_shadow(GLuint handle)
 
 void MetallicRoughnessMaterial::use()
 {
-    if (!compiled_variant) compiled_variant = shader.get()->get_variant();
+    if (!compiled_variant)
+    {
+        compiled_variant = shader.get()->get_variant({ "TWO_CASCADES", "USE_PCF_3X3", "ENABLE_SHADOWS", "USE_IMAGE_BASED_LIGHTING",
+            "HAS_ROUGHNESS_MAP", "HAS_METALNESS_MAP", "HAS_ALBEDO_MAP", "HAS_NORMAL_MAP", "HAS_OCCLUSION_MAP" });
+    }
     compiled_variant->shader.bind();
 }

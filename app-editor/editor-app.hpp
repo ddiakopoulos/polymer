@@ -122,7 +122,7 @@ public:
         {
             if (auto * pbr = dynamic_cast<MetallicRoughnessMaterial*>(mat.second.get()))
             {
-                shader_names.push_back(pbr->program.name);
+                shader_names.push_back(pbr->shader.name);
                 texture_names.push_back(pbr->albedo.name);
                 texture_names.push_back(pbr->normal.name);
                 texture_names.push_back(pbr->metallic.name);
