@@ -151,8 +151,8 @@ struct scene_editor_app final : public polymer_app
 
     uint32_t pbrProgramAsset = -1;
 
-    GlShaderHandle wireframeHandle{ "wireframe" };
-    GlShaderHandle iblHandle{ "ibl" };
+    ShaderHandle wireframeHandle{ "wireframe" };
+    ShaderHandle iblHandle{ "ibl" };
 
     profiler<simple_cpu_timer> editorProfiler;
 

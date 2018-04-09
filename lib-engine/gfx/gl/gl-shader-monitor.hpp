@@ -105,6 +105,14 @@ namespace polymer
             return newVariant;
         }
 
+        void recompile_all()
+        {
+            for (auto & variant : shaders)
+            {
+                variant.second->shader = compile_variant(variant.second->defines);
+            }
+        }
+
         GlShader compile_variant(const std::vector<std::string> defines)
         {
             GlShader result;
@@ -326,17 +334,8 @@ namespace polymer
                 {
                     std::lock_guard<std::mutex> guard(watch_mutex);
 
-                    asset.second->recompile();
+                    asset.second->recompile_all();
                     asset.second->shouldRecompile = false;
-
-                    /*
-                    // Create handles for the requested defines...
-                    for (auto & variant : asset.second->shaders)
-                    {
-                        create_handle_for_asset(variant->key.c_str(), variant);
-                    }
-                    */
-
                 }
             }
         }

@@ -58,49 +58,35 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
         read_file_text("../assets/shaders/wireframe_geom.glsl"));
     create_handle_for_asset("wireframe", std::move(wireframeProgram));
 
-    shaderMonitor.watch(
+    shaderMonitor.watch("ibl"
         "../assets/shaders/ibl_vert.glsl",
         "../assets/shaders/ibl_frag.glsl",
-        "../assets/shaders/renderer", {}, [](GlShader shader) {
-        create_handle_for_asset("ibl", std::move(shader));
-    });
+        "../assets/shaders/renderer");
 
-    shaderMonitor.watch(
+    shaderMonitor.watch("depth-prepass",
         "../assets/shaders/renderer/depth_prepass_vert.glsl",
         "../assets/shaders/renderer/depth_prepass_frag.glsl",
-        "../assets/shaders/renderer", {}, [](GlShader shader) {
-        create_handle_for_asset("depth-prepass", std::move(shader));
-    });
+        "../assets/shaders/renderer");
 
-    shaderMonitor.watch(
+    shaderMonitor.watch("default-shader",
         "../assets/shaders/renderer/forward_lighting_vert.glsl",
         "../assets/shaders/renderer/default_material_frag.glsl",
-        "../assets/shaders/renderer", {}, [](GlShader shader) {
-        create_handle_for_asset("default-shader", std::move(shader));
-    });
+        "../assets/shaders/renderer");
 
-    shaderMonitor.watch(
+    shaderMonitor.watch("post-tonemap",
         "../assets/shaders/renderer/post_tonemap_vert.glsl",
-        "../assets/shaders/renderer/post_tonemap_frag.glsl",
-        [](GlShader shader) {
-        create_handle_for_asset("post-tonemap", std::move(shader));
-    });
+        "../assets/shaders/renderer/post_tonemap_frag.glsl");
 
-    shaderMonitor.watch(
+    shaderMonitor.watch("cascaded-shadows",
         "../assets/shaders/renderer/shadowcascade_vert.glsl",
         "../assets/shaders/renderer/shadowcascade_frag.glsl",
         "../assets/shaders/renderer/shadowcascade_geom.glsl",
-        "../assets/shaders/renderer", {},
-        [](GlShader shader) {
-        create_handle_for_asset("cascaded-shadows", std::move(shader));
-    });
+        "../assets/shaders/renderer");
 
-    pbrProgramAsset = shaderMonitor.watch(
+    shaderMonitor.watch("pbr-forward-lighting",
         "../assets/shaders/renderer/forward_lighting_vert.glsl",
         "../assets/shaders/renderer/forward_lighting_frag.glsl",
-        "../assets/shaders/renderer", [](GlShader shader) {
-        create_handle_for_asset("pbr-forward-lighting", std::move(shader));
-    });
+        "../assets/shaders/renderer");
 
     fullscreen_surface.reset(new fullscreen_texture());
 
@@ -409,7 +395,7 @@ void scene_editor_app::on_draw()
     {
         glDisable(GL_DEPTH_TEST);
 
-        auto & program = wireframeHandle.get();
+        auto & program = wireframeHandle.get()->get_variant()->shader;
 
         program.bind();
 
@@ -580,6 +566,8 @@ void scene_editor_app::on_draw()
                     renderer->gpuProfiler.set_enabled(renderer->settings.performanceProfiling);
                     renderer->cpuProfiler.set_enabled(renderer->settings.performanceProfiling);
 
+                    /*
+                    // fixme
                     if (renderer->settings.shadowsEnabled != lastSettings.shadowsEnabled)
                     {
                         auto & shaderAsset = shaderMonitor.get_asset(pbrProgramAsset);
@@ -606,6 +594,7 @@ void scene_editor_app::on_draw()
                         }
                         shaderAsset.shouldRecompile = true;
                     }
+                    */
                 }
 
                 ImGui::TreePop();

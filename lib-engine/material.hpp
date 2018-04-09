@@ -6,22 +6,36 @@
 #include "gl-api.hpp"
 #include "math-core.hpp"
 #include "asset-defs.hpp"
+#include "gl-shader-monitor.hpp"
 
 namespace polymer
 {
 
     struct Material
     {
-        GlShaderHandle program;
+        ShaderHandle shader;
+        mutable std::shared_ptr<polymer::shader_variant> compiled_variant{ nullptr };
         virtual void update_uniforms() {}
         virtual void use() {}
-        uint32_t id() const { return program.get().handle(); }
+        uint32_t id() const 
+        { 
+            if (!compiled_variant) compiled_variant = shader.get()->get_variant();
+            return compiled_variant->shader.handle();
+        }
     };
 
     struct DefaultMaterial final : public Material
     {
-        DefaultMaterial() { program = { "default-shader" }; }
-        void use() override { program.get().bind(); }
+        DefaultMaterial() 
+        { 
+            shader = { "default-shader" }; 
+        }
+
+        void use() override 
+        { 
+            if (!compiled_variant) compiled_variant = shader.get()->get_variant();
+            compiled_variant->shader.bind();
+        }
     };
 
     class MetallicRoughnessMaterial final : public Material
@@ -36,7 +50,6 @@ namespace polymer
         void use() override;
 
         float3 baseAlbedo{1.f, 1.f, 1.f};
-        float opacity{ 1.f };
 
         float roughnessFactor{ 0.04f };
         float metallicFactor{ 1.f };
@@ -47,9 +60,11 @@ namespace polymer
         float specularLevel{ 0.04f };
         float occlusionStrength{ 1.f };
         float ambientStrength{ 1.f };
+
+        float opacity{ 1.f };
         float shadowOpacity{ 1.f };
 
-        int2 texcoordScale{ 4, 4 };
+        int2 texcoordScale{ 1, 1 };
 
         GlTextureHandle albedo;
         GlTextureHandle normal;

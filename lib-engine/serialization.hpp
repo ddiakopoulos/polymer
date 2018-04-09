@@ -70,10 +70,10 @@ template<class F> void visit_fields(HosekProceduralSky & o, F f)
 
 template<class F> void visit_fields(Pose & o, F f) { f("position", o.position); f("orientation", o.orientation); }
 
-template<class F> void visit_fields(GlTextureHandle & m, F f) { f("id", m.name); }
-template<class F> void visit_fields(GlShaderHandle & m, F f) { f("id", m.name); }
-template<class F> void visit_fields(GlMeshHandle & m, F f) { f("id", m.name); }
-template<class F> void visit_fields(GeometryHandle & m, F f) { f("id", m.name); }
+template<class F> void visit_fields(GlTextureHandle & m, F f)   { f("id", m.name); }
+template<class F> void visit_fields(ShaderHandle & m, F f)      { f("id", m.name); }
+template<class F> void visit_fields(GlMeshHandle & m, F f)      { f("id", m.name); }
+template<class F> void visit_fields(GeometryHandle & m, F f)    { f("id", m.name); }
 
 template<class F> void visit_subclasses(GameObject * p, F f)
 {
@@ -183,11 +183,11 @@ namespace cereal
 
 namespace cereal
 {
-    template<class Archive> void serialize(Archive & archive, GlTextureHandle & m) { archive(cereal::make_nvp("id", m.name)); }
-    template<class Archive> void serialize(Archive & archive, GlShaderHandle & m) { archive(cereal::make_nvp("id", m.name)); }
-    template<class Archive> void serialize(Archive & archive, GlMeshHandle & m) { archive(cereal::make_nvp("id", m.name)); }
-    template<class Archive> void serialize(Archive & archive, GeometryHandle & m) { archive(cereal::make_nvp("id", m.name)); }
-    template<class Archive> void serialize(Archive & archive, MaterialHandle & m) { archive(cereal::make_nvp("id", m.name)); }
+    template<class Archive> void serialize(Archive & archive, GlTextureHandle & m)  { archive(cereal::make_nvp("id", m.name)); }
+    template<class Archive> void serialize(Archive & archive, ShaderHandle & m)     { archive(cereal::make_nvp("id", m.name)); }
+    template<class Archive> void serialize(Archive & archive, GlMeshHandle & m)     { archive(cereal::make_nvp("id", m.name)); }
+    template<class Archive> void serialize(Archive & archive, GeometryHandle & m)   { archive(cereal::make_nvp("id", m.name)); }
+    template<class Archive> void serialize(Archive & archive, MaterialHandle & m)   { archive(cereal::make_nvp("id", m.name)); }
 }
 
 ////////////////////////////////////////////////////
