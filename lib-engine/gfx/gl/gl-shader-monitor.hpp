@@ -42,11 +42,6 @@ inline uint32_t hash_fnv1a(const std::string & str)
 namespace polymer
 {
     /*
-    enum class polymer_shader_defs : uint64_t
-    {
-        //0x1
-    };
-
     { "TWO_CASCADES", "USE_PCF_3X3", "ENABLE_SHADOWS",
         "USE_IMAGE_BASED_LIGHTING",
         "HAS_ROUGHNESS_MAP", "HAS_METALNESS_MAP", "HAS_ALBEDO_MAP", "HAS_NORMAL_MAP", "HAS_OCCLUSION_MAP" }
@@ -62,29 +57,41 @@ namespace polymer
     // Store this in the `asset_handle` table...
     struct gl_shader_record
     {
-        //bit_mask<uint64_t> options;
-
-        std::function<void(GlShader)> onModified;
-
+        std::vector<std::string> includes;
+        std::string name;
         std::string vertexPath;
         std::string fragmentPath;
         std::string geomPath;
         std::string includePath;
-        std::vector<std::string> defines;
-        std::vector<std::string> includes;
+
+        struct variant
+        {
+            std::string lookup;
+            std::vector<std::string> defines;
+            GlShader shader;
+        };
+
+        std::vector<variant> shaders;
 
         bool shouldRecompile = false;
         int64_t writeTime = 0;
 
         gl_shader_record(
-            std::function<void(GlShader)> callback,
+            const std::string & name,
             const std::string & v,
             const std::string & f,
             const std::string & g = "",
-            const std::string & inc = "",
-            const std::vector<std::string> & def = {}) : onModified(callback), vertexPath(v), fragmentPath(f), geomPath(g), includePath(inc), defines(def) { };
+            const std::string & inc = "") : name(name), vertexPath(v), fragmentPath(f), geomPath(g), includePath(inc) { };
 
-        gl_shader_record() {};
+        gl_shader_record() { };
+
+        /*
+        bool has_define(const std::string & define) const
+        {
+            for (auto & def : defines) if (d == def) return true;
+            return false;
+        }
+        */ 
 
         void recompile()
         {
@@ -317,10 +324,9 @@ namespace polymer
         void watch(
             const std::string & name,
             const std::string & vert_path,
-            const std::string & frag_path,
-            std::function<void(GlShader)> callback)
+            const std::string & frag_path)
         {
-            assets[name] = std::make_shared<gl_shader_record>(callback, vert_path, frag_path);
+            assets[name] = std::make_shared<gl_shader_record>(name, vert_path, frag_path);
         }
 
         // Watch vertex, fragment, and geometry
@@ -328,35 +334,30 @@ namespace polymer
             const std::string & name,
             const std::string & vert_path,
             const std::string & frag_path,
-            const std::string & geom_path, 
-            std::function<void(GlShader)> callback)
+            const std::string & geom_path)
         {
-            assets[name] = std::make_shared<gl_shader_record>(callback, vert_path, frag_path, geom_path);
+            assets[name] = std::make_shared<gl_shader_record>(name, vert_path, frag_path, geom_path);
         }
 
-        // Watch vertex and fragment with includes and defines
+        // Watch vertex and fragment with includes
         void watch(
             const std::string & name,
             const std::string & vert_path,
             const std::string & frag_path,
-            const std::string & include_path,
-            const std::vector<std::string> & defines,
-            std::function<void(GlShader)> callback)
+            const std::string & include_path)
         {
-            assets[name] = std::make_shared<gl_shader_record>(callback, vert_path, frag_path, "", include_path, defines);
+            assets[name] = std::make_shared<gl_shader_record>(name, vert_path, frag_path, "", include_path);
         }
 
-        // Watch vertex and fragment and geometry with includes and defines
+        // Watch vertex and fragment and geometry with includes
         void watch(
             const std::string & name,
             const std::string & vert_path,
             const std::string & frag_path,
             const std::string & geom_path,
-            const std::string & include_path,
-            const std::vector<std::string> & defines,
-            std::function<void(GlShader)> callback)
+            const std::string & include_path)
         {
-            assets[const std::string & name, ] = std::make_shared<gl_shader_record>(callback, vert_path, frag_path, geom_path, include_path, defines);
+            assets[name] = std::make_shared<gl_shader_record>(name, vert_path, frag_path, geom_path, include_path);
         }
 
         std::shared_ptr<gl_shader_record> get_asset(const std::string & name)
