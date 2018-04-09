@@ -15,7 +15,7 @@ namespace polymer
         bit_mask() : maskField(0) {}
         bit_mask(T value) : maskField(value) {}
 
-        bool operator == (const bit_mask& other) const;
+        bool operator == (const bit_mask & other) const;
         bool operator == (T mask) const;
 
         operator T( void ) const;

@@ -8,7 +8,7 @@
 #include <stdint.h>
 
 template<typename T>
-class SPSCBoundedQueue
+class spsc_queue_bounded
 {
     
     typedef typename std::aligned_storage<sizeof(T), std::alignment_of<T>::value>::type aligned_t;
@@ -23,17 +23,17 @@ class SPSCBoundedQueue
     cache_line_pad_t pad2;
     std::atomic<size_t> tail{ 0 };
 
-    SPSCBoundedQueue(const SPSCBoundedQueue &) {}
-    void operator= (const SPSCBoundedQueue &) {}
+    spsc_queue_bounded(const spsc_queue_bounded &) {}
+    void operator= (const spsc_queue_bounded &) {}
 
 public:
     
-    SPSCBoundedQueue(size_t size = 1024) : size(size) , mask(size-1), buffer(reinterpret_cast<T*>(new aligned_t[size + 1]))
+    spsc_queue_bounded(size_t size = 1024) : size(size) , mask(size-1), buffer(reinterpret_cast<T*>(new aligned_t[size + 1]))
     {
         assert((size != 0) && ((size & (~size + 1)) == size));
     }
 
-    ~SPSCBoundedQueue()
+    ~spsc_queue_bounded()
     {
         delete[] buffer;
     }

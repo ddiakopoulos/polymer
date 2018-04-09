@@ -41,8 +41,8 @@ struct GameObject
     std::string id;
     virtual ~GameObject() {}
     virtual void update(const float & dt) {}
-    virtual Bounds3D get_world_bounds() const = 0;
-    virtual Bounds3D get_bounds() const = 0;
+    virtual aabb_3d get_world_bounds() const = 0;
+    virtual aabb_3d get_bounds() const = 0;
     virtual float3 get_scale() const = 0;
     virtual void set_scale(const float3 & s) = 0;
     virtual Pose get_pose() const = 0;
@@ -90,7 +90,7 @@ struct PointLight final : public Renderable
 
     Pose get_pose() const override { return Pose(float4(0, 0, 0, 1), data.position); }
     void set_pose(const Pose & p) override { data.position = p.position; }
-    Bounds3D get_bounds() const override { return Bounds3D(float3(-0.5f), float3(0.5f)); }
+    aabb_3d get_bounds() const override { return aabb_3d(float3(-0.5f), float3(0.5f)); }
     float3 get_scale() const override { return float3(1, 1, 1); }
     void set_scale(const float3 & s) override { /* no-op */ }
 
@@ -99,9 +99,9 @@ struct PointLight final : public Renderable
 
     }
 
-    Bounds3D get_world_bounds() const override
+    aabb_3d get_world_bounds() const override
     {
-        const Bounds3D local = get_bounds();
+        const aabb_3d local = get_bounds();
         return{ get_pose().transform_coord(local.min()), get_pose().transform_coord(local.max()) };
     }
 
@@ -137,7 +137,7 @@ struct DirectionalLight final : public Renderable
         data.direction = qydir(p.orientation);
     }
 
-    Bounds3D get_bounds() const override { return Bounds3D(float3(-0.5f), float3(0.5f)); }
+    aabb_3d get_bounds() const override { return aabb_3d(float3(-0.5f), float3(0.5f)); }
     float3 get_scale() const override { return float3(1, 1, 1); }
     void set_scale(const float3 & s) override { /* no-op */ }
 
@@ -146,9 +146,9 @@ struct DirectionalLight final : public Renderable
 
     }
 
-    Bounds3D get_world_bounds() const override
+    aabb_3d get_world_bounds() const override
     {
-        const Bounds3D local = get_bounds();
+        const aabb_3d local = get_bounds();
         return{ get_pose().transform_coord(local.min()), get_pose().transform_coord(local.max()) };
     }
 
@@ -162,7 +162,7 @@ struct StaticMesh final : public Renderable
 {
     Pose pose;
     float3 scale{ 1, 1, 1 };
-    Bounds3D bounds;
+    aabb_3d bounds;
 
     GlMeshHandle mesh{ "" };
     GeometryHandle geom{ "" };
@@ -171,7 +171,7 @@ struct StaticMesh final : public Renderable
 
     Pose get_pose() const override { return pose; }
     void set_pose(const Pose & p) override { pose = p; }
-    Bounds3D get_bounds() const override { return bounds; }
+    aabb_3d get_bounds() const override { return bounds; }
     float3 get_scale() const override { return scale; }
     void set_scale(const float3 & s) override { scale = s; }
 
@@ -182,9 +182,9 @@ struct StaticMesh final : public Renderable
 
     void update(const float & dt) override { }
 
-    Bounds3D get_world_bounds() const override
+    aabb_3d get_world_bounds() const override
     {
-        const Bounds3D local = get_bounds();
+        const aabb_3d local = get_bounds();
         const float3 scale = get_scale();
         return{ pose.transform_coord(local.min()) * scale, pose.transform_coord(local.max()) * scale };
     }

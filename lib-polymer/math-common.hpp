@@ -196,7 +196,6 @@ namespace polymer
     }
 
     // http://dinodini.wordpress.com/2010/04/05/normalized-tunable-sigmoid-functions/
-
     inline float sigmoid(float x)
     {
         return 1.f / (1.f + exp(-x));

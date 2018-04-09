@@ -19,14 +19,14 @@ namespace impl
     using namespace linalg;
 
     template<typename T, int N>
-    class LowPassFilter
+    class low_pass
     {
     protected:
         bool firstTime;
         vec<T, N> value;
         static const int dimension = N;
     public:
-        LowPassFilter() : firstTime(true) { }
+        low_pass() : firstTime(true) { }
 
         void reset() { firstTime = true; }
 
@@ -50,29 +50,29 @@ namespace impl
     };
 
     template<typename T, int N>
-    struct VectorFilterable : public LowPassFilter<T, N>
+    struct vector_filterable : public low_pass<T, N>
     {
         static void set_dx_identity(vec<T, N> & dx)
         {
-            for (int i = 0; i < LowPassFilter<T, N>::dimension; ++i) dx[i] = 0;
+            for (int i = 0; i < low_pass<T, N>::dimension; ++i) dx[i] = 0;
         }
 
         static void compute_derivative(vec<T, N> dx, vec<T, N> prev, const  vec<T, N> current, float dt)
         {
-            for (int i = 0; i < LowPassFilter<T, N>::dimension; ++i) dx[i] = (current[i] - prev[i]) / dt;
+            for (int i = 0; i < low_pass<T, N>::dimension; ++i) dx[i] = (current[i] - prev[i]) / dt;
         }
 
         static float compute_derivative_mag(vec<T, N> const dx)
         {
             float sqnorm = 0.f;
-            for (int i = 0; i < LowPassFilter<T, N>::dimension; ++i) sqnorm += dx[i] * dx[i];
+            for (int i = 0; i < low_pass<T, N>::dimension; ++i) sqnorm += dx[i] * dx[i];
             return sqrtf(sqnorm);
         }
 
     };
 
     template<typename T, int N>
-    struct QuatFilterable : public LowPassFilter<T, N>
+    struct quaternion_filterable : public low_pass<T, N>
     {
         static void set_dx_identity(vec<T, N> & dx) { dx = {0, 0, 0, 1}; }
 
@@ -97,7 +97,7 @@ namespace impl
     };
 
     template<typename Filterable>
-    class OneEuroFilter
+    class one_euro_filter
     {
     protected:
         bool firstTime {true};
@@ -115,7 +115,7 @@ namespace impl
         }
 
     public:
-        OneEuroFilter(float mincutoff, float beta, float dcutoff) : minCutoff(mincutoff), derivCutoff(dcutoff), betaCoeff(beta) {};
+        one_euro_filter(float mincutoff, float beta, float dcutoff) : minCutoff(mincutoff), derivCutoff(dcutoff), betaCoeff(beta) {};
 
         void reset() { firstTime = true; }
 
@@ -130,9 +130,9 @@ namespace impl
 }
 
 template<typename T, int N>
-struct OneEuroFilterVector : public impl::OneEuroFilter< impl::VectorFilterable<T, N> >
+struct one_euro_filter_vec : public impl::one_euro_filter< impl::vector_filterable<T, N> >
 {
-    OneEuroFilterVector() : impl::OneEuroFilter< impl::VectorFilterable<T, N> >(1.0f, 0.05f, 1.0f) { }
+    one_euro_filter_vec() : impl::one_euro_filter< impl::vector_filterable<T, N> >(1.0f, 0.05f, 1.0f) { }
 
     const linalg::vec<T, N> filter(float dt, const linalg::vec<T, N> x)
     {
@@ -141,14 +141,14 @@ struct OneEuroFilterVector : public impl::OneEuroFilter< impl::VectorFilterable<
         if (this->firstTime)
         {
             this->firstTime = false;
-            impl::VectorFilterable<T, N>::set_dx_identity(dx);
+            impl::vector_filterable<T, N>::set_dx_identity(dx);
         }
         else
         {
-            impl::VectorFilterable<T, N>::compute_derivative(dx, this->xFilter.hatxprev(), x, dt);
+            impl::vector_filterable<T, N>::compute_derivative(dx, this->xFilter.hatxprev(), x, dt);
         }
 
-        float derivMag = impl::VectorFilterable<T, N>::compute_derivative_mag(this->dxFilter.filter(dx, this->alpha(dt, this->derivCutoff)));
+        float derivMag = impl::vector_filterable<T, N>::compute_derivative_mag(this->dxFilter.filter(dx, this->alpha(dt, this->derivCutoff)));
         float cutoff = this->minCutoff + this->betaCoeff * derivMag;
 
         auto returnedVal = this->xFilter.filter(x, this->alpha(dt, cutoff));
@@ -157,9 +157,9 @@ struct OneEuroFilterVector : public impl::OneEuroFilter< impl::VectorFilterable<
 };
 
 template<typename T>
-struct OneEuroFilterQuaternion : public impl::OneEuroFilter<impl::QuatFilterable<T, 4>>
+struct one_euro_filter_quat : public impl::one_euro_filter<impl::quaternion_filterable<T, 4>>
 {
-    OneEuroFilterQuaternion() : impl::OneEuroFilter< impl::QuatFilterable<T, 4> >(1.0f, 0.05f, 1.0f) { }
+    one_euro_filter_quat() : impl::one_euro_filter< impl::quaternion_filterable<T, 4> >(1.0f, 0.05f, 1.0f) { }
 
     linalg::vec<T, 4> hatxPrev;
 
@@ -171,14 +171,14 @@ struct OneEuroFilterQuaternion : public impl::OneEuroFilter<impl::QuatFilterable
         {
             this->firstTime = false;
             hatxPrev = x;
-            impl::QuatFilterable<T, 4>::set_dx_identity(dx);
+            impl::quaternion_filterable<T, 4>::set_dx_identity(dx);
         }
         else
         {
-            impl::QuatFilterable<T, 4>::compute_derivative(dx, this->xFilter.hatxprev(), x, dt);
+            impl::quaternion_filterable<T, 4>::compute_derivative(dx, this->xFilter.hatxprev(), x, dt);
         }
 
-        float derivMag = impl::QuatFilterable<T, 4>::compute_derivative_mag(this->dxFilter.filter(dx, this->alpha(dt, this->derivCutoff)));
+        float derivMag = impl::quaternion_filterable<T, 4>::compute_derivative_mag(this->dxFilter.filter(dx, this->alpha(dt, this->derivCutoff)));
         float cutoff = this->minCutoff + this->betaCoeff * derivMag;
 
         linalg::vec<T, 4> hatx = linalg::qslerp(hatxPrev, x, this->alpha(dt, cutoff));
@@ -186,6 +186,5 @@ struct OneEuroFilterQuaternion : public impl::OneEuroFilter<impl::QuatFilterable
         return hatxPrev;
     }
 };
-
 
 #endif // end one_euro_filter_h

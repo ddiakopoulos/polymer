@@ -37,7 +37,7 @@ inline float3 parabolic_curve_derivative(float3 v0, float3 a, float t)
     return ret;
 }
 
-inline bool linecast(const Bounds3D & b, const float3 & p1, const float3 & p2, float3 & hitPoint)
+inline bool linecast(const aabb_3d & b, const float3 & p1, const float3 & p2, float3 & hitPoint)
 {
     Ray r = between(p1, p2);
 
@@ -60,7 +60,7 @@ inline bool linecast(const Bounds3D & b, const float3 & p1, const float3 & p2, f
 // accel  - initial acceleration
 // dist   - distance between sample points
 // points - number of sample points
-inline bool compute_parabolic_curve(const float3 p0, const float3 v0, const float3 accel, const float dist, const int points, const Bounds3D & bounds, std::vector<float3> & curve)
+inline bool compute_parabolic_curve(const float3 p0, const float3 v0, const float3 accel, const float dist, const int points, const aabb_3d & bounds, std::vector<float3> & curve)
 {
     curve.clear();
     curve.push_back(p0);
@@ -213,7 +213,7 @@ inline Geometry make_parabolic_geometry(const std::vector<float3> & points, cons
 
 struct ParabolicPointerParams
 {
-    Bounds3D navMeshBounds;
+    aabb_3d navMeshBounds;
     float3 position = {0, 0, 0};
     float3 forward = {0, 0, 0};
     float pointSpacing = 0.1f;

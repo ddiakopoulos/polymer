@@ -117,7 +117,7 @@ namespace polymer
             }
         }
         
-        void draw(const Bounds2D & rect, const float2 windowSize, const GLuint tex)
+        void draw(const aabb_2d & rect, const float2 windowSize, const GLuint tex)
         {
             const float4x4 projection = make_orthographic_matrix(0.0f, windowSize.x, windowSize.y, 0.0f, -1.0f, 1.0f);
             float4x4 model = make_scaling_matrix({ rect.width(), rect.height(), 0.f });
@@ -142,7 +142,7 @@ namespace polymer
         GlMesh mesh = make_fullscreen_quad_screenspace(); 
     public:
         GLTextureView3D() { program = GlShader(s_textureVert3D, s_textureFrag3D); }
-        void draw(const Bounds2D & rect, const float2 windowSize, const GLuint tex, const GLenum target, const int slice)
+        void draw(const aabb_2d & rect, const float2 windowSize, const GLuint tex, const GLenum target, const int slice)
         {
             const float4x4 projection = make_orthographic_matrix(0.0f, windowSize.x, windowSize.y, 0.0f, -1.0f, 1.0f);
             float4x4 model = make_scaling_matrix({ rect.width(), rect.height(), 0.f });

@@ -9,14 +9,14 @@
 #include <condition_variable>
 
 template<typename T>
-class MPMCBlockingQueue
+class mpmc_queue_blocking
 {
     std::queue<T> queue;
     std::mutex mutex;
     std::condition_variable condition;
 
-    MPMCBlockingQueue(const MPMCBlockingQueue &) = delete;
-    MPMCBlockingQueue & operator= (const MPMCBlockingQueue &) = delete;
+    mpmc_queue_blocking(const mpmc_queue_blocking &) = delete;
+    mpmc_queue_blocking & operator= (const mpmc_queue_blocking &) = delete;
 
 public:
 

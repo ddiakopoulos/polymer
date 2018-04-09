@@ -8,9 +8,9 @@ using namespace polymer;
 
 typedef runtime_mesh Geometry;
 
-inline Bounds3D compute_bounds(const Geometry & g)
+inline aabb_3d compute_bounds(const Geometry & g)
 {
-    Bounds3D bounds;
+    aabb_3d bounds;
 
     bounds._min = float3(std::numeric_limits<float>::infinity());
     bounds._max = -bounds.min();
@@ -185,13 +185,13 @@ inline Geometry concatenate_geometry(const Geometry & a, const Geometry & b)
     return s;
 }
 
-inline bool intersect_ray_mesh(const Ray & ray, const Geometry & mesh, float * outRayT = nullptr, float3 * outFaceNormal = nullptr, Bounds3D * bounds = nullptr)
+inline bool intersect_ray_mesh(const Ray & ray, const Geometry & mesh, float * outRayT = nullptr, float3 * outFaceNormal = nullptr, aabb_3d * bounds = nullptr)
 {
     float bestT = std::numeric_limits<float>::infinity(), t;
     uint3 bestFace = { 0, 0, 0 };
     float2 outUv;
 
-    Bounds3D meshBounds = (bounds) ? *bounds : compute_bounds(mesh);
+    aabb_3d meshBounds = (bounds) ? *bounds : compute_bounds(mesh);
     if (!meshBounds.contains(ray.origin) && intersect_ray_box(ray, meshBounds.min(), meshBounds.max()))
     {
         for (int f = 0; f < mesh.faces.size(); ++f)

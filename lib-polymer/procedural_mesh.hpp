@@ -571,7 +571,7 @@ namespace polymer
     {
         Geometry plane;
         
-        auto curve = BezierCurve(float3(0.0f, 0.0f, 0.0f), float3(0.667f, 0.25f, 0.0f), float3(1.33f, 0.25f, 0.0f), float3(2.0f, 0.0f, 0.0f));
+        auto curve = bezier_spline(float3(0.0f, 0.0f, 0.0f), float3(0.667f, 0.25f, 0.0f), float3(1.33f, 0.25f, 0.0f), float3(2.0f, 0.0f, 0.0f));
         
         const int numSegments = curve.num_steps();
         const int numSlices = numSegments + 1;
@@ -733,8 +733,8 @@ namespace polymer
     {
         Geometry shape;
 
-        SuperFormula f1(m, n1, n2, n3, a, b);
-        SuperFormula f2(m, n1, n2, n3, a, b);
+        super_formula f1(m, n1, n2, n3, a, b);
+        super_formula f2(m, n1, n2, n3, a, b);
 
         float theta = -POLYMER_PI;
         float lon_inc = POLYMER_TAU / segments;

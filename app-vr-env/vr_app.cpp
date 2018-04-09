@@ -177,7 +177,7 @@ void VirtualRealityApp::on_draw()
     physicsEngine->get_world()->debugDrawWorld();
 
     /*
-    Bounds2D rect{ { 0.f, 0.f },{ (float)width,(float)height } };
+    aabb_2d rect{ { 0.f, 0.f },{ (float)width,(float)height } };
     const float mid = (rect.min().x + rect.max().x) / 2.f;
     ScreenViewport leftviewport = { rect.min(),{ mid - 2.f, rect.max().y }, renderer->get_eye_texture(Eye::LeftEye) };
     ScreenViewport rightViewport = { { mid + 2.f, rect.min().y }, rect.max(), renderer->get_eye_texture(Eye::RightEye) };

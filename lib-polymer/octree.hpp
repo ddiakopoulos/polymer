@@ -25,7 +25,7 @@ using namespace polymer;
 
 // Instead of a strict bounds check which might force an object into a parent cell, this function
 // checks centers, aka a "loose" octree. 
-inline bool inside(const Bounds3D & node, const Bounds3D & other)
+inline bool inside(const aabb_3d & node, const aabb_3d & other)
 {
     // Compare centers
     if (!(linalg::all(greater(other.max(), node.center())) && linalg::all(less(other.min(), node.center())))) return false;
@@ -36,31 +36,31 @@ inline bool inside(const Bounds3D & node, const Bounds3D & other)
 
 // Forward declare
 template<typename T>
-struct Octant;
+struct octant;
 
 template<typename T>
-struct SceneNodeContainer
+struct node_container
 {
     T & object;
-    Octant<T> * octant{ nullptr };
-    Bounds3D worldspaceBounds;
-    SceneNodeContainer(T & obj, const Bounds3D & bounds) : object(obj), worldspaceBounds(bounds) {}
-    bool operator== (const SceneNodeContainer<T> & other) { return &object == &other.object; }
+    octant<T> * octant{ nullptr };
+    aabb_3d worldspaceBounds;
+    node_container(T & obj, const aabb_3d & bounds) : object(obj), worldspaceBounds(bounds) {}
+    bool operator== (const node_container<T> & other) { return &object == &other.object; }
 };
 
 template<typename T>
-struct Octant
+struct octant
 {
-    std::list<SceneNodeContainer<T>> objects;
+    std::list<node_container<T>> objects;
 
-    Octant<T> * parent;
-    Octant(Octant<T> * parent) : parent(parent) {}
+    octant<T> * parent;
+    octant(octant<T> * parent) : parent(parent) {}
 
-    Bounds3D box;
-    VoxelArray<std::unique_ptr<Octant<T>>> arr = { { 2, 2, 2 } };
+    aabb_3d box;
+    voxel_array<std::unique_ptr<octant<T>>> arr = { { 2, 2, 2 } };
     uint32_t occupancy{ 0 };
 
-    int3 get_indices(const Bounds3D & other) const
+    int3 get_indices(const aabb_3d & other) const
     {
         const float3 a = other.center();
         const float3 b = box.center();
@@ -71,7 +71,7 @@ struct Octant
         return index;
     }
 
-    void increase_occupancy(Octant<T> * n) const
+    void increase_occupancy(octant<T> * n) const
     {
         if (n != nullptr)
         {
@@ -80,7 +80,7 @@ struct Octant
         }
     }
 
-    void decrease_occupancy(Octant<T> * n) const
+    void decrease_occupancy(octant<T> * n) const
     {
         if (n != nullptr)
         {
@@ -90,7 +90,7 @@ struct Octant
     }
 
     // Returns true if the other is less than half the size of myself
-    bool check_fit(const Bounds3D & other) const
+    bool check_fit(const aabb_3d & other) const
     {
         return all(lequal(other.size(), box.size() * 0.5f));
     }
@@ -98,36 +98,36 @@ struct Octant
 };
 
 template<typename T>
-struct SceneOctree
+struct octree
 {
-    enum CullStatus
+    enum class cull_status : uint32_t
     {
         INSIDE,
         INTERSECT,
         OUTSIDE
     };
 
-    std::unique_ptr<Octant<T>> root;
+    std::unique_ptr<octant<T>> root;
     uint32_t maxDepth{ 8 };
 
-    SceneOctree(const uint32_t maxDepth = 8, const Bounds3D rootBounds = { { -1, -1, -1 },{ +1, +1, +1 } })
+    octree(const uint32_t maxDepth = 8, const aabb_3d rootBounds = { { -1, -1, -1 },{ +1, +1, +1 } })
     {
-        root.reset(new Octant<T>(nullptr));
+        root.reset(new octant<T>(nullptr));
         root->box = rootBounds;
     }
 
-    ~SceneOctree() { }
+    ~octree() { }
 
     float3 get_resolution()
     {
         return root->box.size() / (float)maxDepth;
     }
 
-    void add(SceneNodeContainer<T> & sceneNode, Octant<T> * child, uint32_t depth = 0)
+    void add(node_container<T> & sceneNode, octant<T> * child, uint32_t depth = 0)
     {
         if (!child) child = root.get();
 
-        const Bounds3D bounds = sceneNode.worldspaceBounds;
+        const aabb_3d bounds = sceneNode.worldspaceBounds;
 
         if (depth < maxDepth && child->check_fit(bounds))
         {
@@ -136,7 +136,7 @@ struct SceneOctree
             // No child for this octant
             if (child->arr[lookup] == nullptr)
             {
-                child->arr[lookup].reset(new Octant<T>(child));
+                child->arr[lookup].reset(new octant<T>(child));
 
                 const float3 octantMin = child->box.min();
                 const float3 octantMax = child->box.max();
@@ -157,7 +157,7 @@ struct SceneOctree
                     }
                 }
 
-                child->arr[lookup]->box = Bounds3D(min, max);
+                child->arr[lookup]->box = aabb_3d(min, max);
             }
 
             // Recurse into a new depth
@@ -172,7 +172,7 @@ struct SceneOctree
         }
     }
 
-    void create(SceneNodeContainer<T> & sceneNode)
+    void create(node_container<T> & sceneNode)
     {
         if (!inside(sceneNode.worldspaceBounds, root->box))
         {
@@ -184,14 +184,14 @@ struct SceneOctree
         }
     }
 
-    void update(SceneNodeContainer<T> & sceneNode)
+    void update(node_container<T> & sceneNode)
     {
         if (sceneNode.octant == nullptr)
         {
             throw std::runtime_error("cannot update a scene node that is not present in the tree");
         }
 
-        const Bounds3D box = sceneNode.worldspaceBounds;
+        const aabb_3d box = sceneNode.worldspaceBounds;
 
         // Check if this scene node has bounds that are not consistent with its assigned octant
         if (!(inside(box, sceneNode.octant->box)))
@@ -202,25 +202,25 @@ struct SceneOctree
 
     }
 
-    void remove(SceneNodeContainer<T> & sceneNode)
+    void remove(node_container<T> & sceneNode)
     {
         if (sceneNode.octant == nullptr)
         {
             throw std::runtime_error("cannot remove a scene node that is not present in the tree");
         }
 
-        Octant<T> * oct = sceneNode.octant;
+        octant<T> * oct = sceneNode.octant;
         oct->decrease_occupancy(oct);
         oct->objects.erase(std::find(oct->objects.begin(), oct->objects.end(), sceneNode));
         sceneNode.octant = nullptr;
     }
 
-    void cull(Frustum & camera, std::vector<Octant<T> *> & visibleNodeList, Octant<T> * node, bool alreadyVisible)
+    void cull(Frustum & camera, std::vector<octant<T> *> & visibleNodeList, octant<T> * node, bool alreadyVisible)
     {
         if (!node) node = root.get();
         if (node->occupancy == 0) return;
 
-        CullStatus status = OUTSIDE;
+        cull_status status = OUTSIDE;
 
         if (alreadyVisible)
         {
@@ -246,7 +246,7 @@ struct SceneOctree
         }
 
         // Recurse into children
-        Octant<T> * child;
+        octant<T> * child;
         if ((child = node->arr[{0, 0, 0}].get()) != nullptr) cull(camera, visibleNodeList, child, alreadyVisible);
         if ((child = node->arr[{0, 0, 1}].get()) != nullptr) cull(camera, visibleNodeList, child, alreadyVisible);
         if ((child = node->arr[{0, 1, 0}].get()) != nullptr) cull(camera, visibleNodeList, child, alreadyVisible);
@@ -260,12 +260,12 @@ struct SceneOctree
 
 template<typename T>
 inline void octree_debug_draw(
-    const SceneOctree<T> & octree,
+    const octree<T> & octree,
     GlShader * shader,
     GlMesh * boxMesh,
     GlMesh * sphereMesh,
     const float4x4 & viewProj,
-    typename Octant<T> * node, // rumble rumble something about dependent types
+    typename octant<T> * node, // rumble rumble something about dependent types
     float3 octantColor)
 {
     if (!node) node = octree.root.get();
@@ -289,7 +289,7 @@ inline void octree_debug_draw(
     shader->unbind();
 
     // Recurse into children
-    Octant<T> * child;
+    octant<T> * child;
     if ((child = node->arr[{0, 0, 0}].get()) != nullptr) octree_debug_draw<T>(octree, shader, boxMesh, sphereMesh, viewProj, child, { 0, 0, 0 });
     if ((child = node->arr[{0, 0, 1}].get()) != nullptr) octree_debug_draw<T>(octree, shader, boxMesh, sphereMesh, viewProj, child, { 0, 0, 1 });
     if ((child = node->arr[{0, 1, 0}].get()) != nullptr) octree_debug_draw<T>(octree, shader, boxMesh, sphereMesh, viewProj, child, { 0, 1, 0 });

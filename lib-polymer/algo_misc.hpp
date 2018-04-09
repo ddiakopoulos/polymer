@@ -20,7 +20,7 @@ struct auto_layout
     struct urect
     {
         ucoord x0, y0, x1, y1;
-        Bounds2D resolve(const Bounds2D & r) const { return{ x0.resolve(r.min().x, r.max().x), y0.resolve(r.min().y, r.max().y), x1.resolve(r.min().x, r.max().x), y1.resolve(r.min().y, r.max().y) }; }
+        aabb_2d resolve(const aabb_2d & r) const { return{ x0.resolve(r.min().x, r.max().x), y0.resolve(r.min().y, r.max().y), x1.resolve(r.min().x, r.max().x), y1.resolve(r.min().y, r.max().y) }; }
         bool is_fixed_width() const { return x0.a == x1.a; }
         bool is_fixed_height() const { return y0.a == y1.a; }
         float fixed_width() const { return x1.b - x0.b; }
@@ -29,7 +29,7 @@ struct auto_layout
 
     float aspectRatio{ 1 };
     urect placement{ { 0,0 },{ 0,0 },{ 1,0 },{ 1,0 } };
-    Bounds2D bounds;
+    aabb_2d bounds;
 
     std::vector<std::shared_ptr<auto_layout>> children;
 
@@ -58,22 +58,22 @@ struct auto_layout
 };
 
 template<typename T>
-class VoxelArray
+class voxel_array
 {
     int3 size;
     std::vector<T> voxels;
 public:
-    VoxelArray(const int3 & size) : size(size), voxels(size.x * size.y * size.z) {}
+    voxel_array(const int3 & size) : size(size), voxels(size.x * size.y * size.z) {}
     const int3 & get_size() const { return size; }
     T operator[](const int3 & coords) const { return voxels[coords.z * size.x * size.y + coords.y * size.x + coords.x]; }
     T & operator[](const int3 & coords) { return voxels[coords.z * size.x * size.y + coords.y * size.x + coords.x]; }
 };
 
-class SuperFormula
+class super_formula
 {
     float m, n1, n2, n3, a, b;
 public:
-    SuperFormula(const float m, const float n1, const float n2, const float n3, const float a = 1.0f, const float b = 1.0f) : m(m), n1(n1), n2(n2), n3(n3), a(a), b(b) {}
+    super_formula(const float m, const float n1, const float n2, const float n3, const float a = 1.0f, const float b = 1.0f) : m(m), n1(n1), n2(n2), n3(n3), a(a), b(b) {}
 
     float operator() (const float phi) const
     {
@@ -84,7 +84,7 @@ public:
 };
 
 // Cantor set on the xz plane
-struct CantorSet
+struct cantor_set
 {
     std::vector<Line> lines{ {float3(-1, 0, 0), float3(1, 0, 0)} }; // initial
 
@@ -114,7 +114,7 @@ struct CantorSet
     }
 };
 
-struct SimpleHarmonicOscillator
+struct simple_harmonic_oscillator
 {
     float frequency = 0, amplitude = 0, phase = 0;
     float value() const { return std::sin(phase) * amplitude; }

@@ -19,14 +19,14 @@ namespace polymer
     // Axis-Aligned Bounding Areas //
     /////////////////////////////////
 
-    struct Bounds2D
+    struct aabb_2d
     {
         float2 _min = { 0, 0 };
         float2 _max = { 0, 0 };
 
-        Bounds2D() {}
-        Bounds2D(float2 min, float2 max) : _min(min), _max(max) {}
-        Bounds2D(float x0, float y0, float x1, float y1) { _min.x = x0; _min.y = y0; _max.x = x1; _max.y = y1; }
+        aabb_2d() {}
+        aabb_2d(float2 min, float2 max) : _min(min), _max(max) {}
+        aabb_2d(float x0, float y0, float x1, float y1) { _min.x = x0; _min.y = y0; _max.x = x1; _max.y = y1; }
 
         float2 min() const { return _min; }
         float2 max() const { return _max; }
@@ -41,7 +41,7 @@ namespace polymer
         bool contains(const float px, const float py) const { return px >= _min.x && py >= _min.y && px < _max.x && py < _max.y; }
         bool contains(const float2 & point) const { return contains(point.x, point.y); }
 
-        bool intersects(const Bounds2D & other) const
+        bool intersects(const aabb_2d & other) const
         {
             if ((_min.x <= other._min.x) && (_max.x >= other._max.x) &&
                 (_min.y <= other._min.y) && (_max.y >= other._max.y)) return true;
@@ -49,19 +49,19 @@ namespace polymer
         }
     };
 
-    inline std::ostream & operator << (std::ostream & o, const Bounds2D & b)
+    inline std::ostream & operator << (std::ostream & o, const aabb_2d & b)
     {
         return o << "{" << b.min() << " to " << b.max() << "}";
     }
 
-    struct Bounds3D
+    struct aabb_3d
     {
         float3 _min = { 0, 0, 0 };
         float3 _max = { 0, 0, 0 };
 
-        Bounds3D() {}
-        Bounds3D(float3 min, float3 max) : _min(min), _max(max) {}
-        Bounds3D(float x0, float y0, float z0, float x1, float y1, float z1) { _min.x = x0; _min.y = y0; _min.z = z0; _max.x = x1; _max.y = y1; _max.z = z1; }
+        aabb_3d() {}
+        aabb_3d(float3 min, float3 max) : _min(min), _max(max) {}
+        aabb_3d(float x0, float y0, float z0, float x1, float y1, float z1) { _min.x = x0; _min.y = y0; _min.z = z0; _max.x = x1; _max.y = y1; _max.z = z1; }
 
         float3 min() const { return _min; }
         float3 max() const { return _max; }
@@ -82,7 +82,7 @@ namespace polymer
             return true;
         }
 
-        bool intersects(const Bounds3D & other) const
+        bool intersects(const aabb_3d & other) const
         {
             if ((_min.x <= other._min.x) && (_max.x >= other._max.x) &&
                 (_min.y <= other._min.y) && (_max.y >= other._max.y) &&
@@ -118,7 +118,7 @@ namespace polymer
             _max = linalg::max(_max, p);
         }
 
-        void surround(const Bounds3D & other)
+        void surround(const aabb_3d & other)
         {
             _min = linalg::min(_min, other._min);
             _max = linalg::max(_max, other._max);
@@ -132,16 +132,16 @@ namespace polymer
             else return 2;
         }
 
-        Bounds3D add(const Bounds3D & other) const
+        aabb_3d add(const aabb_3d & other) const
         {
-            Bounds3D result;
+            aabb_3d result;
             result._min = linalg::min(_min, other._min);
             result._max = linalg::max(_max, other._max);
             return result;
         }
     };
 
-    inline std::ostream & operator << (std::ostream & o, const Bounds3D & b)
+    inline std::ostream & operator << (std::ostream & o, const aabb_3d & b)
     {
         return o << "{" << b.min() << " to " << b.max() << "}";
     }
@@ -358,7 +358,7 @@ namespace polymer
         bool contains(const float3 & center, const float3 & size) const
         {
             const float3 half = size * 0.5f;
-            const Bounds3D box(float3(center - half), float3(center + half));
+            const aabb_3d box(float3(center - half), float3(center + half));
             for (int p = 0; p < 6; p++)
             {
                 if (planes[p].distance_to(box.get_positive(planes[p].get_normal())) < 0.f) return false;
@@ -381,7 +381,7 @@ namespace polymer
         bool intersects(const float3 & center, const float3 & size) const
         {
             const float3 half = size * 0.5f;
-            const Bounds3D box(float3(center - half), float3(center + half));
+            const aabb_3d box(float3(center - half), float3(center + half));
             for (int p = 0; p < 6; p++)
             {
                 if (planes[p].distance_to(box.get_positive(planes[p].get_normal())) < 0.f) return false;

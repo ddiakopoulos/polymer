@@ -304,7 +304,7 @@ int get_current_monitor(GLFWwindow * window)
         int xM, yM;
         glfwGetMonitorPos(monitors[iC], &xM, &yM);
         const GLFWvidmode * desktopMode = glfwGetVideoMode(monitors[iC]);
-        Bounds2D monitorRect {(float) xM, (float) yM, (float)xM + desktopMode->width, (float)yM + desktopMode->height};
+        aabb_2d monitorRect {(float) xM, (float) yM, (float)xM + desktopMode->width, (float)yM + desktopMode->height};
         if (monitorRect.contains((float) xW, (float) yW))
             return iC;
     }

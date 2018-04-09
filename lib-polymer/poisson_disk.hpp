@@ -19,15 +19,16 @@ namespace poisson
 {
     using namespace polymer;
 
-    class Grid 
+    class sampling_grid 
     {
         std::vector<std::vector<float2>> grid;
         int2 numCells, offset;
-        Bounds2D bounds;
+        aabb_2d bounds;
         uint32_t kValue, cellSize;
+
     public:
 
-        Grid(const Bounds2D & bounds, uint32_t k)
+        sampling_grid(const aabb_2d & bounds, uint32_t k)
         {
             this->bounds = bounds;
             kValue = k;
@@ -69,15 +70,15 @@ namespace poisson
         }
     };
     
-    class Volume
+    class sampling_volume
     {
         std::vector<std::vector<float3>> volume;
         int3 numCells, offset;
-        Bounds3D bounds;
+        aabb_3d bounds;
         uint32_t kValue, cellSize;
     public:
         
-        Volume(const Bounds3D & bounds, uint32_t k)
+        sampling_volume(const aabb_3d & bounds, uint32_t k)
         {
             this->bounds = bounds;
             kValue = k;
@@ -123,16 +124,16 @@ namespace poisson
         }
     };
     
-    struct PoissonDiskGenerator2D
+    struct poisson_sampler_2d
     {
         std::function<float(const float2 &)> distFunction;
         std::function<bool(const float2 &)> boundsFunction;
         
-        std::vector<float2> build(const Bounds2D & bounds, const std::vector<float2> & initialSet, int k, float separation = 1.0)
+        std::vector<float2> build(const aabb_2d & bounds, const std::vector<float2> & initialSet, int k, float separation = 1.0)
         {
             std::vector<float2> processingList;
             std::vector<float2> outputList;
-            Grid grid(bounds, 3);
+            sampling_grid grid(bounds, 3);
             uniform_random_gen r;
             
             // add the initial points
@@ -189,17 +190,17 @@ namespace poisson
         }
     };
     
-    struct PoissonDiskGenerator3D
+    struct poisson_sampler_3d
     {
         std::function<float(const float3)> distFunction;
         std::function<bool(const float3)> boundsFunction;
         uniform_random_gen r;
 
-        std::vector<float3> build(const Bounds3D & bounds, const std::vector<float3> & initialSet, int k, float separation = 1.0)
+        std::vector<float3> build(const aabb_3d & bounds, const std::vector<float3> & initialSet, int k, float separation = 1.0)
         {
             std::vector<float3> processingList;
             std::vector<float3> outputList;
-            Volume grid(bounds, 3);
+            sampling_volume grid(bounds, 3);
 
             
             for (auto p : initialSet)
@@ -255,16 +256,16 @@ namespace poisson
     // Returns a set of poisson disk samples inside a rectangular area, with a minimum separation and with
     // a packing determined by how high k is. The higher k is the higher the algorithm will be slow.
     // If no initialSet of points is provided the area center will be used as the initial point.
-    inline std::vector<float2> make_poisson_disk_distribution(const Bounds2D & bounds, const std::vector<float2> & initialSet, int k, float separation = 1.0)
+    inline std::vector<float2> make_poisson_disk_distribution(const aabb_2d & bounds, const std::vector<float2> & initialSet, int k, float separation = 1.0)
     {
-        poisson::PoissonDiskGenerator2D gen;
-        return gen.build(bounds, initialSet, k, separation);
+        poisson::poisson_sampler_2d sampler;
+        return sampler.build(bounds, initialSet, k, separation);
     }
 
-    inline std::vector<float3> make_poisson_disk_distribution(const Bounds3D & bounds, const std::vector<float3> & initialSet, int k, float separation = 1.0)
+    inline std::vector<float3> make_poisson_disk_distribution(const aabb_3d & bounds, const std::vector<float3> & initialSet, int k, float separation = 1.0)
     {
-        poisson::PoissonDiskGenerator3D gen;
-        return gen.build(bounds, initialSet, k, separation);
+        poisson::poisson_sampler_3d sampler;
+        return sampler.build(bounds, initialSet, k, separation);
     } 
 }
 

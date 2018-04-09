@@ -22,7 +22,7 @@
 
 inline std::vector<float4x4> make_parallel_transport_frame_bezier(const std::array<Pose, 4> controlPoints, const int segments)
 {
-    BezierCurve curve(controlPoints[0].position, controlPoints[1].position, controlPoints[2].position, controlPoints[3].position);
+    bezier_spline curve(controlPoints[0].position, controlPoints[1].position, controlPoints[2].position, controlPoints[3].position);
 
     std::vector<float3> points;         // Points in spline
     std::vector<float3> tangents;       // Tangents in spline (fwd dir)

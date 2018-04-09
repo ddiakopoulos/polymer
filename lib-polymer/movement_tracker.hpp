@@ -9,10 +9,10 @@
 #include <memory>
 
 template<typename T>
-class MovementTracker
+class movement_tracker
 {
 
-    struct Sample
+    struct sample
     {
         double when;
         T where;
@@ -45,8 +45,8 @@ class MovementTracker
     // The time over which we calculate velocity.
     static double velocity_time() { return 0.5f; }
 
-    std::unique_ptr<Sample> start;
-    std::deque<Sample> timeList;
+    std::unique_ptr<sample> start;
+    std::deque<sample> timeList;
     const uint32_t maxHistory = 10; // Do not keep points older than this
 
 public:
@@ -58,8 +58,8 @@ public:
 
     void add(const T & pos, double time)
     {
-        if (!start) start.reset(new Sample{time, pos});
-        timeList.push_back(Sample{time, pos});
+        if (!start) start.reset(new sample{time, pos});
+        timeList.push_back(sample{time, pos});
         flush(time);
     }
 

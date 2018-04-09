@@ -11,7 +11,7 @@
 using namespace polymer;
 
 template <typename T>
-class CircularBuffer
+class ring_buffer
 {
 
     std::vector<T> buffer;
@@ -24,7 +24,7 @@ class CircularBuffer
 
     bool init { false };
 
-    void init_from(const CircularBuffer & rhs)
+    void init_from(const ring_buffer & rhs)
     {
         init = rhs.init;
         bufferSize = rhs.bufferSize;
@@ -37,16 +37,16 @@ class CircularBuffer
 
 public:
         
-    CircularBuffer() { }
+    ring_buffer() { }
         
-    CircularBuffer(size_t newSize) { resize(newSize); }
+    ring_buffer(size_t newSize) { resize(newSize); }
         
-    CircularBuffer(const CircularBuffer & rhs)
+    ring_buffer(const ring_buffer & rhs)
     {
         if (rhs.init) init_from(rhs);
     }
         
-    CircularBuffer & operator= (const CircularBuffer & rhs)
+    ring_buffer & operator= (const ring_buffer & rhs)
     {
         if (this != &rhs)
         {
@@ -56,7 +56,7 @@ public:
         return *this;
     }
         
-    ~CircularBuffer() { if (init) clear(); }
+    ~ring_buffer() { if (init) clear(); }
         
     // Safe - bounds check with wrap-around
     inline T & operator[](const size_t & index) { return buffer[(readIndex + index) % bufferSize]; }
@@ -156,7 +156,7 @@ public:
 // template<typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type>
 
 template<typename T, typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type>
-T compute_min(const CircularBuffer<T> & b)
+T compute_min(const ring_buffer<T> & b)
 {
     T min = std::numeric_limits<T>::max();
     for (size_t i = 0; i < b.get_current_size(); i++) if (b[i] < min) min = b[i];
@@ -164,7 +164,7 @@ T compute_min(const CircularBuffer<T> & b)
 }
 
 template<typename T, typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type>
-T compute_max(const CircularBuffer<T> & b)
+T compute_max(const ring_buffer<T> & b)
 {
     T max = std::numeric_limits<T>::min();
     for (size_t i = 0; i < b.get_current_size(); i++) if (buffer[i] > max) max = buffer[i];
@@ -172,7 +172,7 @@ T compute_max(const CircularBuffer<T> & b)
 }
 
 template<typename T, typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type>
-T compute_median(const CircularBuffer<T> & b)
+T compute_median(const ring_buffer<T> & b)
 {
     auto vec = b.get_data_as_vector();
     std::sort(vec.begin(), vec.end());
@@ -181,7 +181,7 @@ T compute_median(const CircularBuffer<T> & b)
 }
 
 template<typename T, typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type>
-T compute_mean(const CircularBuffer<T> & b)
+T compute_mean(const ring_buffer<T> & b)
 {
     T sum = {};
     for (size_t i = 0; i < b.get_current_size(); i++) sum += b[i];
@@ -189,7 +189,7 @@ T compute_mean(const CircularBuffer<T> & b)
 }
 
 template<typename T, typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type>
-T compute_variance(const CircularBuffer<T> & b)
+T compute_variance(const ring_buffer<T> & b)
 {
     T mean = compute_mean(b);
     T sum = T();
@@ -198,13 +198,13 @@ T compute_variance(const CircularBuffer<T> & b)
 }
 
 template<typename T, typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type>
-T compute_std_dev(const CircularBuffer<T> & b) 
+T compute_std_dev(const ring_buffer<T> & b) 
 {
     return sqrt(compute_variance(b));
 }
 
 template<typename T, typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type>
-double compute_confidence(const CircularBuffer<T> & b) 
+double compute_confidence(const ring_buffer<T> & b) 
 {
     const double c = 0.48 - 0.1 * log(compute_std_dev(b));
     return clamp(c, 0.0, 1.0) * (double) b.get_current_size() / (double) b.get_maximum_size();
@@ -214,7 +214,7 @@ double compute_confidence(const CircularBuffer<T> & b)
 // http://www.cse.psu.edu/~rtc12/CSE586Spring2010/lectures/pcaLectureShort_6pp.pdf
 // https://en.wikipedia.org/wiki/Sample_mean_and_covariance#Sample_covariance
 // tl;dr: use on pointclouds (as first step to PCA) or IMU data
-inline linalg::aliases::float3x3 compute_covariance_matrix(const CircularBuffer<linalg::aliases::float3> & b)
+inline linalg::aliases::float3x3 compute_covariance_matrix(const ring_buffer<linalg::aliases::float3> & b)
 {
     linalg::aliases::float3 mean;
 
@@ -249,7 +249,7 @@ inline linalg::aliases::float3x3 compute_covariance_matrix(const CircularBuffer<
 // https://statistics.laerd.com/statistical-guides/pearson-correlation-coefficient-statistical-guide.php
 // From Wiki: Pearson's correlation coefficient is the covariance of the two variables divided by the product of their standard deviations
 // tl;dr: normalized covariance (strength of linear relationship)... good for detecting noise
-inline linalg::aliases::float3 compute_pearson_coefficient(const CircularBuffer<linalg::aliases::float3> & b)
+inline linalg::aliases::float3 compute_pearson_coefficient(const ring_buffer<linalg::aliases::float3> & b)
 {
     auto cov = compute_covariance_matrix(b);
     linalg::aliases::float3 pearson;

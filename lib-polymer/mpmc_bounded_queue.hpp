@@ -11,7 +11,7 @@
 #include <vector>
 
 template<typename T>
-class MPMCBoundedQueue
+class mpmc_queue_bounded
 {
     
     struct node_t { T data; std::atomic<size_t> next; };
@@ -28,18 +28,18 @@ class MPMCBoundedQueue
     std::atomic<size_t> tail{ 0 };
     cache_line_pad_t pad3;
 
-    MPMCBoundedQueue(const MPMCBoundedQueue &) { }
-    void operator= (const MPMCBoundedQueue &) { }
+    mpmc_queue_bounded(const mpmc_queue_bounded &) { }
+    void operator= (const mpmc_queue_bounded &) { }
 
 public:
 
-    MPMCBoundedQueue(size_t size = 1024) : size(size), mask(size-1), buffer(reinterpret_cast<node_t*>(new aligned_node_t[size]))
+    mpmc_queue_bounded(size_t size = 1024) : size(size), mask(size-1), buffer(reinterpret_cast<node_t*>(new aligned_node_t[size]))
     {
         assert((size != 0) && ((size & (~size + 1)) == size)); // enforce power of 2
         for (size_t i = 0; i < size; ++i) buffer[i].next.store(i, std::memory_order_relaxed);
     }
 
-    ~MPMCBoundedQueue()
+    ~mpmc_queue_bounded()
     {
         delete[] buffer;
     }

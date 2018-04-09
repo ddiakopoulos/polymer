@@ -255,9 +255,9 @@ namespace ImGui
         Bottom
     };
 
-    typedef std::pair<Bounds2D, Bounds2D> SplitRegion;
+    typedef std::pair<aabb_2d, aabb_2d> SplitRegion;
 
-    SplitRegion Split(const Bounds2D & r, int * v, SplitType t)
+    SplitRegion Split(const aabb_2d & r, int * v, SplitType t)
     {
         ImGuiWindow * window = ImGui::GetCurrentWindowRead();
 

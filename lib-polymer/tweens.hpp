@@ -85,7 +85,7 @@ struct Quartic
  * Next: explore threaded approach, on_start callback & delay
  */
 
-class SimpleTweenPlayer
+class simple_animator
 {
     struct Tween
     {

@@ -17,7 +17,7 @@ class profiler
 {
     struct data_point
     {
-        CircularBuffer<double> average{ 30 };
+        ring_buffer<double> average{ 30 };
         T timer;
     };
 

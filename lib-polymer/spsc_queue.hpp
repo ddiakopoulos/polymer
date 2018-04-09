@@ -9,7 +9,7 @@
 #include <vector>
 
 template<typename T>
-class SPSCQueue
+class spsc_queue
 {
 
     struct node_t { node_t * next; T data; };
@@ -20,17 +20,17 @@ class SPSCQueue
     node_t * tail;
     node_t * back;
 
-    SPSCQueue(const SPSCQueue &) { }
-    void operator= (const SPSCQueue &) { }
+    spsc_queue(const spsc_queue &) { }
+    void operator= (const spsc_queue &) { }
 
 public:
 
-    SPSCQueue() : head(reinterpret_cast<node_t*>(new node_aligned_t)), tail(head)
+    spsc_queue() : head(reinterpret_cast<node_t*>(new node_aligned_t)), tail(head)
     {
         head->next = nullptr;
     }
 
-    ~SPSCQueue()
+    ~spsc_queue()
     {
         T output;
         while (this->consume(output)) {}
