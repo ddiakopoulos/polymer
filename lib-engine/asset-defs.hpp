@@ -1,7 +1,6 @@
 #pragma once
 
 #include "asset-handle.hpp"
-#include "gl-shader-monitor.hpp"
 
 template<class T> inline asset_handle<T> create_handle_for_asset(const char * asset_id, T && asset)
 {
@@ -28,11 +27,12 @@ template<> inline asset_handle<GlMesh> create_handle_for_asset(const char * asse
 namespace polymer
 {
     struct Material;
+    struct gl_shader_record;
 }
 
-//typedef asset_handle<GlShader>                           GlShaderHandle;
+//typedef asset_handle<GlShader>                         GlShaderHandle;
 typedef asset_handle<GlTexture2D>                        GlTextureHandle;
 typedef asset_handle<GlMesh>                             GlMeshHandle;
 typedef asset_handle<Geometry>                           GeometryHandle;
-typedef asset_handle<std::shared_ptr<polymer::Material>> MaterialHandle;
-typedef asset_handle<polymer::gl_shader_record>          ShaderHandle;
+typedef asset_handle<std::shared_ptr<polymer::Material>>            MaterialHandle;
+typedef asset_handle<std::shared_ptr<polymer::gl_shader_record>>    ShaderHandle;

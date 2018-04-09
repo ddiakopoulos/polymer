@@ -1,5 +1,7 @@
 #pragma once
 
+//@todo - This should probably be part of lib-engine! 
+
 #ifndef shader_monitor_h
 #define shader_monitor_h
 
@@ -7,12 +9,14 @@
 #include "util.hpp"
 #include "string_utils.hpp"
 #include "gl-loaders.hpp"
-#include "bit_mask.hpp"
+
 #include <regex>
 #include <unordered_map>
 #include <chrono>
 #include <filesystem>
 #include <atomic>
+
+#include "../../../lib-engine/asset-defs.hpp"
 
 using namespace std::experimental::filesystem;
 using namespace std::chrono;
@@ -47,53 +51,61 @@ namespace polymer
         "HAS_ROUGHNESS_MAP", "HAS_METALNESS_MAP", "HAS_ALBEDO_MAP", "HAS_NORMAL_MAP", "HAS_OCCLUSION_MAP" }
     */
 
-    // This forms the key to gl_shader_record
-    std::string make_shader_handle(std::string key, const std::initializer_list<std::string> defines = {})
+    // Compile on first handle request
+    // Compile on modified...
+
+    struct shader_variant
     {
-        for (auto & define : defines) key += "/" + define;
-        return key;
-    }
+        std::vector<std::string> defines; // eventually capture/store in material
+        GlShader shader;
+        bool enabled(const std::string & define) { for (auto & d : defines) if (d == define) return true; return false; }
+    };
 
     // Store this in the `asset_handle` table...
-    struct gl_shader_record
+    struct gl_shader_asset
     {
-        std::vector<std::string> includes;
         std::string name;
+
         std::string vertexPath;
         std::string fragmentPath;
         std::string geomPath;
+
         std::string includePath;
+        std::vector<std::string> includes;
 
-        struct variant
-        {
-            std::string lookup;
-            std::vector<std::string> defines;
-            GlShader shader;
-        };
-
-        std::vector<variant> shaders;
+        std::unordered_map<uint64_t, std::shared_ptr<shader_variant>> shaders;
 
         bool shouldRecompile = false;
         int64_t writeTime = 0;
 
-        gl_shader_record(
-            const std::string & name,
+        gl_shader_asset(
+            const std::string & n,
             const std::string & v,
             const std::string & f,
             const std::string & g = "",
-            const std::string & inc = "") : name(name), vertexPath(v), fragmentPath(f), geomPath(g), includePath(inc) { };
+            const std::string & inc = "") : name(n), vertexPath(v), fragmentPath(f), geomPath(g), includePath(inc)  
+        { 
 
-        gl_shader_record() { };
-
-        /*
-        bool has_define(const std::string & define) const
-        {
-            for (auto & def : defines) if (d == def) return true;
-            return false;
         }
-        */ 
 
-        void recompile()
+        gl_shader_asset() = default;
+
+        std::shared_ptr<shader_variant> get_variant(const std::vector<std::string> defines = {})
+        {
+            uint64_t sumOfHashes = 0;
+            for (auto & define : defines) sumOfHashes += hash_fnv1a(define);
+
+            auto itr = shaders.find(sumOfHashes);
+            if (itr != shaders.end()) return itr->second;
+
+            auto newVariant = std::make_shared<shader_variant>();
+            newVariant->shader = std::move(compile_variant(defines));
+            newVariant->defines = defines;
+            shaders[sumOfHashes] = newVariant;
+            return newVariant;
+        }
+
+        GlShader compile_variant(const std::vector<std::string> defines)
         {
             GlShader result;
 
@@ -102,7 +114,6 @@ namespace polymer
                 if (defines.size() > 0 || includePath.size() > 0)
                 {
                     result = preprocess(read_file_text(vertexPath), read_file_text(fragmentPath), read_file_text(geomPath), includePath, defines, includes);
-                    result.set_defines(defines);
                 }
                 else
                 {
@@ -111,11 +122,11 @@ namespace polymer
             }
             catch (const std::exception & e)
             {
-                // use log
+                // todo - use log
                 std::cout << "Shader recompilation error: " << e.what() << std::endl;
             }
 
-            if (onModified) onModified(std::move(result));
+            return std::move(result);
         }
     };
 
@@ -271,7 +282,7 @@ namespace polymer
             }
         }
 
-        std::unordered_map<std::string, std::shared_ptr<gl_shader_record>> assets;
+        std::unordered_map<std::string, std::shared_ptr<gl_shader_asset>> assets;
 
         std::string root_path;
         std::thread watch_thread;
@@ -314,8 +325,18 @@ namespace polymer
                 if (asset.second->shouldRecompile)
                 {
                     std::lock_guard<std::mutex> guard(watch_mutex);
+
                     asset.second->recompile();
                     asset.second->shouldRecompile = false;
+
+                    /*
+                    // Create handles for the requested defines...
+                    for (auto & variant : asset.second->shaders)
+                    {
+                        create_handle_for_asset(variant->key.c_str(), variant);
+                    }
+                    */
+
                 }
             }
         }
@@ -326,7 +347,7 @@ namespace polymer
             const std::string & vert_path,
             const std::string & frag_path)
         {
-            assets[name] = std::make_shared<gl_shader_record>(name, vert_path, frag_path);
+            assets[name] = std::make_shared<gl_shader_asset>(name, vert_path, frag_path);
         }
 
         // Watch vertex, fragment, and geometry
@@ -336,7 +357,7 @@ namespace polymer
             const std::string & frag_path,
             const std::string & geom_path)
         {
-            assets[name] = std::make_shared<gl_shader_record>(name, vert_path, frag_path, geom_path);
+            assets[name] = std::make_shared<gl_shader_asset>(name, vert_path, frag_path, geom_path);
         }
 
         // Watch vertex and fragment with includes
@@ -346,7 +367,7 @@ namespace polymer
             const std::string & frag_path,
             const std::string & include_path)
         {
-            assets[name] = std::make_shared<gl_shader_record>(name, vert_path, frag_path, "", include_path);
+            assets[name] = std::make_shared<gl_shader_asset>(name, vert_path, frag_path, "", include_path);
         }
 
         // Watch vertex and fragment and geometry with includes
@@ -357,10 +378,10 @@ namespace polymer
             const std::string & geom_path,
             const std::string & include_path)
         {
-            assets[name] = std::make_shared<gl_shader_record>(name, vert_path, frag_path, geom_path, include_path);
+            assets[name] = std::make_shared<gl_shader_asset>(name, vert_path, frag_path, geom_path, include_path);
         }
 
-        std::shared_ptr<gl_shader_record> get_asset(const std::string & name)
+        std::shared_ptr<gl_shader_asset> get_asset(const std::string & name)
         {
             return assets[name];
         }

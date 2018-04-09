@@ -282,7 +282,6 @@ class GlShader
 {
     GLuint program;
     bool enabled = false;
-    std::vector<std::string> defines;
 
 protected:
     GlShader(const GlShader & r) = delete;
@@ -350,7 +349,6 @@ public:
     GlShader & operator = (GlShader && r)
     {
         std::swap(program, r.program);
-        std::swap(defines, r.defines);
         std::swap(enabled, r.enabled);
         return *this;
     }
