@@ -7,6 +7,7 @@
 #include "util.hpp"
 #include "string_utils.hpp"
 #include "gl-loaders.hpp"
+#include "bit_mask.hpp"
 #include <regex>
 #include <unordered_map>
 #include <chrono>
@@ -22,23 +23,94 @@ inline system_clock::time_point write_time(const std::string & file_path)
     catch (...) { return system_clock::time_point::min(); };
 }
 
+// 32 bit Fowler–Noll–Vo Hash
+inline uint32_t hash_fnv1a(const std::string & str)
+{
+    static const uint32_t fnv1aBase32 = 0x811C9DC5u;
+    static const uint32_t fnv1aPrime32 = 0x01000193u;
+
+    uint32_t result = fnv1aBase32;
+
+    for (auto & c : str)
+    {
+        result ^= static_cast<uint32_t>(c);
+        result *= fnv1aPrime32;
+    }
+    return result;
+}
+
 namespace polymer
 {
-    // 32 bit Fowler–Noll–Vo Hash
-    inline uint32_t hash_fnv1a(const std::string & str)
+    /*
+    enum class polymer_shader_defs : uint64_t
     {
-        static const uint32_t fnv1aBase32 = 0x811C9DC5u;
-        static const uint32_t fnv1aPrime32 = 0x01000193u;
+        //0x1
+    };
 
-        uint32_t result = fnv1aBase32;
+    { "TWO_CASCADES", "USE_PCF_3X3", "ENABLE_SHADOWS",
+        "USE_IMAGE_BASED_LIGHTING",
+        "HAS_ROUGHNESS_MAP", "HAS_METALNESS_MAP", "HAS_ALBEDO_MAP", "HAS_NORMAL_MAP", "HAS_OCCLUSION_MAP" }
+    */
 
-        for (auto & c : str)
-        {
-            result ^= static_cast<uint32_t>(c);
-            result *= fnv1aPrime32;
-        }
-        return result;
+    // This forms the key to gl_shader_record
+    std::string make_shader_handle(std::string key, const std::initializer_list<std::string> defines = {})
+    {
+        for (auto & define : defines) key += "/" + define;
+        return key;
     }
+
+    // Store this in the `asset_handle` table...
+    struct gl_shader_record
+    {
+        //bit_mask<uint64_t> options;
+
+        std::function<void(GlShader)> onModified;
+
+        std::string vertexPath;
+        std::string fragmentPath;
+        std::string geomPath;
+        std::string includePath;
+        std::vector<std::string> defines;
+        std::vector<std::string> includes;
+
+        bool shouldRecompile = false;
+        int64_t writeTime = 0;
+
+        gl_shader_record(
+            std::function<void(GlShader)> callback,
+            const std::string & v,
+            const std::string & f,
+            const std::string & g = "",
+            const std::string & inc = "",
+            const std::vector<std::string> & def = {}) : onModified(callback), vertexPath(v), fragmentPath(f), geomPath(g), includePath(inc), defines(def) { };
+
+        gl_shader_record() {};
+
+        void recompile()
+        {
+            GlShader result;
+
+            try
+            {
+                if (defines.size() > 0 || includePath.size() > 0)
+                {
+                    result = preprocess(read_file_text(vertexPath), read_file_text(fragmentPath), read_file_text(geomPath), includePath, defines, includes);
+                    result.set_defines(defines);
+                }
+                else
+                {
+                    result = GlShader(read_file_text(vertexPath), read_file_text(fragmentPath), read_file_text(geomPath));
+                }
+            }
+            catch (const std::exception & e)
+            {
+                // use log
+                std::cout << "Shader recompilation error: " << e.what() << std::endl;
+            }
+
+            if (onModified) onModified(std::move(result));
+        }
+    };
 
     inline std::string preprocess_includes(const std::string & source, const std::string & includeSearchPath, std::vector<std::string> & includes, int depth)
     {
@@ -141,67 +213,13 @@ namespace polymer
     inline GlComputeProgram preprocess_compute_defines( const std::string & computeShader, const std::vector<std::string> & defines)
     {
         std::stringstream compute;
-
-        for (const auto define : defines)
-        {
-            if (computeShader.size()) compute << "#define " << define << std::endl;
-        }
-
+        for (const auto define : defines) if (computeShader.size()) compute << "#define " << define << std::endl;
         if (computeShader.size()) compute << computeShader;
-
         return GlComputeProgram(preprocess_version(compute.str()));
     }
 
     class gl_shader_monitor
     {
-
-        struct ShaderAsset
-        {
-            std::function<void(GlShader)> onModified;
-
-            std::string vertexPath;
-            std::string fragmentPath;
-            std::string geomPath;
-            std::string includePath;
-            std::vector<std::string> defines;
-            std::vector<std::string> includes;
-
-            bool shouldRecompile = false;
-            int64_t writeTime = 0;
-
-            ShaderAsset(
-                const std::string & v, 
-                const std::string & f, 
-                const std::string & g = "", 
-                const std::string & inc = "", 
-                const std::vector<std::string> & def = {}) : vertexPath(v), fragmentPath(f), geomPath(g), includePath(inc), defines(def) { };
-
-            ShaderAsset() {};
-
-            void recompile()
-            {
-                GlShader result;
-
-                try
-                {
-                    if (defines.size() > 0 || includePath.size() > 0)
-                    {
-                        result = preprocess(read_file_text(vertexPath), read_file_text(fragmentPath), read_file_text(geomPath), includePath, defines, includes);
-                        result.set_defines(defines);
-                    }
-                    else
-                    {
-                        result = GlShader(read_file_text(vertexPath), read_file_text(fragmentPath), read_file_text(geomPath));
-                    }
-                }
-                catch (const std::exception & e)
-                {
-                    std::cout << "Shader recompilation error: " << e.what() << std::endl;
-                }
-
-                if (onModified) onModified(std::move(result));
-            }
-        };
 
         void walk_root_directory(path root)
         {
@@ -214,28 +232,28 @@ namespace polymer
                 for (auto & asset : assets)
                 {
                     // Regular shader assets
-                    if (path == asset.second.vertexPath || path == asset.second.fragmentPath || path == asset.second.geomPath)
+                    if (path == asset.second->vertexPath || path == asset.second->fragmentPath || path == asset.second->geomPath)
                     {
                         auto writeTime = duration_cast<seconds>(write_time(path).time_since_epoch()).count();
-                        if (writeTime > asset.second.writeTime)
+                        if (writeTime > asset.second->writeTime)
                         {
-                            asset.second.writeTime = writeTime;
-                            asset.second.shouldRecompile = true;
-                            std::cout << "Modified Shader: " << asset.second.vertexPath << std::endl;
+                            asset.second->writeTime = writeTime;
+                            asset.second->shouldRecompile = true;
+                            std::cout << "Modified Shader: " << asset.second->vertexPath << std::endl;
                         }
                     }
 
                     // Each shader keeps a list of the files it includes. gl_shader_monitor watches a base path,
                     // so we should be able to recompile shaders dependent on common includes
-                    for (auto & includePath : asset.second.includes)
+                    for (auto & includePath : asset.second->includes)
                     {
                         if (get_filename_with_extension(path) == get_filename_with_extension(includePath))
                         {
                             auto writeTime = duration_cast<seconds>(write_time(path).time_since_epoch()).count();
-                            if (writeTime > asset.second.writeTime)
+                            if (writeTime > asset.second->writeTime)
                             {
-                                asset.second.writeTime = writeTime;
-                                asset.second.shouldRecompile = true;
+                                asset.second->writeTime = writeTime;
+                                asset.second->shouldRecompile = true;
                                 std::cout << "Modified Include: " << includePath << std::endl;
                                 break;
                             }
@@ -246,8 +264,9 @@ namespace polymer
             }
         }
 
+        std::unordered_map<std::string, std::shared_ptr<gl_shader_record>> assets;
+
         std::string root_path;
-        std::unordered_map<uint32_t, ShaderAsset> assets;
         std::thread watch_thread;
         std::mutex watch_mutex;
         std::atomic<bool> watch_should_exit{ false };
@@ -285,62 +304,51 @@ namespace polymer
         {
             for (auto & asset : assets)
             {
-                if (asset.second.shouldRecompile)
+                if (asset.second->shouldRecompile)
                 {
                     std::lock_guard<std::mutex> guard(watch_mutex);
-                    asset.second.recompile();
-                    asset.second.shouldRecompile = false;
+                    asset.second->recompile();
+                    asset.second->shouldRecompile = false;
                 }
             }
         }
 
         // Watch vertex and fragment
-        uint32_t watch(
+        void watch(
+            const std::string & name,
             const std::string & vert_path,
             const std::string & frag_path,
             std::function<void(GlShader)> callback)
         {
-            ShaderAsset asset(vert_path, frag_path);
-            asset.onModified = callback;
-            asset.recompile();
-            uint32_t lookup = hash_fnv1a(vert_path + frag_path);
-            assets[lookup] = std::move(asset);
-            return lookup;
+            assets[name] = std::make_shared<gl_shader_record>(callback, vert_path, frag_path);
         }
 
         // Watch vertex, fragment, and geometry
-        uint32_t watch(
+        void watch(
+            const std::string & name,
             const std::string & vert_path,
             const std::string & frag_path,
             const std::string & geom_path, 
             std::function<void(GlShader)> callback)
         {
-            ShaderAsset asset(vert_path, frag_path, geom_path);
-            asset.onModified = callback;
-            asset.recompile();
-            uint32_t lookup = hash_fnv1a(vert_path + frag_path);
-            assets[lookup] = std::move(asset);
-            return lookup;
+            assets[name] = std::make_shared<gl_shader_record>(callback, vert_path, frag_path, geom_path);
         }
 
         // Watch vertex and fragment with includes and defines
-        uint32_t watch(
+        void watch(
+            const std::string & name,
             const std::string & vert_path,
             const std::string & frag_path,
             const std::string & include_path,
             const std::vector<std::string> & defines,
             std::function<void(GlShader)> callback)
         {
-            ShaderAsset asset(vert_path, frag_path, "", include_path, defines);
-            asset.onModified = callback;
-            asset.recompile();
-            uint32_t lookup = hash_fnv1a(vert_path + frag_path);
-            assets[lookup] = std::move(asset);
-            return lookup;
+            assets[name] = std::make_shared<gl_shader_record>(callback, vert_path, frag_path, "", include_path, defines);
         }
 
         // Watch vertex and fragment and geometry with includes and defines
-        uint32_t watch(
+        void watch(
+            const std::string & name,
             const std::string & vert_path,
             const std::string & frag_path,
             const std::string & geom_path,
@@ -348,17 +356,12 @@ namespace polymer
             const std::vector<std::string> & defines,
             std::function<void(GlShader)> callback)
         {
-            ShaderAsset asset(vert_path, frag_path, geom_path, include_path, defines);
-            asset.onModified = callback;
-            asset.recompile();
-            uint32_t lookup = hash_fnv1a(vert_path + frag_path);
-            assets[lookup] = std::move(asset);
-            return lookup;
+            assets[const std::string & name, ] = std::make_shared<gl_shader_record>(callback, vert_path, frag_path, geom_path, include_path, defines);
         }
 
-        ShaderAsset & get_asset(const uint32_t id)
+        std::shared_ptr<gl_shader_record> get_asset(const std::string & name)
         {
-            return assets[id];
+            return assets[name];
         }
 
     };

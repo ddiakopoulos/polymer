@@ -153,7 +153,6 @@ struct scene_editor_app final : public polymer_app
 
     GlShaderHandle wireframeHandle{ "wireframe" };
     GlShaderHandle iblHandle{ "ibl" };
-    GlMeshHandle cubeHandle{ "cube" };
 
     profiler<simple_cpu_timer> editorProfiler;
 

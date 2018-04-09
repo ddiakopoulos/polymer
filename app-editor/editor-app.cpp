@@ -61,36 +61,29 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
     shaderMonitor.watch(
         "../assets/shaders/ibl_vert.glsl",
         "../assets/shaders/ibl_frag.glsl",
-        "../assets/shaders/renderer", {}, [](GlShader shader)
-    {
+        "../assets/shaders/renderer", {}, [](GlShader shader) {
         create_handle_for_asset("ibl", std::move(shader));
     });
 
     shaderMonitor.watch(
         "../assets/shaders/renderer/depth_prepass_vert.glsl",
         "../assets/shaders/renderer/depth_prepass_frag.glsl",
-        "../assets/shaders/renderer", {}, [](GlShader shader)
-    {
+        "../assets/shaders/renderer", {}, [](GlShader shader) {
         create_handle_for_asset("depth-prepass", std::move(shader));
     });
 
     shaderMonitor.watch(
         "../assets/shaders/renderer/forward_lighting_vert.glsl",
         "../assets/shaders/renderer/default_material_frag.glsl",
-        "../assets/shaders/renderer", {}, [](GlShader shader)
-    {
+        "../assets/shaders/renderer", {}, [](GlShader shader) {
         create_handle_for_asset("default-shader", std::move(shader));
     });
 
-    pbrProgramAsset = shaderMonitor.watch(
-        "../assets/shaders/renderer/forward_lighting_vert.glsl",
-        "../assets/shaders/renderer/forward_lighting_frag.glsl",
-        "../assets/shaders/renderer",
-        { "TWO_CASCADES", "USE_PCF_3X3", "ENABLE_SHADOWS",
-         "USE_IMAGE_BASED_LIGHTING",
-         "HAS_ROUGHNESS_MAP", "HAS_METALNESS_MAP", "HAS_ALBEDO_MAP", "HAS_NORMAL_MAP", "HAS_OCCLUSION_MAP" }, [](GlShader shader)
-    {
-        create_handle_for_asset("pbr-forward-lighting", std::move(shader));
+    shaderMonitor.watch(
+        "../assets/shaders/renderer/post_tonemap_vert.glsl",
+        "../assets/shaders/renderer/post_tonemap_frag.glsl",
+        [](GlShader shader) {
+        create_handle_for_asset("post-tonemap", std::move(shader));
     });
 
     shaderMonitor.watch(
@@ -98,20 +91,19 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
         "../assets/shaders/renderer/shadowcascade_frag.glsl",
         "../assets/shaders/renderer/shadowcascade_geom.glsl",
         "../assets/shaders/renderer", {},
-        [](GlShader shader)
-    {
+        [](GlShader shader) {
         create_handle_for_asset("cascaded-shadows", std::move(shader));
     });
 
-    shaderMonitor.watch(
-        "../assets/shaders/renderer/post_tonemap_vert.glsl",
-        "../assets/shaders/renderer/post_tonemap_frag.glsl",
-        [](GlShader shader)
-    {
-        create_handle_for_asset("post-tonemap", std::move(shader));
+    pbrProgramAsset = shaderMonitor.watch(
+        "../assets/shaders/renderer/forward_lighting_vert.glsl",
+        "../assets/shaders/renderer/forward_lighting_frag.glsl",
+        "../assets/shaders/renderer", [](GlShader shader) {
+        create_handle_for_asset("pbr-forward-lighting", std::move(shader));
     });
 
     fullscreen_surface.reset(new fullscreen_texture());
+
     renderer_settings settings;
     settings.renderSize = int2(width, height);
     renderer.reset(new forward_renderer(settings));

@@ -136,7 +136,6 @@ void main()
 #ifdef HAS_NORMAL_MAP
     vec3 nSample = normalize(texture(s_normal, v_texcoord).xyz * 2.0 - 1.0);
     N = normalize(calc_normal_map(v_normal, normalize(v_tangent), normalize(v_bitangent), normalize(nSample)).xyz);
-    //N = normalize( (normalize(v_tangent) * nSample.x) + (normalize(v_bitangent) * nSample.y) + (normalize(v_normal) * nSample.z)); // alternate
 #endif
 
 // todo - can pack roughness and metalness into the same RG texture
@@ -211,7 +210,7 @@ void main()
         vec3 diffuseContrib, specContrib;
         compute_cook_torrance(data, u_directionalLight.amount, diffuseContrib, specContrib);
 
-        Lo += NdotL * u_directionalLight.color * (diffuseContrib + specContrib);
+        Lo *= NdotL * u_directionalLight.color * (diffuseContrib + specContrib);
     }
 
     // Compute point lights
@@ -237,7 +236,7 @@ void main()
         vec3 diffuseContrib, specContrib;
         compute_cook_torrance(data, attenuation, diffuseContrib, specContrib);
 
-        Lo += NdotL * u_pointLights[i].color * (diffuseContrib + specContrib) * attenuation;
+        Lo *= NdotL * u_pointLights[i].color * (diffuseContrib + specContrib) * attenuation;
     }
 
     #ifdef USE_IMAGE_BASED_LIGHTING
