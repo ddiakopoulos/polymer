@@ -29,6 +29,7 @@ inline system_clock::time_point write_time(const std::string & file_path)
 
 namespace polymer
 {
+
     // 32 bit Fowler–Noll–Vo Hash
     inline uint32_t hash_fnv1a(const std::string & str)
     {
@@ -188,18 +189,26 @@ namespace polymer
             const std::string & g = "",
             const std::string & inc = "") : name(n), vertexPath(v), fragmentPath(f), geomPath(g), includePath(inc)  
         { 
-
+            std::cout << "Construct gl_shader_asset " << n << std::endl;
         }
 
         gl_shader_asset() = default;
 
         std::shared_ptr<shader_variant> get_variant(const std::vector<std::string> defines = {})
         {
+            std::cout << "get_variant " << name << std::endl;
+
             uint64_t sumOfHashes = 0;
             for (auto & define : defines) sumOfHashes += hash_fnv1a(define);
 
             auto itr = shaders.find(sumOfHashes);
-            if (itr != shaders.end()) return itr->second;
+            if (itr != shaders.end())
+            {
+                std::cout << "found existing " << name << std::endl;
+                return itr->second;
+            }
+
+            std::cout << "compiling new " << name << std::endl;
 
             auto newVariant = std::make_shared<shader_variant>();
             newVariant->shader = std::move(compile_variant(defines));
@@ -210,8 +219,18 @@ namespace polymer
 
         void recompile_all()
         {
+            // Compile at least the default variant with no includes defined... 
+            if (shaders.empty())
+            {
+                auto newVariant = std::make_shared<shader_variant>();
+                newVariant->shader = std::move(compile_variant({}));
+                shaders[0] = newVariant;
+            }
+
+            std::cout << "recompile all... " << name << std::endl;
             for (auto & variant : shaders)
             {
+                std::cout << "doot " << std::endl;
                 variant.second->shader = compile_variant(variant.second->defines);
             }
         }
@@ -298,6 +317,7 @@ namespace polymer
 
         gl_shader_monitor(const std::string & root_path) : root_path(root_path) 
         {
+            /*
             watch_thread = std::thread([this, root_path]()
             {
                 while (!watch_should_exit)
@@ -314,6 +334,7 @@ namespace polymer
                     std::this_thread::sleep_for(std::chrono::milliseconds(250));
                 }
             });
+            */
         }
 
         ~gl_shader_monitor()
@@ -343,7 +364,9 @@ namespace polymer
             const std::string & vert_path,
             const std::string & frag_path)
         {
-            assets[name] = std::make_shared<gl_shader_asset>(name, vert_path, frag_path);
+            auto asset = std::make_shared<gl_shader_asset>(name, vert_path, frag_path);
+            assets[name] = asset;
+            create_handle_for_asset(name.c_str(), std::move(asset));
         }
 
         // Watch vertex and fragment with includes
@@ -353,7 +376,9 @@ namespace polymer
             const std::string & frag_path,
             const std::string & include_path)
         {
-            assets[name] = std::make_shared<gl_shader_asset>(name, vert_path, frag_path, "", include_path);
+            auto asset = std::make_shared<gl_shader_asset>(name, vert_path, frag_path, "", include_path);
+            assets[name] = asset;
+            create_handle_for_asset(name.c_str(), std::move(asset));
         }
 
         // Watch vertex and fragment and geometry with includes
@@ -364,7 +389,9 @@ namespace polymer
             const std::string & geom_path,
             const std::string & include_path)
         {
-            assets[name] = std::make_shared<gl_shader_asset>(name, vert_path, frag_path, geom_path, include_path);
+            auto asset = std::make_shared<gl_shader_asset>(name, vert_path, frag_path, geom_path, include_path);
+            assets[name] = asset;
+            create_handle_for_asset(name.c_str(), std::move(asset));
         }
 
         std::shared_ptr<gl_shader_asset> get_asset(const std::string & name)

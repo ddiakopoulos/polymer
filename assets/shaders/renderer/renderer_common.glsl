@@ -5,6 +5,7 @@
 #define INV_PI 1.0/PI
 #define RCP_4PI 1.0 / (4 * PI)
 #define DEFAULT_GAMMA 2.2
+#define TWO_CASCADES // dimitri
 
 const int MAX_POINT_LIGHTS = 4;
 const int NUM_CASCADES = 2;

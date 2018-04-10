@@ -319,6 +319,10 @@ public:
 
         glProgramParameteri(program, GL_PROGRAM_SEPARABLE, GL_FALSE);
 
+        std::ofstream out("shader-output.txt");
+        out << frag;
+        out.close();
+
         ::compile_shader(program, GL_VERTEX_SHADER, vert.c_str());
         ::compile_shader(program, GL_FRAGMENT_SHADER, frag.c_str());
 

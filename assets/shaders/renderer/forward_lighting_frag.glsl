@@ -151,7 +151,9 @@ void main()
     albedo *= sRGBToLinear(texture(s_albedo, v_texcoord).rgb, DEFAULT_GAMMA); 
 #endif
 
+#ifdef HAS_NORMAL_MAP
     roughness = geometric_aa_toksvig(roughness, nSample, 0.5);
+#endif
 
     // Roughness is authored as perceptual roughness; as is convention,
     // convert to material roughness by squaring the perceptual roughness [2].
@@ -200,12 +202,14 @@ void main()
         const float normal_bias = 0.01; // fixme - expose to user
         vec3 biased_pos = get_biased_position(v_world_position, slope_bias, normal_bias, v_normal, L);
 
+        /*
         // The way this is structured, it impacts lighting if we stop updating shadow uniforms 
         float shadowTerm = 1.0;
         #ifdef ENABLE_SHADOWS
             shadowTerm = calculate_csm_coefficient(s_csmArray, biased_pos, v_view_space_position, u_cascadesMatrix, u_cascadesPlane, debugShadowColor);
             shadowVisibility = 1.0 - ((shadowTerm  * NdotL) * u_shadowOpacity * u_receiveShadow);
         #endif
+        */
 
         vec3 diffuseContrib, specContrib;
         compute_cook_torrance(data, u_directionalLight.amount, diffuseContrib, specContrib);

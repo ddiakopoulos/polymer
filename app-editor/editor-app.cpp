@@ -52,13 +52,13 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
 
     load_editor_intrinsic_assets("../assets/models/runtime/");
 
-    auto wireframeProgram = GlShader(
-        read_file_text("../assets/shaders/wireframe_vert.glsl"),
-        read_file_text("../assets/shaders/wireframe_frag.glsl"),
-        read_file_text("../assets/shaders/wireframe_geom.glsl"));
-    create_handle_for_asset("wireframe", std::move(wireframeProgram));
+    shaderMonitor.watch("wireframe",
+        "../assets/shaders/wireframe_vert.glsl",
+        "../assets/shaders/wireframe_frag.glsl",
+        "../assets/shaders/wireframe_geom.glsl",
+        "../assets/shaders/renderer");
 
-    shaderMonitor.watch("ibl"
+    shaderMonitor.watch("ibl", 
         "../assets/shaders/ibl_vert.glsl",
         "../assets/shaders/ibl_frag.glsl",
         "../assets/shaders/renderer");
