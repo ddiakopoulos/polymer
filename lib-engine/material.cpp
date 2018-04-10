@@ -11,7 +11,6 @@ void MetallicRoughnessMaterial::resolve_variants() const
 {
     if (!compiled_shader)
     {
-        std::cout << ">>>>>>>>>>>>>> Resolving Variants" << std::endl;
         compiled_shader = shader.get()->get_variant(required_defines);
     }
 }

@@ -187,16 +187,13 @@ namespace polymer
             const std::string & v,
             const std::string & f,
             const std::string & g = "",
-            const std::string & inc = "") : name(n), vertexPath(v), fragmentPath(f), geomPath(g), includePath(inc)  
-        { 
-            std::cout << "Construct gl_shader_asset " << n << std::endl;
-        }
+            const std::string & inc = "") : name(n), vertexPath(v), fragmentPath(f), geomPath(g), includePath(inc) { }
 
         gl_shader_asset() = default;
 
         std::shared_ptr<shader_variant> get_variant(const std::vector<std::string> defines = {})
         {
-            std::cout << "get_variant " << name << std::endl;
+            //scoped_timer t("get - " + name);
 
             uint64_t sumOfHashes = 0;
             for (auto & define : defines) sumOfHashes += hash_fnv1a(define);
@@ -204,11 +201,9 @@ namespace polymer
             auto itr = shaders.find(sumOfHashes);
             if (itr != shaders.end())
             {
-                std::cout << "found existing " << name << std::endl;
                 return itr->second;
             }
 
-            std::cout << "compiling new " << name << std::endl;
 
             auto newVariant = std::make_shared<shader_variant>();
             newVariant->shader = std::move(compile_variant(defines));
@@ -227,10 +222,8 @@ namespace polymer
                 shaders[0] = newVariant;
             }
 
-            std::cout << "recompile all... " << name << std::endl;
             for (auto & variant : shaders)
             {
-                std::cout << "doot " << std::endl;
                 variant.second->shader = compile_variant(variant.second->defines);
             }
         }
