@@ -310,7 +310,6 @@ namespace polymer
 
         gl_shader_monitor(const std::string & root_path) : root_path(root_path) 
         {
-            /*
             watch_thread = std::thread([this, root_path]()
             {
                 while (!watch_should_exit)
@@ -327,7 +326,6 @@ namespace polymer
                     std::this_thread::sleep_for(std::chrono::milliseconds(250));
                 }
             });
-            */
         }
 
         ~gl_shader_monitor()
