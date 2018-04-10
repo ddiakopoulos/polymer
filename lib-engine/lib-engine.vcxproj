@@ -83,7 +83,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="asset-defs.hpp" />
+    <ClInclude Include="asset-handle-utils.hpp" />
     <ClInclude Include="asset-handle.hpp" />
     <ClInclude Include="fwd_renderer.hpp" />
     <ClInclude Include="gfx\gl\gl-api.hpp" />
@@ -99,15 +99,16 @@
     <ClInclude Include="gfx\gl\gl-procedural-sky.hpp" />
     <ClInclude Include="gfx\gl\gl-renderable-grid.hpp" />
     <ClInclude Include="gfx\gl\gl-renderable-meshline.hpp" />
-    <ClInclude Include="gfx\gl\gl-shader-monitor.hpp" />
     <ClInclude Include="gfx\gl\gl-texture-view.hpp" />
     <ClInclude Include="gfx\gl\glfw-app.hpp" />
     <ClInclude Include="logging.hpp" />
-    <ClInclude Include="material-library.hpp" />
     <ClInclude Include="material.hpp" />
+    <ClInclude Include="material-library.hpp" />
     <ClInclude Include="profiling.hpp" />
     <ClInclude Include="scene.hpp" />
     <ClInclude Include="serialization.hpp" />
+    <ClInclude Include="shader.hpp" />
+    <ClInclude Include="shader-library.hpp" />
     <ClInclude Include="uniforms.hpp" />
   </ItemGroup>
   <ItemGroup>
@@ -115,8 +116,10 @@
     <ClCompile Include="gfx\gl\gl-imgui.cpp" />
     <ClCompile Include="gfx\gl\gl-nvg.cpp" />
     <ClCompile Include="gfx\gl\glfw-app.cpp" />
-    <ClCompile Include="material-library.cpp" />
     <ClCompile Include="material.cpp" />
+    <ClCompile Include="material-library.cpp" />
+    <ClCompile Include="shader-library.cpp" />
+    <ClCompile Include="shader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\lib-polymer\lib-polymer.vcxproj">
