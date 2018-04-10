@@ -8,7 +8,7 @@
 #include "gl-camera.hpp"
 
 #include "uniforms.hpp"
-#include "asset-defs.hpp"
+#include "asset-handle-utils.hpp"
 #include "material.hpp"
 #include "geometry.hpp"
 #include "gl-mesh.hpp"

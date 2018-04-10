@@ -1,7 +1,7 @@
 #include "material-library.hpp"
 #include "serialization.hpp"
-#include "asset-defs.hpp"
-#include "material.hpp"
+#include "asset-handle-utils.hpp"
+#include "material-asset.hpp"
 #include "logging.hpp"
 
 using namespace polymer;

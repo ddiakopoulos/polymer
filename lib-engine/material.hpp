@@ -5,7 +5,7 @@
 
 #include "gl-api.hpp"
 #include "math-core.hpp"
-#include "asset-defs.hpp"
+#include "asset-handle-utils.hpp"
 #include "gl-shader-monitor.hpp"
 
 namespace polymer

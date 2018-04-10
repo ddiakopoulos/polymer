@@ -6,7 +6,7 @@
 #include "material.hpp"
 #include "fwd_renderer.hpp"
 #include "uniforms.hpp"
-#include "asset-defs.hpp"
+#include "asset-handle-utils.hpp"
 #include "scene.hpp"
 #include "editor-ui.hpp"
 #include "arcball.hpp"

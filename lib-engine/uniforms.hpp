@@ -1,14 +1,12 @@
 #pragma once
 
-#ifndef vr_uniforms_hpp
-#define vr_uniforms_hpp
+#ifndef polymer_scene_uniforms
+#define polymer_scene_uniforms
 
 #include "util.hpp"
 #include "math-common.hpp"
 
 using namespace polymer;
-
-// https://www.khronos.org/opengl/wiki/Interface_Block_(GLSL)#Memory_layout
 
 namespace uniforms
 {
@@ -72,4 +70,4 @@ namespace uniforms
 
 }
 
-#endif // end vr_uniforms_hpp
+#endif // end polymer_scene_uniforms

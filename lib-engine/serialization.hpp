@@ -4,7 +4,7 @@
 #define serialization_hpp
 
 #include "uniforms.hpp"
-#include "asset-defs.hpp"
+#include "asset-handle-utils.hpp"
 #include "material.hpp"
 #include "scene.hpp"
 #include "gl-procedural-sky.hpp"

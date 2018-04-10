@@ -29,7 +29,6 @@ inline system_clock::time_point write_time(const std::string & file_path)
 
 namespace polymer
 {
-
     // 32 bit Fowler–Noll–Vo Hash
     inline uint32_t hash_fnv1a(const std::string & str)
     {
@@ -45,12 +44,6 @@ namespace polymer
         }
         return result;
     }
-
-    /*
-    { "TWO_CASCADES", "USE_PCF_3X3", "ENABLE_SHADOWS",
-        "USE_IMAGE_BASED_LIGHTING",
-        "HAS_ROUGHNESS_MAP", "HAS_METALNESS_MAP", "HAS_ALBEDO_MAP", "HAS_NORMAL_MAP", "HAS_OCCLUSION_MAP" }
-    */
 
     inline std::string preprocess_includes(const std::string & source, const std::string & includeSearchPath, std::vector<std::string> & includes, int depth)
     {
@@ -245,7 +238,7 @@ namespace polymer
             }
             catch (const std::exception & e)
             {
-                // todo - use log
+                //@todo use logger
                 std::cout << "Shader recompilation error: " << e.what() << std::endl;
             }
 
@@ -274,6 +267,7 @@ namespace polymer
                         {
                             asset.second->writeTime = writeTime;
                             asset.second->shouldRecompile = true;
+                            //@todo use logger
                             std::cout << "Modified Shader: " << asset.second->vertexPath << std::endl;
                         }
                     }
@@ -289,6 +283,7 @@ namespace polymer
                             {
                                 asset.second->writeTime = writeTime;
                                 asset.second->shouldRecompile = true;
+                                //@todo use logger
                                 std::cout << "Modified Include: " << includePath << std::endl;
                                 break;
                             }
@@ -321,6 +316,7 @@ namespace polymer
                     }
                     catch (const std::exception & e)
                     {
+                        //@todo use logger
                         std::cout << "Filesystem error: " << e.what() << std::endl;
                     }
                     std::this_thread::sleep_for(std::chrono::milliseconds(250));
