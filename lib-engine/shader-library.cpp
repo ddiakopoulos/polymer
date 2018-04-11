@@ -1,4 +1,5 @@
 #include "shader-library.hpp"
+#include "asset-handle-utils.hpp"
 
 using namespace polymer;
 using namespace std::experimental::filesystem;

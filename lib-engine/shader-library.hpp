@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef shader_library_hpp
-#define shader_library_hpp
+#ifndef polymer_shader_library_hpp
+#define polymer_shader_library_hpp
 
 #include "gl-api.hpp"
 #include "util.hpp"
@@ -14,8 +14,6 @@
 #include <chrono>
 #include <filesystem>
 #include <atomic>
-
-#include "../../../lib-engine/asset-handle-utils.hpp"
 
 using namespace std::experimental::filesystem;
 using namespace std::chrono;
@@ -51,4 +49,4 @@ namespace polymer
     };
 }
 
-#endif shader_library_hpp
+#endif // end polymer_shader_library_hpp

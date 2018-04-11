@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef polymer_asset_handle_utils_hpp
+#define polymer_asset_handle_utils_hpp
+
 #include "asset-handle.hpp"
 
 template<class T> inline asset_handle<T> create_handle_for_asset(const char * asset_id, T && asset)
@@ -35,3 +38,5 @@ typedef asset_handle<GlMesh>                             			gpu_mesh_handle;
 typedef asset_handle<Geometry>                           			cpu_mesh_handle;
 typedef asset_handle<std::shared_ptr<polymer::material_interface>>  material_handle;
 typedef asset_handle<std::shared_ptr<polymer::gl_shader_asset>>    	shader_handle;
+
+#endif // end polymer_asset_handle_utils_hpp

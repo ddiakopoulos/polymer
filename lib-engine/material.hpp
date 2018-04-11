@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef vr_material_hpp
-#define vr_material_hpp
+#ifndef polymer_material_asset_hpp
+#define polymer_material_asset_hpp
 
 #include "gl-api.hpp"
 #include "math-core.hpp"
@@ -37,7 +37,10 @@ namespace polymer
 
         virtual void resolve_variants() const override final 
         { 
-            if (!compiled_shader) compiled_shader = shader.get()->get_variant();
+            if (!compiled_shader)
+            {
+                compiled_shader = shader.get()->get_variant();
+            }
         }
 
         virtual uint32_t id() const override final
@@ -92,4 +95,4 @@ namespace polymer
 
 }
 
-#endif // end vr_material_hpp
+#endif // end polymer_material_asset_hpp

@@ -1,7 +1,9 @@
 #pragma once
 
+#ifndef polymer_material_library_hpp
+#define polymer_material_library_hpp
+
 #include "asset-handle.hpp"
-#include "file_io.hpp"
 
 namespace polymer
 {
@@ -24,3 +26,5 @@ namespace polymer
         void remove_material(const std::string & name);
     };
 }
+
+#endif // end polymer_material_library_hpp

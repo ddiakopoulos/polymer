@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef asset_base_hpp
-#define asset_base_hpp
+#ifndef polymer_asset_handle_hpp
+#define polymer_asset_handle_hpp
 
 #include "util.hpp"
 #include "math-core.hpp"
@@ -140,4 +140,4 @@ public:
 template<class T>
 std::unordered_map<std::string, std::shared_ptr<polymer_unique_asset<T>>> asset_handle<T>::table;
 
-#endif // end asset_base_hpp
+#endif // end polymer_asset_handle_hpp

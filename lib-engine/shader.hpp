@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef shader
-#define shader_monitor_h
+#ifndef polymer_shader_asset_hpp
+#define polymer_shader_asset_hpp
 
 #include "gl-api.hpp"
 #include "util.hpp"
@@ -46,4 +46,4 @@ namespace polymer
     };
 }
 
-#endif
+#endif // end polymer_shader_asset_hpp
