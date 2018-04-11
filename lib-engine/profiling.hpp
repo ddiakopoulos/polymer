@@ -12,50 +12,54 @@
 // at compile time, such that both objects implement function signatures for 
 // start(), stop(), and elapsed_ms().
 
-template<typename T>
-class profiler
+namespace polymer
 {
-    struct data_point
+    template<typename T>
+    class profiler
     {
-        ring_buffer<double> average{ 30 };
-        T timer;
+        struct data_point
+        {
+            ring_buffer<double> average{ 30 };
+            T timer;
+        };
+
+        std::unordered_map<std::string, data_point> dataPoints;
+
+        bool enabled{ true };
+
+    public:
+
+        void set_enabled(bool newState)
+        {
+            enabled = newState;
+            dataPoints.clear();
+        }
+
+        void begin(const std::string & id)
+        {
+            if (!enabled) return;
+            dataPoints[id].timer.start();
+        }
+
+        void end(const std::string & id)
+        {
+            if (!enabled) return;
+            dataPoints[id].timer.stop();
+            const double t = dataPoints[id].timer.elapsed_ms();
+            if (t > 0.0) dataPoints[id].average.put(t);
+        }
+
+        std::vector<std::pair<std::string, float>> get_data()
+        {
+            std::vector<std::pair<std::string, float>> data;
+            for (auto & d : dataPoints)
+            {
+                data.emplace_back(d.first, static_cast<float>(compute_mean(d.second.average)));
+            }
+            return data;
+        }
     };
 
-    std::unordered_map<std::string, data_point> dataPoints;
+} // end namespace polymer
 
-    bool enabled{ true };
-
-public:
-
-    void set_enabled(bool newState)
-    {
-        enabled = newState;
-        dataPoints.clear();
-    }
-
-    void begin(const std::string & id)
-    {
-        if (!enabled) return;
-        dataPoints[id].timer.start();
-    }
-
-    void end(const std::string & id)
-    {
-        if (!enabled) return;
-        dataPoints[id].timer.stop();
-        const double t = dataPoints[id].timer.elapsed_ms();
-        if (t > 0.0) dataPoints[id].average.put(t);
-    }
-    
-    std::vector<std::pair<std::string, float>> get_data()
-    {
-        std::vector<std::pair<std::string, float>> data;
-        for (auto & d : dataPoints)
-        {
-            data.emplace_back(d.first, static_cast<float>(compute_mean(d.second.average)));
-        }
-        return data;
-    }
-};
-
-#endif // end core_scene_hpp
+#endif // end polymer_profiling_hpp

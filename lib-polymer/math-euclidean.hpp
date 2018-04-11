@@ -3,7 +3,7 @@
  * The name of this file might be slightly odd, but it defines commonly used geometric
  * primitives such as axis-aligned bounding boxes in 2D and 3D, spheres, planes, segments,
  * lines, and frustums. Although the functionality is not comprehensive between all
- * primitive types, generally most of the common intersection types are provided. 
+ * primitive types, some of the most of the common intersection types are provided. 
  */
 
 #pragma once

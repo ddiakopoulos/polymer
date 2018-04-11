@@ -1,7 +1,6 @@
 /*
  * File: math-core.hpp
- * This file can be used to easily import the library of common math 
- * functionality found in this codebase into a new sample or sub-library.
+ * This file can be used to easily import the Polymer's math features into a new sample or sub-library.
  */
 
 #pragma once

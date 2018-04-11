@@ -129,8 +129,6 @@ gl_shader_asset::gl_shader_asset(const std::string & n, const std::string & v, c
 
 std::shared_ptr<shader_variant> gl_shader_asset::get_variant(const std::vector<std::string> defines)
 {
-    //scoped_timer t("get - " + name);
-
     uint64_t sumOfHashes = 0;
     for (auto & define : defines) sumOfHashes += poly_hash_fnv1a(define);
 
