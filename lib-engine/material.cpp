@@ -3,10 +3,6 @@
 
 using namespace polymer;
 
-//////////////////////////////////////////////////////
-//   Physically-Based Metallic-Roughness Material   //
-//////////////////////////////////////////////////////
-
 void polymer_pbr_standard::resolve_variants() const
 {
     if (!compiled_shader)

@@ -22,6 +22,10 @@ namespace polymer
         virtual uint32_t id() const = 0;                    // returns the gl handle, used for sorting materials by type to minimize state changes in the renderer
     };
 
+    //////////////////////////
+    //   Default Material   //
+    //////////////////////////
+
     struct polymer_default_material final : public material_interface
     {
         polymer_default_material() 
@@ -50,6 +54,10 @@ namespace polymer
         }
     };
 
+    //////////////////////////////////////////////////////
+    //   Physically-Based Metallic-Roughness Material   //
+    //////////////////////////////////////////////////////
+
     class polymer_pbr_standard final : public material_interface
     {
         int bindpoint = 0;
@@ -59,13 +67,13 @@ namespace polymer
 
     public:
 
-        void update_uniforms_shadow(GLuint handle);
-        void update_uniforms_ibl(GLuint irradiance, GLuint radiance);
-
         virtual void update_uniforms() override final;
         virtual void use() override final;
         virtual void resolve_variants() const override final;
         virtual uint32_t id() const override final;
+
+        void update_uniforms_shadow(GLuint handle);
+        void update_uniforms_ibl(GLuint irradiance, GLuint radiance);
 
         float3 baseAlbedo{1.f, 1.f, 1.f};
 

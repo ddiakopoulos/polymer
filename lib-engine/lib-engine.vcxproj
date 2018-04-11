@@ -106,7 +106,7 @@
     <ClInclude Include="material-library.hpp" />
     <ClInclude Include="profiling.hpp" />
     <ClInclude Include="scene.hpp" />
-    <ClInclude Include="serialization.hpp" />
+    <ClInclude Include="serialization.inl" />
     <ClInclude Include="shader.hpp" />
     <ClInclude Include="shader-library.hpp" />
     <ClInclude Include="uniforms.hpp" />

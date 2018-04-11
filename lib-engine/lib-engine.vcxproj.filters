@@ -10,21 +10,19 @@
     <ClCompile Include="gfx\gl\gl-nvg.cpp">
       <Filter>gfx\gl</Filter>
     </ClCompile>
-    <ClCompile Include="fwd_renderer.cpp">
-      <Filter>gfx</Filter>
-    </ClCompile>
     <ClCompile Include="material.cpp">
-      <Filter>gfx\assets</Filter>
+      <Filter>assets</Filter>
     </ClCompile>
     <ClCompile Include="material-library.cpp">
-      <Filter>gfx\assets</Filter>
+      <Filter>assets</Filter>
     </ClCompile>
     <ClCompile Include="shader.cpp">
-      <Filter>gfx\assets</Filter>
+      <Filter>assets</Filter>
     </ClCompile>
     <ClCompile Include="shader-library.cpp">
-      <Filter>gfx\assets</Filter>
+      <Filter>assets</Filter>
     </ClCompile>
+    <ClCompile Include="fwd_renderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="gfx\gl\gl-api.hpp">
@@ -72,42 +70,32 @@
     <ClInclude Include="gfx\gl\gl-texture-view.hpp">
       <Filter>gfx\gl</Filter>
     </ClInclude>
-    <ClInclude Include="uniforms.hpp">
-      <Filter>gfx</Filter>
-    </ClInclude>
-    <ClInclude Include="fwd_renderer.hpp">
-      <Filter>gfx</Filter>
-    </ClInclude>
-    <ClInclude Include="logging.hpp">
-      <Filter>gfx</Filter>
-    </ClInclude>
-    <ClInclude Include="profiling.hpp">
-      <Filter>gfx</Filter>
-    </ClInclude>
-    <ClInclude Include="scene.hpp">
-      <Filter>gfx</Filter>
-    </ClInclude>
     <ClInclude Include="asset-handle.hpp">
-      <Filter>gfx\assets</Filter>
+      <Filter>assets</Filter>
     </ClInclude>
     <ClInclude Include="asset-handle-utils.hpp">
-      <Filter>gfx\assets</Filter>
+      <Filter>assets</Filter>
     </ClInclude>
     <ClInclude Include="material.hpp">
-      <Filter>gfx\assets</Filter>
+      <Filter>assets</Filter>
     </ClInclude>
     <ClInclude Include="material-library.hpp">
-      <Filter>gfx\assets</Filter>
+      <Filter>assets</Filter>
     </ClInclude>
     <ClInclude Include="shader.hpp">
-      <Filter>gfx\assets</Filter>
+      <Filter>assets</Filter>
     </ClInclude>
     <ClInclude Include="shader-library.hpp">
-      <Filter>gfx\assets</Filter>
+      <Filter>assets</Filter>
     </ClInclude>
-    <ClInclude Include="serialization.hpp">
-      <Filter>gfx\assets</Filter>
+    <ClInclude Include="serialization.inl">
+      <Filter>assets</Filter>
     </ClInclude>
+    <ClInclude Include="fwd_renderer.hpp" />
+    <ClInclude Include="logging.hpp" />
+    <ClInclude Include="profiling.hpp" />
+    <ClInclude Include="scene.hpp" />
+    <ClInclude Include="uniforms.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="gfx">
@@ -116,7 +104,7 @@
     <Filter Include="gfx\gl">
       <UniqueIdentifier>{cc4e37ef-4ac0-47f3-adcd-a38cf9cd4708}</UniqueIdentifier>
     </Filter>
-    <Filter Include="gfx\assets">
+    <Filter Include="assets">
       <UniqueIdentifier>{ceb9746b-b2d8-4e85-9c06-eb2a3215d6c6}</UniqueIdentifier>
     </Filter>
   </ItemGroup>

@@ -34,7 +34,8 @@ class asset_handle
 {
     static std::unordered_map<std::string, std::shared_ptr<polymer_unique_asset<T>>> table;
     mutable std::shared_ptr<polymer_unique_asset<T>> handle{ nullptr };
-    asset_handle(const::std::string & id, std::shared_ptr<polymer_unique_asset<T>> h) : name(id), handle(h) {} // private constructor for the static list() method below
+    // Private constructor for the static list() method below.
+    asset_handle(const::std::string & id, std::shared_ptr<polymer_unique_asset<T>> h) : name(id), handle(h) {} 
 
 public:
 
@@ -61,7 +62,7 @@ public:
     // Return reference to underlying resource. 
     T & get() const
     { 
-        // Check if this handle has a cached asset
+        // Check if this handle has a cached asset. 
         if (handle)
         {
             return handle->asset; 
@@ -71,6 +72,12 @@ public:
         {
             // If not, this is a virgin handle and we should lookup from the static table.
             auto & a = table[name];
+
+            // If there's no loaded asset in the table for this identifier, default construct one. 
+            // This behavior might be changed in the future. Previously we were throwing a runtime_exception,
+            // however it was particularly annoying during prototyping. Default constructing an object
+            // might be the lesser evil, but tends to result in questions like, "why is my asset not loading?"
+            // since we might have forgotten to load an asset into a handle, or mistyped a handle id. 
             if (!a)
             {
                 a = std::make_shared<polymer_unique_asset<T>>();
@@ -100,7 +107,6 @@ public:
         handle->timestamp = system_time_ns();
 
         Logger::get_instance()->assetLog->info("asset type {} with id {} was assigned", typeid(T).name(), name);
-        //Logger::get_instance()->assetLog->info("asset type {} with id {} was assigned", typeid(this).name(), name);
 
         return handle->asset;
     }
@@ -117,6 +123,7 @@ public:
         return false;
     }
 
+    // List will return all the asset_handles of type T.
     static std::vector<asset_handle> list()
     {
         std::vector<asset_handle> results;
