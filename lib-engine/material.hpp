@@ -6,24 +6,25 @@
 #include "gl-api.hpp"
 #include "math-core.hpp"
 #include "asset-handle-utils.hpp"
-#include "gl-shader-monitor.hpp"
+#include "shader-library.hpp"
 
 namespace polymer
 {
     typedef std::shared_ptr<polymer::shader_variant> cached_variant;
-    struct Material
+
+    struct material_interface
     {
         mutable cached_variant compiled_shader{ nullptr };  // cached on first access (because needs to happen on GL thread)
-        ShaderHandle shader;                                // typically set during object inflation / deserialization
+        shader_handle shader;                                // typically set during object inflation / deserialization
         virtual void update_uniforms() {}                   // generic interface for overriding specific uniform sets
         virtual void use() {}                               // generic interface for binding the program
         virtual void resolve_variants() const = 0;          // all overridden functions need to call this to cache the shader
         virtual uint32_t id() const = 0;                    // returns the gl handle, used for sorting materials by type to minimize state changes in the renderer
     };
 
-    struct DefaultMaterial final : public Material
+    struct polymer_default_material final : public material_interface
     {
-        DefaultMaterial() 
+        polymer_default_material() 
         { 
             shader = { "default-shader" }; 
         }
@@ -46,7 +47,7 @@ namespace polymer
         }
     };
 
-    class MetallicRoughnessMaterial final : public Material
+    class polymer_pbr_standard final : public material_interface
     {
         int bindpoint = 0;
 
@@ -80,13 +81,13 @@ namespace polymer
 
         int2 texcoordScale{ 1, 1 };
 
-        GlTextureHandle albedo;
-        GlTextureHandle normal;
-        GlTextureHandle metallic;
-        GlTextureHandle roughness;
-        GlTextureHandle emissive;
-        GlTextureHandle height;
-        GlTextureHandle occlusion;
+        texture_handle albedo;
+        texture_handle normal;
+        texture_handle metallic;
+        texture_handle roughness;
+        texture_handle emissive;
+        texture_handle height;
+        texture_handle occlusion;
     };
 
 }

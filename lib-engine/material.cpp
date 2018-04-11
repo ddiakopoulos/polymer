@@ -7,7 +7,7 @@ using namespace polymer;
 //   Physically-Based Metallic-Roughness Material   //
 //////////////////////////////////////////////////////
 
-void MetallicRoughnessMaterial::resolve_variants() const
+void polymer_pbr_standard::resolve_variants() const
 {
     if (!compiled_shader)
     {
@@ -15,13 +15,13 @@ void MetallicRoughnessMaterial::resolve_variants() const
     }
 }
 
-uint32_t MetallicRoughnessMaterial::id() const
+uint32_t polymer_pbr_standard::id() const
 {
     resolve_variants();
     return compiled_shader->shader.handle();
 }
 
-void MetallicRoughnessMaterial::update_uniforms()
+void polymer_pbr_standard::update_uniforms()
 {
     resolve_variants();
     GlShader & program = compiled_shader->shader;
@@ -52,7 +52,7 @@ void MetallicRoughnessMaterial::update_uniforms()
     program.unbind();
 }
 
-void MetallicRoughnessMaterial::update_uniforms_ibl(GLuint irradiance, GLuint radiance)
+void polymer_pbr_standard::update_uniforms_ibl(GLuint irradiance, GLuint radiance)
 {
     resolve_variants();
     GlShader & program = compiled_shader->shader;
@@ -64,7 +64,7 @@ void MetallicRoughnessMaterial::update_uniforms_ibl(GLuint irradiance, GLuint ra
     program.unbind();
 }
 
-void MetallicRoughnessMaterial::update_uniforms_shadow(GLuint handle)
+void polymer_pbr_standard::update_uniforms_shadow(GLuint handle)
 {
     resolve_variants();
     GlShader & program = compiled_shader->shader;
@@ -75,7 +75,7 @@ void MetallicRoughnessMaterial::update_uniforms_shadow(GLuint handle)
     program.unbind();
 }
 
-void MetallicRoughnessMaterial::use()
+void polymer_pbr_standard::use()
 {
     resolve_variants();
     compiled_shader->shader.bind();

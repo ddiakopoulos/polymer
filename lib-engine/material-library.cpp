@@ -1,7 +1,7 @@
 #include "material-library.hpp"
 #include "serialization.hpp"
 #include "asset-handle-utils.hpp"
-#include "material-asset.hpp"
+#include "material.hpp"
 #include "logging.hpp"
 
 using namespace polymer;
@@ -11,27 +11,25 @@ const std::string material_library::kDefaultMaterialId = "default-material";
 material_library::material_library(const std::string & library_path) : library_path(library_path)
 {
     // Create a default material
-    std::shared_ptr<DefaultMaterial> default = std::make_shared<DefaultMaterial>();
-    create_handle_for_asset(kDefaultMaterialId.c_str(), static_cast<std::shared_ptr<Material>>(default));
+    std::shared_ptr<polymer_default_material> default = std::make_shared<polymer_default_material>();
+    create_handle_for_asset(kDefaultMaterialId.c_str(), static_cast<std::shared_ptr<material_interface>>(default));
     cereal::deserialize_from_json(library_path, instances);
 
     // Register all material instances with the asset system. Since everything is handle-based,
     // we can do this wherever, so long as it's before the first rendered frame
     for (auto & instance : instances)
     {
-        create_handle_for_asset(instance.first.c_str(), static_cast<std::shared_ptr<Material>>(instance.second));
+        create_handle_for_asset(instance.first.c_str(), static_cast<std::shared_ptr<material_interface>>(instance.second));
     }
 }
 
-/*
 material_library::~material_library()
 {
-    // Should we also call MaterialHandle::destroy(...) for all the material assets? 
+    // Should we also call material_handle::destroy(...) for all the material assets? 
     instances.clear();
 }
-*/
 
-void material_library::create_material(const std::string & name, std::shared_ptr<MetallicRoughnessMaterial> mat)
+void material_library::create_material(const std::string & name, std::shared_ptr<polymer_pbr_standard> mat)
 {
     const auto itr = instances.find(name);
     if (itr != instances.end())
@@ -39,7 +37,7 @@ void material_library::create_material(const std::string & name, std::shared_ptr
         Logger::get_instance()->assetLog->info("material list already contains {}", name);
         return;
     }
-    create_handle_for_asset(name.c_str(), std::dynamic_pointer_cast<Material>(mat));
+    create_handle_for_asset(name.c_str(), std::dynamic_pointer_cast<material_interface>(mat));
     instances[name] = mat;
     auto jsonString = cereal::serialize_to_json(instances);
     polymer::write_file_text(library_path, jsonString);
@@ -51,7 +49,7 @@ void material_library::remove_material(const std::string & name)
     if (itr != instances.end())
     {
         instances.erase(itr);
-        MaterialHandle::destroy(name);
+        material_handle::destroy(name);
         auto jsonString = cereal::serialize_to_json(instances);
         polymer::write_file_text(library_path, jsonString);
         Logger::get_instance()->assetLog->info("removing {} from the material list", name);

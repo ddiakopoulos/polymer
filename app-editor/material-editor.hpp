@@ -162,7 +162,7 @@ struct material_editor_window final : public glfw_window
                 // iterating the keys of instances in the material library, but using
                 // asset_handles is more canonical.
                 std::vector<std::string> materialNames;
-                for (auto & m : asset_handle<std::shared_ptr<Material>>::list()) materialNames.push_back(m.name);
+                for (auto & m : asset_handle<std::shared_ptr<material_interface>>::list()) materialNames.push_back(m.name);
 
                 // Get the object from the selection
                 GameObject * selected_object = entitySelection[0];
@@ -222,7 +222,7 @@ struct material_editor_window final : public glfw_window
 
                 // Make a list of all the material types. (i.e. PBR, etc)
                 std::vector<std::string> materialTypes;
-                visit_subclasses((Material*)nullptr, [&materialTypes](const char * name, auto * p)
+                visit_subclasses((material_interface*)nullptr, [&materialTypes](const char * name, auto * p)
                 {
                     materialTypes.push_back(name);
                 });
@@ -253,7 +253,7 @@ struct material_editor_window final : public glfw_window
                 ImGui::Dummy({ 0, 12 });
 
                 // Draw the listbox of materials
-                draw_listbox<MaterialHandle>("Materials", textFilter, assetSelection);
+                draw_listbox<material_handle>("Materials", textFilter, assetSelection);
                 ImGui::Dummy({ 0, 12 });
                 ImGui::Separator();
             }
@@ -263,7 +263,7 @@ struct material_editor_window final : public glfw_window
                 auto index_to_handle_name = [](const uint32_t index) -> std::string
                 {
                     uint32_t idx = 0;
-                    for (auto & m : asset_handle<std::shared_ptr<Material>>::list())
+                    for (auto & m : asset_handle<std::shared_ptr<material_interface>>::list())
                     {
                         if (index == idx) return m.name;
                         idx++;
@@ -271,7 +271,7 @@ struct material_editor_window final : public glfw_window
                 };
 
                 // This is by index
-                auto mat = asset_handle<std::shared_ptr<Material>>::list()[assetSelection].get();
+                auto mat = asset_handle<std::shared_ptr<material_interface>>::list()[assetSelection].get();
                 const std::string material_handle_name = index_to_handle_name(assetSelection);
                 previewMesh->mat = material_handle_name;
 

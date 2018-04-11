@@ -26,12 +26,12 @@ template<> inline asset_handle<GlMesh> create_handle_for_asset(const char * asse
 // and nothing could find the asset, but all the data and names were correctly setup.
 namespace polymer
 {
-    struct Material;
-    struct gl_shader_asset;
+    struct material_interface;
+    class gl_shader_asset;
 }
 
-typedef asset_handle<GlTexture2D>                        			GlTextureHandle;
-typedef asset_handle<GlMesh>                             			GlMeshHandle;
-typedef asset_handle<Geometry>                           			GeometryHandle;
-typedef asset_handle<std::shared_ptr<polymer::Material>>         	MaterialHandle;
-typedef asset_handle<std::shared_ptr<polymer::gl_shader_asset>>    	ShaderHandle;
+typedef asset_handle<GlTexture2D>                        			texture_handle;
+typedef asset_handle<GlMesh>                             			gpu_mesh_handle;
+typedef asset_handle<Geometry>                           			cpu_mesh_handle;
+typedef asset_handle<std::shared_ptr<polymer::material_interface>>  material_handle;
+typedef asset_handle<std::shared_ptr<polymer::gl_shader_asset>>    	shader_handle;

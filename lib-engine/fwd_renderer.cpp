@@ -73,8 +73,8 @@ void forward_renderer::run_skybox_pass(const view_data & view, const render_payl
     auto & program = GlShaderHandle("ibl").get();
     program.bind();
     program.uniform("u_mvp", mul(view.projectionMatrix, rotation_matrix(qconj(view.pose.orientation))));
-    program.texture("sc_ibl", 0, GlTextureHandle("wells-radiance-cubemap").get(), GL_TEXTURE_CUBE_MAP);
-    GlMeshHandle("cube").get().draw_elements();
+    program.texture("sc_ibl", 0, texture_handle("wells-radiance-cubemap").get(), GL_TEXTURE_CUBE_MAP);
+    gpu_mesh_handle("cube").get().draw_elements();
     program.unbind();
     */
 
@@ -125,9 +125,9 @@ void forward_renderer::run_forward_pass(std::vector<Renderable *> & renderQueueM
     {
         update_per_object_uniform_buffer(r, view);
 
-        Material * mat = r->get_material();
+        material_interface * mat = r->get_material();
         mat->update_uniforms();
-        if (auto * mr = dynamic_cast<MetallicRoughnessMaterial*>(mat))
+        if (auto * mr = dynamic_cast<polymer_pbr_standard*>(mat))
         {
             if (settings.shadowsEnabled)
             {

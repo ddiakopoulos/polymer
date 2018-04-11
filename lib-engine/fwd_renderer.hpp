@@ -42,7 +42,7 @@ class stable_cascaded_shadows
 
     GlTexture3D shadowArrayDepth;
     GlFramebuffer shadowArrayFramebuffer;
-    ShaderHandle program = { "cascaded-shadows" };
+    shader_handle program = { "cascaded-shadows" };
 
 public:
 
@@ -235,8 +235,8 @@ struct render_payload
     uniforms::directional_light sunlight;
     std::vector<view_data> views;
     float4 clear_color{ 1, 0, 0, 1 };
-    GlTextureHandle ibl_radianceCubemap;
-    GlTextureHandle ibl_irradianceCubemap;
+    texture_handle ibl_radianceCubemap;
+    texture_handle ibl_irradianceCubemap;
 };
 
 /////////////////////////////////////////
@@ -263,8 +263,8 @@ class forward_renderer
     std::unique_ptr<stable_cascaded_shadows> shadow;
     GlMesh post_quad;
 
-    ShaderHandle earlyZPass = { "depth-prepass" };
-    ShaderHandle hdr_tonemapShader = { "post-tonemap" };
+    shader_handle earlyZPass = { "depth-prepass" };
+    shader_handle hdr_tonemapShader = { "post-tonemap" };
 
     // Update per-object uniform buffer
     void update_per_object_uniform_buffer(Renderable * top, const view_data & d);

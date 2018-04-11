@@ -1,6 +1,26 @@
 #include "shader.hpp"
 
-std::string preprocess_includes(const std::string & source, const std::string & includeSearchPath, std::vector<std::string> & includes, int depth)
+////////////////////////////////////////
+//   Shader Preprocessing Functions   //
+////////////////////////////////////////
+
+// 32 bit Fowler–Noll–Vo Hash
+uint32_t poly_hash_fnv1a(const std::string & str)
+{
+    static const uint32_t fnv1aBase32 = 0x811C9DC5u;
+    static const uint32_t fnv1aPrime32 = 0x01000193u;
+
+    uint32_t result = fnv1aBase32;
+
+    for (auto & c : str)
+    {
+        result ^= static_cast<uint32_t>(c);
+        result *= fnv1aPrime32;
+    }
+    return result;
+}
+
+std::string process_includes_recursive(const std::string & source, const std::string & includeSearchPath, std::vector<std::string> & includes, int depth)
 {
     if (depth > 4) throw std::runtime_error("exceeded max include recursion depth");
 
@@ -24,7 +44,7 @@ std::string preprocess_includes(const std::string & source, const std::string & 
             if (!includeFile.empty())
             {
                 includes.push_back(includeSearchPath + "/" + includeFile);
-                output << preprocess_includes(includeString, includeSearchPath, includes, depth++) << std::endl;
+                output << process_includes_recursive(includeString, includeSearchPath, includes, depth++) << std::endl;
             }
         }
         else
@@ -60,8 +80,7 @@ std::string preprocess_version(const std::string & source)
     return result.str();
 }
 
-inline GlShader preprocess(
-    const std::string & vertexShader,
+GlShader preprocess(const std::string & vertexShader,
     const std::string & fragmentShader,
     const std::string & geomShader,
     const std::string & includeSearchPath,
@@ -86,75 +105,85 @@ inline GlShader preprocess(
     if (geomShader.size())
     {
         return GlShader(
-            preprocess_version(preprocess_includes(vertex.str(), includeSearchPath, includes, 0)),
-            preprocess_version(preprocess_includes(fragment.str(), includeSearchPath, includes, 0)),
-            preprocess_version(preprocess_includes(geom.str(), includeSearchPath, includes, 0)));
+            preprocess_version(process_includes_recursive(vertex.str(), includeSearchPath, includes, 0)),
+            preprocess_version(process_includes_recursive(fragment.str(), includeSearchPath, includes, 0)),
+            preprocess_version(process_includes_recursive(geom.str(), includeSearchPath, includes, 0)));
     }
     else
     {
         return GlShader(
-            preprocess_version(preprocess_includes(vertex.str(), includeSearchPath, includes, 0)),
-            preprocess_version(preprocess_includes(fragment.str(), includeSearchPath, includes, 0)));
+            preprocess_version(process_includes_recursive(vertex.str(), includeSearchPath, includes, 0)),
+            preprocess_version(process_includes_recursive(fragment.str(), includeSearchPath, includes, 0)));
     }
 }
 
-    std::shared_ptr<shader_variant> get_variant(const std::vector<std::string> defines = {})
+///////////////////////////////////////
+//   gl_shader_asset implementation  //
+///////////////////////////////////////
+
+gl_shader_asset::gl_shader_asset(const std::string & n, const std::string & v, const std::string & f, const std::string & g, const std::string & inc) 
+    : name(n), vertexPath(v), fragmentPath(f), geomPath(g), includePath(inc) 
+{ 
+
+}
+
+std::shared_ptr<shader_variant> gl_shader_asset::get_variant(const std::vector<std::string> defines)
+{
+    //scoped_timer t("get - " + name);
+
+    uint64_t sumOfHashes = 0;
+    for (auto & define : defines) sumOfHashes += poly_hash_fnv1a(define);
+
+    auto itr = shaders.find(sumOfHashes);
+    if (itr != shaders.end())
     {
-        //scoped_timer t("get - " + name);
-
-        uint64_t sumOfHashes = 0;
-        for (auto & define : defines) sumOfHashes += hash_fnv1a(define);
-
-        auto itr = shaders.find(sumOfHashes);
-        if (itr != shaders.end())
-        {
-            return itr->second;
-        }
+        return itr->second;
+    }
 
 
+    auto newVariant = std::make_shared<shader_variant>();
+    newVariant->shader = std::move(compile_variant(defines));
+    newVariant->defines = defines;
+    shaders[sumOfHashes] = newVariant;
+    return newVariant;
+}
+
+void gl_shader_asset::recompile_all()
+{
+    // Compile at least the default variant with no includes defined... 
+    if (shaders.empty())
+    {
         auto newVariant = std::make_shared<shader_variant>();
-        newVariant->shader = std::move(compile_variant(defines));
-        newVariant->defines = defines;
-        shaders[sumOfHashes] = newVariant;
-        return newVariant;
+        newVariant->shader = std::move(compile_variant({}));
+        shaders[0] = newVariant;
     }
 
-    void recompile_all()
+    for (auto & variant : shaders)
     {
-        // Compile at least the default variant with no includes defined... 
-        if (shaders.empty())
-        {
-            auto newVariant = std::make_shared<shader_variant>();
-            newVariant->shader = std::move(compile_variant({}));
-            shaders[0] = newVariant;
-        }
-
-        for (auto & variant : shaders)
-        {
-            variant.second->shader = compile_variant(variant.second->defines);
-        }
+        variant.second->shader = compile_variant(variant.second->defines);
     }
+}
 
-    GlShader compile_variant(const std::vector<std::string> defines)
+GlShader gl_shader_asset::compile_variant(const std::vector<std::string> defines)
+{
+    GlShader variant;
+
+    try
     {
-        GlShader result;
-
-        try
+        if (defines.size() > 0 || includePath.size() > 0)
         {
-            if (defines.size() > 0 || includePath.size() > 0)
-            {
-                result = preprocess(read_file_text(vertexPath), read_file_text(fragmentPath), read_file_text(geomPath), includePath, defines, includes);
-            }
-            else
-            {
-                result = GlShader(read_file_text(vertexPath), read_file_text(fragmentPath), read_file_text(geomPath));
-            }
+            variant = preprocess(read_file_text(vertexPath), read_file_text(fragmentPath), read_file_text(geomPath), includePath, defines, includes);
         }
-        catch (const std::exception & e)
+        else
         {
-            //@todo use logger
-            std::cout << "Shader recompilation error: " << e.what() << std::endl;
+            variant = GlShader(read_file_text(vertexPath), read_file_text(fragmentPath), read_file_text(geomPath));
         }
-
-        return std::move(result);
     }
+    catch (const std::exception & e)
+    {
+        //@todo use logger
+        std::cout << "Shader recompilation error: " << e.what() << std::endl;
+    }
+
+    return std::move(variant);
+}

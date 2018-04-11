@@ -120,7 +120,7 @@ public:
 
         for (auto & mat : library->instances)
         {
-            if (auto * pbr = dynamic_cast<MetallicRoughnessMaterial*>(mat.second.get()))
+            if (auto * pbr = dynamic_cast<polymer_pbr_standard*>(mat.second.get()))
             {
                 shader_names.push_back(pbr->shader.name);
                 texture_names.push_back(pbr->albedo.name);
@@ -151,8 +151,8 @@ struct scene_editor_app final : public polymer_app
 
     uint32_t pbrProgramAsset = -1;
 
-    ShaderHandle wireframeHandle{ "wireframe" };
-    ShaderHandle iblHandle{ "ibl" };
+    shader_handle wireframeHandle{ "wireframe" };
+    shader_handle iblHandle{ "ibl" };
 
     profiler<simple_cpu_timer> editorProfiler;
 

@@ -7,6 +7,7 @@
 #include "util.hpp"
 #include "string_utils.hpp"
 #include "gl-loaders.hpp"
+#include "shader.hpp"
 
 #include <regex>
 #include <unordered_map>
@@ -21,12 +22,6 @@ using namespace std::chrono;
 
 namespace polymer 
 {
-    inline system_clock::time_point write_time(const std::string & file_path)
-    {
-        try { return last_write_time(path(file_path)); }
-        catch (...) { return system_clock::time_point::min(); };
-    }
-
     class gl_shader_monitor
     {
         std::unordered_map<std::string, std::shared_ptr<gl_shader_asset>> assets;

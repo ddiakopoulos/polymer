@@ -52,12 +52,12 @@ struct GameObject
 
 struct Renderable : public GameObject
 {
-    MaterialHandle mat;
+    material_handle mat;
 
     bool receive_shadow{ true };
     bool cast_shadow{ true };
 
-    Material * get_material() 
+    material_interface * get_material() 
     {
         if (mat.assigned())
         {
@@ -66,7 +66,7 @@ struct Renderable : public GameObject
 
         else return nullptr; 
     }
-    void set_material(asset_handle<std::shared_ptr<Material>> handle) { mat = handle; }
+    void set_material(asset_handle<std::shared_ptr<material_interface>> handle) { mat = handle; }
 
     void set_receive_shadow(const bool value) { receive_shadow = value; }
     bool get_receive_shadow() const { return receive_shadow; }
@@ -164,8 +164,8 @@ struct StaticMesh final : public Renderable
     float3 scale{ 1, 1, 1 };
     aabb_3d bounds;
 
-    GlMeshHandle mesh{ "" };
-    GeometryHandle geom{ "" };
+    gpu_mesh_handle mesh{ "" };
+    cpu_mesh_handle geom{ "" };
 
     StaticMesh() { }
 

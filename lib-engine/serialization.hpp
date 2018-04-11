@@ -69,11 +69,10 @@ template<class F> void visit_fields(HosekProceduralSky & o, F f)
 }
 
 template<class F> void visit_fields(Pose & o, F f) { f("position", o.position); f("orientation", o.orientation); }
-
-template<class F> void visit_fields(GlTextureHandle & m, F f)   { f("id", m.name); }
-template<class F> void visit_fields(ShaderHandle & m, F f)      { f("id", m.name); }
-template<class F> void visit_fields(GlMeshHandle & m, F f)      { f("id", m.name); }
-template<class F> void visit_fields(GeometryHandle & m, F f)    { f("id", m.name); }
+template<class F> void visit_fields(texture_handle & m, F f)   { f("id", m.name); }
+template<class F> void visit_fields(shader_handle & m, F f)      { f("id", m.name); }
+template<class F> void visit_fields(gpu_mesh_handle & m, F f)      { f("id", m.name); }
+template<class F> void visit_fields(cpu_mesh_handle & m, F f)    { f("id", m.name); }
 
 template<class F> void visit_subclasses(GameObject * p, F f)
 {
@@ -118,12 +117,12 @@ template<class F> void visit_fields(DirectionalLight & o, F f)
     f("direction", o.data.direction);
 }
 
-template<class F> void visit_subclasses(Material * p, F f)
+template<class F> void visit_subclasses(material_interface * p, F f)
 {
-    f("MetallicRoughnessMaterial", dynamic_cast<MetallicRoughnessMaterial *>(p));
+    f("polymer_pbr_standard", dynamic_cast<polymer_pbr_standard *>(p));
 }
 
-template<class F> void visit_fields(MetallicRoughnessMaterial & o, F f)
+template<class F> void visit_fields(polymer_pbr_standard & o, F f)
 {
     f("base_albedo", o.baseAlbedo);
     f("opacity", o.opacity, range_metadata<float>{ 0.f, 1.f });
@@ -183,11 +182,11 @@ namespace cereal
 
 namespace cereal
 {
-    template<class Archive> void serialize(Archive & archive, GlTextureHandle & m)  { archive(cereal::make_nvp("id", m.name)); }
-    template<class Archive> void serialize(Archive & archive, ShaderHandle & m)     { archive(cereal::make_nvp("id", m.name)); }
-    template<class Archive> void serialize(Archive & archive, GlMeshHandle & m)     { archive(cereal::make_nvp("id", m.name)); }
-    template<class Archive> void serialize(Archive & archive, GeometryHandle & m)   { archive(cereal::make_nvp("id", m.name)); }
-    template<class Archive> void serialize(Archive & archive, MaterialHandle & m)   { archive(cereal::make_nvp("id", m.name)); }
+    template<class Archive> void serialize(Archive & archive, texture_handle & m)  { archive(cereal::make_nvp("id", m.name)); }
+    template<class Archive> void serialize(Archive & archive, shader_handle & m)     { archive(cereal::make_nvp("id", m.name)); }
+    template<class Archive> void serialize(Archive & archive, gpu_mesh_handle & m)     { archive(cereal::make_nvp("id", m.name)); }
+    template<class Archive> void serialize(Archive & archive, cpu_mesh_handle & m)   { archive(cereal::make_nvp("id", m.name)); }
+    template<class Archive> void serialize(Archive & archive, material_handle & m)   { archive(cereal::make_nvp("id", m.name)); }
 }
 
 ////////////////////////////////////////////////////
@@ -198,15 +197,15 @@ CEREAL_REGISTER_TYPE_WITH_NAME(StaticMesh,                      "StaticMesh");
 CEREAL_REGISTER_TYPE_WITH_NAME(PointLight,                      "PointLight");
 CEREAL_REGISTER_TYPE_WITH_NAME(DirectionalLight,                "DirectionalLight");
 
-CEREAL_REGISTER_TYPE_WITH_NAME(Material,                        "MaterialBase");
-CEREAL_REGISTER_TYPE_WITH_NAME(MetallicRoughnessMaterial,       "MetallicRoughnessMaterial");
+CEREAL_REGISTER_TYPE_WITH_NAME(material_interface,         "material_interface");
+CEREAL_REGISTER_TYPE_WITH_NAME(polymer_pbr_standard,       "polymer_pbr_standard");
 
 CEREAL_REGISTER_POLYMORPHIC_RELATION(GameObject, Renderable)
 CEREAL_REGISTER_POLYMORPHIC_RELATION(Renderable, StaticMesh)
 CEREAL_REGISTER_POLYMORPHIC_RELATION(Renderable, PointLight)
 CEREAL_REGISTER_POLYMORPHIC_RELATION(Renderable, DirectionalLight)
 
-CEREAL_REGISTER_POLYMORPHIC_RELATION(Material, MetallicRoughnessMaterial);
+CEREAL_REGISTER_POLYMORPHIC_RELATION(material_interface, polymer_pbr_standard);
 
 ///////////////////////////////////
 //   Game Object Serialization   //
@@ -281,7 +280,7 @@ namespace cereal
 namespace cereal
 {
     template<class Archive> 
-    void serialize(Archive & archive, Material & m)
+    void serialize(Archive & archive, material_interface & m)
     {
         visit_subclasses(&m, [&archive](const char * name, auto * p)
         {
