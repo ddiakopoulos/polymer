@@ -1,7 +1,7 @@
 #include "index.hpp"
 #include "editor-app.hpp"
 #include "editor-ui.hpp"
-#include "serialization.hpp"
+#include "serialization.inl"
 #include "logging.hpp"
 #include "win32.hpp"
 

@@ -8,7 +8,7 @@
 #include "asset-handle-utils.hpp"
 #include "material.hpp"
 #include "gl-imgui.hpp"
-#include "serialization.hpp"
+#include "serialization.inl"
 #include "imgui/imgui_internal.h"
 
 ///////////////////////////////////////////////

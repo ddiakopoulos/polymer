@@ -61,7 +61,7 @@ template<class F> void visit_fields(HosekProceduralSky & o, F f)
 {
     f("sun_position_theta",     o.sunPosition.x,    range_metadata<float>{ 0.f, (float) POLYMER_PI });
     f("sun_position_phi",       o.sunPosition.y,    range_metadata<float>{ 0.f, (float) POLYMER_TWO_PI });
-    f("normalized_sun_y",       o.normalizedSunY,   range_metadata<float>{ 0.f, (float)POLYMER_PI });
+    f("normalized_sun_y",       o.normalizedSunY,   range_metadata<float>{ 0.f, (float) POLYMER_PI });
     f("albedo",                 o.albedo,           range_metadata<float>{ 0.01f, 4.f});
     f("turbidity",              o.turbidity,        range_metadata<float>{ 1.f, 14.f });
 
@@ -183,22 +183,22 @@ namespace cereal
 namespace cereal
 {
     template<class Archive> void serialize(Archive & archive, texture_handle & m)  { archive(cereal::make_nvp("id", m.name)); }
-    template<class Archive> void serialize(Archive & archive, shader_handle & m)     { archive(cereal::make_nvp("id", m.name)); }
-    template<class Archive> void serialize(Archive & archive, gpu_mesh_handle & m)     { archive(cereal::make_nvp("id", m.name)); }
-    template<class Archive> void serialize(Archive & archive, cpu_mesh_handle & m)   { archive(cereal::make_nvp("id", m.name)); }
-    template<class Archive> void serialize(Archive & archive, material_handle & m)   { archive(cereal::make_nvp("id", m.name)); }
+    template<class Archive> void serialize(Archive & archive, shader_handle & m)   { archive(cereal::make_nvp("id", m.name)); }
+    template<class Archive> void serialize(Archive & archive, gpu_mesh_handle & m) { archive(cereal::make_nvp("id", m.name)); }
+    template<class Archive> void serialize(Archive & archive, cpu_mesh_handle & m) { archive(cereal::make_nvp("id", m.name)); }
+    template<class Archive> void serialize(Archive & archive, material_handle & m) { archive(cereal::make_nvp("id", m.name)); }
 }
 
 ////////////////////////////////////////////////////
 //   Engine Relationship Declarations For Cereal  //
 ////////////////////////////////////////////////////
 
-CEREAL_REGISTER_TYPE_WITH_NAME(StaticMesh,                      "StaticMesh");
-CEREAL_REGISTER_TYPE_WITH_NAME(PointLight,                      "PointLight");
-CEREAL_REGISTER_TYPE_WITH_NAME(DirectionalLight,                "DirectionalLight");
+CEREAL_REGISTER_TYPE_WITH_NAME(StaticMesh,              "StaticMesh");
+CEREAL_REGISTER_TYPE_WITH_NAME(PointLight,              "PointLight");
+CEREAL_REGISTER_TYPE_WITH_NAME(DirectionalLight,        "DirectionalLight");
 
-CEREAL_REGISTER_TYPE_WITH_NAME(material_interface,         "material_interface");
-CEREAL_REGISTER_TYPE_WITH_NAME(polymer_pbr_standard,       "polymer_pbr_standard");
+CEREAL_REGISTER_TYPE_WITH_NAME(material_interface,      "material_interface");
+CEREAL_REGISTER_TYPE_WITH_NAME(polymer_pbr_standard,    "polymer_pbr_standard");
 
 CEREAL_REGISTER_POLYMORPHIC_RELATION(GameObject, Renderable)
 CEREAL_REGISTER_POLYMORPHIC_RELATION(Renderable, StaticMesh)

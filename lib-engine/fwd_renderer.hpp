@@ -263,10 +263,9 @@ class forward_renderer
     std::unique_ptr<stable_cascaded_shadows> shadow;
     GlMesh post_quad;
 
-    shader_handle earlyZPass = { "depth-prepass" };
-    shader_handle hdr_tonemapShader = { "post-tonemap" };
+    shader_handle renderPassEarlyZ = { "depth-prepass" };
+    shader_handle renderPassTonemap = { "post-tonemap" };
 
-    // Update per-object uniform buffer
     void update_per_object_uniform_buffer(Renderable * top, const view_data & d);
 
     void run_depth_prepass(const view_data & view, const render_payload & scene);

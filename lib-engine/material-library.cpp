@@ -1,5 +1,5 @@
 #include "material-library.hpp"
-#include "serialization.hpp"
+#include "serialization.inl"
 #include "asset-handle-utils.hpp"
 #include "material.hpp"
 #include "logging.hpp"
