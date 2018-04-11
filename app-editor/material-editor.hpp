@@ -4,7 +4,7 @@
 #define material_editor_hpp
 
 #include "material.hpp"
-#include "fwd_renderer.hpp"
+#include "renderer-standard.hpp"
 #include "asset-handle-utils.hpp"
 #include "scene.hpp"
 #include "editor-ui.hpp"

@@ -1,5 +1,5 @@
 #include "material.hpp"
-#include "fwd_renderer.hpp"
+#include "renderer-standard.hpp"
 
 using namespace polymer;
 

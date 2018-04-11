@@ -85,7 +85,7 @@
   <ItemGroup>
     <ClInclude Include="asset-handle-utils.hpp" />
     <ClInclude Include="asset-handle.hpp" />
-    <ClInclude Include="fwd_renderer.hpp" />
+    <ClInclude Include="renderer-standard.hpp" />
     <ClInclude Include="gfx\gl\gl-api.hpp" />
     <ClInclude Include="gfx\gl\gl-async-gpu-timer.hpp" />
     <ClInclude Include="gfx\gl\gl-async-pbo.hpp" />
@@ -112,7 +112,7 @@
     <ClInclude Include="uniforms.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="fwd_renderer.cpp" />
+    <ClCompile Include="renderer-standard.cpp" />
     <ClCompile Include="gfx\gl\gl-imgui.cpp" />
     <ClCompile Include="gfx\gl\gl-nvg.cpp" />
     <ClCompile Include="gfx\gl\glfw-app.cpp" />

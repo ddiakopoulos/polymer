@@ -22,7 +22,7 @@
     <ClCompile Include="shader-library.cpp">
       <Filter>assets</Filter>
     </ClCompile>
-    <ClCompile Include="fwd_renderer.cpp" />
+    <ClCompile Include="renderer-standard.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="gfx\gl\gl-api.hpp">
@@ -91,11 +91,11 @@
     <ClInclude Include="serialization.inl">
       <Filter>assets</Filter>
     </ClInclude>
-    <ClInclude Include="fwd_renderer.hpp" />
     <ClInclude Include="logging.hpp" />
     <ClInclude Include="profiling.hpp" />
     <ClInclude Include="scene.hpp" />
     <ClInclude Include="uniforms.hpp" />
+    <ClInclude Include="renderer-standard.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="gfx">
