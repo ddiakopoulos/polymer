@@ -3,6 +3,39 @@
 
 using namespace polymer;
 
+//////////////////////////
+//   Default Material   //
+//////////////////////////
+
+polymer_default_material::polymer_default_material()
+{
+    shader = { "default-shader" };
+}
+
+void polymer_default_material::use()
+{
+    resolve_variants();
+    compiled_shader->shader.bind();
+}
+
+void polymer_default_material::resolve_variants() const
+{
+    if (!compiled_shader)
+    {
+        compiled_shader = shader.get()->get_variant();
+    }
+}
+
+uint32_t polymer_default_material::id() const
+{
+    resolve_variants();
+    return compiled_shader->shader.handle();
+}
+
+/////////////////////////////////////////
+//   Lambertian Blinn-Phong Material   //
+/////////////////////////////////////////
+
 polymer_blinn_phong_material::polymer_blinn_phong_material()
 {
     shader = { "blinn-phong" };
