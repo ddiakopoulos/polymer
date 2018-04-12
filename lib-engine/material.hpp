@@ -54,9 +54,25 @@ namespace polymer
         }
     };
 
-    //////////////////////////////////////////////////////
-    //   Physically-Based Metallic-Roughness Material   //
-    //////////////////////////////////////////////////////
+    class polymer_blinn_phong_material final : public material_interface
+    {
+        int bindpoint = 0;
+
+    public:
+
+        polymer_blinn_phong_material();
+        virtual void use() override final;
+        virtual void resolve_variants() const override final;
+        virtual uint32_t id() const override final;
+
+        texture_handle diffuse;
+        texture_handle normal;
+
+        float3 diffuseColor;
+        float3 specularColor;
+        float specularShininess;
+        float specularStrength;
+    };
 
     class polymer_pbr_standard final : public material_interface
     {

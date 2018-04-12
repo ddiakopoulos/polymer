@@ -3,6 +3,35 @@
 
 using namespace polymer;
 
+polymer_blinn_phong_material::polymer_blinn_phong_material()
+{
+    shader = { "default-shader" };
+}
+
+void polymer_blinn_phong_material::use()
+{
+    resolve_variants();
+    compiled_shader->shader.bind();
+}
+
+void polymer_blinn_phong_material::resolve_variants() const
+{
+    if (!compiled_shader)
+    {
+        compiled_shader = shader.get()->get_variant();
+    }
+}
+
+uint32_t polymer_blinn_phong_material::id() const
+{
+    resolve_variants();
+    return compiled_shader->shader.handle();
+}
+
+//////////////////////////////////////////////////////
+//   Physically-Based Metallic-Roughness Material   //
+//////////////////////////////////////////////////////
+
 void polymer_pbr_standard::resolve_variants() const
 {
     if (!compiled_shader)
