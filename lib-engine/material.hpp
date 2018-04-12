@@ -64,6 +64,9 @@ namespace polymer
         virtual void use() override final;
         virtual void resolve_variants() const override final;
         virtual uint32_t id() const override final;
+        virtual void update_uniforms() override final;
+
+        int2 texcoordScale{ 1, 1 };
 
         texture_handle diffuse;
         texture_handle normal;
@@ -105,7 +108,6 @@ namespace polymer
 
         float opacity{ 1.f };
         float shadowOpacity{ 1.f };
-
         int2 texcoordScale{ 1, 1 };
 
         texture_handle albedo;

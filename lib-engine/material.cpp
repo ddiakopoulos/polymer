@@ -8,12 +8,6 @@ polymer_blinn_phong_material::polymer_blinn_phong_material()
     shader = { "default-shader" };
 }
 
-void polymer_blinn_phong_material::use()
-{
-    resolve_variants();
-    compiled_shader->shader.bind();
-}
-
 void polymer_blinn_phong_material::resolve_variants() const
 {
     if (!compiled_shader)
@@ -26,6 +20,32 @@ uint32_t polymer_blinn_phong_material::id() const
 {
     resolve_variants();
     return compiled_shader->shader.handle();
+}
+
+void polymer_blinn_phong_material::use()
+{
+    resolve_variants();
+    GlShader & program = compiled_shader->shader;
+    program.bind();
+}
+
+void polymer_blinn_phong_material::update_uniforms()
+{
+    resolve_variants();
+    GlShader & program = compiled_shader->shader;
+    program.bind();
+
+    program.uniform("u_diffuseColor", diffuseColor);
+    program.uniform("u_specularColor", specularColor);
+    program.uniform("u_specularShininess", specularShininess);
+    program.uniform("u_specularStrength", specularStrength);
+
+    program.uniform("u_texCoordScale", float2(texcoordScale));
+
+    if (compiled_shader->enabled("HAS_DIFFUSE_MAP")) program.texture("s_diffuse", bindpoint++, diffuse.get(), GL_TEXTURE_2D);
+    if (compiled_shader->enabled("HAS_NORMAL_MAP")) program.texture("s_normal", bindpoint++, normal.get(), GL_TEXTURE_2D);
+
+    program.unbind();
 }
 
 //////////////////////////////////////////////////////
