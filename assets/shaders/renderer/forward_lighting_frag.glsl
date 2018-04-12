@@ -202,19 +202,17 @@ void main()
         const float normal_bias = 0.01; // fixme - expose to user
         vec3 biased_pos = get_biased_position(v_world_position, slope_bias, normal_bias, v_normal, L);
 
-        /*
         // The way this is structured, it impacts lighting if we stop updating shadow uniforms 
         float shadowTerm = 1.0;
         #ifdef ENABLE_SHADOWS
             shadowTerm = calculate_csm_coefficient(s_csmArray, biased_pos, v_view_space_position, u_cascadesMatrix, u_cascadesPlane, debugShadowColor);
             shadowVisibility = 1.0 - ((shadowTerm  * NdotL) * u_shadowOpacity * u_receiveShadow);
         #endif
-        */
 
         vec3 diffuseContrib, specContrib;
         compute_cook_torrance(data, u_directionalLight.amount, diffuseContrib, specContrib);
 
-        Lo *= NdotL * u_directionalLight.color * (diffuseContrib + specContrib);
+        Lo += NdotL * u_directionalLight.color * (diffuseContrib + specContrib);
     }
 
     // Compute point lights
@@ -240,7 +238,7 @@ void main()
         vec3 diffuseContrib, specContrib;
         compute_cook_torrance(data, attenuation, diffuseContrib, specContrib);
 
-        Lo *= NdotL * u_pointLights[i].color * (diffuseContrib + specContrib) * attenuation;
+        Lo += NdotL * u_pointLights[i].color * (diffuseContrib + specContrib) * attenuation;
     }
 
     #ifdef USE_IMAGE_BASED_LIGHTING
