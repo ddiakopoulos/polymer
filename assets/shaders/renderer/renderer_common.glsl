@@ -2,7 +2,7 @@
 
 #define saturate(x) clamp(x, 0.0, 1.0)
 #define PI 3.1415926535897932384626433832795
-#define INV_PI 1.0/PI
+#define INV_PI 1.0 / PI
 #define RCP_4PI 1.0 / (4 * PI)
 #define DEFAULT_GAMMA 2.2
 #define TWO_CASCADES // dimitri
