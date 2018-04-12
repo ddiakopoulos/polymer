@@ -25,13 +25,13 @@ vec3 lambert_diffuse(const in vec3 diffuseColor)
 
 // Optimized variant (presented by Epic at SIGGRAPH '13)
 // https://cdn2.unrealengine.com/Resources/files/2013SiggraphPresentationsNotes-26915738.pdf
-vec3 schlick_approx(const in vec3 specularColor, const in float LdotH) {
+vec3 schlick_approx(const in vec3 specularColor, const in float LdotH)
 {
     const float fresnel = exp2((-5.55473 * LdotH - 6.98316) * LdotH);
     return (1.0 - specularColor) * fresnel + specularColor;
 }
 
-vec3 blinn_phong_specular(const in vec3 NdotH, const in vec3 LdotH, const in vec3 specularColor, const in float shininess) 
+vec3 blinn_phong_specular(const in float NdotH, const in float LdotH, const in vec3 specularColor, const in float shininess) 
 {
     const vec3 F = schlick_approx(specularColor, LdotH);
     const float D = INV_PI * (shininess * 0.5 + 1.0) * pow(NdotH, shininess);
@@ -66,7 +66,7 @@ void main()
         float NdotH = clamp(dot(N, H), 0.0, 1.0);
         float LdotH = clamp(dot(L, H), 0.0, 1.0);
 
-        vec3 irradiance = NdotL * u_directionalLight.color;
+        const vec3 irradiance = NdotL * u_directionalLight.color;
 
         vec3 diffuseContrib, specContrib;
         diffuseContrib += irradiance * lambert_diffuse(diffuseColor);
@@ -88,11 +88,13 @@ void main()
         float dist = length(u_pointLights[i].position - v_world_position);
         float attenuation = point_light_attenuation(u_pointLights[i].radius, 2.0, 0.1, dist); // reasonable intensity is 0.01 to 8
 
+        const vec3 irradiance = NdotL * u_pointLights[i].color;
+
         vec3 diffuseContrib, specContrib;
         diffuseContrib += irradiance * lambert_diffuse(diffuseColor);
         specContrib += irradiance * blinn_phong_specular(NdotH, LdotH, u_specularColor, u_specularShininess) * u_specularStrength;
 
-        Lo += u_pointLights[i].color * (diffuseContrib + specContrib) * attenuation;
+        Lo += (diffuseContrib + specContrib) * attenuation;
     }
 
     f_color = vec4(Lo, 1.0); 

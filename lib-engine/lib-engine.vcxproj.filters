@@ -96,6 +96,9 @@
     <ClInclude Include="scene.hpp" />
     <ClInclude Include="uniforms.hpp" />
     <ClInclude Include="renderer-standard.hpp" />
+    <ClInclude Include="asset-resolver.hpp">
+      <Filter>assets</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="gfx">
