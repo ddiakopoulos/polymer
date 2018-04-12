@@ -5,7 +5,7 @@ using namespace polymer;
 
 polymer_blinn_phong_material::polymer_blinn_phong_material()
 {
-    shader = { "default-shader" };
+    shader = { "blinn-phong" };
 }
 
 void polymer_blinn_phong_material::resolve_variants() const
@@ -41,6 +41,8 @@ void polymer_blinn_phong_material::update_uniforms()
     program.uniform("u_specularStrength", specularStrength);
 
     program.uniform("u_texCoordScale", float2(texcoordScale));
+
+    bindpoint = 0;
 
     if (compiled_shader->enabled("HAS_DIFFUSE_MAP")) program.texture("s_diffuse", bindpoint++, diffuse.get(), GL_TEXTURE_2D);
     if (compiled_shader->enabled("HAS_NORMAL_MAP")) program.texture("s_normal", bindpoint++, normal.get(), GL_TEXTURE_2D);
