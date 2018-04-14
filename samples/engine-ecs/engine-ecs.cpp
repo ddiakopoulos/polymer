@@ -1,6 +1,15 @@
 #include "polymer-typeid.hpp"
 #include <unordered_map>
 
+#include "cereal/cereal.hpp"
+#include "cereal/types/memory.hpp"
+#include "cereal/types/vector.hpp"
+#include "cereal/types/map.hpp"
+#include "cereal/types/polymorphic.hpp"
+#include "cereal/types/base_class.hpp"
+#include "cereal/archives/json.hpp"
+#include "cereal/access.hpp"
+
 using namespace polymer;
 
  //////////////////
@@ -87,6 +96,40 @@ using namespace polymer;
      return type_name_generator::generate<T>() == std::string(name);
  }
 
+///////////////////
+// Serialization //
+///////////////////
+
+struct example_component
+{
+    float value1;
+    float value2;
+    float value3;
+};
+
+template <typename T>
+std::string serialize_to_json(T e)
+{
+    std::ostringstream oss;
+    {
+        cereal::JSONOutputArchive json_archiver(oss);
+        json_archiver(e);
+    }
+    return oss.str();
+}
+
+template<class F> void visit_fields(example_component & o, F f)
+{
+    f("v1", o.value1);
+    f("v2", o.value2);
+    f("v3", o.value3);
+}
+
+template<class Archive> void serialize(Archive & archive, example_component & m)
+{
+    visit_fields(m, [&archive](const char * name, auto & field, auto... metadata) { archive(cereal::make_nvp(name, field)); });
+};
+
 IMPLEMENT_MAIN(int argc, char * argv[])
 {
     /*
@@ -108,6 +151,14 @@ IMPLEMENT_MAIN(int argc, char * argv[])
     std::cout << "verify: Bounds2D - " << verify_typename<aabb_2d>("Bounds2D") << std::endl;
 
     */
+    example_component c;
+    c.value1 = 1.f;
+    c.value2 = 2.f;
+    c.value3 = 3.f;
+
+    std::cout << serialize_to_json(c) << std::endl;
+
+    std::this_thread::sleep_for(std::chrono::seconds(100));
 
     return EXIT_SUCCESS;
 }
