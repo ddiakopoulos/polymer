@@ -106,6 +106,7 @@ struct example_component
     float value2;
     float value3;
 };
+POLYMER_SETUP_TYPEID(example_component);
 
 template <typename T>
 std::string serialize_to_json(T e)
@@ -116,6 +117,14 @@ std::string serialize_to_json(T e)
         json_archiver(e);
     }
     return oss.str();
+}
+
+template <typename T>
+void deserialize_from_json(const std::string & json_str, T & e)
+{
+    std::istringstream iss(json_str);
+    cereal::JSONInputArchive json_archiver(iss);
+    json_archiver(e);
 }
 
 template<class F> void visit_fields(example_component & o, F f)
@@ -132,31 +141,25 @@ template<class Archive> void serialize(Archive & archive, example_component & m)
 
 IMPLEMENT_MAIN(int argc, char * argv[])
 {
-    /*
     entity_manager factory;
 
-    // ----
-
-    name_system system(&factory);
-
-    const entity mesh = factory.create();
-
-    system.set_name(mesh, "static_mesh");
-    std::cout << "Lookup By Name:   " << system.get_name(mesh) << std::endl;
-    std::cout << "Lookup By Entity: " << system.find_entity("static_mesh") << std::endl;
-
-    std::cout << "verify: bool - " << verify_typename<bool>("bool") << std::endl;
-    std::cout << "verify: uint64_t - " << verify_typename<uint64_t>("uint64_t") << std::endl;
-    std::cout << "verify: float2 - " << verify_typename<float2>("float2") << std::endl;
-    std::cout << "verify: Bounds2D - " << verify_typename<aabb_2d>("Bounds2D") << std::endl;
-
-    */
     example_component c;
     c.value1 = 1.f;
     c.value2 = 2.f;
     c.value3 = 3.f;
 
-    std::cout << serialize_to_json(c) << std::endl;
+    auto str = serialize_to_json(c);
+
+    std::cout << "Serialized: " << str << std::endl;
+
+    example_component ds = {};
+
+    deserialize_from_json(str, ds);
+
+    visit_fields(ds, [&](const char * name, auto & field, auto... metadata) 
+    { 
+        std::cout << "Name: " << name << ", " << field << std::endl;
+    });
 
     std::this_thread::sleep_for(std::chrono::seconds(100));
 
