@@ -220,7 +220,7 @@ inline linalg::aliases::float3x3 compute_covariance_matrix(const ring_buffer<lin
 
     float3 sum = {};
     for (size_t i = 0; i < b.get_current_size(); i++) sum += b[i];
-    sum /= float3(b.get_current_size());
+    sum /= float3(static_cast<float>(b.get_current_size()));
 
     linalg::aliases::float3x3 total;
 

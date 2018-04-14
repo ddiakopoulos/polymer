@@ -792,7 +792,7 @@ namespace polymer
     {
         Geometry ico = make_icosahedron();
 
-        for (int j = 0; j < subdivisions; ++j)
+        for (uint32_t j = 0; j < subdivisions; ++j)
         {
             ico.vertices.reserve(ico.vertices.size() + ico.faces.size());
             ico.normals.reserve(ico.normals.size() + ico.faces.size());

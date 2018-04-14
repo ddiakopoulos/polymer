@@ -143,7 +143,7 @@ inline Geometry make_parabolic_geometry(const std::vector<float3> & points, cons
     g.texcoord0.resize(points.size() * 2);
 
     const float3 right = normalize(cross(fwd, float3(0, +1, 0)));
-    const float3 thickness = float3(0.1);
+    const float3 thickness = float3(0.1f);
 
     for (int x = 0; x < points.size(); x++)
     {
@@ -217,7 +217,7 @@ struct ParabolicPointerParams
     float3 position = {0, 0, 0};
     float3 forward = {0, 0, 0};
     float pointSpacing = 0.1f;
-    float pointCount = 32.f; // pointSpacing * pointCount is maximum travel distance in meters
+    uint32_t pointCount = 32; // pointSpacing * pointCount is maximum travel distance in meters
 };
 
 inline bool make_parabolic_pointer(const ParabolicPointerParams & params, Geometry & pointer, float3 & worldHit)
@@ -231,7 +231,7 @@ inline bool make_parabolic_pointer(const ParabolicPointerParams & params, Geomet
 
     if (solution)
     {
-        pointer = make_parabolic_geometry(points, forwardDirScaled, 0.1);
+        pointer = make_parabolic_geometry(points, forwardDirScaled, 0.1f);
         worldHit = points[points.size() - 1];
         return true;
     }

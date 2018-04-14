@@ -25,7 +25,7 @@ inline float ballistic_range(float speed, float gravity, float initial_height)
 {
     if (speed < 0 || gravity < 0 || initial_height <= 0) throw std::range_error("invalid initial conditions");
 
-    float angle = 45.0 * POLYMER_DEG_TO_RAD; // no air resistence, so 45 degrees provides maximum range
+    float angle = static_cast<float>(45.0 * POLYMER_DEG_TO_RAD); // no air resistence, so 45 degrees provides maximum range
     float cos = std::cos(angle);
     float sin = std::sin(angle);
 
@@ -223,7 +223,7 @@ inline bool solve_ballistic_arc_lateral(const float3 proj_pos, const float later
         
     float t;
     if (!valid0 && !valid1) return false;
-    else if (valid0 && valid1) t = std::min(t0, t1);
+    else if (valid0 && valid1) t = static_cast<float>(std::min(t0, t1));
     else t = valid0 ? (float)t0 : (float)t1;
 
     // Calculate impact point

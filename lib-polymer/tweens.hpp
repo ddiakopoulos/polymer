@@ -50,8 +50,8 @@ struct Exponential
         if (t == 0.f) return 0.f;
         if (t == 1.f) return 1.f;
         t *= 2;
-        if (t < 1) return 0.5f * std::pow(2, 10 * (t - 1));
-        return 0.5f * (-std::pow(2, -10 * (t - 1)) + 2);
+        if (t < 1) return 0.5f * std::powf(2, 10 * (t - 1));
+        return 0.5f * (-std::powf(2, -10 * (t - 1)) + 2);
     }
 };
 

@@ -159,12 +159,12 @@ namespace polymer
         void save_pngs()
         {
             const std::vector<std::string> faceNames = {{"positive_x"}, {"negative_x"}, {"positive_y"}, {"negative_y"}, {"positive_z"}, {"negative_z"}};
-            std::vector<uint8_t> data(resolution * resolution * 3);
+            std::vector<uint8_t> data(static_cast<size_t>(resolution * resolution * 3));
             glBindTexture(GL_TEXTURE_CUBE_MAP, cubeMapColor);
             for (int i = 0; i < 6; ++i)
             {
                 glGetTexImage(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, GL_UNSIGNED_BYTE, data.data());
-                stbi_write_png( std::string(faceNames[i] + ".png").c_str(), resolution, resolution, 3, data.data(), resolution * 3);
+                stbi_write_png( std::string(faceNames[i] + ".png").c_str(), static_cast<int>(resolution), static_cast<int>(resolution), 3, data.data(), static_cast<int>(resolution) * 3);
                 gl_check_error(__FILE__, __LINE__);
             }
             glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
@@ -175,7 +175,7 @@ namespace polymer
 
         std::function<void(float3 eyePosition, float4x4 viewMatrix, float4x4 projMatrix)> render;
 
-        CubemapCamera(int resolution) : resolution(resolution)
+        CubemapCamera(int resolution) : resolution(static_cast<float>(resolution))
         {
             cubeMapColor.setup_cube(resolution, resolution, GL_RGB, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
             cubeMapDepth.setup_cube(resolution, resolution, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
@@ -205,7 +205,7 @@ namespace polymer
                  {
                      glFramebufferTexture2DEXT(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, cubeMapColor, 0);
                      glFramebufferTexture2DEXT(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, cubeMapDepth, 0);
-                     glViewport(0, 0, resolution, resolution);
+                     glViewport(0, 0, static_cast<int>(resolution), static_cast<int>(resolution));
                      glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
                      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
