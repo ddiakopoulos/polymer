@@ -22,45 +22,21 @@ namespace polymer
         virtual uint32_t id() const = 0;                    // returns the gl handle, used for sorting materials by type to minimize state changes in the renderer
     };
 
-    //////////////////////////
-    //   Default Material   //
-    //////////////////////////
-
     struct polymer_default_material final : public material_interface
     {
-        polymer_default_material() 
-        { 
-            shader = { "default-shader" }; 
-        }
-
-        virtual void use() override final
-        { 
-            resolve_variants();
-            compiled_shader->shader.bind();
-        }
-
-        virtual void resolve_variants() const override final 
-        { 
-            if (!compiled_shader)
-            {
-                compiled_shader = shader.get()->get_variant();
-            }
-        }
-
-        virtual uint32_t id() const override final
-        {
-            resolve_variants();
-            return compiled_shader->shader.handle();
-        }
+        polymer_default_material();
+        virtual void use() override final;
+        virtual void resolve_variants() const override final;
+        virtual uint32_t id() const override final;
     };
 
-    class polymer_blinn_phong_material final : public material_interface
+    class polymer_blinn_phong_standard final : public material_interface
     {
         int bindpoint = 0;
 
     public:
 
-        polymer_blinn_phong_material();
+        polymer_blinn_phong_standard();
         virtual void use() override final;
         virtual void resolve_variants() const override final;
         virtual uint32_t id() const override final;

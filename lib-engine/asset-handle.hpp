@@ -49,7 +49,7 @@ public:
         name = asset_id;
         if (name.empty())
         {
-            name = "default";
+            name = "empty";
         }
     }
 
@@ -114,10 +114,12 @@ public:
     bool assigned() const
     {
         if (handle && handle->assigned) return true;
-        auto & a = table[name];
-        if (a)
+
+        // Search for it, but don't default construct
+        auto itr = table.find(name);
+        if (itr != table.end())
         {
-            handle = a;
+            handle = itr->second;
             return handle->assigned;
         }
         return false;
@@ -127,7 +129,10 @@ public:
     static std::vector<asset_handle> list()
     {
         std::vector<asset_handle> results;
-        for (const auto & a : table) results.push_back(asset_handle<T>(a.first, a.second));
+        for (const auto & a : table)
+        {
+            results.push_back(asset_handle<T>(a.first, a.second));
+        }
         return results;
     }
 

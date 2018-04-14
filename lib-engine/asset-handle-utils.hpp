@@ -7,6 +7,7 @@
 
 template<class T> inline asset_handle<T> create_handle_for_asset(const char * asset_id, T && asset)
 {
+    std::cout << "assigning: " << asset_id << std::endl;
     static_assert(!std::is_pointer<T>::value, "cannot create a handle for a raw pointer");
     return { asset_handle<T>(asset_id, std::move(asset)) };
 }

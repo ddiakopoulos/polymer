@@ -164,6 +164,11 @@ struct material_editor_window final : public glfw_window
                 std::vector<std::string> materialNames;
                 for (auto & m : asset_handle<std::shared_ptr<material_interface>>::list()) materialNames.push_back(m.name);
 
+                for (auto & n : materialNames)
+                {
+                    std::cout << "List: " << n << std::endl;
+
+                }
                 // Get the object from the selection
                 GameObject * selected_object = entitySelection[0];
 

@@ -36,12 +36,12 @@ uint32_t polymer_default_material::id() const
 //   Lambertian Blinn-Phong Material   //
 /////////////////////////////////////////
 
-polymer_blinn_phong_material::polymer_blinn_phong_material()
+polymer_blinn_phong_standard::polymer_blinn_phong_standard()
 {
     shader = { "blinn-phong" };
 }
 
-void polymer_blinn_phong_material::resolve_variants() const
+void polymer_blinn_phong_standard::resolve_variants() const
 {
     if (!compiled_shader)
     {
@@ -49,20 +49,20 @@ void polymer_blinn_phong_material::resolve_variants() const
     }
 }
 
-uint32_t polymer_blinn_phong_material::id() const
+uint32_t polymer_blinn_phong_standard::id() const
 {
     resolve_variants();
     return compiled_shader->shader.handle();
 }
 
-void polymer_blinn_phong_material::use()
+void polymer_blinn_phong_standard::use()
 {
     resolve_variants();
     GlShader & program = compiled_shader->shader;
     program.bind();
 }
 
-void polymer_blinn_phong_material::update_uniforms()
+void polymer_blinn_phong_standard::update_uniforms()
 {
     resolve_variants();
     GlShader & program = compiled_shader->shader;

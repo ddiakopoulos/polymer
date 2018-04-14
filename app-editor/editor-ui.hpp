@@ -107,18 +107,38 @@ bool build_imgui(const char * label, asset_handle<T> & h, const A & ... metadata
 {
     if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
 
-    int index;
+    int index{ -1 };
     std::vector<std::string> items;
 
+    // List all handles
     for (auto & handle : asset_handle<T>::list())
     {
-        if (handle.name == h.name) index = static_cast<int>(items.size());
+        // Pre-select index from list if handle matches name
+        if (handle.name == h.name)
+        {
+            index = static_cast<int>(items.size());
+        }
         items.push_back(handle.name);
     }
 
+    //items.push_back("none");
+
+    // No matching named handle then select "none"
+    //if (index == -1) { index = items.size(); }
+
     if (ImGui::Combo(label, &index, items))
     {
-        h = items[index];
+        // if we've selected none
+        if (index == items.size())
+        {
+            h = {}; // zero assign
+        }
+        else
+        {
+            // Selected a real asset handle
+            h = items[index];
+        }
+
         return true;
     }
     else return false;

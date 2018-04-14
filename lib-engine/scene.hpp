@@ -164,8 +164,8 @@ struct StaticMesh final : public Renderable
     float3 scale{ 1, 1, 1 };
     aabb_3d bounds;
 
-    gpu_mesh_handle mesh{ "" };
-    cpu_mesh_handle geom{ "" };
+    gpu_mesh_handle mesh;
+    cpu_mesh_handle geom;
 
     StaticMesh() { }
 

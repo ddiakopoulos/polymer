@@ -120,6 +120,7 @@ template<class F> void visit_fields(DirectionalLight & o, F f)
 template<class F> void visit_subclasses(material_interface * p, F f)
 {
     f("polymer_pbr_standard", dynamic_cast<polymer_pbr_standard *>(p));
+    //f("polymer_blinn_phong_standard", dynamic_cast<polymer_blinn_phong_standard *>(p));
 }
 
 template<class F> void visit_fields(polymer_pbr_standard & o, F f)
