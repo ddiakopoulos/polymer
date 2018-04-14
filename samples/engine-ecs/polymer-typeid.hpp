@@ -11,34 +11,34 @@
 
 // https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function
 
-using HashValue = uint64_t;
-constexpr HashValue hash_offset_basis = 0x84222325;
-constexpr HashValue hash_prime_multiplier = 0x000001b3;
+using poly_hash_value = uint64_t;
+constexpr poly_hash_value hash_offset_basis = 0x84222325;
+constexpr poly_hash_value hash_prime_multiplier = 0x000001b3;
 
 namespace detail
 {
     // Helper function for performing the recursion for the compile time hash.
     template <std::size_t N>
-    inline constexpr HashValue const_hash_fnv1a(const char(&str)[N], int start, HashValue hash)
+    inline constexpr poly_hash_value const_hash_fnv1a(const char(&str)[N], int start, poly_hash_value hash)
     {
         // Perform the static_cast to uint64_t otherwise MSVC complains, about integral constant overflow (warning C4307).
-        return (start == N || start == N - 1) ? hash : const_hash_fnv1a(str, start + 1, static_cast<HashValue>((hash ^ static_cast<unsigned char>(str[start])) * static_cast<uint64_t>(hash_prime_multiplier)));
+        return (start == N || start == N - 1) ? hash : const_hash_fnv1a(str, start + 1, static_cast<poly_hash_value>((hash ^ static_cast<unsigned char>(str[start])) * static_cast<uint64_t>(hash_prime_multiplier)));
     }
 }  // namespace detail
 
    // Compile-time hash function.
 template <std::size_t N>
-inline constexpr HashValue const_hash_fnv1a(const char(&str)[N])
+inline constexpr poly_hash_value const_hash_fnv1a(const char(&str)[N])
 {
     return N <= 1 ? 0 : detail::const_hash_fnv1a(str, 0, hash_offset_basis);
 }
 
-HashValue hash_fnv1a(HashValue basis, const char * str, size_t len)
+poly_hash_value hash_fnv1a(poly_hash_value basis, const char * str, size_t len)
 {
     if (str == nullptr || *str == 0 || len == 0) return 0;
 
     size_t count = 0;
-    HashValue value = basis;
+    poly_hash_value value = basis;
     while (*str && count < len)
     {
         value = (value ^ static_cast<unsigned char>(*str++)) * hash_prime_multiplier;
@@ -47,19 +47,19 @@ HashValue hash_fnv1a(HashValue basis, const char * str, size_t len)
     return value;
 }
 
-HashValue hash_fnv1a(const char * str, size_t len)
+poly_hash_value hash_fnv1a(const char * str, size_t len)
 {
     return hash_fnv1a(hash_offset_basis, str, len);
 }
 
-HashValue hash_fnv1a(const char * str)
+poly_hash_value hash_fnv1a(const char * str)
 {
     const size_t npos = -1;
     return hash_fnv1a(str, npos);
 }
 
 // Functor for hashable types in STL containers.
-struct Hasher
+struct hasher
 {
     template <class T>
     std::size_t operator()(const T & value) const { return hash_fnv1a(value); }
@@ -69,7 +69,7 @@ struct Hasher
 //   Custom TypeId Implementation   //
 //////////////////////////////////////
 
-using TypeId = uint64_t;
+using poly_typeid = uint64_t;
 
 template <typename T>
 const char * get_typename()
@@ -81,7 +81,7 @@ const char * get_typename()
 }
 
 template <typename T>
-TypeId get_typeid() { return T::TYPEID_NOT_SETUP; }
+poly_typeid get_typeid() { return T::TYPEID_NOT_SETUP; }
 
 template <typename T>
 struct typeid_traits { static constexpr bool kHasTypeId = false; };
@@ -96,13 +96,13 @@ template <>                                    \
     return #Type;                              \
 }                                              \
 template <>                                    \
-    inline TypeId get_typeid<Type>() {         \
+    inline poly_typeid get_typeid<Type>() {    \
     return const_hash_fnv1a(#Type);            \
 }                                          
 
-/////////////////////////
-//   TypeId Registry   //
-/////////////////////////
+//////////////////////////////
+//   poly_typeid Registry   //
+//////////////////////////////
 
 // Used for SFINAE on other types we haven't setup yet (todo - stl containers)
 template <typename T>

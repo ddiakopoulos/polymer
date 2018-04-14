@@ -69,9 +69,6 @@
     <ClInclude Include="math-projection.hpp">
       <Filter>src\math-core</Filter>
     </ClInclude>
-    <ClInclude Include="math-euclidean.hpp">
-      <Filter>src\math-core</Filter>
-    </ClInclude>
     <ClInclude Include="math-core.hpp">
       <Filter>src\math-core</Filter>
     </ClInclude>
@@ -164,6 +161,9 @@
     </ClInclude>
     <ClInclude Include="..\third_party\tinyexr\tinyexr.h">
       <Filter>third_party\tinyexr</Filter>
+    </ClInclude>
+    <ClInclude Include="math-primitives.hpp">
+      <Filter>src\math-core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

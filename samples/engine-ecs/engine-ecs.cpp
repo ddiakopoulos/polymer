@@ -14,16 +14,16 @@ using namespace polymer;
  // Provide a consistent way to retrieve an Entity to which a component belongs. 
  class component 
  {
-     entity ent{ kInvalidEntity };
+     entity e{ kInvalidEntity };
  public:
-     explicit component(entity e) : ent(e) {}
-     entity get_entity() const { return ent; }
+     explicit component(entity e) : e(e) {}
+     entity get_entity() const { return e; }
  };
 
  // Hash functor for Components so they can be used in unordered containers. It uses the Component's Entity as the key value.
  struct component_hash 
  {
-     entity operator()(const component& c) const { return c.get_entity(); }
+     entity operator()(const component & c) const { return c.get_entity(); }
  };
 
  // Systems are responsible for storing the component data instances associated with Entities.
@@ -38,7 +38,7 @@ using namespace polymer;
      virtual ~system() { }
 
      // The Hash of the actual type used for safely casting the definition to a concrete type for extracting data.
-     using DefinitionType = HashValue;
+     using DefinitionType = poly_hash_value;
 
      // Associates a default-constructed component with an entity
      virtual bool create(entity e, DefinitionType component_name_hash) = 0;
@@ -54,18 +54,18 @@ using namespace polymer;
      // Helper function to signal to the entity manager that this system operates on these types of components
      template <typename S>
      void register_system_for_type(S * system, DefinitionType type) { register_system_for_type(get_typeid<S>(), type); }
-     void register_system_for_type(TypeId system_type, DefinitionType type);
+     void register_system_for_type(poly_typeid system_type, DefinitionType type);
  };
 
  struct entity_manager
  {
      std::mutex createMutex;
 
-     using TypeMap = std::unordered_map<system::DefinitionType, TypeId>;    // ComponentDef type (hashed) to System TypeId map.
+     using TypeMap = std::unordered_map<system::DefinitionType, poly_typeid>;    // ComponentDef type (hashed) to System TypeId map.
      TypeMap system_type_map;                                               // Map of ComponentDef type (hash) to System TypeIds.
      entity entity_counter { 0 };                                           // Autoincrementing value to generate unique Entity IDs.
 
-     void register_system_for_type(TypeId system_type, HashValue def_type) 
+     void register_system_for_type(poly_typeid system_type, poly_hash_value def_type) 
      {
          system_type_map[def_type] = system_type;
      }
@@ -79,7 +79,7 @@ using namespace polymer;
  };
 
  // Associates the System with the DefType in the entity_manager.
- void system::register_system_for_type(TypeId system_type, DefinitionType type) { factory->register_system_for_type(system_type, type); }
+ void system::register_system_for_type(poly_typeid system_type, DefinitionType type) { factory->register_system_for_type(system_type, type); }
 
  template <typename T>
  bool verify_typename(const char * name) 
@@ -87,158 +87,9 @@ using namespace polymer;
      return type_name_generator::generate<T>() == std::string(name);
  }
 
- ////////////////////////
- //   name/id system   //
- ////////////////////////
-
- struct name_system final : public system
- {
-     name_system(entity_manager * f) : system(f)
-     {
-         register_system_for_type(this, hash_fnv1a("NameDefinition"));
-     }
-
-     ~name_system() override { }
-
-     bool create(entity e, DefinitionType component_name_hash) override final
-     {
-         return false;
-     }
-
-     // Associates |entity| with a name. Removes any existing name associated with this entity.
-     bool create(entity entity, HashValue type, void * data) override final
-     {
-         if (type != const_hash_fnv1a("NameDefinition"))  { return false; }
-         return true;
-         // todo - set name based on data
-     }
-
-     // Disassociates any name from |entity|.
-     void destroy(entity entity) override final
-     {
-         auto iter = entity_to_hash_.find(entity);
-         if (iter != entity_to_hash_.end()) 
-         {
-             hash_to_entity_.erase(iter->second);
-             entity_to_hash_.erase(iter);
-         }
-         entity_to_name_.erase(entity);
-     }
-
-     // Finds the name associated with |entity|. Returns empty string if no name is found.
-     std::string get_name(entity entity) const
-     {
-         const auto iter = entity_to_name_.find(entity);
-         return iter != entity_to_name_.end() ? iter->second : "";
-     }
-
-     void set_name(entity entity, const std::string & name) 
-     {
-         if (entity == kInvalidEntity) { return; }
-
-         const std::string existing_name = get_name(entity);
-         if (existing_name == name) { return; } // No need to proceed if current name and desired name are identical
-
-         // Ensure a different entity with the same name does not already exist. This
-         // may happen if an entity with the name had not been properly deleted or
-         // the same entity had been created multiple times.
-         if (find_entity(name) != kInvalidEntity) 
-         {
-             std::cout << "entity " << name << " already exists..." << std::endl;
-             return;
-         }
-
-         const auto hash = hash_fnv1a(name.c_str());
-
-         hash_to_entity_.erase(hash_fnv1a(existing_name.c_str()));
-         hash_to_entity_[hash] = entity;
-
-         entity_to_name_[entity] = name;
-         entity_to_hash_[entity] = hash;
-     }
-
-     entity find_entity(const std::string & name) const 
-     {
-         const auto hash = hash_fnv1a(name.c_str());
-         const auto iter = hash_to_entity_.find(hash);
-         return iter != hash_to_entity_.end() ? iter->second : kInvalidEntity;
-     }
-
-     std::unordered_map<entity, std::string> entity_to_name_;
-     std::unordered_map<entity, HashValue> entity_to_hash_;
-     std::unordered_map<HashValue, entity> hash_to_entity_;
- };
- POLYMER_SETUP_TYPEID(name_system);
-
- ///////////////////////////////
- //   Example Render System   //
- ///////////////////////////////
-
- // Systems operate on one or more Components to provide Entities with specific behaviours.
- // Entities have Components assigned by systems. 
- struct ex_render_component final : public component
- {
-     ex_render_component() : component(kInvalidEntity) { }
-     explicit ex_render_component(entity e) : component(e) { }
-     std::string name{ "render-component" };
- };
-
- struct ex_render_system : public system
- {
-     ex_render_system(entity_manager * f) : system(f)
-     {
-         register_system_for_type(this, hash_fnv1a("RenderDefinition"));
-     }
-
-     ~ex_render_system() override { }
-
-     bool create(entity e, DefinitionType component_name_hash) override final
-     {
-         return false;
-     }
-
-     bool create(entity entity, HashValue type, void * data) override final
-     {
-         if (type != hash_fnv1a("RenderDefinition")) { return false; }
-
-         if (components_.find(entity) != components_.end())
-         {
-             // update existing component
-             auto data = components_[entity];
-         }
-         else
-         {
-             // create new component
-             components_.emplace(entity, ex_render_component(entity));
-         }
-         return true;
-     }
-     
-     // find & erase
-     void destroy(entity entity) override final
-     {
-         auto iter = components_.find(entity);
-         if (iter != components_.end())
-         {
-             components_.erase(iter);
-         }
-     }
-
-     // returns a zero length string if not found
-     std::string get_renderable_name(entity e) 
-     {
-         auto iter = components_.find(e);
-         if (iter != components_.end()) return iter->second.name;
-         return {};
-     }
-
-     // Entities added to this list have components
-     std::unordered_map<entity, ex_render_component> components_;
- };
- POLYMER_SETUP_TYPEID(ex_render_system);
-
 IMPLEMENT_MAIN(int argc, char * argv[])
 {
+    /*
     entity_manager factory;
 
     // ----
@@ -256,25 +107,7 @@ IMPLEMENT_MAIN(int argc, char * argv[])
     std::cout << "verify: float2 - " << verify_typename<float2>("float2") << std::endl;
     std::cout << "verify: Bounds2D - " << verify_typename<aabb_2d>("Bounds2D") << std::endl;
 
-    // ----
-
-    ex_render_system renderSystem(&factory);
-
-    // Create new entities
-    const entity renderableOne = factory.create();
-    const entity renderableTwo = factory.create();
-    const entity renderableThree = factory.create();
-
-    // Associate |ex_render_component| with these entities
-    renderSystem.create(renderableOne, hash_fnv1a("RenderDefinition"), nullptr);
-    renderSystem.create(renderableTwo, hash_fnv1a("RenderDefinition"), nullptr);
-
-    renderSystem.get_renderable_name(renderableOne);
-    renderSystem.get_renderable_name(renderableTwo);
-    renderSystem.get_renderable_name(renderableThree);
-
-    renderSystem.destroy(renderableOne);
-    renderSystem.get_renderable_name(renderableOne);
+    */
 
     return EXIT_SUCCESS;
 }

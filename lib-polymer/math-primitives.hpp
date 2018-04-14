@@ -16,7 +16,7 @@
 namespace polymer
 {
     /////////////////////////////////
-    // Axis-Aligned Bounding Areas //
+    // Axis-Aligned Bounding Boxes //
     /////////////////////////////////
 
     struct aabb_2d

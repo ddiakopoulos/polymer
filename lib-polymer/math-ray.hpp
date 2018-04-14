@@ -11,7 +11,7 @@
 
 #include "math-common.hpp"
 #include "math-spatial.hpp"
-#include "math-math-primitives.hpp"
+#include "math-primitives.hpp"
 
 namespace polymer
 {

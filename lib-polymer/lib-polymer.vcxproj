@@ -31,7 +31,7 @@
     <ClInclude Include="linalg.h" />
     <ClInclude Include="math-common.hpp" />
     <ClInclude Include="math-core.hpp" />
-    <ClInclude Include="math-euclidean.hpp" />
+    <ClInclude Include="math-primitives.hpp" />
     <ClInclude Include="math-projection.hpp" />
     <ClInclude Include="math-ray.hpp" />
     <ClInclude Include="math-spatial.hpp" />
