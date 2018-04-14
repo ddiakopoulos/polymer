@@ -39,12 +39,13 @@ using namespace polymer;
  // They also perform all the logic for manipulating and processing their Components.
  // This base class provides an API for an entity_manager to associate Components with Entities in a data-driven manner.
  struct entity_manager;
- struct system : public non_copyable
+
+ struct base_system : public non_copyable
  {
      entity_manager * factory;
 
-     explicit system(entity_manager * f) : factory(f) {}
-     virtual ~system() { }
+     explicit base_system(entity_manager * f) : factory(f) {}
+     virtual ~base_system() {}
 
      // Associates a default-constructed component with an entity
      virtual bool create(entity e, poly_typeid hash) = 0;
@@ -65,9 +66,11 @@ using namespace polymer;
  {
      std::mutex createMutex;
 
-     using TypeMap = std::unordered_map<poly_typeid, poly_typeid>;   // ComponentDef type (hashed) to System TypeId map.
-     TypeMap system_type_map;                                                   // Map of ComponentDef type (hash) to System TypeIds.
-     entity entity_counter { 0 };                                               // Autoincrementing value to generate unique ids.
+     std::unordered_map<poly_typeid, poly_typeid> system_type_map;
+     entity entity_counter { 0 }; // Autoincrementing value to generate unique ids.
+
+     template <typename T, typename... Args>
+     T * create_system(Args &&... args);
 
      void register_system_for_type(poly_typeid system_type, poly_hash_value def_type) 
      {
@@ -80,28 +83,42 @@ using namespace polymer;
          const entity e = ++entity_counter;
          return e;
      }
+
+     void add_system(poly_typeid system_type, base_system * system)
+     {
+         if (!system) return;
+         auto itr = systems.find(system_type);
+         if (itr == systems.end()) systems.emplace(system_type, system);
+     }
+
+     std::unordered_map<poly_typeid, base_system *> systems;
  };
 
- // Associates the System with the DefType in the entity_manager.
- void system::register_system_for_type(poly_typeid system_type, poly_typeid type) { factory->register_system_for_type(system_type, type); }
-
- template <typename T>
- bool verify_typename(const char * name) 
+ template <typename T, typename... Args>
+ T * entity_manager::create_system(Args &&... args) 
  {
-     return type_name_generator::generate<T>() == std::string(name);
+     T * ptr = new T(std::forward<Args>(args)...);
+     add_system(get_typeid<T>(), ptr);
+     return ptr;
  }
+
+ void base_system::register_system_for_type(poly_typeid system_type, poly_typeid type) { factory->register_system_for_type(system_type, type); }
 
 ///////////////////
 // Serialization //
 ///////////////////
 
-struct example_component
+struct physics_component
 {
-    float value1;
-    float value2;
-    float value3;
+    float value1, value2, value3;
 };
-POLYMER_SETUP_TYPEID(example_component);
+POLYMER_SETUP_TYPEID(physics_component);
+
+struct render_component
+{
+    float value1, value2, value3;
+};
+POLYMER_SETUP_TYPEID(render_component);
 
 template <typename T>
 std::string serialize_to_json(T e)
@@ -122,38 +139,76 @@ void deserialize_from_json(const std::string & json_str, T & e)
     json_archiver(e);
 }
 
-template<class F> void visit_fields(example_component & o, F f)
+template<class F> void visit_fields(render_component & o, F f)
 {
     f("v1", o.value1);
     f("v2", o.value2);
     f("v3", o.value3);
 }
 
-template<class Archive> void serialize(Archive & archive, example_component & m)
+template<class F> void visit_fields(physics_component & o, F f)
+{
+    f("v1", o.value1);
+    f("v2", o.value2);
+    f("v3", o.value3);
+}
+
+template<class Archive> void serialize(Archive & archive, render_component & m)
 {
     visit_fields(m, [&archive](const char * name, auto & field, auto... metadata) { archive(cereal::make_nvp(name, field)); });
-};
+}
 
-struct ex_system_one final : public system
+template<class Archive> void serialize(Archive & archive, physics_component & m)
 {
-    const poly_typeid c1 = const_hash_fnv1a("physics_component");
-    ex_system_one(entity_manager * f) : system(f) { register_system_for_type(this, c1); }
+    visit_fields(m, [&archive](const char * name, auto & field, auto... metadata) { archive(cereal::make_nvp(name, field)); });
+}
+
+struct ex_system_one final : public base_system
+{
+    const poly_typeid c1 = get_typeid<physics_component>();
+    ex_system_one(entity_manager * f) : base_system(f) { register_system_for_type(this, c1); }
     ~ex_system_one() override { }
-    bool create(entity e, poly_typeid hash) override final { return false; }
-    bool create(entity entity, poly_typeid hash, void * data) override final { if (hash != c1) { return false; } return true; }
+    bool create(entity e, poly_typeid hash) override final 
+    { 
+        if (c1 != hash) std::cout << "it's an error" << std::endl;
+        components[e] = physics_component();
+        return true; 
+    }
+    bool create(entity e, poly_typeid hash, void * data) override final 
+    { 
+        if (hash != c1) { return false; } 
+        auto new_component = physics_component();
+        new_component = *static_cast<physics_component *>(data);
+        components[e] = std::move(new_component);
+        return true;
+    }
     void destroy(entity entity) override final { }
+    std::unordered_map<entity, physics_component> components;
 };
 POLYMER_SETUP_TYPEID(ex_system_one);
 
-struct ex_system_two final : public system
+struct ex_system_two final : public base_system
 {
-    const poly_typeid c2 = get_typeid<example_component>();
-    ex_system_two(entity_manager * f) : system(f) { register_system_for_type(this, c2); }
+    const poly_typeid c2 = get_typeid<render_component>();
+    ex_system_two(entity_manager * f) : base_system(f) { register_system_for_type(this, c2); }
     ~ex_system_two() override { }
-    bool create(entity e, poly_typeid hash) override final { return false; }
-    bool create(entity entity, poly_typeid hash, void * data) override final { if (hash != c2) { return false; } return true; }
+    bool create(entity e, poly_typeid hash) override final 
+    { 
+        if (c2 != hash) std::cout << "it's an error" << std::endl;
+        components[e] = render_component();
+        return true;
+    }
+
+    bool create(entity e, poly_typeid hash, void * data) override final 
+    { 
+        if (hash != c2) { return false; } 
+        auto new_component = render_component();
+        new_component = *static_cast<render_component *>(data);
+        components[e] = std::move(new_component);
+        return true; 
+    }
     void destroy(entity entity) override final { }
-    std::unordered_map<entity, example_component> components;
+    std::unordered_map<entity, render_component> components;
 };
 POLYMER_SETUP_TYPEID(ex_system_two);
 
@@ -161,7 +216,8 @@ IMPLEMENT_MAIN(int argc, char * argv[])
 {
     entity_manager factory;
 
-    example_component c;
+    /*
+    render_component c;
     c.value1 = 1.f;
     c.value2 = 2.f;
     c.value3 = 3.f;
@@ -170,7 +226,7 @@ IMPLEMENT_MAIN(int argc, char * argv[])
 
     std::cout << "Serialized: " << str << std::endl;
 
-    example_component ds = {};
+    render_component ds = {};
 
     deserialize_from_json(str, ds);
 
@@ -178,8 +234,29 @@ IMPLEMENT_MAIN(int argc, char * argv[])
     { 
         std::cout << "Name: " << name << ", " << field << std::endl;
     });
+    */
 
-    ex_system_one system(&factory);
+    render_component s{ 1.f, 2.f, 3.f };
+    auto str = serialize_to_json(s);
+    render_component ds = {};
+    deserialize_from_json(str, ds);
+
+    auto sys1 = factory.create_system<ex_system_one>(&factory);
+    auto sys2 = factory.create_system<ex_system_two>(&factory);
+
+    auto someEntity = factory.create();
+    std::cout << "New Entity is: " << someEntity << std::endl;
+
+    sys2->create(someEntity, get_typeid<render_component>(), &ds);
+
+    for (auto & e : sys2->components)
+    {
+        std::cout << "Iterate Entity: " << e.first << std::endl;
+        visit_fields(e.second, [&](const char * name, auto & field, auto... metadata)
+        {
+            std::cout << "\tName: " << name << ", " << field << std::endl;
+        });
+    }
 
     std::this_thread::sleep_for(std::chrono::seconds(100));
 
