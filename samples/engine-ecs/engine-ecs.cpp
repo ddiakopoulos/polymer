@@ -46,33 +46,28 @@ using namespace polymer;
      explicit system(entity_manager * f) : factory(f) {}
      virtual ~system() { }
 
-     // The Hash of the actual type used for safely casting the definition to a concrete type for extracting data.
-     using DefinitionType = poly_hash_value;
-
      // Associates a default-constructed component with an entity
-     virtual bool create(entity e, DefinitionType component_name_hash) = 0;
+     virtual bool create(entity e, poly_typeid hash) = 0;
 
      // Associates component with the Entity using the serialized data
-     virtual bool create(entity e, DefinitionType component_name_hash, void * data) = 0;
-
-     /* todo - create with default-constructed component */
+     virtual bool create(entity e, poly_typeid hash, void * data) = 0;
 
      // Disassociates all component data from the entity in this system
      virtual void destroy(entity e) = 0;
 
      // Helper function to signal to the entity manager that this system operates on these types of components
      template <typename S>
-     void register_system_for_type(S * system, DefinitionType type) { register_system_for_type(get_typeid<S>(), type); }
-     void register_system_for_type(poly_typeid system_type, DefinitionType type);
+     void register_system_for_type(S * system, poly_typeid type) { register_system_for_type(get_typeid<S>(), type); }
+     void register_system_for_type(poly_typeid system_type, poly_typeid type);
  };
 
  struct entity_manager
  {
      std::mutex createMutex;
 
-     using TypeMap = std::unordered_map<system::DefinitionType, poly_typeid>;    // ComponentDef type (hashed) to System TypeId map.
-     TypeMap system_type_map;                                               // Map of ComponentDef type (hash) to System TypeIds.
-     entity entity_counter { 0 };                                           // Autoincrementing value to generate unique Entity IDs.
+     using TypeMap = std::unordered_map<poly_typeid, poly_typeid>;   // ComponentDef type (hashed) to System TypeId map.
+     TypeMap system_type_map;                                                   // Map of ComponentDef type (hash) to System TypeIds.
+     entity entity_counter { 0 };                                               // Autoincrementing value to generate unique ids.
 
      void register_system_for_type(poly_typeid system_type, poly_hash_value def_type) 
      {
@@ -88,7 +83,7 @@ using namespace polymer;
  };
 
  // Associates the System with the DefType in the entity_manager.
- void system::register_system_for_type(poly_typeid system_type, DefinitionType type) { factory->register_system_for_type(system_type, type); }
+ void system::register_system_for_type(poly_typeid system_type, poly_typeid type) { factory->register_system_for_type(system_type, type); }
 
  template <typename T>
  bool verify_typename(const char * name) 
@@ -139,6 +134,29 @@ template<class Archive> void serialize(Archive & archive, example_component & m)
     visit_fields(m, [&archive](const char * name, auto & field, auto... metadata) { archive(cereal::make_nvp(name, field)); });
 };
 
+struct ex_system_one final : public system
+{
+    const poly_typeid c1 = const_hash_fnv1a("physics_component");
+    ex_system_one(entity_manager * f) : system(f) { register_system_for_type(this, c1); }
+    ~ex_system_one() override { }
+    bool create(entity e, poly_typeid hash) override final { return false; }
+    bool create(entity entity, poly_typeid hash, void * data) override final { if (hash != c1) { return false; } return true; }
+    void destroy(entity entity) override final { }
+};
+POLYMER_SETUP_TYPEID(ex_system_one);
+
+struct ex_system_two final : public system
+{
+    const poly_typeid c2 = get_typeid<example_component>();
+    ex_system_two(entity_manager * f) : system(f) { register_system_for_type(this, c2); }
+    ~ex_system_two() override { }
+    bool create(entity e, poly_typeid hash) override final { return false; }
+    bool create(entity entity, poly_typeid hash, void * data) override final { if (hash != c2) { return false; } return true; }
+    void destroy(entity entity) override final { }
+    std::unordered_map<entity, example_component> components;
+};
+POLYMER_SETUP_TYPEID(ex_system_two);
+
 IMPLEMENT_MAIN(int argc, char * argv[])
 {
     entity_manager factory;
@@ -160,6 +178,8 @@ IMPLEMENT_MAIN(int argc, char * argv[])
     { 
         std::cout << "Name: " << name << ", " << field << std::endl;
     });
+
+    ex_system_one system(&factory);
 
     std::this_thread::sleep_for(std::chrono::seconds(100));
 

@@ -16,7 +16,7 @@ struct name_system final : public system
 
     ~name_system() override { }
 
-    bool create(entity e, DefinitionType component_name_hash) override final
+    bool create(entity e, component_hash component_name_hash) override final
     {
         return false;
     }
