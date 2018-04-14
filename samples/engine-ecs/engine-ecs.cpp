@@ -237,32 +237,6 @@ using namespace polymer;
  };
  POLYMER_SETUP_TYPEID(ex_render_system);
 
- /* 
-  * Implement: Component Pool
-  * Implement: PolymerEngineContext (Registry for Systems)
-
-  * [Systems]
-  * - Name
-  * - Transform (scenegraph)
-  * - Render
-  * - Light
-  * - Collision + Raycast
-  * - Dispatcher (events)
-  * - Physics (Bullet3)
-
-  * [Components / Defs]
-  * - Point Lights
-  * - Directional Lights
-  * - Spot Lights
-  * - Static Meshes
-  * - Skinned Meshes
-  * - VR Controller
-  * - Reticle
-  * - World Anchor
-  * - Teleport Destination
-  * - Teleport Navigator
-  */
-
 IMPLEMENT_MAIN(int argc, char * argv[])
 {
     entity_manager factory;
@@ -280,7 +254,7 @@ IMPLEMENT_MAIN(int argc, char * argv[])
     std::cout << "verify: bool - " << verify_typename<bool>("bool") << std::endl;
     std::cout << "verify: uint64_t - " << verify_typename<uint64_t>("uint64_t") << std::endl;
     std::cout << "verify: float2 - " << verify_typename<float2>("float2") << std::endl;
-    std::cout << "verify: Bounds2D - " << verify_typename<Bounds2D>("Bounds2D") << std::endl;
+    std::cout << "verify: Bounds2D - " << verify_typename<aabb_2d>("Bounds2D") << std::endl;
 
     // ----
 

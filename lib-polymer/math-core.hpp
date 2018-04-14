@@ -10,7 +10,7 @@
 
 #include "math-common.hpp"
 #include "math-spatial.hpp"
-#include "math-euclidean.hpp"
+#include "math-primitives.hpp"
 #include "math-projection.hpp"
 #include "math-ray.hpp"
 

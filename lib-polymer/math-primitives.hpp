@@ -1,15 +1,15 @@
 ﻿/*
- * File: math-euclidean.hpp
- * The name of this file might be slightly odd, but it defines commonly used geometric
- * primitives such as axis-aligned bounding boxes in 2D and 3D, spheres, planes, segments,
- * lines, and frustums. Although the functionality is not comprehensive between all
- * primitive types, some of the most of the common intersection types are provided. 
+ * File: math-primitives.hpp
+ * This file defines commonly used geometric primitives such as axis-aligned bounding 
+ * boxes in 2D and 3D, spheres, planes, segments, lines, and frustums. Although the 
+ * functionality is not comprehensive between all primitive types, some of the most 
+ * of the common intersection types are provided. 
  */
 
 #pragma once
 
-#ifndef math_euclidean_hpp
-#define math_euclidean_hpp
+#ifndef math_primitives_hpp
+#define math_primitives_hpp
 
 #include "math-common.hpp"
 
@@ -409,4 +409,4 @@ namespace polymer
 
 }
 
-#endif // end math_euclidean_hpp
+#endif // end math_primitives_hpp
