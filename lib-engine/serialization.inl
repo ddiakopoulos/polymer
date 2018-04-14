@@ -69,10 +69,10 @@ template<class F> void visit_fields(HosekProceduralSky & o, F f)
 }
 
 template<class F> void visit_fields(Pose & o, F f) { f("position", o.position); f("orientation", o.orientation); }
-template<class F> void visit_fields(texture_handle & m, F f)   { f("id", m.name); }
-template<class F> void visit_fields(shader_handle & m, F f)      { f("id", m.name); }
-template<class F> void visit_fields(gpu_mesh_handle & m, F f)      { f("id", m.name); }
-template<class F> void visit_fields(cpu_mesh_handle & m, F f)    { f("id", m.name); }
+template<class F> void visit_fields(texture_handle & m, F f) { f("id", m.name); }
+template<class F> void visit_fields(shader_handle & m, F f) { f("id", m.name); }
+template<class F> void visit_fields(gpu_mesh_handle & m, F f) { f("id", m.name); }
+template<class F> void visit_fields(cpu_mesh_handle & m, F f) { f("id", m.name); }
 
 template<class F> void visit_subclasses(GameObject * p, F f)
 {

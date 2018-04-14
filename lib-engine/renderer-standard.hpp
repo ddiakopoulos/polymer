@@ -198,8 +198,8 @@ template<class F> void visit_fields(stable_cascaded_shadows & o, F f)
 struct renderer_settings
 {
     int2 renderSize{ 0, 0 };
-    int cameraCount = 1;
-    int msaaSamples = 4;
+    uint32_t cameraCount = 1;
+    uint32_t msaaSamples = 4;
     bool performanceProfiling = true;
     bool useDepthPrepass = false;
     bool tonemapEnabled = true;

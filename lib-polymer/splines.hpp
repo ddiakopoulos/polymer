@@ -15,12 +15,12 @@ namespace polymer
         
         void calculate_length()
         {
-            arcLengths.resize(num_steps());
+            arcLengths.resize(num_steps);
             arcLengths[0] = 0.0f;
             float3 start = p0;
-            for (int i = 1; i < num_steps(); i++)
+            for (size_t i = 1; i < num_steps; i++)
             {
-                float t = float(i) / float(num_steps() - 1);
+                float t = float(i) / float(num_steps - 1);
                 float3 end = point(t);
                 float length = distance(start, end);
                 arcLengths[i] = arcLengths[i - 1] + length;
@@ -33,7 +33,9 @@ namespace polymer
         
     public:
         
-        bezier_spline(float3 p0, float3 p1, float3 p2, float3 p3)
+        size_t num_steps;
+
+        bezier_spline(float3 p0, float3 p1, float3 p2, float3 p3, const size_t num_steps = 32) : num_steps(num_steps)
         {
             set_control_points(p0, p1, p2, p3);
         }
@@ -45,11 +47,6 @@ namespace polymer
             this->p2 = p2;
             this->p3 = p3;
             calculate_length();
-        }
-        
-        float num_steps() const
-        {
-            return 32;
         }
         
         float3 point(const float t) const
@@ -85,9 +82,9 @@ namespace polymer
         float max_curvature() const
         {
             float max = std::numeric_limits<float>::min();
-            for (int i = 0; i < num_steps(); i++)
+            for (size_t i = 0; i < num_steps; i++)
             {
-                float t = float(i) / float(num_steps() - 1);
+                float t = float(i) / float(num_steps - 1);
                 float c = curvature(t);
                 if (c > max) max = c;
             }

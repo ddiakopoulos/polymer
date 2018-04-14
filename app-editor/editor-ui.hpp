@@ -54,7 +54,18 @@ inline bool build_imgui(const char * label, int & v, const A & ... metadata)
     auto * useInput = unpack<input_field>(metadata...);
 
     if (rangeData && !useInput) return ImGui::SliderInt(label, &v, rangeData->min, rangeData->max);
-    else return ImGui::InputInt(label, &v);
+    else return ImGui::InputInt(label, &v, 1);
+}
+
+template<class... A>
+inline bool build_imgui(const char * label, uint32_t & v, const A & ... metadata)
+{
+    if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
+    auto * rangeData = unpack<range_metadata<int>>(metadata...);
+    auto * useInput = unpack<input_field>(metadata...);
+
+    if (rangeData && !useInput) return ImGui::SliderInt(label, reinterpret_cast<int*>(&v), rangeData->min, rangeData->max);
+    else return ImGui::InputInt(label, reinterpret_cast<int*>(&v), 1);
 }
 
 template<class... A>

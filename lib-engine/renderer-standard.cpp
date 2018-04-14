@@ -269,7 +269,7 @@ void forward_renderer::render_frame(const render_payload & scene)
     b.time = timer.milliseconds().count() / 1000.f; // expressed in seconds
     b.resolution = float2(settings.renderSize);
     b.invResolution = 1.f / b.resolution;
-    b.activePointLights = scene.pointLights.size();
+    b.activePointLights = static_cast<int>(scene.pointLights.size());
 
     b.directional_light.color = scene.sunlight.color;
     b.directional_light.direction = scene.sunlight.direction;
@@ -314,6 +314,8 @@ void forward_renderer::render_frame(const render_payload & scene)
             b.cascadesNear[c] = shadow->nearPlanes[c];
             b.cascadesFar[c] = shadow->farPlanes[c];
         }
+
+        gl_check_error(__FILE__, __LINE__);
     }
 
     // Per-scene can be uploaded now that the shadow pass has completed
@@ -388,6 +390,8 @@ void forward_renderer::render_frame(const render_payload & scene)
         glClearNamedFramebufferfv(multisampleFramebuffer, GL_COLOR, 0, &defaultColor[0]);
         glClearNamedFramebufferfv(multisampleFramebuffer, GL_DEPTH, 0, &defaultDepth);
 
+        gl_check_error(__FILE__, __LINE__);
+
         // Execute the forward passes
         if (settings.useDepthPrepass)
         {
@@ -395,6 +399,8 @@ void forward_renderer::render_frame(const render_payload & scene)
             run_depth_prepass(scene.views[camIdx], scene);
             gpuProfiler.end("depth-prepass");
         }
+
+        gl_check_error(__FILE__, __LINE__);
 
         gpuProfiler.begin("forward-pass");
         cpuProfiler.begin("skybox");
@@ -404,6 +410,8 @@ void forward_renderer::render_frame(const render_payload & scene)
         run_forward_pass(materialRenderList, defaultRenderList, scene.views[camIdx], scene);
         cpuProfiler.end("forward");
         gpuProfiler.end("forward-pass");
+
+        gl_check_error(__FILE__, __LINE__);
 
         glDisable(GL_MULTISAMPLE);
 
