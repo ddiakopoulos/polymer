@@ -144,8 +144,8 @@ struct world_transform_component : public base_component
 
 class transform_system final : public base_system
 {
-    polymer_component_pool<scene_graph_component> scene_graph_transforms{ 128 };
-    polymer_component_pool<world_transform_component> world_transforms{ 128 };
+    polymer_component_pool<scene_graph_component> scene_graph_transforms{ 64 };
+    polymer_component_pool<world_transform_component> world_transforms{ 64 };
 
     void recalculate_world_transform(entity child)
     {
@@ -278,7 +278,6 @@ POLYMER_SETUP_TYPEID(transform_system);
 //   Transform System Tests   //
 ////////////////////////////////
 
-// check double create
 TEST_CASE("transform system has_transform")
 {
     entity_orchestrator orchestrator;
@@ -320,6 +319,8 @@ TEST_CASE("transform system destruction")
         system->destroy(e);
         REQUIRE(system->has_transform(e) == false);
     }
+
+    CHECK_THROWS_AS(system->destroy(0), std::exception);
 }
 
 TEST_CASE("transform system add/remove parent & children")
@@ -392,6 +393,36 @@ TEST_CASE("transform system scene graph math correctness")
     REQUIRE(system->get_world_transform(child1)->world_pose == check_p2);
     REQUIRE(system->get_world_transform(child2)->world_pose == check_p3);
 }
+
+TEST_CASE("transform system performance testing")
+{
+    entity_orchestrator orchestrator;
+    transform_system * system = orchestrator.create_system<transform_system>(&orchestrator);
+    uniform_random_gen gen;
+
+    auto random_pose = [&]() -> Pose
+    {
+        return Pose(make_rotation_quat_axis_angle({ gen.random_float(), gen.random_float(), gen.random_float() }, gen.random_float() * POLYMER_TAU),
+            float3(gen.random_float() * 100, gen.random_float() * 100, gen.random_float() * 100));
+    };
+
+    {
+        scoped_timer t("create 16384 entities with 4 children each (65535 total)");
+        for (int i = 0; i < 16384; ++i)
+        {
+            auto rootEntity = orchestrator.create_entity();
+            system->create(rootEntity, random_pose(), float3(1));
+
+            for (int c = 0; c < 4; ++c)
+            {
+                auto childEntity = orchestrator.create_entity();
+                system->create(childEntity, random_pose(), float3(1));
+                system->add_child(rootEntity, childEntity);
+            }
+        }
+    }
+}
+
 
 //////////////////////////////
 //   Component Pool Tests   //
