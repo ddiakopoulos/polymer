@@ -295,8 +295,6 @@ struct transform_system final : public base_system
         if (node.parent != kInvalidEntity)
         {
             auto & parent_node = scene_graph_transforms[node.parent];
-            std::cout << "Parent has local pose: " << parent_node.local_pose << std::endl;
-            std::cout << "Node has local pose: " << node.local_pose << std::endl;
             world_xform.world_pose = node.local_pose * parent_node.local_pose;
         }
         else
@@ -326,8 +324,8 @@ IMPLEMENT_MAIN(int argc, char * argv[])
     auto root = factory.create();   // 1
     auto child1 = factory.create(); // 2 
     auto child2 = factory.create(); // 3
-    xform_system->create(root, Pose(float4(0, 0, 0, 1), float3(0, 5.f, 0)), float3(1, 1, 1));
-    xform_system->create(child1, Pose(float4(0, 0, 0, 1), float3(0, 0, 3.f)), float3(1, 1, 1));
+    xform_system->create(root, Pose(make_rotation_quat_axis_angle({ 0, 1, 0 }, POLYMER_PI / 2.0), float3(0, 5.f, 0)), float3(1, 1, 1));
+    xform_system->create(child1, Pose(make_rotation_quat_axis_angle({ 0, 1, 0 }, -(POLYMER_PI / 2.0)), float3(0, 0, 3.f)), float3(1, 1, 1));
     //xform_system->create(child2, Pose(float4(0, 0, 0, 1), float3(4.f, 0, 0)), float3(1, 1, 1));
 
     xform_system->add_child(root, child1);
