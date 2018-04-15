@@ -144,8 +144,6 @@ struct world_transform_component : public base_component
 
 class transform_system final : public base_system
 {
-    polymer_component_pool<scene_graph_component> scene_graph_transforms{ 64 };
-    polymer_component_pool<world_transform_component> world_transforms{ 64 };
 
     void recalculate_world_transform(entity child)
     {
@@ -181,6 +179,9 @@ class transform_system final : public base_system
     }
 
 public:
+
+    polymer_component_pool<scene_graph_component> scene_graph_transforms{ 64 };
+    polymer_component_pool<world_transform_component> world_transforms{ 64 };
 
     transform_system(entity_orchestrator * f) : base_system(f) 
     { 
@@ -400,10 +401,16 @@ TEST_CASE("transform system performance testing")
     transform_system * system = orchestrator.create_system<transform_system>(&orchestrator);
     uniform_random_gen gen;
 
+    float timer = 0.f;
+    manual_timer t;
     auto random_pose = [&]() -> Pose
     {
-        return Pose(make_rotation_quat_axis_angle({ gen.random_float(), gen.random_float(), gen.random_float() }, gen.random_float() * POLYMER_TAU),
+        t.start();
+        auto p = Pose(make_rotation_quat_axis_angle({ gen.random_float(), gen.random_float(), gen.random_float() }, gen.random_float() * POLYMER_TAU),
             float3(gen.random_float() * 100, gen.random_float() * 100, gen.random_float() * 100));
+        t.stop();
+        timer += t.get();
+        return p;
     };
 
     {
@@ -420,9 +427,27 @@ TEST_CASE("transform system performance testing")
                 system->add_child(rootEntity, childEntity);
             }
         }
+
+        std::cout << "Random pose generation took: " << timer << "ms" << std::endl;
     }
 }
 
+TEST_CASE("transform system performance testing 2")
+{
+    entity_orchestrator orchestrator;
+    transform_system * system = orchestrator.create_system<transform_system>(&orchestrator);
+
+    for (int i = 0; i < 65536; ++i)
+    {
+        auto rootEntity = orchestrator.create_entity();
+        system->create(rootEntity, Pose(), float3(1));
+    }
+
+    {
+        scoped_timer t("iterate and add");
+        system->world_transforms.for_each([&](world_transform_component & t) { t.world_pose.position += float3(0.001f); });
+    }
+}
 
 //////////////////////////////
 //   Component Pool Tests   //
