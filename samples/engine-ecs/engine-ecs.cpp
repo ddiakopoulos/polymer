@@ -234,6 +234,7 @@ struct scene_graph_component : public component
     scene_graph_component() {};
     scene_graph_component(entity e) : component(e) {}
     polymer::Pose local_pose;
+    polymer::float3 local_scale;
     entity parent;
     std::vector<entity> children;
 }; POLYMER_SETUP_TYPEID(scene_graph_component);
@@ -242,11 +243,10 @@ struct world_transform_component : public component
 {
     world_transform_component() {};
     world_transform_component(entity e) : component(e) {}
-    polymer::float4x4 world_from_entity;
-    aabb_2d bounding_box;
+    polymer::Pose world_pose;
 }; POLYMER_SETUP_TYPEID(world_transform_component);
 
-struct transform_system final : public base_system, public non_copyable
+struct transform_system final : public base_system
 {
     // Used by other systems to group types of transforms (collision, interactables, renderable, etc)
     using transform_flags = uint16_t;
@@ -256,34 +256,34 @@ struct transform_system final : public base_system, public non_copyable
     transform_system(entity_manager * f) : base_system(f) { register_system_for_type(this, tcid); }
     ~transform_system() override { }
 
-    bool create(entity e, poly_typeid hash) override final
+    bool create(entity e, poly_typeid hash) override final { return true; }
+    bool create(entity e, poly_typeid hash, void * data) override final { return true; }
+
+    bool create(entity e, const polymer::Pose local_pose, const float3 local_scale)
     {
-        //if (tcid != hash) std::cout << "it's an error" << std::endl;
-        //transforms[e] = transform_component(e);
+        scene_graph_transforms[e] = scene_graph_component(e);
+        scene_graph_transforms[e].local_pose = local_pose;
+        scene_graph_transforms[e].local_scale = local_scale;
+
+        world_transforms[e] = world_transform_component(e);
+        recalculate_world_matrix(e);
+
         return true;
     }
 
-    bool create(entity e, poly_typeid hash, void * data) override final
+    world_transform_component & get_world_transform(entity e)
     {
-        //if (hash != tcid) { return false; }
-        //auto new_component = transform_component(e);
-        //new_component = *static_cast<transform_component *>(data);
-        //transforms[e] = std::move(new_component);
-        return true;
-    }
-
-    const world_transform_component * get_world_transform(entity e)
-    {
-        auto transform = world_transforms[e]; // todo - get(e)
-        return &transform;
+        return world_transforms[e]; // todo - get(e)
     }
 
     void recalculate_world_matrix(entity child) 
     {
-        auto node = scene_graph_transforms[child];
-        auto world_xform = get_world_transform(child);
+        auto & node = scene_graph_transforms[child];
+        auto & world_xform = world_transforms[child];
 
-        world_xform->world_from_entity = mul(remove_scale(node.local_pose.matrix()), get_world_transform(node.parent));
+        std::cout << node.local_pose.matrix() << std::endl;
+
+        world_xform.world_pose = node.local_pose * get_world_transform(node.parent).world_pose;
 
         for (auto & child : node.children) 
         {
@@ -298,18 +298,19 @@ struct transform_system final : public base_system, public non_copyable
 };
 POLYMER_SETUP_TYPEID(transform_system);
 
-
-
-
-
-
-
-
 IMPLEMENT_MAIN(int argc, char * argv[])
 {
     entity_manager factory;
 
     auto xform_system = factory.create_system<transform_system>(&factory);
+
+    auto entityWithTransform1 = factory.create();
+    auto entityWithTransform2 = factory.create();
+    xform_system->create(entityWithTransform1, Pose(float4(0, 0, 0, 1), float3(0, 33.f, 0)), float3(1, 1, 1));
+    xform_system->create(entityWithTransform2, Pose(float4(0, 0, 0, 1), float3(15.25f, 0, 0)), float3(1, 1, 1));
+
+    std::cout << xform_system->get_world_transform(entityWithTransform1).world_pose << std::endl;
+    std::cout << xform_system->get_world_transform(entityWithTransform2).world_pose << std::endl;
 
     std::this_thread::sleep_for(std::chrono::seconds(100));
 
