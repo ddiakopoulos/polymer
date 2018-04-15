@@ -286,6 +286,8 @@ public:
 
     bool create(entity e, const polymer::Pose local_pose, const float3 local_scale)
     {
+        // todo - check already added
+
         scene_graph_transforms[e] = scene_graph_component(e);
         scene_graph_transforms[e].local_pose = local_pose;
         scene_graph_transforms[e].local_scale = local_scale;
@@ -399,6 +401,30 @@ IMPLEMENT_MAIN(int argc, char * argv[])
     std::cout << "Destroyed first child should be nullptr: " << xform_system->get_local_transform(child1) << std::endl;
 
     // 32768
+
+    uniform_random_gen gen;
+
+    // debug ~4.6 seconds
+    // release ~80 ms
+    {
+        scoped_timer t("create 16384 entities with 4 children each (65535 total)");
+        for (int i = 0; i < 16384; ++i)
+        {
+            auto rootEntity = factory.create();
+            xform_system->create(rootEntity,
+                Pose(make_rotation_quat_axis_angle({ gen.random_float(), gen.random_float(), gen.random_float() }, POLYMER_PI),
+                    float3(gen.random_float() * 10, gen.random_float() * 10, gen.random_float() * 10)), float3(1, 1, 1));
+
+            for (int c = 0; c < 4; ++c)
+            {
+                auto childEntity = factory.create();
+                xform_system->create(childEntity,
+                    Pose(make_rotation_quat_axis_angle({ gen.random_float(), gen.random_float(), gen.random_float() }, POLYMER_PI),
+                        float3(gen.random_float() * 10, gen.random_float() * 10, gen.random_float() * 10)), float3(1, 1, 1));
+                xform_system->add_child(rootEntity, childEntity);
+            }
+        }
+    }
 
     std::this_thread::sleep_for(std::chrono::seconds(100));
 
