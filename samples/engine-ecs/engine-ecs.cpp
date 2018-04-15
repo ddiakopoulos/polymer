@@ -289,11 +289,55 @@ POLYMER_SETUP_TYPEID(transform_system);
 //   Transform System Tests   //
 ////////////////////////////////
 
-TEST_CASE("transform system test")
+TEST_CASE("transform system has_transform")
 {
+    entity_orchestrator orchestrator;
+    transform_system * system = orchestrator.create_system<transform_system>(&orchestrator);
 
+    entity root = orchestrator.create_entity();
+    REQUIRE(system->has_transform(root) == false);
+
+    system->create(root, Pose(), float3(1));
+    REQUIRE(system->has_transform(root) == true);
 }
 
+TEST_CASE("transform system add & remove parent + children")
+{
+    Pose p1(make_rotation_quat_axis_angle({ 0, 1, 0 }, POLYMER_PI / 2.0), float3(0, 5.f, 0));
+    Pose p2(make_rotation_quat_axis_angle({ 1, 1, 0 }, POLYMER_PI / 0.5), float3(3.f, 0, 0));
+    Pose p3(make_rotation_quat_axis_angle({ 0, 1, -1 }, POLYMER_PI), float3(0, 1.f, 4.f));
+
+    entity_orchestrator orchestrator;
+    transform_system * system = orchestrator.create_system<transform_system>(&orchestrator);
+
+    entity root = orchestrator.create_entity();
+    entity child1 = orchestrator.create_entity();
+    entity child2 = orchestrator.create_entity();
+
+    system->create(root, p1, float3(1));
+    system->create(child1, p2, float3(1));
+    system->create(child2, p3, float3(1));
+
+    REQUIRE(system->has_transform(root) == true);
+    REQUIRE(system->has_transform(child1) == true);
+    REQUIRE(system->has_transform(child2) == true);
+
+    REQUIRE(system->get_parent(root) == kInvalidEntity);
+    REQUIRE(system->get_parent(child1) == kInvalidEntity);
+    REQUIRE(system->get_parent(child2) == kInvalidEntity);
+
+    CHECK_THROWS_AS(system->add_child(0, 0), std::exception); // invalid parent
+    CHECK_THROWS_AS(system->add_child(root, 0), std::exception); // invalid child
+
+    system->add_child(root, child1);
+    system->add_child(root, child2);
+
+    REQUIRE(system->get_parent(child1) == root);
+    REQUIRE(system->get_parent(child2) == root);
+
+    system->remove_parent(child1);
+    REQUIRE(system->get_parent(child1) == kInvalidEntity);
+}
 
 //////////////////////////////
 //   Component Pool Tests   //
