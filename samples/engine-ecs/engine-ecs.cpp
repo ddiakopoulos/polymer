@@ -235,7 +235,7 @@ struct scene_graph_component : public component
     scene_graph_component(entity e) : component(e) {}
     polymer::Pose local_pose;
     polymer::float3 local_scale;
-    entity parent;
+    entity parent{ kInvalidEntity };
     std::vector<entity> children;
 }; POLYMER_SETUP_TYPEID(scene_graph_component);
 
@@ -271,9 +271,20 @@ struct transform_system final : public base_system
         return true;
     }
 
-    world_transform_component & get_world_transform(entity e)
+    bool add_child(entity parent, entity child)
     {
-        return world_transforms[e]; // todo - get(e)
+        scene_graph_transforms[parent].children.push_back(child);
+        scene_graph_transforms[child].parent = parent;
+        recalculate_world_matrix(parent);
+        return true;
+    }
+
+    world_transform_component * get_world_transform(entity e)
+    {
+        if (e == kInvalidEntity) return nullptr;
+        auto itr = world_transforms.find(e);
+        if (itr != world_transforms.end()) return &itr->second;
+        else return nullptr;
     }
 
     void recalculate_world_matrix(entity child) 
@@ -281,13 +292,21 @@ struct transform_system final : public base_system
         auto & node = scene_graph_transforms[child];
         auto & world_xform = world_transforms[child];
 
-        std::cout << node.local_pose.matrix() << std::endl;
-
-        world_xform.world_pose = node.local_pose * get_world_transform(node.parent).world_pose;
-
-        for (auto & child : node.children) 
+        if (node.parent != kInvalidEntity)
         {
-            recalculate_world_matrix(child);
+            auto & parent_node = scene_graph_transforms[node.parent];
+            std::cout << "Parent has local pose: " << parent_node.local_pose << std::endl;
+            std::cout << "Node has local pose: " << node.local_pose << std::endl;
+            world_xform.world_pose = node.local_pose * parent_node.local_pose;
+        }
+        else
+        {
+            world_xform.world_pose = node.local_pose;
+        }
+
+        for (auto & c : node.children) 
+        {
+            recalculate_world_matrix(c);
         }
     }
 
@@ -304,13 +323,19 @@ IMPLEMENT_MAIN(int argc, char * argv[])
 
     auto xform_system = factory.create_system<transform_system>(&factory);
 
-    auto entityWithTransform1 = factory.create();
-    auto entityWithTransform2 = factory.create();
-    xform_system->create(entityWithTransform1, Pose(float4(0, 0, 0, 1), float3(0, 33.f, 0)), float3(1, 1, 1));
-    xform_system->create(entityWithTransform2, Pose(float4(0, 0, 0, 1), float3(15.25f, 0, 0)), float3(1, 1, 1));
+    auto root = factory.create();   // 1
+    auto child1 = factory.create(); // 2 
+    auto child2 = factory.create(); // 3
+    xform_system->create(root, Pose(float4(0, 0, 0, 1), float3(0, 5.f, 0)), float3(1, 1, 1));
+    xform_system->create(child1, Pose(float4(0, 0, 0, 1), float3(0, 0, 3.f)), float3(1, 1, 1));
+    //xform_system->create(child2, Pose(float4(0, 0, 0, 1), float3(4.f, 0, 0)), float3(1, 1, 1));
 
-    std::cout << xform_system->get_world_transform(entityWithTransform1).world_pose << std::endl;
-    std::cout << xform_system->get_world_transform(entityWithTransform2).world_pose << std::endl;
+    xform_system->add_child(root, child1);
+    //xform_system->add_child(root, child2);
+
+    std::cout << xform_system->get_world_transform(root)->world_pose << std::endl;
+    std::cout << xform_system->get_world_transform(child1)->world_pose << std::endl;
+    //std::cout << xform_system->get_world_transform(child2).world_pose << std::endl;
 
     std::this_thread::sleep_for(std::chrono::seconds(100));
 
