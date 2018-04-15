@@ -133,14 +133,6 @@ struct scene_graph_component : public base_component
     polymer::float3 local_scale;
     entity parent{ kInvalidEntity };
     std::vector<entity> children;
-    scene_graph_component(const scene_graph_component & o) { std::cout << "(copy) move failed!\n"; }
-    scene_graph_component(scene_graph_component && o) noexcept { std::cout << "move success \n"; }
-    scene_graph_component& operator=(scene_graph_component other) 
-    { 
-        std::cout << "copy assign \n";
-        return *this;
-    }
-
 }; POLYMER_SETUP_TYPEID(scene_graph_component);
 
 struct world_transform_component : public base_component

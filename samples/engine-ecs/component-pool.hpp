@@ -175,7 +175,7 @@ namespace polymer
         using LookupTable = std::unordered_map<Key, Index, LookupHashT>; // Table that maps a Key to a specific element in the ArrayVector.
 
        // Destroys the Object at the specified |index|. Performs a swap-and-pop for objects not at the end of the ArrayVector.
-        void destroy(const Index& index)
+        void destroy(const Index & index)
         {
             // The object to remove is in the "middle" of the ArrayVector, so swap it with the one at the very end.
             auto & back_page = objects.back();
@@ -188,6 +188,9 @@ namespace polymer
                 T & other = back_page[back_page.size() - 1];
                 KeyFunctionT key_fn;
                 lookup_table[key_fn(other)] = index;
+
+                // Good thing to note: if the user has provided a copy assignment operator, it 
+                // blocks the automatic implementation of a move constructor, and can be used in its place.
                 std::swap(obj, other);
             }
 
