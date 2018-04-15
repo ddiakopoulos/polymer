@@ -233,7 +233,7 @@ struct scene_graph_component : public component
 {
     scene_graph_component() {};
     scene_graph_component(entity e) : component(e) {}
-    polymer::Pose pose;
+    polymer::Pose local_pose;
     entity parent;
     std::vector<entity> children;
 }; POLYMER_SETUP_TYPEID(scene_graph_component);
@@ -272,12 +272,38 @@ struct transform_system final : public base_system, public non_copyable
         return true;
     }
 
+    const world_transform_component * get_world_transform(entity e)
+    {
+        auto transform = world_transforms[e]; // todo - get(e)
+        return &transform;
+    }
+
+    void recalculate_world_matrix(entity child) 
+    {
+        auto node = scene_graph_transforms[child];
+        auto world_xform = get_world_transform(child);
+
+        world_xform->world_from_entity = mul(remove_scale(node.local_pose.matrix()), get_world_transform(node.parent));
+
+        for (auto & child : node.children) 
+        {
+            recalculate_world_matrix(child);
+        }
+    }
+
     void destroy(entity entity) override final { }
 
-    std::unordered_map<entity, scene_graph_component> scene_graph_transforms;
-    std::unordered_map<entity, world_transform_component> world_transforms;
+    std::unordered_map<entity, scene_graph_component> scene_graph_transforms; // component pool
+    std::unordered_map<entity, world_transform_component> world_transforms; // component pool
 };
 POLYMER_SETUP_TYPEID(transform_system);
+
+
+
+
+
+
+
 
 IMPLEMENT_MAIN(int argc, char * argv[])
 {

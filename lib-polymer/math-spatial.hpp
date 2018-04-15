@@ -258,6 +258,14 @@ namespace polymer
     // Construct affine transformation matrices //
     //////////////////////////////////////////////
     
+    inline float4x4 remove_scale(float4x4 transform)
+    {
+        transform.row(0) = normalize(transform.row(0));
+        transform.row(1) = normalize(transform.row(1));
+        transform.row(2) = normalize(transform.row(2));
+        return transform;
+    }
+
     inline float4x4 make_scaling_matrix(float scaling)
     {
         return {{scaling,0,0,0}, {0,scaling,0,0}, {0,0,scaling,0}, {0,0,0,1}};
