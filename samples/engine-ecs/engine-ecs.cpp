@@ -1,7 +1,5 @@
 #include "math-core.hpp"
 
-#include "polymer-typeid.hpp"
-
 #include "cereal/cereal.hpp"
 #include "cereal/types/memory.hpp"
 #include "cereal/types/vector.hpp"
@@ -11,7 +9,9 @@
 #include "cereal/archives/json.hpp"
 #include "cereal/access.hpp"
 
+#include "polymer-typeid.hpp"
 #include "polymer-ecs.hpp"
+#include "component-pool.hpp"
 
 ///////////////////
 // Serialization //
@@ -278,6 +278,9 @@ POLYMER_SETUP_TYPEID(transform_system);
 
 IMPLEMENT_MAIN(int argc, char * argv[])
 {
+    polymer_component_pool<scene_graph_component> scene_graph_pool(32);
+
+    /*
     entity_orchestrator orchestrator;
 
     auto xform_system = orchestrator.create_system<transform_system>(&orchestrator);
@@ -308,32 +311,9 @@ IMPLEMENT_MAIN(int argc, char * argv[])
 
     std::cout << "Destroyed first child should be nullptr: " << xform_system->get_local_transform(child1) << std::endl;
 
-    // 32768
+    */
 
     uniform_random_gen gen;
-
-    // debug ~4.6 seconds
-    // release ~80 ms
-    {
-        scoped_timer t("create 16384 entities with 4 children each (65535 total)");
-        for (int i = 0; i < 16384; ++i)
-        {
-            auto rootEntity = orchestrator.create_entity();
-            xform_system->create(rootEntity,
-                Pose(make_rotation_quat_axis_angle({ gen.random_float(), gen.random_float(), gen.random_float() }, POLYMER_PI),
-                    float3(gen.random_float() * 10, gen.random_float() * 10, gen.random_float() * 10)), float3(1, 1, 1));
-
-            for (int c = 0; c < 4; ++c)
-            {
-                auto childEntity = orchestrator.create_entity();
-                xform_system->create(childEntity,
-                    Pose(make_rotation_quat_axis_angle({ gen.random_float(), gen.random_float(), gen.random_float() }, POLYMER_PI),
-                        float3(gen.random_float() * 10, gen.random_float() * 10, gen.random_float() * 10)), float3(1, 1, 1));
-                xform_system->add_child(rootEntity, childEntity);
-            }
-        }
-    }
-
     std::this_thread::sleep_for(std::chrono::seconds(100));
 
     return EXIT_SUCCESS;
