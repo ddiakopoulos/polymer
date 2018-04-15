@@ -231,14 +231,43 @@ struct world_transform_component : public component
     polymer::Pose world_pose;
 }; POLYMER_SETUP_TYPEID(world_transform_component);
 
-struct transform_system final : public base_system
+class transform_system final : public base_system
 {
     // Used by other systems to group types of transforms (collision, interactables, renderable, etc)
     using transform_flags = uint16_t;
 
-    const poly_typeid tcid = get_typeid<scene_graph_component>();
+    std::unordered_map<entity, scene_graph_component> scene_graph_transforms; // todo - component pool
+    std::unordered_map<entity, world_transform_component> world_transforms; // todo - component pool
 
-    transform_system(entity_manager * f) : base_system(f) { register_system_for_type(this, tcid); }
+    void recalculate_world_transform(entity child)
+    {
+        auto & node = scene_graph_transforms[child];
+        auto & world_xform = world_transforms[child];
+
+        // If the node has a parent then we can compute a new world transform,.
+        if (node.parent != kInvalidEntity)
+        {
+            auto & parent_node = scene_graph_transforms[node.parent];
+            world_xform.world_pose = node.local_pose * parent_node.local_pose;
+        }
+        else
+        {
+            // If the node has no parent, it should be considered already in world space.
+            world_xform.world_pose = node.local_pose;
+        }
+
+        // For each child, calculate its new world transform
+        for (auto & c : node.children) recalculate_world_transform(c);
+    }
+
+public:
+
+    transform_system(entity_manager * f) : base_system(f) 
+    { 
+        register_system_for_type(this, get_typeid<scene_graph_component>()); 
+        register_system_for_type(this, get_typeid<world_transform_component>());
+    }
+
     ~transform_system() override { }
 
     bool create(entity e, poly_typeid hash, void * data) override final { return true; }
@@ -250,16 +279,28 @@ struct transform_system final : public base_system
         scene_graph_transforms[e].local_scale = local_scale;
 
         world_transforms[e] = world_transform_component(e);
-        recalculate_world_matrix(e);
+        recalculate_world_transform(e);
 
         return true;
     }
 
+    bool has_transform(entity e) const
+    {
+        const auto itr = scene_graph_transforms.find(e);
+        if (itr != scene_graph_transforms.end()) return true;
+        return false;
+    }
+
     bool add_child(entity parent, entity child)
     {
+        if (parent == kInvalidEntity) throw std::invalid_argument("parent was invalid");
+        if (child == kInvalidEntity) throw std::invalid_argument("child was invalid");
+        if (!has_transform(parent)) throw std::invalid_argument("parent has no transform component");
+        if (!has_transform(child)) throw std::invalid_argument("child has no transform component");
+
         scene_graph_transforms[parent].children.push_back(child);
         scene_graph_transforms[child].parent = parent;
-        recalculate_world_matrix(parent);
+        recalculate_world_transform(parent);
         return true;
     }
 
@@ -279,22 +320,6 @@ struct transform_system final : public base_system
         else return nullptr;
     }
 
-    void remove_parent(entity child)
-    {
-        auto & child_node = scene_graph_transforms[child];
-        if (child_node.parent != kInvalidEntity)
-        {
-            auto & parent_node = scene_graph_transforms[child_node.parent];
-            std::cout << "Parent node has children \n";
-            for (auto & c : parent_node.children) std::cout << c << std::endl;
-            parent_node.children.erase(std::remove(parent_node.children.begin(), parent_node.children.end(), child), parent_node.children.end());
-            std::cout << "new children \n";
-            for (auto & c : parent_node.children) std::cout << c << std::endl;
-            child_node.parent = kInvalidEntity;
-            recalculate_world_matrix(child);
-        }
-    }
-
     entity get_parent(entity child) const
     {
         if (child == kInvalidEntity) return kInvalidEntity;
@@ -307,32 +332,21 @@ struct transform_system final : public base_system
         return kInvalidEntity;
     }
 
-    void recalculate_world_matrix(entity child) 
+    void remove_parent(entity child)
     {
-        auto & node = scene_graph_transforms[child];
-        auto & world_xform = world_transforms[child];
-
-        if (node.parent != kInvalidEntity)
+        auto & child_node = scene_graph_transforms[child];
+        if (child_node.parent != kInvalidEntity)
         {
-            auto & parent_node = scene_graph_transforms[node.parent];
-            world_xform.world_pose = node.local_pose * parent_node.local_pose;
-        }
-        else
-        {
-            world_xform.world_pose = node.local_pose;
-        }
-
-        for (auto & c : node.children) 
-        {
-            recalculate_world_matrix(c);
+            auto & parent_node = scene_graph_transforms[child_node.parent];
+            parent_node.children.erase(std::remove(parent_node.children.begin(), parent_node.children.end(), child), parent_node.children.end());
+            child_node.parent = kInvalidEntity;
+            recalculate_world_transform(child);
         }
     }
 
     void destroy(entity entity) override final { }
-
-    std::unordered_map<entity, scene_graph_component> scene_graph_transforms; // component pool
-    std::unordered_map<entity, world_transform_component> world_transforms; // component pool
 };
+
 POLYMER_SETUP_TYPEID(transform_system);
 
 IMPLEMENT_MAIN(int argc, char * argv[])
@@ -341,9 +355,9 @@ IMPLEMENT_MAIN(int argc, char * argv[])
 
     auto xform_system = factory.create_system<transform_system>(&factory);
 
-    auto root = factory.create();   // 1
-    auto child1 = factory.create(); // 2 
-    auto child2 = factory.create(); // 3
+    auto root = factory.create();
+    auto child1 = factory.create();
+    auto child2 = factory.create(); 
     xform_system->create(root, Pose(make_rotation_quat_axis_angle({ 0, 1, 0 }, POLYMER_PI / 2.0), float3(0, 5.f, 0)), float3(1, 1, 1));
     xform_system->create(child1, Pose(make_rotation_quat_axis_angle({ 0, 1, 0 }, -(POLYMER_PI / 2.0)), float3(0, 0, 3.f)), float3(1, 1, 1));
     xform_system->create(child2, Pose(float4(0, 0, 0, 1), float3(4.f, 0, 0)), float3(1, 1, 1));
@@ -351,17 +365,17 @@ IMPLEMENT_MAIN(int argc, char * argv[])
     xform_system->add_child(root, child1);
     xform_system->add_child(root, child2);
 
-    std::cout << "root " << xform_system->get_world_transform(root)->world_pose << std::endl;
-    std::cout << "first child " << xform_system->get_world_transform(child1)->world_pose << std::endl;
-    std::cout << "second child" << xform_system->get_world_transform(child2)->world_pose << std::endl;
+    std::cout << "Root " << xform_system->get_world_transform(root)->world_pose << std::endl;
+    std::cout << "First child " << xform_system->get_world_transform(child1)->world_pose << std::endl;
+    std::cout << "Second child" << xform_system->get_world_transform(child2)->world_pose << std::endl;
 
     std::cout << "Parent of root is " << xform_system->get_parent(root) << std::endl;
     std::cout << "Parent of first child is " << xform_system->get_parent(child1) << std::endl;
     std::cout << "Parent of second child is " << xform_system->get_parent(child2) << std::endl;
 
     xform_system->remove_parent(child1);
-    std::cout << "Parent of first child was removed. New Parent is: " << xform_system->get_parent(child1) << std::endl;
-    std::cout << "Child1 new transform: " << xform_system->get_world_transform(child1)->world_pose << std::endl;
+    std::cout << "Parent of first child was removed. New parent is: " << xform_system->get_parent(child1) << std::endl;
+    std::cout << "first child / new transform: " << xform_system->get_world_transform(child1)->world_pose << std::endl;
 
     std::this_thread::sleep_for(std::chrono::seconds(100));
 
