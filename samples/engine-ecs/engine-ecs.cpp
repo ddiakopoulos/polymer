@@ -260,6 +260,18 @@ class transform_system final : public base_system
         for (auto & c : node.children) recalculate_world_transform(c);
     }
 
+    void destroy_recursive(entity child)
+    {
+        auto & node = scene_graph_transforms[child];
+        for (auto & n : node.children) destroy_recursive(n);
+
+        // Erase world transform
+        world_transforms.erase(child);
+
+        // Erase itself after all children are gone
+        scene_graph_transforms.erase(child);
+    }
+
 public:
 
     transform_system(entity_manager * f) : base_system(f) 
@@ -344,7 +356,12 @@ public:
         }
     }
 
-    void destroy(entity entity) override final { }
+    void destroy(entity e) override final 
+    { 
+        if (e == kInvalidEntity) throw std::invalid_argument("parent was invalid");
+        if (!has_transform(e)) throw std::invalid_argument("no component exists for this entity");
+        destroy_recursive(e);
+    }
 };
 
 POLYMER_SETUP_TYPEID(transform_system);
@@ -376,6 +393,12 @@ IMPLEMENT_MAIN(int argc, char * argv[])
     xform_system->remove_parent(child1);
     std::cout << "Parent of first child was removed. New parent is: " << xform_system->get_parent(child1) << std::endl;
     std::cout << "first child / new transform: " << xform_system->get_world_transform(child1)->world_pose << std::endl;
+
+    xform_system->destroy(child1);
+
+    std::cout << "Destroyed first child should be nullptr: " << xform_system->get_local_transform(child1) << std::endl;
+
+    // 32768
 
     std::this_thread::sleep_for(std::chrono::seconds(100));
 
