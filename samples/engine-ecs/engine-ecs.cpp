@@ -285,6 +285,20 @@ POLYMER_SETUP_TYPEID(transform_system);
 // REQUIRE_FALSE
 // CHECK_THROWS_AS(func(), std::exception); 
 
+////////////////////////////////
+//   Transform System Tests   //
+////////////////////////////////
+
+TEST_CASE("transform system test")
+{
+
+}
+
+
+//////////////////////////////
+//   Component Pool Tests   //
+//////////////////////////////
+
 TEST_CASE("polymer_component_pool size is zero on creation")
 {
     polymer_component_pool<scene_graph_component> scene_graph_pool(32);
@@ -342,12 +356,11 @@ TEST_CASE("polymer_component_pool check duplicate elements")
     REQUIRE(static_cast<int>(scene_graph_pool.size()) == 1);
 }
 
-
 TEST_CASE("polymer_component_pool add and remove")
 {
     polymer_component_pool<scene_graph_component> scene_graph_pool(32);
 
-    int check = 0;
+    size_t check = 0;
     for (int i = 0; i < 128; ++i) 
     {
         const int value = 10 * i;
@@ -358,27 +371,20 @@ TEST_CASE("polymer_component_pool add and remove")
 
     REQUIRE(static_cast<int>(scene_graph_pool.size()) ==  128);
 
-    for (int i = 55; i < 101; ++i) 
+    for (int i = 44; i < 101; ++i) 
     {
         const int value = 10 * i;
         scene_graph_pool.destroy(i);
         check -= value;
     }
 
-    int sum1 = 0;
+    size_t sum1{ 0 }, sum2{ 0 };
     scene_graph_pool.for_each([&](scene_graph_component & t) { sum1 += t.parent; });
-
-    /*
-    int sum2 = 0;
-    for (auto & w : scene_graph_pool) 
-    {
-        sum2 += w.
-    }
-    */
+    for (auto & w : scene_graph_pool) { sum2 += w.parent; }
 
     REQUIRE(sum1 == check);
-    //REQUIRE(sum2 == check);
-    REQUIRE(static_cast<int>(scene_graph_pool.size()) == (128 - 101 + 55));
+    REQUIRE(sum2 == check);
+    REQUIRE(static_cast<int>(scene_graph_pool.size()) == (128 - 101 + 44));
 }
 
 
