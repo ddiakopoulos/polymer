@@ -94,7 +94,9 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="component_pool.hpp" />
     <ClInclude Include="name-system.hpp" />
+    <ClInclude Include="polymer-ecs.hpp" />
     <ClInclude Include="polymer-typeid.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -11,116 +11,24 @@
 #include "cereal/archives/json.hpp"
 #include "cereal/access.hpp"
 
-#include <unordered_map>
-
-using namespace polymer;
-
- //////////////////
- //   Entities   //
- //////////////////
-
- // An Entity is an uniquely identifiable object in the Polymer runtime.
- using entity = uint64_t;
- constexpr entity kInvalidEntity = 0;
-
- // Provide a consistent way to retrieve an Entity to which a component belongs. 
- class component 
- {
-     entity e;
- public:
-     explicit component(entity e = kInvalidEntity) : e(e) {}
-     entity get_entity() const { return e; }
- };
-
- // Hash functor for Components so they can be used in unordered containers. It uses the Component's Entity as the key value.
- struct component_hash 
- {
-     entity operator()(const component & c) const { return c.get_entity(); }
- };
-
- // Systems are responsible for storing the component data instances associated with Entities.
- // They also perform all the logic for manipulating and processing their Components.
- // This base class provides an API for an entity_manager to associate Components with Entities in a data-driven manner.
- struct entity_manager;
-
- struct base_system : public non_copyable
- {
-     entity_manager * factory;
-
-     explicit base_system(entity_manager * f) : factory(f) {}
-     virtual ~base_system() {}
-
-     // Associates component with the Entity using serialized data. The void pointer 
-     // and hash type is to subvert the need for a heavily templated component system. 
-     virtual bool create(entity e, poly_typeid hash, void * data) = 0;
-
-     // Destroys all of an entity's associated components
-     virtual void destroy(entity e) = 0;
-
-     // Helper function to signal to the entity manager that this system operates on these types of components
-     template <typename S>
-     void register_system_for_type(S * system, poly_typeid type) { register_system_for_type(get_typeid<S>(), type); }
-     void register_system_for_type(poly_typeid system_type, poly_typeid type);
- };
-
- struct entity_manager
- {
-     std::mutex createMutex;
-
-     std::unordered_map<poly_typeid, poly_typeid> system_type_map;
-     entity entity_counter { 0 }; // Autoincrementing value to generate unique ids.
-
-     template <typename T, typename... Args>
-     T * create_system(Args &&... args);
-
-     void register_system_for_type(poly_typeid system_type, poly_hash_value def_type) 
-     {
-         system_type_map[def_type] = system_type;
-     }
-
-     entity create()
-     {
-         std::lock_guard<std::mutex> guard(createMutex);
-         const entity e = ++entity_counter;
-         return e;
-     }
-
-     void add_system(poly_typeid system_type, base_system * system)
-     {
-         if (!system) return;
-         auto itr = systems.find(system_type);
-         if (itr == systems.end()) systems.emplace(system_type, system);
-     }
-
-     std::unordered_map<poly_typeid, base_system *> systems;
- };
-
- template <typename T, typename... Args>
- T * entity_manager::create_system(Args &&... args) 
- {
-     T * ptr = new T(std::forward<Args>(args)...);
-     add_system(get_typeid<T>(), ptr);
-     return ptr;
- }
-
- void base_system::register_system_for_type(poly_typeid system_type, poly_typeid type) { factory->register_system_for_type(system_type, type); }
+#include "polymer-ecs.hpp"
 
 ///////////////////
 // Serialization //
 ///////////////////
 
-struct physics_component : public component
+struct physics_component : public base_component
 {
     physics_component() {};
-    physics_component(entity e) : component(e) {}
+    physics_component(entity e) : base_component(e) {}
     float value1, value2, value3;
 };
 POLYMER_SETUP_TYPEID(physics_component);
 
-struct render_component : public component
+struct render_component : public base_component
 {
     render_component() {}
-    render_component(entity e) : component(e) {}
+    render_component(entity e) : base_component(e) {}
     float value1, value2, value3;
 };
 POLYMER_SETUP_TYPEID(render_component);
@@ -171,7 +79,7 @@ template<class Archive> void serialize(Archive & archive, physics_component & m)
 struct ex_system_one final : public base_system
 {
     const poly_typeid c1 = get_typeid<physics_component>();
-    ex_system_one(entity_manager * f) : base_system(f) { register_system_for_type(this, c1); }
+    ex_system_one(entity_orchestrator * f) : base_system(f) { register_system_for_type(this, c1); }
     ~ex_system_one() override { }
     bool create(entity e, poly_typeid hash, void * data) override final
     { 
@@ -189,7 +97,7 @@ POLYMER_SETUP_TYPEID(ex_system_one);
 struct ex_system_two final : public base_system
 {
     const poly_typeid c2 = get_typeid<render_component>();
-    ex_system_two(entity_manager * f) : base_system(f) { register_system_for_type(this, c2); }
+    ex_system_two(entity_orchestrator * f) : base_system(f) { register_system_for_type(this, c2); }
     ~ex_system_two() override { }
     bool create(entity e, poly_typeid hash, void * data) override final
     { 
@@ -214,20 +122,20 @@ template<class F> void visit_systems(base_system * s, F f)
 //   Transform System   //
 //////////////////////////
 
-struct scene_graph_component : public component
+struct scene_graph_component : public base_component
 {
     scene_graph_component() {};
-    scene_graph_component(entity e) : component(e) {}
+    scene_graph_component(entity e) : base_component(e) {}
     polymer::Pose local_pose;
     polymer::float3 local_scale;
     entity parent{ kInvalidEntity };
     std::vector<entity> children;
 }; POLYMER_SETUP_TYPEID(scene_graph_component);
 
-struct world_transform_component : public component
+struct world_transform_component : public base_component
 {
     world_transform_component() {};
-    world_transform_component(entity e) : component(e) {}
+    world_transform_component(entity e) : base_component(e) {}
     polymer::Pose world_pose;
 }; POLYMER_SETUP_TYPEID(world_transform_component);
 
@@ -274,7 +182,7 @@ class transform_system final : public base_system
 
 public:
 
-    transform_system(entity_manager * f) : base_system(f) 
+    transform_system(entity_orchestrator * f) : base_system(f) 
     { 
         register_system_for_type(this, get_typeid<scene_graph_component>()); 
         register_system_for_type(this, get_typeid<world_transform_component>());
@@ -370,13 +278,13 @@ POLYMER_SETUP_TYPEID(transform_system);
 
 IMPLEMENT_MAIN(int argc, char * argv[])
 {
-    entity_manager factory;
+    entity_orchestrator orchestrator;
 
-    auto xform_system = factory.create_system<transform_system>(&factory);
+    auto xform_system = orchestrator.create_system<transform_system>(&orchestrator);
 
-    auto root = factory.create();
-    auto child1 = factory.create();
-    auto child2 = factory.create(); 
+    auto root = orchestrator.create_entity();
+    auto child1 = orchestrator.create_entity();
+    auto child2 = orchestrator.create_entity();
     xform_system->create(root, Pose(make_rotation_quat_axis_angle({ 0, 1, 0 }, POLYMER_PI / 2.0), float3(0, 5.f, 0)), float3(1, 1, 1));
     xform_system->create(child1, Pose(make_rotation_quat_axis_angle({ 0, 1, 0 }, -(POLYMER_PI / 2.0)), float3(0, 0, 3.f)), float3(1, 1, 1));
     xform_system->create(child2, Pose(float4(0, 0, 0, 1), float3(4.f, 0, 0)), float3(1, 1, 1));
@@ -410,14 +318,14 @@ IMPLEMENT_MAIN(int argc, char * argv[])
         scoped_timer t("create 16384 entities with 4 children each (65535 total)");
         for (int i = 0; i < 16384; ++i)
         {
-            auto rootEntity = factory.create();
+            auto rootEntity = orchestrator.create_entity();
             xform_system->create(rootEntity,
                 Pose(make_rotation_quat_axis_angle({ gen.random_float(), gen.random_float(), gen.random_float() }, POLYMER_PI),
                     float3(gen.random_float() * 10, gen.random_float() * 10, gen.random_float() * 10)), float3(1, 1, 1));
 
             for (int c = 0; c < 4; ++c)
             {
-                auto childEntity = factory.create();
+                auto childEntity = orchestrator.create_entity();
                 xform_system->create(childEntity,
                     Pose(make_rotation_quat_axis_angle({ gen.random_float(), gen.random_float(), gen.random_float() }, POLYMER_PI),
                         float3(gen.random_float() * 10, gen.random_float() * 10, gen.random_float() * 10)), float3(1, 1, 1));
