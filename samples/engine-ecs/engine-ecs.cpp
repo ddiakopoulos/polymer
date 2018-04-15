@@ -196,17 +196,16 @@ public:
     {
         const auto check_node = scene_graph_transforms.get(e);
         const auto check_world = world_transforms.get(e);
-        if (check_node == nullptr || check_world == nullptr) throw std::runtime_error("entity was already added to system");
-
-        auto node = scene_graph_transforms.emplace(scene_graph_component(e));
-        auto world = world_transforms.emplace(world_transform_component(e));
-
-        node->local_pose = local_pose;
-        node->local_scale = local_scale;
-
-        recalculate_world_transform(e);
-
-        return true;
+        if (check_node == nullptr || check_world == nullptr)
+        {
+            auto node = scene_graph_transforms.emplace(scene_graph_component(e));
+            auto world = world_transforms.emplace(world_transform_component(e));
+            node->local_pose = local_pose;
+            node->local_scale = local_scale;
+            recalculate_world_transform(e);
+            return true;
+        }
+        return false;
     }
 
     bool has_transform(entity e) const
@@ -292,6 +291,16 @@ TEST_CASE("transform system has_transform")
     REQUIRE(system->has_transform(root) == true);
 }
 
+TEST_CASE("transform system double add")
+{
+    entity_orchestrator orchestrator;
+    transform_system * system = orchestrator.create_system<transform_system>(&orchestrator);
+
+    entity root = orchestrator.create_entity();
+    REQUIRE(system->create(root, Pose(), float3(1)) == true);
+    REQUIRE(system->create(root, Pose(), float3(1)) == false);
+}
+
 TEST_CASE("transform system destruction")
 {
     entity_orchestrator orchestrator;
@@ -313,7 +322,7 @@ TEST_CASE("transform system destruction")
     }
 }
 
-TEST_CASE("transform system add & remove parent + children")
+TEST_CASE("transform system add/remove parent & children")
 {
     Pose p1(make_rotation_quat_axis_angle({ 0, 1, 0 }, POLYMER_PI / 2.0), float3(0, 5.f, 0));
     Pose p2(make_rotation_quat_axis_angle({ 1, 1, 0 }, POLYMER_PI / 0.5), float3(3.f, 0, 0));
