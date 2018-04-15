@@ -50,13 +50,11 @@ using namespace polymer;
      explicit base_system(entity_manager * f) : factory(f) {}
      virtual ~base_system() {}
 
-     // Associates a default-constructed component with an entity
-     virtual bool create(entity e, poly_typeid hash) = 0;
-
-     // Associates component with the Entity using the serialized data
+     // Associates component with the Entity using serialized data. The void pointer 
+     // and hash type is to subvert the need for a heavily templated component system. 
      virtual bool create(entity e, poly_typeid hash, void * data) = 0;
 
-     // Disassociates all component data from the entity in this system
+     // Destroys all of an entity's associated components
      virtual void destroy(entity e) = 0;
 
      // Helper function to signal to the entity manager that this system operates on these types of components
@@ -175,13 +173,7 @@ struct ex_system_one final : public base_system
     const poly_typeid c1 = get_typeid<physics_component>();
     ex_system_one(entity_manager * f) : base_system(f) { register_system_for_type(this, c1); }
     ~ex_system_one() override { }
-    bool create(entity e, poly_typeid hash) override final 
-    { 
-        if (c1 != hash) std::cout << "it's an error" << std::endl;
-        components[e] = physics_component(e);
-        return true; 
-    }
-    bool create(entity e, poly_typeid hash, void * data) override final 
+    bool create(entity e, poly_typeid hash, void * data) override final
     { 
         if (hash != c1) { return false; } 
         auto new_component = physics_component(e);
@@ -199,14 +191,7 @@ struct ex_system_two final : public base_system
     const poly_typeid c2 = get_typeid<render_component>();
     ex_system_two(entity_manager * f) : base_system(f) { register_system_for_type(this, c2); }
     ~ex_system_two() override { }
-    bool create(entity e, poly_typeid hash) override final 
-    { 
-        if (c2 != hash) std::cout << "it's an error" << std::endl;
-        components[e] = render_component(e);
-        return true;
-    }
-
-    bool create(entity e, poly_typeid hash, void * data) override final 
+    bool create(entity e, poly_typeid hash, void * data) override final
     { 
         if (hash != c2) { return false; } 
         auto new_component = render_component(e);
@@ -256,7 +241,6 @@ struct transform_system final : public base_system
     transform_system(entity_manager * f) : base_system(f) { register_system_for_type(this, tcid); }
     ~transform_system() override { }
 
-    bool create(entity e, poly_typeid hash) override final { return true; }
     bool create(entity e, poly_typeid hash, void * data) override final { return true; }
 
     bool create(entity e, const polymer::Pose local_pose, const float3 local_scale)
@@ -279,12 +263,48 @@ struct transform_system final : public base_system
         return true;
     }
 
+    scene_graph_component * get_local_transform(entity e)
+    {
+        if (e == kInvalidEntity) return nullptr;
+        auto itr = scene_graph_transforms.find(e);
+        if (itr != scene_graph_transforms.end()) return &itr->second;
+        else return nullptr;
+    }
+
     world_transform_component * get_world_transform(entity e)
     {
         if (e == kInvalidEntity) return nullptr;
         auto itr = world_transforms.find(e);
         if (itr != world_transforms.end()) return &itr->second;
         else return nullptr;
+    }
+
+    void remove_parent(entity child)
+    {
+        auto & child_node = scene_graph_transforms[child];
+        if (child_node.parent != kInvalidEntity)
+        {
+            auto & parent_node = scene_graph_transforms[child_node.parent];
+            std::cout << "Parent node has children \n";
+            for (auto & c : parent_node.children) std::cout << c << std::endl;
+            parent_node.children.erase(std::remove(parent_node.children.begin(), parent_node.children.end(), child), parent_node.children.end());
+            std::cout << "new children \n";
+            for (auto & c : parent_node.children) std::cout << c << std::endl;
+            child_node.parent = kInvalidEntity;
+            recalculate_world_matrix(child);
+        }
+    }
+
+    entity get_parent(entity child) const
+    {
+        if (child == kInvalidEntity) return kInvalidEntity;
+        const auto itr = scene_graph_transforms.find(child);
+        if (itr != scene_graph_transforms.end())
+        {
+            if (itr->second.parent != kInvalidEntity) return itr->second.parent;
+            else return kInvalidEntity;
+        }
+        return kInvalidEntity;
     }
 
     void recalculate_world_matrix(entity child) 
@@ -326,14 +346,22 @@ IMPLEMENT_MAIN(int argc, char * argv[])
     auto child2 = factory.create(); // 3
     xform_system->create(root, Pose(make_rotation_quat_axis_angle({ 0, 1, 0 }, POLYMER_PI / 2.0), float3(0, 5.f, 0)), float3(1, 1, 1));
     xform_system->create(child1, Pose(make_rotation_quat_axis_angle({ 0, 1, 0 }, -(POLYMER_PI / 2.0)), float3(0, 0, 3.f)), float3(1, 1, 1));
-    //xform_system->create(child2, Pose(float4(0, 0, 0, 1), float3(4.f, 0, 0)), float3(1, 1, 1));
+    xform_system->create(child2, Pose(float4(0, 0, 0, 1), float3(4.f, 0, 0)), float3(1, 1, 1));
 
     xform_system->add_child(root, child1);
-    //xform_system->add_child(root, child2);
+    xform_system->add_child(root, child2);
 
-    std::cout << xform_system->get_world_transform(root)->world_pose << std::endl;
-    std::cout << xform_system->get_world_transform(child1)->world_pose << std::endl;
-    //std::cout << xform_system->get_world_transform(child2).world_pose << std::endl;
+    std::cout << "root " << xform_system->get_world_transform(root)->world_pose << std::endl;
+    std::cout << "first child " << xform_system->get_world_transform(child1)->world_pose << std::endl;
+    std::cout << "second child" << xform_system->get_world_transform(child2)->world_pose << std::endl;
+
+    std::cout << "Parent of root is " << xform_system->get_parent(root) << std::endl;
+    std::cout << "Parent of first child is " << xform_system->get_parent(child1) << std::endl;
+    std::cout << "Parent of second child is " << xform_system->get_parent(child2) << std::endl;
+
+    xform_system->remove_parent(child1);
+    std::cout << "Parent of first child was removed. New Parent is: " << xform_system->get_parent(child1) << std::endl;
+    std::cout << "Child1 new transform: " << xform_system->get_world_transform(child1)->world_pose << std::endl;
 
     std::this_thread::sleep_for(std::chrono::seconds(100));
 
