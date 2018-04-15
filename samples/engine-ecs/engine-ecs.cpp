@@ -13,6 +13,7 @@
 #include "polymer-ecs.hpp"
 #include "component-pool.hpp"
 
+#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
 
 ///////////////////
@@ -132,6 +133,14 @@ struct scene_graph_component : public base_component
     polymer::float3 local_scale;
     entity parent{ kInvalidEntity };
     std::vector<entity> children;
+    scene_graph_component(const scene_graph_component & o) { std::cout << "(copy) move failed!\n"; }
+    scene_graph_component(scene_graph_component && o) noexcept { std::cout << "move success \n"; }
+    scene_graph_component& operator=(scene_graph_component other) 
+    { 
+        std::cout << "copy assign \n";
+        return *this;
+    }
+
 }; POLYMER_SETUP_TYPEID(scene_graph_component);
 
 struct world_transform_component : public base_component
@@ -278,4 +287,107 @@ public:
 
 POLYMER_SETUP_TYPEID(transform_system);
 
-// polymer_component_pool<scene_graph_component> scene_graph_pool(32);
+// REQUIRE - this level will immediately quit the test case if the assert fails and will mark the test case as failed.
+// CHECK - this level will mark the test case as failed if the assert fails but will continue with the test case.
+// WARN - this level will only print a message if the assert fails but will not mark the test case as failed.
+// REQUIRE_FALSE
+// CHECK_THROWS_AS(func(), std::exception); 
+
+TEST_CASE("polymer_component_pool size is zero on creation")
+{
+    polymer_component_pool<scene_graph_component> scene_graph_pool(32);
+    REQUIRE(scene_graph_pool.size() == 0);
+}
+
+TEST_CASE("polymer_component_pool add elements")
+{
+    polymer_component_pool<scene_graph_component> scene_graph_pool(32);
+    auto obj = scene_graph_pool.emplace(55);
+    REQUIRE(obj != nullptr);
+    REQUIRE(obj->get_entity() == 55);
+    REQUIRE(static_cast<int>(scene_graph_pool.size()) == 1);
+}
+
+TEST_CASE("polymer_component_pool clear elements")
+{
+    polymer_component_pool<scene_graph_component> scene_graph_pool(32);
+    scene_graph_pool.emplace(99);
+    scene_graph_pool.clear();
+    REQUIRE(static_cast<int>(scene_graph_pool.size()) == 0);
+}
+
+TEST_CASE("polymer_component_pool contains elements")
+{
+    polymer_component_pool<scene_graph_component> scene_graph_pool(32);
+    bool result = scene_graph_pool.contains(88);
+    REQUIRE(result == false);
+
+    scene_graph_pool.emplace(88);
+    result = scene_graph_pool.contains(88);
+    REQUIRE(result == true);
+}
+
+TEST_CASE("polymer_component_pool get elements")
+{
+    polymer_component_pool<scene_graph_component> scene_graph_pool(32);
+
+    auto obj = scene_graph_pool.get(1);
+    REQUIRE(obj == nullptr);
+
+    scene_graph_pool.emplace(1);
+    obj = scene_graph_pool.get(1);
+    REQUIRE(obj != nullptr);
+    REQUIRE(obj->get_entity() == 1);
+    REQUIRE(static_cast<int>(scene_graph_pool.size()) == 1);
+}
+
+TEST_CASE("polymer_component_pool check duplicate elements")
+{
+    polymer_component_pool<scene_graph_component> scene_graph_pool(32);
+
+    scene_graph_pool.emplace(5);
+    scene_graph_pool.emplace(5);
+    REQUIRE(static_cast<int>(scene_graph_pool.size()) == 1);
+}
+
+
+TEST_CASE("polymer_component_pool add and remove")
+{
+    polymer_component_pool<scene_graph_component> scene_graph_pool(32);
+
+    int check = 0;
+    for (int i = 0; i < 128; ++i) 
+    {
+        const int value = 10 * i;
+        auto obj = scene_graph_pool.emplace(i);
+        obj->parent = value;
+        check += value;
+    }
+
+    REQUIRE(static_cast<int>(scene_graph_pool.size()) ==  128);
+
+    for (int i = 55; i < 101; ++i) 
+    {
+        const int value = 10 * i;
+        scene_graph_pool.destroy(i);
+        check -= value;
+    }
+
+    int sum1 = 0;
+    scene_graph_pool.for_each([&](scene_graph_component & t) { sum1 += t.parent; });
+
+    /*
+    int sum2 = 0;
+    for (auto & w : scene_graph_pool) 
+    {
+        sum2 += w.
+    }
+    */
+
+    REQUIRE(sum1 == check);
+    //REQUIRE(sum2 == check);
+    REQUIRE(static_cast<int>(scene_graph_pool.size()) == (128 - 101 + 55));
+}
+
+
+

@@ -63,33 +63,32 @@ namespace polymer
         unordered_vector_map & operator = (const unordered_vector_map& rhs) = delete;
 
         // Emplaces an object at the end of the container's internal memory and
-        // returns a pointer to it.  Returns nullptr if there is already an Object in
+        // returns a pointer to it. Returns nullptr if there is already an Object in
         // the container that Hashes to the same key.
         // Note: The Object will be created in order to call the KeyFunctionT() function to
-        // determine its key.  If there is a collision, the newly created Object will
+        // determine its key. If there is a collision, the newly created Object will
         // be immediately destroyed.
-        template<typename... Args>
-        T * emplace(Args&&... args)
+        template<typename... Args> T * emplace(Args &&... args)
         {
             // Grow the internal storage if necessary, either because this is the first
             // element being added or because the "back" array is full.
-            if (objects.empty() || objects.back().Size() == page_size)
+            if (objects.empty() || objects.back().size() == page_size)
             {
                 objects.emplace_back(page_size);
             }
 
             // Add the element to the "end" of the ArrayVector.
             auto & back_page = objects.back();
-            T * obj = back_page.emplace_back(std::forward<Args>(args)...);
+            back_page.emplace_back(std::forward<Args>(args)...);
+            T & obj = back_page.back();
 
             // Check to see if an object with this key is already being stored and, if
-            // so, remove it.  Otherwise, add this new one.  Unfortunately, we can
-            // only check the key after we have created the object.
+            // so, remove it. Otherwise, add this new one. we can only check the key after we have created the object.
             KeyFunctionT key_fn;
-            const auto & key = key_fn(*obj);
-            const Index index(objects.size() - 1, back_page.Size() - 1);
+            const auto & key = key_fn(obj);
+            const Index index(objects.size() - 1, back_page.size() - 1);
 
-            if (lookup_table.emplace(key, index).second) return obj;
+            if (lookup_table.emplace(key, index).second) return &obj;
             else
             {
                 destroy(index);
@@ -114,52 +113,44 @@ namespace polymer
             return lookup_table.count(key) > 0;
         }
 
-        // Returns a pointer to the Object associated with |key|, or nullptr if no
-        // such Object exists.
+        // Returns a pointer to the Object associated with |key|, or nullptr.
         T * get(const Key& key)
         {
             auto iter = lookup_table.find(key);
             if (iter == lookup_table.end()) return nullptr;
 
             const Index & index = iter->second;
-            T * obj = objects[index.first].get(index.second);
-            return obj;
+            T & obj = objects[index.first][index.second];
+            return &obj;
         }
 
-        // Returns a pointer to the Object associated with |key|, or nullptr if no such Object exists.
+        // Returns a pointer to the Object associated with |key|, or nullptr.
         const T * get(const Key& key) const
         {
             auto iter = lookup_table.find(key);
             if (iter == lookup_table.end())  return nullptr;
 
             const Index & index = iter->second;
-            const T * obj = objects[index.first].get(index.second);
-            return obj;
+            const T & obj = objects[index.first][index.second];
+            return &obj;
         }
 
         // Iterates over all objects, passing them to the given function |Fn|.
         template<typename Fn> void for_each(Fn && func)
         {
-            for (auto & object : *this) func(object);
+            for (T & object : *this) func(object);
         }
 
-        // Iterates over all Objects, passing them to the given function |Fn|.
         template<typename Fn> void for_each(Fn && func) const
         {
-            for (auto & object : *this) func(object);
+            for (T & object : *this) func(object);
         }
 
-        // Returns the number of Objects stored in the container.
         size_t size() const
         {
-            const size_t objectssize = objects.size();
-            if (objectssize == 0) return 0;
-
-            const size_t back_size = objects.back().Size();
-            return ((objectssize - 1) * page_size) + back_size;
+            return lookup_table.size();
         }
 
-        // Clears the container, destroying the contained objects.
         void clear()
         {
             objects.clear();
@@ -179,34 +170,32 @@ namespace polymer
 
     private:
 
-        using ArrayVector = std::vector<std::vector<T>>;                 // An array of an array of Objects for cache-efficient iteration.
+        using ArrayVector = std::vector<std::vector<T>>;                 // An array of an array of objects for cache-efficient iteration.
         using Index = std::pair<size_t, size_t>;                         // A pair of indices to the two arrays in the ArrayVector.
         using LookupTable = std::unordered_map<Key, Index, LookupHashT>; // Table that maps a Key to a specific element in the ArrayVector.
 
-                                                                         // Destroys the Object at the specified |index|.  Performs a swap-and-pop for objects not at the end of the ArrayVector.
+       // Destroys the Object at the specified |index|. Performs a swap-and-pop for objects not at the end of the ArrayVector.
         void destroy(const Index& index)
         {
-            // The object to remove is in the "middle" of the ArrayVector, so swap it
-            // with the one at the very end.
+            // The object to remove is in the "middle" of the ArrayVector, so swap it with the one at the very end.
             auto & back_page = objects.back();
             const bool is_in_last_page = (index.first == objects.size() - 1);
-            const bool is_last_element = (index.second == back_page.Size() - 1);
+            const bool is_last_element = (index.second == back_page.size() - 1);
 
             if (!is_in_last_page || !is_last_element)
             {
-                Object* obj = objects[index.first].get(index.second);
-                Object* other = back_page.get(back_page.Size() - 1);
+                T & obj = objects[index.first][index.second];
+                T & other = back_page[back_page.size() - 1];
                 KeyFunctionT key_fn;
-                lookup_table[key_fn(*other)] = index;
-                using std::swap;
-                swap(*obj, *other);
+                lookup_table[key_fn(other)] = index;
+                std::swap(obj, other);
             }
 
             // The object we want to destroy is at the very back, so just pop it.
-            objects.back().pop();
+            objects.back().pop_back();
 
             // If the "back" array is empty, we can remove it.
-            if (objects.back().Size() == 0) objects.pop_back();
+            if (objects.back().size() == 0) objects.pop_back();
         }
 
         // The vector of arrays used to store Object instances.
@@ -226,7 +215,7 @@ namespace polymer
         class Iterator
         {
             using OuterIterator = typename std::conditional<IsConst, typename ArrayVector::const_iterator, typename ArrayVector::iterator>::type;
-            using InnerIterator = typename std::conditional<IsConst, typename ArrayVector::const_iterator, typename ArrayVector::iterator>::type;
+            using InnerIterator = typename std::conditional<IsConst, typename std::vector<T>::const_iterator, typename std::vector<T>::iterator>::type;
 
         public:
 
@@ -244,7 +233,7 @@ namespace polymer
             // Allow conversion from the non-const iterator to the const
             // iterator. Relies on the fact that the internal iterators only support 
             // conversions from non-const to const.
-            Iterator(const Iterator<false>& other) : outer_(other.outer_), outer_end_(other.outer_end_), inner_(other.inner_) { }
+            Iterator(const Iterator<false> & other) : outer_(other.outer_), outer_end_(other.outer_end_), inner_(other.inner_) { }
 
             reference operator*() const
             {
@@ -258,7 +247,7 @@ namespace polymer
                 return inner_;
             }
 
-            Iterator& operator++()
+            Iterator & operator++()
             {
                 assert(outer_ != outer_end_);
                 ++inner_;
@@ -291,7 +280,7 @@ namespace polymer
             }
 
             // Allow inequality comparison between const and non-const iterators.
-            friend bool operator != (const Iterator& lhs, const Iterator& rhs) { return !(lhs == rhs); }
+            friend bool operator != (const Iterator & lhs, const Iterator & rhs) { return !(lhs == rhs); }
 
         private:
 
