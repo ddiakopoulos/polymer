@@ -229,38 +229,68 @@ template<class F> void visit_systems(base_system * s, F f)
 //   Transform System   //
 //////////////////////////
 
-struct transform_component : public component
+struct scene_graph_component : public component
 {
-    transform_component() {};
-    transform_component(entity e) : component(e) {}
+    scene_graph_component() {};
+    scene_graph_component(entity e) : component(e) {}
     polymer::Pose pose;
-};
-POLYMER_SETUP_TYPEID(transform_component);
+    entity parent;
+    std::vector<entity> children;
+}; POLYMER_SETUP_TYPEID(scene_graph_component);
 
-struct transform_system final : public base_system
+struct world_transform_component : public component
 {
-    const poly_typeid tcid = get_typeid<transform_component>();
+    world_transform_component() {};
+    world_transform_component(entity e) : component(e) {}
+    polymer::float4x4 world_from_entity;
+    aabb_2d bounding_box;
+}; POLYMER_SETUP_TYPEID(world_transform_component);
+
+struct transform_system final : public base_system, public non_copyable
+{
+    // Used by other systems to group types of transforms (collision, interactables, renderable, etc)
+    using transform_flags = uint16_t;
+
+    const poly_typeid tcid = get_typeid<scene_graph_component>();
+
     transform_system(entity_manager * f) : base_system(f) { register_system_for_type(this, tcid); }
     ~transform_system() override { }
+
     bool create(entity e, poly_typeid hash) override final
     {
-        if (tcid != hash) std::cout << "it's an error" << std::endl;
-        components[e] = transform_component(e);
+        //if (tcid != hash) std::cout << "it's an error" << std::endl;
+        //transforms[e] = transform_component(e);
         return true;
     }
+
     bool create(entity e, poly_typeid hash, void * data) override final
     {
-        if (hash != tcid) { return false; }
-        auto new_component = transform_component(e);
-        new_component = *static_cast<transform_component *>(data);
-        components[e] = std::move(new_component);
+        //if (hash != tcid) { return false; }
+        //auto new_component = transform_component(e);
+        //new_component = *static_cast<transform_component *>(data);
+        //transforms[e] = std::move(new_component);
         return true;
     }
-    void destroy(entity entity) override final { }
-    std::unordered_map<entity, transform_component> components;
-};
-POLYMER_SETUP_TYPEID(ex_system_one);
 
+    void destroy(entity entity) override final { }
+
+    std::unordered_map<entity, scene_graph_component> scene_graph_transforms;
+    std::unordered_map<entity, world_transform_component> world_transforms;
+};
+POLYMER_SETUP_TYPEID(transform_system);
+
+IMPLEMENT_MAIN(int argc, char * argv[])
+{
+    entity_manager factory;
+
+    auto xform_system = factory.create_system<transform_system>(&factory);
+
+    std::this_thread::sleep_for(std::chrono::seconds(100));
+
+    return EXIT_SUCCESS;
+}
+
+/*
 IMPLEMENT_MAIN(int argc, char * argv[])
 {
     entity_manager factory;
@@ -297,12 +327,6 @@ IMPLEMENT_MAIN(int argc, char * argv[])
 
     // Hierarchy aware: transform, collision, events
 
-    /*
-     * ++ entity
-     *  - component [components];
-     *  - children [entity]
-     */
-
     // Get list of all systems
     for (auto & system : factory.systems)
     {
@@ -323,3 +347,4 @@ IMPLEMENT_MAIN(int argc, char * argv[])
 
     return EXIT_SUCCESS;
 }
+*/
