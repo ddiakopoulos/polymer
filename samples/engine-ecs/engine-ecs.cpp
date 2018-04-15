@@ -1,5 +1,6 @@
+#include "math-core.hpp"
+
 #include "polymer-typeid.hpp"
-#include <unordered_map>
 
 #include "cereal/cereal.hpp"
 #include "cereal/types/memory.hpp"
@@ -9,6 +10,8 @@
 #include "cereal/types/base_class.hpp"
 #include "cereal/archives/json.hpp"
 #include "cereal/access.hpp"
+
+#include <unordered_map>
 
 using namespace polymer;
 
@@ -222,34 +225,45 @@ template<class F> void visit_systems(base_system * s, F f)
     f("system_two", dynamic_cast<ex_system_two *>(s));
 }
 
+//////////////////////////
+//   Transform System   //
+//////////////////////////
+
+struct transform_component : public component
+{
+    transform_component() {};
+    transform_component(entity e) : component(e) {}
+    polymer::Pose pose;
+};
+POLYMER_SETUP_TYPEID(transform_component);
+
+struct transform_system final : public base_system
+{
+    const poly_typeid tcid = get_typeid<transform_component>();
+    transform_system(entity_manager * f) : base_system(f) { register_system_for_type(this, tcid); }
+    ~transform_system() override { }
+    bool create(entity e, poly_typeid hash) override final
+    {
+        if (tcid != hash) std::cout << "it's an error" << std::endl;
+        components[e] = transform_component(e);
+        return true;
+    }
+    bool create(entity e, poly_typeid hash, void * data) override final
+    {
+        if (hash != tcid) { return false; }
+        auto new_component = transform_component(e);
+        new_component = *static_cast<transform_component *>(data);
+        components[e] = std::move(new_component);
+        return true;
+    }
+    void destroy(entity entity) override final { }
+    std::unordered_map<entity, transform_component> components;
+};
+POLYMER_SETUP_TYPEID(ex_system_one);
+
 IMPLEMENT_MAIN(int argc, char * argv[])
 {
     entity_manager factory;
-
-    /*
-    render_component c;
-    c.value1 = 1.f;
-    c.value2 = 2.f;
-    c.value3 = 3.f;
-
-    auto str = serialize_to_json(c);
-
-    std::cout << "Serialized: " << str << std::endl;
-
-    render_component ds = {};
-
-    deserialize_from_json(str, ds);
-
-    visit_fields(ds, [&](const char * name, auto & field, auto... metadata) 
-    { 
-        std::cout << "Name: " << name << ", " << field << std::endl;
-    });
-
-    visit_systems(system.second, [&](const char * name, auto * system_pointer)
-    {
-        if (system_pointer) {}
-    });
-    */
 
     render_component s(factory.create());
     s.value1 = 1.f;
@@ -257,8 +271,12 @@ IMPLEMENT_MAIN(int argc, char * argv[])
     s.value3 = 3.f;
     auto str = serialize_to_json(s);
 
-    render_component ds = (factory.create());
+    std::cout << "Render component attached entity: " << s.get_entity() << std::endl;
+
+    render_component ds;
     deserialize_from_json(str, ds);
+
+    std::cout << "Deserialized attached entity: " << ds.get_entity() << std::endl;
 
     auto sys1 = factory.create_system<ex_system_one>(&factory);
     auto sys2 = factory.create_system<ex_system_two>(&factory);
