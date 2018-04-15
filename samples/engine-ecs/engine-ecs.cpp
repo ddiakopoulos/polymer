@@ -23,9 +23,9 @@ using namespace polymer;
  // Provide a consistent way to retrieve an Entity to which a component belongs. 
  class component 
  {
-     entity e{ kInvalidEntity };
+     entity e;
  public:
-     explicit component(entity e) : e(e) {}
+     explicit component(entity e = kInvalidEntity) : e(e) {}
      entity get_entity() const { return e; }
  };
 
@@ -108,14 +108,18 @@ using namespace polymer;
 // Serialization //
 ///////////////////
 
-struct physics_component
+struct physics_component : public component
 {
+    physics_component() {};
+    physics_component(entity e) : component(e) {}
     float value1, value2, value3;
 };
 POLYMER_SETUP_TYPEID(physics_component);
 
-struct render_component
+struct render_component : public component
 {
+    render_component() {}
+    render_component(entity e) : component(e) {}
     float value1, value2, value3;
 };
 POLYMER_SETUP_TYPEID(render_component);
@@ -171,13 +175,13 @@ struct ex_system_one final : public base_system
     bool create(entity e, poly_typeid hash) override final 
     { 
         if (c1 != hash) std::cout << "it's an error" << std::endl;
-        components[e] = physics_component();
+        components[e] = physics_component(e);
         return true; 
     }
     bool create(entity e, poly_typeid hash, void * data) override final 
     { 
         if (hash != c1) { return false; } 
-        auto new_component = physics_component();
+        auto new_component = physics_component(e);
         new_component = *static_cast<physics_component *>(data);
         components[e] = std::move(new_component);
         return true;
@@ -195,14 +199,14 @@ struct ex_system_two final : public base_system
     bool create(entity e, poly_typeid hash) override final 
     { 
         if (c2 != hash) std::cout << "it's an error" << std::endl;
-        components[e] = render_component();
+        components[e] = render_component(e);
         return true;
     }
 
     bool create(entity e, poly_typeid hash, void * data) override final 
     { 
         if (hash != c2) { return false; } 
-        auto new_component = render_component();
+        auto new_component = render_component(e);
         new_component = *static_cast<render_component *>(data);
         components[e] = std::move(new_component);
         return true; 
@@ -211,6 +215,12 @@ struct ex_system_two final : public base_system
     std::unordered_map<entity, render_component> components;
 };
 POLYMER_SETUP_TYPEID(ex_system_two);
+
+template<class F> void visit_systems(base_system * s, F f)
+{
+    f("system_one", dynamic_cast<ex_system_one *>(s));
+    f("system_two", dynamic_cast<ex_system_two *>(s));
+}
 
 IMPLEMENT_MAIN(int argc, char * argv[])
 {
@@ -234,11 +244,20 @@ IMPLEMENT_MAIN(int argc, char * argv[])
     { 
         std::cout << "Name: " << name << ", " << field << std::endl;
     });
+
+    visit_systems(system.second, [&](const char * name, auto * system_pointer)
+    {
+        if (system_pointer) {}
+    });
     */
 
-    render_component s{ 1.f, 2.f, 3.f };
+    render_component s(factory.create());
+    s.value1 = 1.f;
+    s.value2 = 2.f;
+    s.value3 = 3.f;
     auto str = serialize_to_json(s);
-    render_component ds = {};
+
+    render_component ds = (factory.create());
     deserialize_from_json(str, ds);
 
     auto sys1 = factory.create_system<ex_system_one>(&factory);
@@ -257,6 +276,30 @@ IMPLEMENT_MAIN(int argc, char * argv[])
             std::cout << "\tName: " << name << ", " << field << std::endl;
         });
     }
+
+    // Hierarchy aware: transform, collision, events
+
+    /*
+     * ++ entity
+     *  - component [components];
+     *  - children [entity]
+     */
+
+    // Get list of all systems
+    for (auto & system : factory.systems)
+    {
+
+        if (auto * sys = dynamic_cast<ex_system_one *>(system.second))
+        {
+
+        }
+    }
+
+    // Serialize an entity
+    auto serialize_entity = [&](entity e)
+    {
+
+    };
 
     std::this_thread::sleep_for(std::chrono::seconds(100));
 
