@@ -314,9 +314,9 @@ TEST_CASE("transform system add & remove parent + children")
     entity child1 = orchestrator.create_entity();
     entity child2 = orchestrator.create_entity();
 
-    system->create(root, p1, float3(1));
-    system->create(child1, p2, float3(1));
-    system->create(child2, p3, float3(1));
+    system->create(root, Pose(), float3(1));
+    system->create(child1, Pose(), float3(1));
+    system->create(child2, Pose(), float3(1));
 
     REQUIRE(system->has_transform(root) == true);
     REQUIRE(system->has_transform(child1) == true);
@@ -337,6 +337,39 @@ TEST_CASE("transform system add & remove parent + children")
 
     system->remove_parent(child1);
     REQUIRE(system->get_parent(child1) == kInvalidEntity);
+}
+
+TEST_CASE("transform system scene graph math correctness")
+{
+    const Pose p1(make_rotation_quat_axis_angle({ 0, 1, 0 }, POLYMER_PI / 2.0), float3(0, 5.f, 0));
+    const Pose p2(make_rotation_quat_axis_angle({ 1, 1, 0 }, POLYMER_PI / 0.5), float3(3.f, 0, 0));
+    const Pose p3(make_rotation_quat_axis_angle({ 0, 1, -1 }, POLYMER_PI), float3(0, 1.f, 4.f));
+
+    entity_orchestrator orchestrator;
+    transform_system * system = orchestrator.create_system<transform_system>(&orchestrator);
+
+    entity root = orchestrator.create_entity();
+    entity child1 = orchestrator.create_entity();
+    entity child2 = orchestrator.create_entity();
+
+    system->create(root, p1, float3(1));
+    system->create(child1, p2, float3(1));
+    system->create(child2, p3, float3(1));
+
+    REQUIRE(system->get_local_transform(root)->local_pose == p1);
+    REQUIRE(system->get_local_transform(child1)->local_pose == p2);
+    REQUIRE(system->get_local_transform(child2)->local_pose == p3);
+
+    system->add_child(root, child1);
+    system->add_child(root, child2);
+
+    const Pose check_p1 = p1;
+    const Pose check_p2 = p2 * p1;
+    const Pose check_p3 = p3 * p1;
+
+    REQUIRE(system->get_world_transform(root)->world_pose == check_p1); // root (already in worldspace)
+    REQUIRE(system->get_world_transform(child1)->world_pose == check_p2);
+    REQUIRE(system->get_world_transform(child2)->world_pose == check_p3);
 }
 
 //////////////////////////////
