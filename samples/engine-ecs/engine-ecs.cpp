@@ -13,6 +13,8 @@
 #include "polymer-ecs.hpp"
 #include "component-pool.hpp"
 
+#include "doctest.h"
+
 ///////////////////
 // Serialization //
 ///////////////////
@@ -276,104 +278,4 @@ public:
 
 POLYMER_SETUP_TYPEID(transform_system);
 
-IMPLEMENT_MAIN(int argc, char * argv[])
-{
-    polymer_component_pool<scene_graph_component> scene_graph_pool(32);
-
-    /*
-    entity_orchestrator orchestrator;
-
-    auto xform_system = orchestrator.create_system<transform_system>(&orchestrator);
-
-    auto root = orchestrator.create_entity();
-    auto child1 = orchestrator.create_entity();
-    auto child2 = orchestrator.create_entity();
-    xform_system->create(root, Pose(make_rotation_quat_axis_angle({ 0, 1, 0 }, POLYMER_PI / 2.0), float3(0, 5.f, 0)), float3(1, 1, 1));
-    xform_system->create(child1, Pose(make_rotation_quat_axis_angle({ 0, 1, 0 }, -(POLYMER_PI / 2.0)), float3(0, 0, 3.f)), float3(1, 1, 1));
-    xform_system->create(child2, Pose(float4(0, 0, 0, 1), float3(4.f, 0, 0)), float3(1, 1, 1));
-
-    xform_system->add_child(root, child1);
-    xform_system->add_child(root, child2);
-
-    std::cout << "Root " << xform_system->get_world_transform(root)->world_pose << std::endl;
-    std::cout << "First child " << xform_system->get_world_transform(child1)->world_pose << std::endl;
-    std::cout << "Second child" << xform_system->get_world_transform(child2)->world_pose << std::endl;
-
-    std::cout << "Parent of root is " << xform_system->get_parent(root) << std::endl;
-    std::cout << "Parent of first child is " << xform_system->get_parent(child1) << std::endl;
-    std::cout << "Parent of second child is " << xform_system->get_parent(child2) << std::endl;
-
-    xform_system->remove_parent(child1);
-    std::cout << "Parent of first child was removed. New parent is: " << xform_system->get_parent(child1) << std::endl;
-    std::cout << "first child / new transform: " << xform_system->get_world_transform(child1)->world_pose << std::endl;
-
-    xform_system->destroy(child1);
-
-    std::cout << "Destroyed first child should be nullptr: " << xform_system->get_local_transform(child1) << std::endl;
-
-    */
-
-    uniform_random_gen gen;
-    std::this_thread::sleep_for(std::chrono::seconds(100));
-
-    return EXIT_SUCCESS;
-}
-
-/*
-IMPLEMENT_MAIN(int argc, char * argv[])
-{
-    entity_manager factory;
-
-    render_component s(factory.create());
-    s.value1 = 1.f;
-    s.value2 = 2.f;
-    s.value3 = 3.f;
-    auto str = serialize_to_json(s);
-
-    std::cout << "Render component attached entity: " << s.get_entity() << std::endl;
-
-    render_component ds;
-    deserialize_from_json(str, ds);
-
-    std::cout << "Deserialized attached entity: " << ds.get_entity() << std::endl;
-
-    auto sys1 = factory.create_system<ex_system_one>(&factory);
-    auto sys2 = factory.create_system<ex_system_two>(&factory);
-
-    auto someEntity = factory.create();
-    std::cout << "New Entity is: " << someEntity << std::endl;
-
-    sys2->create(someEntity, get_typeid<render_component>(), &ds);
-
-    for (auto & e : sys2->components)
-    {
-        std::cout << "Iterate Entity: " << e.first << std::endl;
-        visit_fields(e.second, [&](const char * name, auto & field, auto... metadata)
-        {
-            std::cout << "\tName: " << name << ", " << field << std::endl;
-        });
-    }
-
-    // Hierarchy aware: transform, collision, events
-
-    // Get list of all systems
-    for (auto & system : factory.systems)
-    {
-
-        if (auto * sys = dynamic_cast<ex_system_one *>(system.second))
-        {
-
-        }
-    }
-
-    // Serialize an entity
-    auto serialize_entity = [&](entity e)
-    {
-
-    };
-
-    std::this_thread::sleep_for(std::chrono::seconds(100));
-
-    return EXIT_SUCCESS;
-}
-*/
+// polymer_component_pool<scene_graph_component> scene_graph_pool(32);
