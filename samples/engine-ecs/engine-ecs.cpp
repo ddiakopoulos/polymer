@@ -150,7 +150,7 @@ class transform_system final : public base_system
         auto node = scene_graph_transforms.get(child);
         auto world_xform = world_transforms.get(child);
 
-        // If the node has a parent then we can compute a new world transform,.
+        // If the node has a parent then we can compute a new world transform.
         if (node->parent != kInvalidEntity)
         {
             auto parent_node = scene_graph_transforms.get(node->parent);
@@ -227,16 +227,28 @@ public:
         return true;
     }
 
-    scene_graph_component * get_local_transform(entity e)
+    const scene_graph_component * get_local_transform(entity e)
     {
         if (e == kInvalidEntity) return nullptr;
         return scene_graph_transforms.get(e);
     }
 
-    world_transform_component * get_world_transform(entity e)
+    const world_transform_component * get_world_transform(entity e)
     {
         if (e == kInvalidEntity) return nullptr;
         return world_transforms.get(e);
+    }
+
+    bool update_local_transform(entity e, const Pose new_pose)
+    {
+        if (e == kInvalidEntity) return kInvalidEntity;
+        if (auto * node = scene_graph_transforms.get(e))
+        {
+            node->local_pose = new_pose;
+            if (node->parent != kInvalidEntity) recalculate_world_transform(node->parent);
+            return true;
+        }
+        return false;
     }
 
     entity get_parent(entity child) const
@@ -393,6 +405,11 @@ TEST_CASE("transform system scene graph math correctness")
     REQUIRE(system->get_world_transform(root)->world_pose == check_p1); // root (already in worldspace)
     REQUIRE(system->get_world_transform(child1)->world_pose == check_p2);
     REQUIRE(system->get_world_transform(child2)->world_pose == check_p3);
+}
+
+TEST_CASE("transform system update local transform")
+{
+    // todo - test update_local_transform
 }
 
 TEST_CASE("transform system performance testing")
