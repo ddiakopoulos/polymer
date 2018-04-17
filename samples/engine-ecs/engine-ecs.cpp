@@ -285,13 +285,7 @@ POLYMER_SETUP_TYPEID(transform_system);
 //   Event System   //
 //////////////////////
 
-struct example_event
-{
-    uint32_t value;
-};
-POLYMER_SETUP_TYPEID(example_event);
-
-// event wrappers do not own data
+// note: event wrappers do not own data
 struct event_wrapper
 {
     poly_typeid type { 0 };          // typeid of the wrapped event.
@@ -319,9 +313,12 @@ typedef uint32_t connection_id; // unique id per event
 typedef std::function<void(const event_wrapper & evt)> event_handler;
 
 // The event manager uses this as an internal utility to map events
-// to their handlers. It is not currently thread-safe. 
+// to their handlers via `poly_typeid`. It is not currently thread-safe. 
 class event_handler_map
 {
+
+public:
+
     struct tagged_event_handler
     {
         tagged_event_handler(connection_id id, const void * owner, event_handler fn) : id(id), owner(owner), fn(std::move(fn)) {}
@@ -330,7 +327,7 @@ class event_handler_map
         event_handler fn;
     };
 
-    int dispatch_count;
+    int dispatch_count{ 0 };
     std::vector<std::pair<poly_typeid, tagged_event_handler>> command_queue;
     std::unordered_multimap<poly_typeid, tagged_event_handler> map;
 
@@ -354,12 +351,12 @@ class event_handler_map
             for (auto it = range.first; it != range.second;) 
             {
                 if (it->second.owner == handler.owner) it = map.erase(it);
-                else  ++it;
+                else ++it;
             }
         }
     }
 
-public:
+//public:
 
     void add(poly_typeid type, connection_id id, const void * owner, event_handler fn)
     {
@@ -386,18 +383,18 @@ public:
 
         ++dispatch_count;
         auto range = map.equal_range(type);
-        for (auto it = range.first; it != range.second; ++it)  it->second.fn(event);
+        for (auto it = range.first; it != range.second; ++it) it->second.fn(event);
 
         range = map.equal_range(0);
-        for (auto it = range.first; it != range.second; ++it)  it->second.fn(event);
+        for (auto it = range.first; it != range.second; ++it) it->second.fn(event);
         --dispatch_count;
 
         if (dispatch_count == 0) 
         {
             for (auto & cmd : command_queue) 
             {
-                if (cmd.second.fn) map.emplace(cmd.first, std::move(cmd.second)); // remove operation
-                else remove_impl(cmd.first, std::move(cmd.second));
+                if (cmd.second.fn) map.emplace(cmd.first, std::move(cmd.second)); // queue a remove operation
+                else remove_impl(cmd.first, std::move(cmd.second)); // execute remove
             }
             command_queue.clear();
         }
@@ -410,10 +407,12 @@ class connection
 {
     poly_typeid type{ 0 };
     connection_id id{ 0 };
+
     std::weak_ptr<event_handler_map> handlers;
 public:
     connection() {};
     connection(const std::weak_ptr<event_handler_map> & handlers, poly_typeid type, connection_id id) : handlers(handlers), type(type), id(id) {}
+
     void disconnect()
     {
         if (auto handler = handlers.lock())
@@ -428,7 +427,7 @@ class scoped_connection
 {
     connection c;
     scoped_connection(const scoped_connection &) = delete;
-    scoped_connection & operator=(const scoped_connection&) = delete;
+    scoped_connection & operator= (const scoped_connection &) = delete;
 public:
     scoped_connection(connection c) : c(c) {}
     scoped_connection(scoped_connection && r) : c(r.c) { r.c = {}; }
@@ -437,16 +436,78 @@ public:
     void disconnect() { c.disconnect(); }
 };
 
-class event_manager 
+class synchronous_event_manager 
 {
+    connection_id id{ 0 }; // autoincrementing counter
+    std::shared_ptr<event_handler_map> handlers;
+
+    // Function declaration that is used to extract a type from the event handler (const)
+    template <typename Fn, typename Arg> Arg connect_helper(void (Fn::*)(const Arg&) const);
+    template <typename Fn, typename Arg> Arg connect_helper(void (Fn::*)(const Arg&));
+
+    connection connect_impl(poly_typeid type, const void * owner, event_handler handler) 
+    {
+        const connection_id new_id = ++id;
+        handlers->add(type, new_id, owner, std::move(handler));
+        return connection(handlers, type, new_id);
+    }
+
 public:
+
+    synchronous_event_manager() : handlers(std::make_shared<event_handler_map>()) {}
+
+    template <typename E>
+    void send(const E & event)
+    {
+        handlers->dispatch(event_wrapper(event));
+    }
+
+    template <typename Fn>
+    connection connect(const void * owner, Fn && fn)
+    {
+        using function_signature = typename std::remove_reference<Fn>::type;
+        using event_t = decltype(connect_helper(&function_signature::operator()));
+
+        return connect_impl(get_typeid<event_t>(), owner, [fn](const event_wrapper & event) mutable
+        {
+            const event_t * obj = event.get<event_t>();
+            fn(*obj);
+        });
+    }
+
+    template <typename Fn>
+    scoped_connection connect(Fn && handler)
+    {
+        return connect(nullptr, std::forward<Fn>(handler));
+    }
+
+    //scoped_connection connect(poly_typeid type, event_handler handler) {}
 };
 
-TEST_CASE("event manager test")
+struct example_event { uint32_t value; }; POLYMER_SETUP_TYPEID(example_event);
+struct example_event2 { uint32_t value; }; POLYMER_SETUP_TYPEID(example_event2);
+
+struct handler_test
 {
-    event_manager manager;
-    example_event anEvent{ 100 };
-    event_wrapper wrapper(anEvent);
+    void handle_event(const example_event & e) { sum += e.value; }
+    uint32_t sum = 0;
+};
+
+TEST_CASE("synchronous_event_manager test")
+{
+    synchronous_event_manager manager;
+    example_event evt1{ 100 };
+    event_wrapper wrapper(evt1);
+
+    handler_test test_handler;
+
+    // Capture the receiving class in a lambda to invoke the handler when the event is dispatched
+    auto connection = manager.connect([&](const example_event & event) { test_handler.handle_event(event); });
+
+    example_event ex{ 5 };
+    manager.send(ex);
+
+    REQUIRE(test_handler.sum == 5);
 }
 
 // REQUIRE - this level will immediately quit the test case if the assert fails and will mark the test case as failed.
