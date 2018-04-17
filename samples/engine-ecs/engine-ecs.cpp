@@ -315,22 +315,74 @@ struct event_wrapper
     poly_typeid get_type() const { return type; }
 };
 
-class event_manager 
+typedef uint32_t connection_id; // unique id per event
+typedef std::function<void(const event_wrapper & evt)> event_handler;
+
+class event_handler_map
 {
-    typedef uint32_t connection_id; // unique id per event
+    struct tagged_event_handler
+    {
+        tagged_event_handler(connection_id id, const void * owner, event_handler fn) : id(id), owner(owner), fn(std::move(fn)) {}
+        connection_id id;
+        const void * owner;
+        event_handler fn;
+    };
+
+    void add_impl(poly_typeid type, tagged_event_handler handler);
+    void remove_impl (poly_typeid type, tagged_event_handler handler);
+
+    int dispatch_count;
+    std::vector<std::pair<poly_typeid, tagged_event_handler>> command_queue;
+    std::unordered_multimap<poly_typeid, tagged_event_handler> map;
 
 public:
 
-    // Functor used for handling events.
-    using event_handler = std::function<void(const event_wrapper & evt)>;
+    void add(poly_typeid type, connection_id id, const void* owner, event_handler fn);
+    void remove(poly_typeid type, connection_id id, const void* owner);
+    void dispatch(const event_wrapper & event);
+    size_t num_connections() const;
+
+};
+
+class connection 
+{
+    poly_typeid type{ 0 };
+    connection_id id{ 0 };
+    std::weak_ptr<event_handler_map> handlers;
+public:
+    connection(const std::weak_ptr<event_handler_map> & handlers, poly_typeid type, connection_id id) : handlers(handlers), type(type), id(id) {}
+    void disconnect()
+    {
+        if (auto handler = handlers.lock())
+        {
+            handler->remove(type, id, nullptr);
+            handler.reset();
+        }
+    }
+};
+
+class scoped_connection 
+{
+    connection connection_;
+    scoped_connection(const scoped_connection &) = delete;
+    scoped_connection & operator=(const scoped_connection&) = delete;
+public:
+    scoped_connection(connection c);
+    scoped_connection(scoped_connection && r);
+    scoped_connection & operator= (scoped_connection && r);
+    ~scoped_connection();
+    void disconnect();
+};
+
+class event_manager 
+{
+public:
 };
 
 TEST_CASE("transform system has_transform")
 {
     event_manager manager;
-
     example_event anEvent{ 100 };
-
     event_wrapper wrapper(anEvent);
 }
 
