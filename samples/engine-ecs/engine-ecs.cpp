@@ -495,7 +495,8 @@ public:
     //scoped_connection connect(poly_typeid type, event_handler handler) {}
 };
 
-struct example_event { uint32_t value; }; POLYMER_SETUP_TYPEID(example_event);
+struct example_event  { uint32_t value; }; 
+POLYMER_SETUP_TYPEID(example_event);
 struct example_event2 { uint32_t value; }; POLYMER_SETUP_TYPEID(example_event2);
 
 struct handler_test
@@ -547,7 +548,7 @@ TEST_CASE("synchronous_event_manager manual disconnection")
     REQUIRE(manager.num_handlers() == 0);
     REQUIRE(manager.num_handlers_type(get_typeid<example_event>()) == 0);
 
-    example_event ex{ 10 };
+    example_event ex{ 55 };
     auto result = manager.send(ex);
 
     REQUIRE(result == false);
@@ -567,6 +568,13 @@ TEST_CASE("synchronous_event_manager connection test")
 
     REQUIRE(result == true);
     REQUIRE(test_handler.sum == 5);
+
+    for (int i = 0; i < 10; ++i)
+    {
+        manager.send(example_event{ 10 });
+    }
+
+    REQUIRE(test_handler.sum == 105);
 }
 
 // REQUIRE - this level will immediately quit the test case if the assert fails and will mark the test case as failed.
