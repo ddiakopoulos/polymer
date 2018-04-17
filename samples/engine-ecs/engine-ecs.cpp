@@ -285,30 +285,34 @@ POLYMER_SETUP_TYPEID(transform_system);
 //   Event System   //
 //////////////////////
 
+struct example_event
+{
+    uint32_t value;
+};
+POLYMER_SETUP_TYPEID(example_event);
+
+// event wrappers do not own data
 struct event_wrapper
 {
-    poly_typeid type = 0;          // typeid of the wrapped event.
-    mutable size_t size = 0;       // sizeof() the wrapped event.
-    mutable size_t align = 0;      // alignof() the wrapped event.
-    mutable void * data = nullptr; // pointer to the wrapped event.
+    poly_typeid type { 0 };          // typeid of the wrapped event.
+    mutable size_t size { 0 };       // sizeof() the wrapped event.
+    mutable void * data { nullptr }; // pointer to the wrapped event.
 
     event_wrapper() = default;
-
-    ~event_wrapper()
-    {
-
-    }
+    ~event_wrapper() = default;
 
     template <typename E>
-    explicit event_wrapper(const E & event)
+    explicit event_wrapper(const E & evt) 
+        : type(get_typeid<E>()), size(sizeof(E)), data(const_cast<E*>(&evt)) {}
+
+    template <typename E>
+    const E * get() const
     {
-
-
+        if (type != get_typeid<E>()) return nullptr;
+        return reinterpret_cast<const E*>(data);
     }
 
-    /// Gets the TypeId of the wrapped Event.
     poly_typeid get_type() const { return type; }
-
 };
 
 class event_manager 
@@ -320,6 +324,15 @@ public:
     // Functor used for handling events.
     using event_handler = std::function<void(const event_wrapper & evt)>;
 };
+
+TEST_CASE("transform system has_transform")
+{
+    event_manager manager;
+
+    example_event anEvent{ 100 };
+
+    event_wrapper wrapper(anEvent);
+}
 
 // REQUIRE - this level will immediately quit the test case if the assert fails and will mark the test case as failed.
 // CHECK - this level will mark the test case as failed if the assert fails but will continue with the test case.
