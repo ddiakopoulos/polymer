@@ -400,7 +400,8 @@ public:
         }
     }
 
-    size_t num_connections() const { return map.size(); }
+    size_t size() const { return map.size(); }
+    size_t handler_count(poly_typeid type) { return map.count(type); }
 };
 
 class connection 
@@ -481,6 +482,12 @@ public:
         return connect(nullptr, std::forward<Fn>(handler));
     }
 
+    // How many functions are currently registered?
+    size_t num_handlers() const { return handlers->size(); }
+
+    // How many functions listening for this type of event?
+    size_t num_handlers_type(poly_typeid type) const { return handlers->handler_count(type); }
+
     //scoped_connection connect(poly_typeid type, event_handler handler) {}
 };
 
@@ -493,15 +500,28 @@ struct handler_test
     uint32_t sum = 0;
 };
 
-TEST_CASE("synchronous_event_manager test")
+TEST_CASE("synchronous_event_manager connection count")
 {
     synchronous_event_manager manager;
-    example_event evt1{ 100 };
-    event_wrapper wrapper(evt1);
-
     handler_test test_handler;
 
+    REQUIRE(manager.num_handlers() == 0);
+    REQUIRE(manager.num_handlers_type(get_typeid<example_event>()) == 0);
+
     // Capture the receiving class in a lambda to invoke the handler when the event is dispatched
+    auto connection = manager.connect([&](const example_event & event) { test_handler.handle_event(event); });
+
+    REQUIRE(manager.num_handlers() == 1);
+    REQUIRE(manager.num_handlers_type(get_typeid<example_event>()) == 1);
+}
+
+TEST_CASE("synchronous_event_manager connection test")
+{
+    synchronous_event_manager manager;
+
+    handler_test test_handler;
+    REQUIRE(test_handler.sum == 0);
+
     auto connection = manager.connect([&](const example_event & event) { test_handler.handle_event(event); });
 
     example_event ex{ 5 };
