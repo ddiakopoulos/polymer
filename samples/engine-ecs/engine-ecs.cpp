@@ -317,8 +317,6 @@ typedef std::function<void(const event_wrapper & evt)> event_handler;
 class event_handler_map
 {
 
-public:
-
     struct tagged_event_handler
     {
         tagged_event_handler(connection_id id, const void * owner, event_handler fn) : id(id), owner(owner), fn(std::move(fn)) {}
@@ -356,7 +354,7 @@ public:
         }
     }
 
-//public:
+public:
 
     void add(poly_typeid type, connection_id id, const void * owner, event_handler fn)
     {
@@ -377,18 +375,20 @@ public:
         else remove_impl(type, std::move(handler));
     }
 
-    void dispatch(const event_wrapper & event)
+    bool dispatch(const event_wrapper & event)
     {
+        size_t handled = 0;
+
         const poly_typeid type = event.get_type();
 
         // Dispatches to handlers only matching type (typical case)
         ++dispatch_count;
         auto range = map.equal_range(type);
-        for (auto it = range.first; it != range.second; ++it) it->second.fn(event);
+        for (auto it = range.first; it != range.second; ++it) { it->second.fn(event); handled++; };
 
         // Dispatches to handlers listening to all events, regardless of type (infrequent)
         range = map.equal_range(0);
-        for (auto it = range.first; it != range.second; ++it) it->second.fn(event);
+        for (auto it = range.first; it != range.second; ++it) { it->second.fn(event); handled++; };
         --dispatch_count;
 
         if (dispatch_count == 0) 
@@ -400,6 +400,8 @@ public:
             }
             command_queue.clear();
         }
+
+        return (handled >= 1);
     }
 
     size_t size() const { return map.size(); }
@@ -460,9 +462,9 @@ public:
     synchronous_event_manager() : handlers(std::make_shared<event_handler_map>()) {}
 
     template <typename E>
-    void send(const E & event)
+    bool send(const E & event)
     {
-        handlers->dispatch(event_wrapper(event));
+        return handlers->dispatch(event_wrapper(event));
     }
 
     template <typename Fn>
@@ -517,7 +519,20 @@ TEST_CASE("synchronous_event_manager connection count")
     REQUIRE(manager.num_handlers_type(get_typeid<example_event>()) == 1);
 }
 
-TEST_CASE("synchronous_event_manager disconnection count")
+TEST_CASE("synchronous_event_manager scoped disconnection")
+{
+    synchronous_event_manager manager;
+    handler_test test_handler;
+
+    {
+        auto scoped_connection = manager.connect([&](const example_event & event) { test_handler.handle_event(event); });
+    }
+
+    REQUIRE(manager.num_handlers() == 0);
+    REQUIRE(manager.num_handlers_type(get_typeid<example_event>()) == 0);
+}
+
+TEST_CASE("synchronous_event_manager manual disconnection")
 {
     synchronous_event_manager manager;
     handler_test test_handler;
@@ -533,7 +548,9 @@ TEST_CASE("synchronous_event_manager disconnection count")
     REQUIRE(manager.num_handlers_type(get_typeid<example_event>()) == 0);
 
     example_event ex{ 10 };
-    manager.send(ex);
+    auto result = manager.send(ex);
+
+    REQUIRE(result == false);
 }
 
 TEST_CASE("synchronous_event_manager connection test")
@@ -546,8 +563,9 @@ TEST_CASE("synchronous_event_manager connection test")
     auto connection = manager.connect([&](const example_event & event) { test_handler.handle_event(event); });
 
     example_event ex{ 5 };
-    manager.send(ex);
+    bool result = manager.send(ex);
 
+    REQUIRE(result == true);
     REQUIRE(test_handler.sum == 5);
 }
 
