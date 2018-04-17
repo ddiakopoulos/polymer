@@ -381,10 +381,12 @@ public:
     {
         const poly_typeid type = event.get_type();
 
+        // Dispatches to handlers only matching type (typical case)
         ++dispatch_count;
         auto range = map.equal_range(type);
         for (auto it = range.first; it != range.second; ++it) it->second.fn(event);
 
+        // Dispatches to handlers listening to all events, regardless of type (infrequent)
         range = map.equal_range(0);
         for (auto it = range.first; it != range.second; ++it) it->second.fn(event);
         --dispatch_count;
@@ -443,8 +445,8 @@ class synchronous_event_manager
     std::shared_ptr<event_handler_map> handlers;
 
     // Function declaration that is used to extract a type from the event handler (const)
-    template <typename Fn, typename Arg> Arg connect_helper(void (Fn::*)(const Arg&) const);
-    template <typename Fn, typename Arg> Arg connect_helper(void (Fn::*)(const Arg&));
+    template <typename Fn, typename Arg> Arg connect_helper(void (Fn::*)(const Arg &) const);
+    template <typename Fn, typename Arg> Arg connect_helper(void (Fn::*)(const Arg &));
 
     connection connect_impl(poly_typeid type, const void * owner, event_handler handler) 
     {
@@ -513,6 +515,25 @@ TEST_CASE("synchronous_event_manager connection count")
 
     REQUIRE(manager.num_handlers() == 1);
     REQUIRE(manager.num_handlers_type(get_typeid<example_event>()) == 1);
+}
+
+TEST_CASE("synchronous_event_manager disconnection count")
+{
+    synchronous_event_manager manager;
+    handler_test test_handler;
+
+    auto connection = manager.connect([&](const example_event & event) { test_handler.handle_event(event); });
+
+    REQUIRE(manager.num_handlers() == 1);
+    REQUIRE(manager.num_handlers_type(get_typeid<example_event>()) == 1);
+
+    connection.disconnect();
+
+    REQUIRE(manager.num_handlers() == 0);
+    REQUIRE(manager.num_handlers_type(get_typeid<example_event>()) == 0);
+
+    example_event ex{ 10 };
+    manager.send(ex);
 }
 
 TEST_CASE("synchronous_event_manager connection test")
