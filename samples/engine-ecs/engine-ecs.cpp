@@ -16,10 +16,6 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
 
-///////////////////
-// Serialization //
-///////////////////
-
 struct physics_component : public base_component
 {
     physics_component() {};
@@ -35,6 +31,10 @@ struct render_component : public base_component
     float value1, value2, value3;
 };
 POLYMER_SETUP_TYPEID(render_component);
+
+///////////////////
+// Serialization //
+///////////////////
 
 template <typename T>
 std::string serialize_to_json(T e)
@@ -245,7 +245,7 @@ public:
         if (auto * node = scene_graph_transforms.get(e))
         {
             node->local_pose = new_pose;
-            if (node->parent != kInvalidEntity) recalculate_world_transform(node->parent);
+            recalculate_world_transform(e);
             return true;
         }
         return false;
@@ -280,6 +280,46 @@ public:
 };
 
 POLYMER_SETUP_TYPEID(transform_system);
+
+//////////////////////
+//   Event System   //
+//////////////////////
+
+struct event_wrapper
+{
+    poly_typeid type = 0;          // typeid of the wrapped event.
+    mutable size_t size = 0;       // sizeof() the wrapped event.
+    mutable size_t align = 0;      // alignof() the wrapped event.
+    mutable void * data = nullptr; // pointer to the wrapped event.
+
+    event_wrapper() = default;
+
+    ~event_wrapper()
+    {
+
+    }
+
+    template <typename E>
+    explicit event_wrapper(const E & event)
+    {
+
+
+    }
+
+    /// Gets the TypeId of the wrapped Event.
+    poly_typeid get_type() const { return type; }
+
+};
+
+class event_manager 
+{
+    typedef uint32_t connection_id; // unique id per event
+
+public:
+
+    // Functor used for handling events.
+    using event_handler = std::function<void(const event_wrapper & evt)>;
+};
 
 // REQUIRE - this level will immediately quit the test case if the assert fails and will mark the test case as failed.
 // CHECK - this level will mark the test case as failed if the assert fails but will continue with the test case.
@@ -557,6 +597,3 @@ TEST_CASE("polymer_component_pool add and remove")
     REQUIRE(sum2 == check);
     REQUIRE(static_cast<int>(scene_graph_pool.size()) == (128 - 101 + 44));
 }
-
-
-

@@ -67,8 +67,8 @@ class entity_orchestrator
 {
     std::mutex createMutex;
     std::unordered_map<poly_typeid, poly_typeid> system_type_map;
-    entity entity_counter{ 0 }; // Autoincrementing value to generate unique ids.
     std::unordered_map<poly_typeid, base_system *> systems;
+    entity entity_counter{ 0 }; // Autoincrementing value to generate unique ids.
 
 public:
 
