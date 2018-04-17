@@ -328,20 +328,80 @@ class event_handler_map
         event_handler fn;
     };
 
-    void add_impl(poly_typeid type, tagged_event_handler handler);
-    void remove_impl (poly_typeid type, tagged_event_handler handler);
-
     int dispatch_count;
     std::vector<std::pair<poly_typeid, tagged_event_handler>> command_queue;
     std::unordered_multimap<poly_typeid, tagged_event_handler> map;
 
+    void remove_impl(poly_typeid type, tagged_event_handler handler)
+    {
+        assert(handler.fn == nullptr);
+        assert(handler.id != 0 || handler.owner != nullptr);
+
+        auto range = std::make_pair(map.begin(), map.end());
+        if (type != 0) range = map.equal_range(type);
+
+        if (handler.id) 
+        {
+            for (auto it = range.first; it != range.second; ++it) 
+            {
+                if (it->second.id == handler.id) map.erase(it); return;
+            }
+        }
+        else if (handler.owner) 
+        {
+            for (auto it = range.first; it != range.second;) 
+            {
+                if (it->second.owner == handler.owner) it = map.erase(it);
+                else  ++it;
+            }
+        }
+    }
+
 public:
 
-    void add(poly_typeid type, connection_id id, const void* owner, event_handler fn);
-    void remove(poly_typeid type, connection_id id, const void* owner);
-    void dispatch(const event_wrapper & event);
-    size_t num_connections() const;
+    void add(poly_typeid type, connection_id id, const void * owner, event_handler fn)
+    {
+        tagged_event_handler handler(id, owner, std::move(fn));
+        if (dispatch_count > 0) command_queue.emplace_back(type, std::move(handler));
+        else
+        {
+            assert(handler.id != 0);
+            assert(handler.fn != nullptr);
+            map.emplace(type, std::move(handler));
+        }
+    }
 
+    void remove(poly_typeid type, connection_id id, const void * owner)
+    {
+        tagged_event_handler handler(id, owner, nullptr);
+        if (dispatch_count > 0) command_queue.emplace_back(type, std::move(handler));
+        else remove_impl(type, std::move(handler));
+    }
+
+    void dispatch(const event_wrapper & event)
+    {
+        const poly_typeid type = event.get_type();
+
+        ++dispatch_count;
+        auto range = map.equal_range(type);
+        for (auto it = range.first; it != range.second; ++it)  it->second.fn(event);
+
+        range = map.equal_range(0);
+        for (auto it = range.first; it != range.second; ++it)  it->second.fn(event);
+        --dispatch_count;
+
+        if (dispatch_count == 0) 
+        {
+            for (auto & cmd : command_queue) 
+            {
+                if (cmd.second.fn) map.emplace(cmd.first, std::move(cmd.second)); // remove operation
+                else remove_impl(cmd.first, std::move(cmd.second));
+            }
+            command_queue.clear();
+        }
+    }
+
+    size_t num_connections() const { return map.size(); }
 };
 
 class connection 
@@ -379,7 +439,7 @@ class event_manager
 public:
 };
 
-TEST_CASE("transform system has_transform")
+TEST_CASE("event manager test")
 {
     event_manager manager;
     example_event anEvent{ 100 };
