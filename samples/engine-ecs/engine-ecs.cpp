@@ -318,6 +318,8 @@ struct event_wrapper
 typedef uint32_t connection_id; // unique id per event
 typedef std::function<void(const event_wrapper & evt)> event_handler;
 
+// The event manager uses this as an internal utility to map events
+// to their handlers. It is not currently thread-safe. 
 class event_handler_map
 {
     struct tagged_event_handler
@@ -410,6 +412,7 @@ class connection
     connection_id id{ 0 };
     std::weak_ptr<event_handler_map> handlers;
 public:
+    connection() {};
     connection(const std::weak_ptr<event_handler_map> & handlers, poly_typeid type, connection_id id) : handlers(handlers), type(type), id(id) {}
     void disconnect()
     {
@@ -423,15 +426,15 @@ public:
 
 class scoped_connection 
 {
-    connection connection_;
+    connection c;
     scoped_connection(const scoped_connection &) = delete;
     scoped_connection & operator=(const scoped_connection&) = delete;
 public:
-    scoped_connection(connection c);
-    scoped_connection(scoped_connection && r);
-    scoped_connection & operator= (scoped_connection && r);
-    ~scoped_connection();
-    void disconnect();
+    scoped_connection(connection c) : c(c) {}
+    scoped_connection(scoped_connection && r) : c(r.c) { r.c = {}; }
+    scoped_connection & operator= (scoped_connection && r) { if (this != &r) disconnect(); c = r.c; r.c = {}; return *this; }
+    ~scoped_connection() { disconnect(); }
+    void disconnect() { c.disconnect(); }
 };
 
 class event_manager 
