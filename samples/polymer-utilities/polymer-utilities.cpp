@@ -1,8 +1,30 @@
+/*
+ * File: samples/polymer-utilities.cpp
+ */
+
 #include "index.hpp"
 
 using namespace polymer;
 
-IMPLEMENT_MAIN(int argc, char * argv[])
+#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#include "doctest.h"
+
+TEST_CASE("string manipulation")
 {
-    return EXIT_SUCCESS;
+
+}
+
+TEST_CASE("basic path and filename manipulation")
+{
+
+}
+
+TEST_CASE("loading & saving ascii files")
+{
+
+}
+
+TEST_CASE("loading & saving binary files")
+{
+
 }
