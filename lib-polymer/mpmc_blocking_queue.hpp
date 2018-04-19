@@ -54,7 +54,7 @@ public:
     }
         
     std::size_t size() const { return queue.size(); }
-    
+  
 };
 
 #endif // end mpmc_blocking_queue_hpp

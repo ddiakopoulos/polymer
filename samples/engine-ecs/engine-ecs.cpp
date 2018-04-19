@@ -16,6 +16,13 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
 
+/// Quick reference for doctest macros
+/// REQUIRE - this level will immediately quit the test case if the assert fails and will mark the test case as failed.
+/// CHECK - this level will mark the test case as failed if the assert fails but will continue with the test case.
+/// WARN - this level will only print a message if the assert fails but will not mark the test case as failed.
+/// REQUIRE_FALSE
+/// CHECK_THROWS_AS(func(), std::exception); 
+
 struct physics_component : public base_component
 {
     physics_component() {};
@@ -516,7 +523,12 @@ public:
 
     // How many functions listening for this type of event?
     size_t num_handlers_type(poly_typeid type) const { return handlers->handler_count(type); }
+};
 
+class async_event_manager : public synchronous_event_manager
+{
+    /* todo - mpmc blocking queue with move semantics*/
+public:
 };
 
 struct example_event  { uint32_t value; }; 
@@ -625,12 +637,6 @@ TEST_CASE("synchronous_event_manager disconnect all by owner")
 {
     //disconnect_all(const void * owner)
 }
-
-// REQUIRE - this level will immediately quit the test case if the assert fails and will mark the test case as failed.
-// CHECK - this level will mark the test case as failed if the assert fails but will continue with the test case.
-// WARN - this level will only print a message if the assert fails but will not mark the test case as failed.
-// REQUIRE_FALSE
-// CHECK_THROWS_AS(func(), std::exception); 
 
 ////////////////////////////////
 //   Transform System Tests   //
