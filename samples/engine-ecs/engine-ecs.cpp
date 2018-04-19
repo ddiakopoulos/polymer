@@ -316,7 +316,6 @@ typedef std::function<void(const event_wrapper & evt)> event_handler;
 // to their handlers via `poly_typeid`. It is not currently thread-safe. 
 class event_handler_map
 {
-
     struct tagged_event_handler
     {
         tagged_event_handler(connection_id id, const void * owner, event_handler fn) : id(id), owner(owner), fn(std::move(fn)) {}
@@ -443,6 +442,8 @@ public:
 
 class synchronous_event_manager 
 {
+protected:
+
     connection_id id{ 0 }; // autoincrementing counter
     std::shared_ptr<event_handler_map> handlers;
 
@@ -457,16 +458,24 @@ class synchronous_event_manager
         return connection(handlers, type, new_id);
     }
 
+    /* todo - removes the handler that matches the the type and owner */
+    void disconnect_impl(poly_typeid type, const void * owner) {}
+
 public:
 
     synchronous_event_manager() : handlers(std::make_shared<event_handler_map>()) {}
 
+    // Send an event. Events must be hashable and registered via poly_typeid.
     template <typename E>
     bool send(const E & event)
     {
         return handlers->dispatch(event_wrapper(event));
     }
 
+    // A connection that must be manually disconnected. If a non-null
+    // owner is specified, the pointer can be used by users of the
+    // event handler as an additional way to disconnect beyond calling
+    // .disconnect() on the connection object. 
     template <typename Fn>
     connection connect(const void * owner, Fn && fn)
     {
@@ -480,11 +489,27 @@ public:
         });
     }
 
+    // The type of connection is dependent on the function signature 
+    // of Fn (e.g. void(const event_t & e)). It will be disconnected when it 
+    // goes out of scope. 
     template <typename Fn>
-    scoped_connection connect(Fn && handler)
-    {
-        return connect(nullptr, std::forward<Fn>(handler));
-    }
+    scoped_connection connect(Fn && handler) { return connect(nullptr, std::forward<Fn>(handler)); }
+
+    /* todo - connect a handler directly to a type */
+    scoped_connection connect(poly_typeid type, event_handler handler) {}
+
+    /* todo - connect a handler to all events that are passed through the dispatcher */
+    scoped_connection connect_all(event_handler handler) {}
+
+    /* todo - disconnects all functions listening to an event associated with the following owner. */
+    template <typename E>
+    void disconnect(const void * owner) {}
+
+    /* todo - disconnects all functions listening to events of the specified type associated with the specified owner */
+    void disconnect(poly_typeid type, const void * owner) {}
+
+    /* todo - disconnects all functions with the specified owner */
+    void disconnect_all(const void * owner) {}
 
     // How many functions are currently registered?
     size_t num_handlers() const { return handlers->size(); }
@@ -492,7 +517,6 @@ public:
     // How many functions listening for this type of event?
     size_t num_handlers_type(poly_typeid type) const { return handlers->handler_count(type); }
 
-    //scoped_connection connect(poly_typeid type, event_handler handler) {}
 };
 
 struct example_event  { uint32_t value; }; 
@@ -575,6 +599,31 @@ TEST_CASE("synchronous_event_manager connection test")
     }
 
     REQUIRE(test_handler.sum == 105);
+}
+
+TEST_CASE("synchronous_event_manager connection by type and handler")
+{
+    // connect(poly_typeid type, event_handler handler)
+}
+
+TEST_CASE("synchronous_event_manager connect all ")
+{
+    // connect_all(event_handler handler)
+}
+
+TEST_CASE("synchronous_event_manager disconnect type by owner pointer")
+{
+    //disconnect<T>(const void * owner)
+}
+
+TEST_CASE("synchronous_event_manager disconnect by type and owner")
+{
+    // disconnect(poly_typeid type, const void * owner)
+}
+
+TEST_CASE("synchronous_event_manager disconnect all by owner")
+{
+    //disconnect_all(const void * owner)
 }
 
 // REQUIRE - this level will immediately quit the test case if the assert fails and will mark the test case as failed.
