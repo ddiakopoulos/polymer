@@ -12,16 +12,13 @@
 #include "polymer-typeid.hpp"
 #include "polymer-ecs.hpp"
 #include "component-pool.hpp"
+#include "mpmc_blocking_queue.hpp"
 
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
 
 /// Quick reference for doctest macros
-/// REQUIRE - this level will immediately quit the test case if the assert fails and will mark the test case as failed.
-/// CHECK - this level will mark the test case as failed if the assert fails but will continue with the test case.
-/// WARN - this level will only print a message if the assert fails but will not mark the test case as failed.
-/// REQUIRE_FALSE
-/// CHECK_THROWS_AS(func(), std::exception); 
+/// REQUIRE, REQUIRE_FALSE, CHECK, WARN, CHECK_THROWS_AS(func(), std::exception)
 
 struct physics_component : public base_component
 {
@@ -468,15 +465,25 @@ protected:
     /* todo - removes the handler that matches the the type and owner */
     void disconnect_impl(poly_typeid type, const void * owner) {}
 
+protected:
+
+    virtual bool send_internal(const event_wrapper & event_w)
+    {
+        return handlers->dispatch(event_w);
+    }
+
 public:
 
     synchronous_event_manager() : handlers(std::make_shared<event_handler_map>()) {}
+
+    // This is used by the async event queue
+    virtual void process() {};
 
     // Send an event. Events must be hashable and registered via poly_typeid.
     template <typename E>
     bool send(const E & event)
     {
-        return handlers->dispatch(event_wrapper(event));
+        return send_internal(event_wrapper(event));
     }
 
     // A connection that must be manually disconnected. If a non-null
@@ -527,13 +534,38 @@ public:
 
 class async_event_manager : public synchronous_event_manager
 {
-    /* todo - mpmc blocking queue with move semantics*/
+    mpmc_queue_blocking<std::unique_ptr<event_wrapper>> queue;
+
+    async_event_manager(const async_event_manager &) = delete;
+    async_event_manager & operator=(const async_event_manager &) = delete;
+
+    virtual bool send_internal(const event_wrapper & event_w) override final
+    {
+        std::unique_ptr<event_wrapper> event_copy(new event_wrapper(event_w));
+        queue.produce(std::move(event_copy));
+    }
+
 public:
+
+    // Callbacks will happen on the calling thread. It's expected that 
+    // this function is only invoked from a single thread, like an an updater.
+    virtual void process() override final
+    {
+        std::unique_ptr<event_wrapper> event;
+        while (queue.try_consume(event)) 
+        {
+            synchronous_event_manager::send_internal(*event);
+        }
+    }
+
+    bool empty() const { return queue.empty(); }
 };
 
 struct example_event  { uint32_t value; }; 
 POLYMER_SETUP_TYPEID(example_event);
-struct example_event2 { uint32_t value; }; POLYMER_SETUP_TYPEID(example_event2);
+
+struct example_event2 { uint32_t value; }; 
+POLYMER_SETUP_TYPEID(example_event2);
 
 struct handler_test
 {
@@ -602,7 +634,7 @@ TEST_CASE("synchronous_event_manager connection test")
     example_event ex{ 5 };
     bool result = manager.send(ex);
 
-    REQUIRE(result == true);
+    REQUIRE(result);
     REQUIRE(test_handler.sum == 5);
 
     for (int i = 0; i < 10; ++i)
@@ -648,10 +680,10 @@ TEST_CASE("transform system has_transform")
     transform_system * system = orchestrator.create_system<transform_system>(&orchestrator);
 
     entity root = orchestrator.create_entity();
-    REQUIRE(system->has_transform(root) == false);
+    REQUIRE_FALSE(system->has_transform(root));
 
     system->create(root, Pose(), float3(1));
-    REQUIRE(system->has_transform(root) == true);
+    REQUIRE(system->has_transform(root));
 }
 
 TEST_CASE("transform system double add")
@@ -660,8 +692,8 @@ TEST_CASE("transform system double add")
     transform_system * system = orchestrator.create_system<transform_system>(&orchestrator);
 
     entity root = orchestrator.create_entity();
-    REQUIRE(system->create(root, Pose(), float3(1)) == true);
-    REQUIRE(system->create(root, Pose(), float3(1)) == false);
+    REQUIRE(system->create(root, Pose(), float3(1)));
+    REQUIRE_FALSE(system->create(root, Pose(), float3(1)));
 }
 
 TEST_CASE("transform system destruction")
@@ -675,13 +707,13 @@ TEST_CASE("transform system destruction")
         entity e = orchestrator.create_entity();
         system->create(e, Pose(), float3(1));
         entities.push_back(e);
-        REQUIRE(system->has_transform(e) == true);
+        REQUIRE(system->has_transform(e));
     }
 
     for (auto & e : entities)
     {
         system->destroy(e);
-        REQUIRE(system->has_transform(e) == false);
+        REQUIRE_FALSE(system->has_transform(e));
     }
 
     CHECK_THROWS_AS(system->destroy(0), std::exception);
@@ -704,9 +736,9 @@ TEST_CASE("transform system add/remove parent & children")
     system->create(child1, Pose(), float3(1));
     system->create(child2, Pose(), float3(1));
 
-    REQUIRE(system->has_transform(root) == true);
-    REQUIRE(system->has_transform(child1) == true);
-    REQUIRE(system->has_transform(child2) == true);
+    REQUIRE(system->has_transform(root));
+    REQUIRE(system->has_transform(child1));
+    REQUIRE(system->has_transform(child2));
 
     REQUIRE(system->get_parent(root) == kInvalidEntity);
     REQUIRE(system->get_parent(child1) == kInvalidEntity);
@@ -848,11 +880,11 @@ TEST_CASE("polymer_component_pool contains elements")
 {
     polymer_component_pool<scene_graph_component> scene_graph_pool(32);
     bool result = scene_graph_pool.contains(88);
-    REQUIRE(result == false);
+    REQUIRE_FALSE(result);
 
     scene_graph_pool.emplace(88);
     result = scene_graph_pool.contains(88);
-    REQUIRE(result == true);
+    REQUIRE(result);
 }
 
 TEST_CASE("polymer_component_pool get elements")

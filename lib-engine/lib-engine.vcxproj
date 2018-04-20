@@ -89,7 +89,6 @@
     <ClInclude Include="renderer-standard.hpp" />
     <ClInclude Include="gfx\gl\gl-api.hpp" />
     <ClInclude Include="gfx\gl\gl-async-gpu-timer.hpp" />
-    <ClInclude Include="gfx\gl\gl-async-pbo.hpp" />
     <ClInclude Include="gfx\gl\gl-camera.hpp" />
     <ClInclude Include="gfx\gl\gl-gizmo.hpp" />
     <ClInclude Include="gfx\gl\gl-imgui.hpp" />

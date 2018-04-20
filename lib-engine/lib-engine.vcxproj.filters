@@ -31,9 +31,6 @@
     <ClInclude Include="gfx\gl\gl-async-gpu-timer.hpp">
       <Filter>gfx\gl</Filter>
     </ClInclude>
-    <ClInclude Include="gfx\gl\gl-async-pbo.hpp">
-      <Filter>gfx\gl</Filter>
-    </ClInclude>
     <ClInclude Include="gfx\gl\gl-camera.hpp">
       <Filter>gfx\gl</Filter>
     </ClInclude>

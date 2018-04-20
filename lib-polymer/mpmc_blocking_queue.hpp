@@ -12,7 +12,7 @@ template<typename T>
 class mpmc_queue_blocking
 {
     std::queue<T> queue;
-    std::mutex mutex;
+    mutable std::mutex mutex;
     std::condition_variable condition;
 
     mpmc_queue_blocking(const mpmc_queue_blocking &) = delete;
@@ -20,11 +20,13 @@ class mpmc_queue_blocking
 
 public:
 
+    mpmc_queue_blocking() = default;
+
     // Produce a new value and possibily notify one of the threads calling `wait_and_consume`
-    void produce(T const & value)
+    void produce(T & value)
     {
         std::lock_guard<std::mutex> lock(mutex);
-        queue.push(value);
+        queue.push(std::move(value));
         condition.notify_one();
     }
 
@@ -33,7 +35,7 @@ public:
     {
         std::unique_lock<std::mutex> lock(mutex);
         while (queue.empty()) condition.wait(lock);
-        popped_value = queue.front();
+        popped_value = std::move(queue.front());
         queue.pop();
     }
 
@@ -42,11 +44,12 @@ public:
     {
         std::lock_guard<std::mutex> lock(mutex);
         if (queue.empty()) return false;
-        popped_value = queue.front();
+        popped_value = std::move(queue.front());
         queue.pop();
         return true;
     }
 
+    // Is the queue empty? 
     bool empty() const
     {
         std::unique_lock<std::mutex> lock(mutex);
