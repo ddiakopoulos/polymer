@@ -26,7 +26,7 @@ namespace polymer
 {
 
     // fixme - move to events file
-    struct UpdateEvent
+    struct app_update_event
     {
         double elapsed_s;
         float timestep_ms;
@@ -35,7 +35,7 @@ namespace polymer
     };
 
     // fixme - move to events file
-    struct InputEvent
+    struct app_input_event
     {
         enum Type { CURSOR, MOUSE, KEY, CHAR, SCROLL };
 
@@ -70,7 +70,7 @@ namespace polymer
     class glfw_window
     {
         bool isDragging{ false };
-        void preprocess_input(InputEvent & event);
+        void preprocess_input(app_input_event & event);
         void consume_character(uint32_t codepoint);
         void consume_key(int key, int action);
         void consume_mousebtn(int button, int action);
@@ -88,12 +88,12 @@ namespace polymer
         virtual ~glfw_window();
 
         int get_mods() const;
-        virtual void on_update(const UpdateEvent & e) { }
+        virtual void on_update(const app_update_event & e) { }
         virtual void on_draw() { }
         virtual void on_window_focus(bool focused) { }
         virtual void on_window_resize(int2 size) { }
         virtual void on_window_close() { }
-        virtual void on_input(const InputEvent & event) { }
+        virtual void on_input(const app_input_event & event) { }
         virtual void on_drop(std::vector<std::string> names) { }
         gl_context * get_shared_gl_context() const { return gl_ctx; }
         GLFWwindow * get_window() const { return window; }

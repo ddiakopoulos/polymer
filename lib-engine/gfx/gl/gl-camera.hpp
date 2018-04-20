@@ -63,11 +63,11 @@ namespace polymer
             lastCursor = float2(0, 0);
         }
         
-        void handle_input(const InputEvent & e)
+        void handle_input(const app_input_event & e)
         {
             switch (e.type)
             {
-            case InputEvent::KEY:
+            case app_input_event::KEY:
                 switch (e.value[0])
                 {
                     case GLFW_KEY_W: bf = e.is_down(); break;
@@ -76,14 +76,14 @@ namespace polymer
                     case GLFW_KEY_D: br = e.is_down(); break;
                 }
                 break;
-            case InputEvent::MOUSE:
+            case app_input_event::MOUSE:
                 switch (e.value[0])
                 {
                     case GLFW_MOUSE_BUTTON_LEFT: ml = e.is_down(); break;
                     case GLFW_MOUSE_BUTTON_RIGHT: mr = e.is_down(); break;
                 }
                 break;
-            case InputEvent::CURSOR:
+            case app_input_event::CURSOR:
                 if (mr)
                 {
                     camYaw -= (e.cursor.x - lastCursor.x) * 0.01f;

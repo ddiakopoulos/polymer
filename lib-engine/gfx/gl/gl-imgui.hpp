@@ -36,7 +36,7 @@ struct GlTexture2D;
 namespace polymer
 {
     class polymer_app;
-    struct InputEvent;
+    struct app_input_event;
 }
 
 struct GLFWwindow;
@@ -68,7 +68,7 @@ namespace gui
         ~imgui_instance();
         void add_font(const std::vector<uint8_t> & font);
         void append_icon_font(const std::vector<uint8_t> & font);
-        void update_input(const polymer::InputEvent & e);
+        void update_input(const polymer::app_input_event & e);
         void begin_frame();
         void end_frame();
     };

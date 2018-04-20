@@ -64,13 +64,13 @@ void VirtualRealityApp::on_window_resize(int2 size)
     glfwGetWindowSize(window, &windowWidth, &windowHeight);
 }
 
-void VirtualRealityApp::on_input(const InputEvent & event) 
+void VirtualRealityApp::on_input(const app_input_event & event) 
 {
     cameraController.handle_input(event);
     if (igm) igm->update_input(event);
 }
 
-void VirtualRealityApp::on_update(const UpdateEvent & e) 
+void VirtualRealityApp::on_update(const app_update_event & e) 
 {
     cameraController.update(e.timestep_ms);
 

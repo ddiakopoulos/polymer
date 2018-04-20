@@ -126,7 +126,7 @@ struct VirtualRealityApp : public polymer_app
     void setup_physics();
 
     void on_window_resize(int2 size) override;
-    void on_input(const InputEvent & event) override;
-    void on_update(const UpdateEvent & e) override;
+    void on_input(const app_input_event & event) override;
+    void on_update(const app_update_event & e) override;
     void on_draw() override;
 };

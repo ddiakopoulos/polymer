@@ -25,8 +25,7 @@ TEST_CASE("string, path and filename manipulation")
     const std::string path_c = { "C:\\users\\dimitri\\profile.png" };
     REQUIRE(get_filename_without_extension(path_c) == "profile");
 
-    /// Note that this function is purely string based and does not actually
-    /// resolve relative paths.
+    /// Note that this function is purely string based and does not actually resolve relative paths.
     const std::string path_d = { "../../../path/to/a/image.png" };
     REQUIRE(parent_directory_from_filepath(path_d) == "../../../path/to/a");
 }

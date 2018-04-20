@@ -112,7 +112,7 @@ public:
         return gizmo_active;
     }
 
-    void on_input(const InputEvent & event)
+    void on_input(const app_input_event & event)
     {
         gizmo.handle_input(event);
     }

@@ -8,9 +8,9 @@
 using namespace polymer;
 
 
-static InputEvent generate_input_event(GLFWwindow * window, InputEvent::Type type, const float2 & cursor, int action)
+static app_input_event generate_input_event(GLFWwindow * window, app_input_event::Type type, const float2 & cursor, int action)
 {
-    InputEvent e;
+    app_input_event e;
     e.window = window;
     e.type = type;
     e.cursor = cursor;
@@ -142,9 +142,9 @@ glfw_window::~glfw_window()
     if (window) glfwDestroyWindow(window);
 }
 
-void glfw_window::preprocess_input(InputEvent & event)
+void glfw_window::preprocess_input(app_input_event & event)
 {
-    if (event.type == InputEvent::MOUSE)
+    if (event.type == app_input_event::MOUSE)
     {
         if (event.is_down()) isDragging = true;
         else if (event.is_up()) isDragging = false;
@@ -155,34 +155,34 @@ void glfw_window::preprocess_input(InputEvent & event)
 
 void glfw_window::consume_character(uint32_t codepoint)
 {
-    auto e = generate_input_event(window, InputEvent::CHAR, get_cursor_position(window), 0);
+    auto e = generate_input_event(window, app_input_event::CHAR, get_cursor_position(window), 0);
     e.value[0] = codepoint;
     preprocess_input(e);
 }
 
 void glfw_window::consume_key(int key, int action)
 {
-    auto e = generate_input_event(window, InputEvent::KEY, get_cursor_position(window), action);
+    auto e = generate_input_event(window, app_input_event::KEY, get_cursor_position(window), action);
     e.value[0] = key;
     preprocess_input(e);
 }
 
 void glfw_window::consume_mousebtn(int button, int action)
 {
-    auto e = generate_input_event(window, InputEvent::MOUSE, get_cursor_position(window), action);
+    auto e = generate_input_event(window, app_input_event::MOUSE, get_cursor_position(window), action);
     e.value[0] = button;
     preprocess_input(e);
 }
 
 void glfw_window::consume_cursor(double xpos, double ypos)
 {
-    auto e = generate_input_event(window, InputEvent::CURSOR, { (float)xpos, (float)ypos }, 0);
+    auto e = generate_input_event(window, app_input_event::CURSOR, { (float)xpos, (float)ypos }, 0);
     preprocess_input(e);
 }
 
 void glfw_window::consume_scroll(double deltaX, double deltaY)
 {
-    auto e = generate_input_event(window, InputEvent::SCROLL, get_cursor_position(window), 0);
+    auto e = generate_input_event(window, app_input_event::SCROLL, get_cursor_position(window), 0);
     e.value[0] = (float)deltaX;
     e.value[1] = (float)deltaY;
     preprocess_input(e);
@@ -256,7 +256,7 @@ void polymer_app::main_loop()
                 fpsTime = 0;
             }
 
-            UpdateEvent e;
+            app_update_event e;
             e.elapsed_s = glfwGetTime();
             e.timestep_ms = timestep;
             e.framesPerSecond = fps;

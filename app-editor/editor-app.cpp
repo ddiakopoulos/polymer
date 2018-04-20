@@ -199,7 +199,7 @@ void scene_editor_app::on_window_resize(int2 size)
     }
 }
 
-void scene_editor_app::on_input(const InputEvent & event)
+void scene_editor_app::on_input(const app_input_event & event)
 {
     igm->update_input(event);
     gizmo_selector->on_input(event);
@@ -215,7 +215,7 @@ void scene_editor_app::on_input(const InputEvent & event)
     if (event.mods == 0) flycam.handle_input(event);
 
     {
-        if (event.type == InputEvent::KEY)
+        if (event.type == app_input_event::KEY)
         {
             // De-select all objects
             if (event.value[0] == GLFW_KEY_ESCAPE && event.action == GLFW_RELEASE)
@@ -257,7 +257,7 @@ void scene_editor_app::on_input(const InputEvent & event)
         }
 
         // Raycast for editor/gizmo selection on mouse up
-        if (event.type == InputEvent::MOUSE && event.action == GLFW_RELEASE && event.value[0] == GLFW_MOUSE_BUTTON_LEFT)
+        if (event.type == app_input_event::MOUSE && event.action == GLFW_RELEASE && event.value[0] == GLFW_MOUSE_BUTTON_LEFT)
         {
             int width, height;
             glfwGetWindowSize(window, &width, &height);
@@ -315,7 +315,7 @@ void scene_editor_app::reset_renderer(int2 size, const renderer_settings & setti
     renderer.reset(new forward_renderer(settings));
 }
 
-void scene_editor_app::on_update(const UpdateEvent & e)
+void scene_editor_app::on_update(const app_update_event & e)
 {
     int width, height;
     glfwGetWindowSize(window, &width, &height);

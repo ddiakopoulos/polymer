@@ -81,13 +81,13 @@ namespace gui
         ImGui::Shutdown(data.context);
     }
     
-    void imgui_instance::update_input(const polymer::InputEvent & e)
+    void imgui_instance::update_input(const polymer::app_input_event & e)
     {
         ImGui::SetCurrentContext(data.context);
 
         ImGuiIO & io = ImGui::GetIO();
         
-        if (e.type == InputEvent::Type::MOUSE)
+        if (e.type == app_input_event::Type::MOUSE)
         {
             if (e.action == GLFW_PRESS)
             {
@@ -96,18 +96,18 @@ namespace gui
             }
         }
 
-        if (e.type == InputEvent::Type::CURSOR)
+        if (e.type == app_input_event::Type::CURSOR)
         {
             io.MousePos = ImVec2(e.cursor.x, e.cursor.y);
         }
 
 
-        if (e.type == InputEvent::Type::SCROLL)
+        if (e.type == app_input_event::Type::SCROLL)
         {
             data.MouseWheel += (float)e.value[1]; // Use fractional mouse wheel, 1.0 unit 5 lines.
         }
         
-        if (e.type == InputEvent::Type::KEY)
+        if (e.type == app_input_event::Type::KEY)
         {
             io.KeysDown[e.value[0]] = (e.action == GLFW_PRESS);
             io.KeyCtrl = (e.mods & GLFW_MOD_CONTROL) != 0;
@@ -115,7 +115,7 @@ namespace gui
             io.KeyAlt = (e.mods & GLFW_MOD_ALT) != 0;
         }
         
-        if (e.type == InputEvent::Type::CHAR)
+        if (e.type == app_input_event::Type::CHAR)
         {
             if (e.value[0] > 0 && e.value[0] < 0x10000)
             {

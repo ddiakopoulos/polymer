@@ -97,16 +97,16 @@ struct material_editor_window final : public glfw_window
         gui::make_light_theme();
     }
 
-    virtual void on_input(const polymer::InputEvent & e) override final
+    virtual void on_input(const polymer::app_input_event & e) override final
     {
         if (e.window == window) auxImgui->update_input(e);
         if (ImGui::GetIO().WantCaptureMouse || ImGui::GetIO().WantCaptureKeyboard) return;
 
-        if (e.type == InputEvent::MOUSE && e.is_down())
+        if (e.type == app_input_event::MOUSE && e.is_down())
         {
             arcball->mouse_down(e.cursor);
         }
-        else if (e.type == InputEvent::CURSOR && e.drag)
+        else if (e.type == app_input_event::CURSOR && e.drag)
         {
             arcball->mouse_drag(e.cursor);
             previewMesh->pose.orientation = safe_normalize(qmul(arcball->currentQuat, previewMesh->pose.orientation));

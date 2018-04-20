@@ -50,8 +50,8 @@ struct scene_editor_app final : public polymer_app
     void reset_renderer(int2 size, const renderer_settings & settings);
 
     void on_window_resize(int2 size) override;
-    void on_input(const InputEvent & event) override;
-    void on_update(const UpdateEvent & e) override;
+    void on_input(const app_input_event & event) override;
+    void on_update(const app_update_event & e) override;
     void on_draw() override;
     void on_drop(std::vector <std::string> filepaths) override;
 };
