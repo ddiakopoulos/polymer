@@ -16,6 +16,7 @@ struct sample_gl_render final : public polymer_app
     perspective_camera cam;
     std::unique_ptr<arcball_controller> arcball;
     app_input_event lastEvent;
+    bool deltaMotion{ false };
 
     Pose modelPose;
     GlMesh model;
@@ -99,6 +100,8 @@ void sample_gl_render::on_window_resize(int2 size) {}
 
 void sample_gl_render::on_input(const app_input_event & event)
 {
+    deltaMotion = (length(lastEvent.cursor - event.cursor) > 0);
+
     if (event.type == app_input_event::Type::MOUSE && event.is_down())
     {
         arcball->mouse_down(event.cursor);
@@ -115,7 +118,7 @@ void sample_gl_render::on_input(const app_input_event & event)
 void sample_gl_render::on_update(const app_update_event & e)
 {
     int width, height;
-    glfwGetWindowSize(window, &width, &height);;
+    glfwGetWindowSize(window, &width, &height);
 }
 
 void sample_gl_render::on_draw()
@@ -139,12 +142,14 @@ void sample_gl_render::on_draw()
     const float4x4 viewMatrix = cam.get_view_matrix();
     const float4x4 viewProjectionMatrix = mul(projectionMatrix, viewMatrix);
 
-    if (lastEvent.drag)
+    if (lastEvent.drag && deltaMotion)
     {
         modelPose.orientation = normalize(qmul(modelPose.orientation, arcball->currentQuat));
     }
 
     draw_mesh_matcap(matcapShader, model, matcapTexture, modelPose.matrix(), viewMatrix, projectionMatrix);
+
+    deltaMotion = false;
 
     gl_check_error(__FILE__, __LINE__);
 
