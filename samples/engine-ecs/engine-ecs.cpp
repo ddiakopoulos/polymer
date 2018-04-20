@@ -301,12 +301,15 @@ struct event_wrapper
 
     template <typename E>
     explicit event_wrapper(const E & evt) 
-        : type(get_typeid<E>()), size(sizeof(E)), data(const_cast<E*>(&evt)) {}
+        : type(get_typeid<E>()), size(sizeof(E)), data(const_cast<E*>(&evt)) {
+        std::cout << "construct" << std::endl;
+    }
 
     template <typename E>
     const E * get() const
     {
-        if (type != get_typeid<E>()) return nullptr;
+        if (type != get_typeid<E>()) 
+            return nullptr;
         return reinterpret_cast<const E*>(data);
     }
 
@@ -499,7 +502,7 @@ public:
         return connect_impl(get_typeid<event_t>(), owner, [fn](const event_wrapper & event) mutable
         {
             const event_t * obj = event.get<event_t>();
-            fn(*obj);
+            fn(*obj); // invoke the foreign handler
         });
     }
 
@@ -543,9 +546,12 @@ class async_event_manager : public synchronous_event_manager
     {
         std::unique_ptr<event_wrapper> event_copy(new event_wrapper(event_w));
         queue.produce(std::move(event_copy));
+        return true; 
     }
 
 public:
+
+    async_event_manager() = default;
 
     // Callbacks will happen on the calling thread. It's expected that 
     // this function is only invoked from a single thread, like an an updater.
@@ -561,11 +567,47 @@ public:
     bool empty() const { return queue.empty(); }
 };
 
-struct example_event  { uint32_t value; }; 
+struct example_event 
+{
+    uint32_t value; 
+    ~example_event()
+    {
+        std::cout << "destructed example_event event" << std::endl;
+    }
+}; 
 POLYMER_SETUP_TYPEID(example_event);
 
 struct example_event2 { uint32_t value; }; 
 POLYMER_SETUP_TYPEID(example_event2);
+
+struct queued_event 
+{
+    queued_event() {}
+    ~queued_event()
+    {
+        std::cout << "destructed queued event" << std::endl;
+    }
+    explicit queued_event(uint32_t value) : value(value) {}
+    queued_event(uint32_t value, const std::string & text) : value(value), text(text) {}
+    const uint32_t value = 0;
+    const std::string text;
+};
+POLYMER_SETUP_TYPEID(queued_event);
+
+struct example_queued_event_handler
+{
+    example_queued_event_handler() { static_value = 0; static_accumulator = 0; }
+    void handle(const queued_event & e) { accumulator += e.value; value = e.value; text = e.text; }
+    static void static_handle(const queued_event & e) { static_value = e.value; static_accumulator += e.value; }
+    std::string text;
+    uint32_t value = 0;
+    uint32_t accumulator = 0;
+    static uint32_t static_value;
+    static uint32_t static_accumulator;
+};
+
+uint32_t example_queued_event_handler::static_value = 0;
+uint32_t example_queued_event_handler::static_accumulator = 0;
 
 struct handler_test
 {
@@ -573,6 +615,7 @@ struct handler_test
     uint32_t sum = 0;
 };
 
+/*
 TEST_CASE("synchronous_event_manager connection count")
 {
     synchronous_event_manager manager;
@@ -622,29 +665,6 @@ TEST_CASE("synchronous_event_manager manual disconnection")
     REQUIRE(result == false);
 }
 
-TEST_CASE("synchronous_event_manager connection test")
-{
-    synchronous_event_manager manager;
-
-    handler_test test_handler;
-    REQUIRE(test_handler.sum == 0);
-
-    auto connection = manager.connect([&](const example_event & event) { test_handler.handle_event(event); });
-
-    example_event ex{ 5 };
-    bool result = manager.send(ex);
-
-    REQUIRE(result);
-    REQUIRE(test_handler.sum == 5);
-
-    for (int i = 0; i < 10; ++i)
-    {
-        manager.send(example_event{ 10 });
-    }
-
-    REQUIRE(test_handler.sum == 105);
-}
-
 TEST_CASE("synchronous_event_manager connection by type and handler")
 {
     // connect(poly_typeid type, event_handler handler)
@@ -668,6 +688,73 @@ TEST_CASE("synchronous_event_manager disconnect by type and owner")
 TEST_CASE("synchronous_event_manager disconnect all by owner")
 {
     //disconnect_all(const void * owner)
+}
+
+TEST_CASE("synchronous_event_manager connection test")
+{
+    synchronous_event_manager manager;
+
+    handler_test test_handler;
+    REQUIRE(test_handler.sum == 0);
+
+    auto connection = manager.connect([&](const example_event & event) 
+    { 
+        std::cout << "Invoked the callbacl: " << event.value << std::endl;
+        test_handler.handle_event(event); 
+    });
+
+    example_event ex{ 5 };
+    bool result = manager.send(ex);
+
+    REQUIRE(result);
+    REQUIRE(test_handler.sum == 5);
+
+    for (int i = 0; i < 10; ++i)
+    {
+        manager.send(example_event{ 10 });
+    }
+
+    REQUIRE(test_handler.sum == 105);
+}
+
+*/
+
+TEST_CASE("async_event_manager")
+{
+    async_event_manager mgr;
+
+    example_queued_event_handler handlerClass;
+
+    auto c1 = mgr.connect([&](const queued_event & event) {
+        std::cout << event.value << std::endl;
+        example_queued_event_handler::static_handle(event);
+    });
+
+    auto c2 = mgr.connect([&](const queued_event & event) { handlerClass.handle(event); });
+
+    std::vector<std::thread> producerThreads;
+    static const int num_producers = 64;
+
+    for (int i = 0; i < num_producers; ++i)
+    {
+        producerThreads.emplace_back([&mgr]()
+        {
+            for (int j = 0; j < 100; ++j)
+            {
+                mgr.send(queued_event{ (uint32_t) j + 1 });
+            }
+        });
+    }
+
+    for (auto & t : producerThreads) t.join();
+
+    REQUIRE(0 == handlerClass.accumulator);
+    REQUIRE(0 == handlerClass.static_accumulator);
+
+    mgr.process();
+
+    REQUIRE(2080 * num_producers == handlerClass.accumulator);
+    REQUIRE(2080 * num_producers == handlerClass.static_accumulator);
 }
 
 ////////////////////////////////
