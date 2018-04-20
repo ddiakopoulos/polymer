@@ -60,7 +60,7 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(SolutionDir)third_party\glew\lib\$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)third_party\glew\lib\$(Platform);$(SolutionDir)lib-model-io\third-party\fbxsdk\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>glew32s.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
     </Link>
@@ -80,7 +80,7 @@
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>$(SolutionDir)third_party\glew\lib\$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)third_party\glew\lib\$(Platform);$(SolutionDir)lib-model-io\third-party\fbxsdk\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>glew32s.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
     </Link>
@@ -91,6 +91,9 @@
   <ItemGroup>
     <ProjectReference Include="..\..\lib-engine\lib-engine.vcxproj">
       <Project>{71f00a1a-c67d-4cb9-9f37-98d4975fa5c7}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\lib-model-io\lib-model-io.vcxproj">
+      <Project>{bddb4be8-092b-4c42-b39e-7ef79011403c}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\lib-polymer\lib-polymer.vcxproj">
       <Project>{992e85a7-b590-477b-a1b2-8a04aaad0e10}</Project>

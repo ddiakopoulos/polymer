@@ -1,3 +1,12 @@
+/*
+ * File: samples/gl-render-cpp
+ * This sample demonstrates the use of Polymer's lowest-level OpenGL API. Polymer
+ * uses sevel OpenGL 4.5 features under the hood, namely the direct state access (DSA)
+ * extension to simplify the implementation of GL wrapper types. This sample uses 
+ * `lib-model-io` to load an obj file and apply a rendering technique known as matcap 
+ * shading, a texture-only based approach without any actual scene lighting.
+ */
+
 #include "index.hpp"
 
 using namespace polymer;
@@ -5,7 +14,13 @@ using namespace polymer;
 struct sample_gl_render final : public polymer_app
 {
     perspective_camera cam;
-    fps_camera_controller flycam;
+    std::unique_ptr<arcball_controller> arcball;
+    app_input_event lastEvent;
+
+    Pose modelPose;
+    GlMesh model;
+    GlShader matcapShader;
+    GlTexture2D matcapTexture;
 
     sample_gl_render();
     ~sample_gl_render();
@@ -16,6 +31,43 @@ struct sample_gl_render final : public polymer_app
     void on_draw() override;
 };
 
+void upload_mesh(const runtime_mesh & cpu, GlMesh & gpu, bool indexed = true)
+{
+    const uint32_t components = 6;
+    
+    std::vector<float> buffer;
+    buffer.reserve(cpu.vertices.size());
+
+    for (int v = 0; v < cpu.vertices.size(); v++)
+    {
+        buffer.push_back(cpu.vertices[v].x);
+        buffer.push_back(cpu.vertices[v].y);
+        buffer.push_back(cpu.vertices[v].z);
+        buffer.push_back(cpu.normals[v].x);
+        buffer.push_back(cpu.normals[v].y);
+        buffer.push_back(cpu.normals[v].z);
+    }
+
+    gpu.set_vertices(buffer.size() * sizeof(float), buffer.data(), GL_STATIC_DRAW);
+    gpu.set_attribute(0, 3, GL_FLOAT, GL_FALSE, components * sizeof(float), ((float*)0) + 0);
+    gpu.set_attribute(1, 3, GL_FLOAT, GL_FALSE, components * sizeof(float), ((float*)0) + 3);
+    if (indexed) gpu.set_elements(cpu.faces, GL_STATIC_DRAW);
+    else gpu.set_non_indexed(GL_LINES);
+}
+
+void draw_mesh_matcap(GlShader & shader, GlMesh & mesh, const GlTexture2D & tex, 
+    const float4x4 & model, const float4x4 & view, const float4x4 & proj)
+{
+    shader.bind();
+    shader.uniform("u_modelMatrix", model);
+    shader.uniform("u_viewProj", mul(proj, view));
+    shader.uniform("u_modelViewMatrix", mul(view, model));
+    shader.uniform("u_modelMatrixIT", inverse(transpose(model)));
+    shader.texture("u_matcapTexture", 0, tex, GL_TEXTURE_2D);
+    mesh.draw_elements();
+    shader.unbind();
+}
+
 sample_gl_render::sample_gl_render() : polymer_app(1280, 720, "sample-gl-render")
 {
     glfwMakeContextCurrent(window);
@@ -25,23 +77,39 @@ sample_gl_render::sample_gl_render() : polymer_app(1280, 720, "sample-gl-render"
     glfwGetWindowSize(window, &width, &height);
     glViewport(0, 0, width, height);
 
-    cam.look_at({ 0, 9.5f, -6.0f }, { 0, 0.1f, 0 });
-    flycam.set_camera(&cam);
+    matcapTexture = load_image("../../assets/textures/matcap/chemical_carpaint_blue.png");
+
+    matcapShader = GlShader(
+        read_file_text("../../assets/shaders/prototype/matcap_vert.glsl"),
+        read_file_text("../..//assets/shaders/prototype/matcap_frag.glsl"));
+
+    auto meshes = import_model("../../assets/models/geometry/TorusKnotUniform.obj");
+    runtime_mesh & m = meshes.begin()->second;
+    rescale_geometry(m);
+    upload_mesh(m, model);
+
+    arcball.reset(new arcball_controller(float2(width, height)));
+
+    cam.look_at({ 0, 0, 2 }, { 0, 0.1f, 0 });
 }
 
-sample_gl_render::~sample_gl_render()
-{ 
+sample_gl_render::~sample_gl_render() {}
 
-}
-
-void sample_gl_render::on_window_resize(int2 size)
-{ 
-
-}
+void sample_gl_render::on_window_resize(int2 size) {}
 
 void sample_gl_render::on_input(const app_input_event & event)
 {
-    flycam.handle_input(event);
+    if (event.type == app_input_event::Type::MOUSE && event.is_down())
+    {
+        arcball->mouse_down(event.cursor);
+    }
+
+    if (event.type == app_input_event::Type::CURSOR && event.drag)
+    {
+        arcball->mouse_drag(event.cursor);
+    }
+
+    lastEvent = event;
 }
 
 void sample_gl_render::on_update(const app_update_event & e)
@@ -58,7 +126,7 @@ void sample_gl_render::on_draw()
     glfwGetWindowSize(window, &width, &height);
 
     glViewport(0, 0, width, height);
-    glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+    glClearColor(0.25f, 0.25f, 0.25f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glEnable(GL_CULL_FACE);
@@ -71,12 +139,19 @@ void sample_gl_render::on_draw()
     const float4x4 viewMatrix = cam.get_view_matrix();
     const float4x4 viewProjectionMatrix = mul(projectionMatrix, viewMatrix);
 
+    if (lastEvent.drag)
+    {
+        modelPose.orientation = normalize(qmul(modelPose.orientation, arcball->currentQuat));
+    }
+
+    draw_mesh_matcap(matcapShader, model, matcapTexture, modelPose.matrix(), viewMatrix, projectionMatrix);
+
     gl_check_error(__FILE__, __LINE__);
 
     glfwSwapBuffers(window); 
 }
 
-IMPLEMENT_MAIN(int argc, char * argv[])
+int main(int argc, char * argv[])
 {
     try
     {

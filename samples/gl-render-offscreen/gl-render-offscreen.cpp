@@ -76,7 +76,7 @@ void sample_gl_render_offscreen::on_draw()
     glfwSwapBuffers(window); 
 }
 
-IMPLEMENT_MAIN(int argc, char * argv[])
+int main(int argc, char * argv[])
 {
     try
     {

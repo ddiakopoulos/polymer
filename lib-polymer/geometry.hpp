@@ -158,7 +158,7 @@ inline void compute_normals(Geometry & g, bool smooth = true)
     for (auto & n : g.normals) n = safe_normalize(n);
 }
 
-inline void rescale_geometry(Geometry & g, float radius = 1.0f)
+inline void rescale_geometry(runtime_mesh & g, float radius = 1.0f)
 {
     auto bounds = compute_bounds(g);
 
