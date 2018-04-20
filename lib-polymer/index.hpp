@@ -26,7 +26,6 @@
 #include "glfw-app.hpp"
 #include "gl-api.hpp"
 #include "gl-async-gpu-timer.hpp"
-#include "gl-async-pbo.hpp"
 #include "gl-camera.hpp"
 #include "gl-imgui.hpp"
 #include "gl-mesh.hpp"

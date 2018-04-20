@@ -27,12 +27,33 @@ namespace polymer
 		return onPlane;
 	}
 
-	struct arcball_controller
+	class arcball_controller
 	{
 		float2 windowSize;
 		float2 initialMousePos;
-		float4 initialQuat, currentQuat;
-		float3 constraintAxis = { 0, 0, 0 };
+
+        float3 mouse_on_sphere(const float2 & mouse)
+        {
+            float3 result = { 0, 0, 0 };
+            result.x = (mouse.x - (0.5f * windowSize.x)) / (0.5f * windowSize.x);
+            result.y = -(mouse.y - (0.5f * windowSize.y)) / (0.5f * windowSize.y);
+
+            float mag = length2(result);
+
+            if (mag > 1.0f) result = safe_normalize(result);
+            else
+            {
+                result.z = std::sqrt(1.f - mag);
+                result = safe_normalize(result);
+            }
+
+            return result;
+        }
+
+    public:
+
+        float4 initialQuat, currentQuat;
+        float3 constraintAxis = { 0, 0, 0 };
 
 		arcball_controller(float2 windowSize) : windowSize(windowSize) { initialQuat = currentQuat = float4(0, 0, 0, 1); }
 
@@ -58,25 +79,7 @@ namespace polymer
 			auto rotation = normalize(make_rotation_quat_between_vectors(a, b));
 			auto deltaRotation = normalize(qmul(rotation, qconj(initialQuat)));
 			currentQuat = deltaRotation;
-			initialMousePos = mousePos; // delta rotation
-		}
-
-		float3 mouse_on_sphere(const float2 & mouse)
-		{
-			float3 result = { 0, 0, 0 };
-			result.x = (mouse.x - (0.5f * windowSize.x)) / (0.5f * windowSize.x);
-			result.y = -(mouse.y - (0.5f * windowSize.y)) / (0.5f * windowSize.y);
-
-			float mag = length2(result);
-
-			if (mag > 1.0f) result = safe_normalize(result);
-			else
-			{
-				result.z = std::sqrt(1.f - mag);
-				result = safe_normalize(result);
-			}
-
-			return result;
+			initialMousePos = mousePos;
 		}
 
 	};
