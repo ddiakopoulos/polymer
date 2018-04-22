@@ -325,7 +325,7 @@ POLYMER_SETUP_TYPEID(transform_system);
 // using a variant type. This implementation persists in Polymer as a point of future extension. 
 // An `event_wrapper` by default does not own an event, however a copy operation 
 // also copies the underlying event and assumes ownership. 
-struct event_wrapper
+class event_wrapper
 {
     enum op : uint32_t 
     {
@@ -352,11 +352,13 @@ struct event_wrapper
         }
     }
 
-    poly_typeid type { 0 };          // typeid of the wrapped event.
-    mutable size_t size { 0 };       // sizeof() the wrapped event.
-    mutable size_t align { 0 };      // alignof() the wrapped event.
-    mutable void * data { nullptr }; // pointer to the wrapped event.
-    lifetime life{ transient };
+    mutable poly_typeid type { 0 };     // typeid of the wrapped event.
+    mutable size_t size { 0 };          // sizeof() the wrapped event.
+    mutable size_t align { 0 };         // alignof() the wrapped event.
+    mutable void * data { nullptr };    // pointer to the wrapped event.
+    mutable lifetime life{ transient };
+
+public:
 
     event_wrapper() = default;
     ~event_wrapper()
@@ -365,17 +367,12 @@ struct event_wrapper
         {
             pointer_op(op::destruct, data, nullptr);
             polymer_aligned_free(data);
-            std::cout << "destruct" << std::endl;
         }
     }
 
     template <typename E>
     explicit event_wrapper(const E & evt) 
-        : type(get_typeid<E>()), size(sizeof(E)), data(const_cast<E*>(&evt)), align(alignof(E)),
-          pointer_op(&do_pointer_op<E>) 
-    {
-        std::cout << "construct" << std::endl;
-    }
+        : type(get_typeid<E>()), size(sizeof(E)), data(const_cast<E*>(&evt)), align(alignof(E)), pointer_op(&do_pointer_op<E>) { }
 
     event_wrapper(const event_wrapper & rhs) 
         : type(rhs.type), size(rhs.size), align(rhs.align), pointer_op(rhs.pointer_op), life(lifetime::concrete)
@@ -385,7 +382,6 @@ struct event_wrapper
             data = polymer_aligned_alloc(size, align);
             pointer_op(op::copy, data, rhs.data);
         }
-        std::cout << "copy construct" << std::endl;
     }
 
     template <typename E>
@@ -529,7 +525,19 @@ public:
     void disconnect() { c.disconnect(); }
 };
 
-class synchronous_event_manager 
+////////////////////////////////////
+//   Synchronous Event Mananger   //
+////////////////////////////////////
+
+// This event mananger tracks connections between types of events
+// and their associated connected handlers. A variety of convenience
+// functions are provided to connect through an event's typeid or
+// by template deduction. As the name suggests, events dispatched
+// through this manager are invoked synchronously on the calling thread;
+// events are processed by their handlers immediately. This type
+// of behavior is useful for some types of system implementations,
+// such as a user interface with a dedicated thread.
+class event_manager_sync 
 {
 protected:
 
@@ -550,8 +558,6 @@ protected:
     /* todo - removes the handler that matches the the type and owner */
     void disconnect_impl(poly_typeid type, const void * owner) {}
 
-protected:
-
     virtual bool send_internal(const event_wrapper & event_w)
     {
         return handlers->dispatch(event_w);
@@ -559,7 +565,7 @@ protected:
 
 public:
 
-    synchronous_event_manager() : handlers(std::make_shared<event_handler_map>()) {}
+    event_manager_sync() : handlers(std::make_shared<event_handler_map>()) {}
 
     // This is used by the async event queue
     virtual void process() {};
@@ -617,12 +623,21 @@ public:
     size_t num_handlers_type(poly_typeid type) const { return handlers->handler_count(type); }
 };
 
-class async_event_manager : public synchronous_event_manager
+/////////////////////////////
+//   Async Event Manager   //
+/////////////////////////////
+
+// This type of event manager queues up events and batches them
+// when users call `process()`. This class is kept simple and does
+// not perform any threading. Notably different from the sync variant,
+// we use an `event_wrapper` to keep copies of the event alive until
+// they are sent and handled (otherwise we'd run into lifetime issues). 
+class event_manager_async : public event_manager_sync
 {
     mpmc_queue_blocking<std::unique_ptr<event_wrapper>> queue;
 
-    async_event_manager(const async_event_manager &) = delete;
-    async_event_manager & operator=(const async_event_manager &) = delete;
+    event_manager_async(const event_manager_async &) = delete;
+    event_manager_async & operator=(const event_manager_async &) = delete;
 
     virtual bool send_internal(const event_wrapper & event_w) override final
     {
@@ -633,7 +648,10 @@ class async_event_manager : public synchronous_event_manager
 
 public:
 
-    async_event_manager() = default;
+    event_manager_async() = default;
+    ~event_manager_async() = default;
+
+    bool empty() const { return queue.empty(); }
 
     // Callbacks will happen on the calling thread. It's expected that 
     // this function is only invoked from a single thread, like an an updater.
@@ -642,21 +660,12 @@ public:
         std::unique_ptr<event_wrapper> event;
         while (queue.try_consume(event)) 
         {
-            synchronous_event_manager::send_internal(*event);
+            event_manager_sync::send_internal(*event);
         }
     }
-
-    bool empty() const { return queue.empty(); }
 };
 
-struct example_event 
-{
-    uint32_t value; 
-    ~example_event()
-    {
-        std::cout << "destructed example_event event" << std::endl;
-    }
-}; 
+struct example_event { uint32_t value; }; 
 POLYMER_SETUP_TYPEID(example_event);
 
 struct example_event2 { uint32_t value; }; 
@@ -665,10 +674,6 @@ POLYMER_SETUP_TYPEID(example_event2);
 struct queued_event 
 {
     queued_event() {}
-    ~queued_event()
-    {
-        std::cout << "destructed queued event" << std::endl;
-    }
     explicit queued_event(uint32_t value) : value(value) {}
     queued_event(uint32_t value, const std::string & text) : value(value), text(text) {}
     const uint32_t value = 0;
@@ -697,10 +702,9 @@ struct handler_test
     uint32_t sum = 0;
 };
 
-/*
-TEST_CASE("synchronous_event_manager connection count")
+TEST_CASE("event_manager_sync connection count")
 {
-    synchronous_event_manager manager;
+    event_manager_sync manager;
     handler_test test_handler;
 
     REQUIRE(manager.num_handlers() == 0);
@@ -713,9 +717,9 @@ TEST_CASE("synchronous_event_manager connection count")
     REQUIRE(manager.num_handlers_type(get_typeid<example_event>()) == 1);
 }
 
-TEST_CASE("synchronous_event_manager scoped disconnection")
+TEST_CASE("event_manager_sync scoped disconnection")
 {
-    synchronous_event_manager manager;
+    event_manager_sync manager;
     handler_test test_handler;
 
     {
@@ -726,9 +730,9 @@ TEST_CASE("synchronous_event_manager scoped disconnection")
     REQUIRE(manager.num_handlers_type(get_typeid<example_event>()) == 0);
 }
 
-TEST_CASE("synchronous_event_manager manual disconnection")
+TEST_CASE("event_manager_sync manual disconnection")
 {
-    synchronous_event_manager manager;
+    event_manager_sync manager;
     handler_test test_handler;
 
     auto connection = manager.connect([&](const example_event & event) { test_handler.handle_event(event); });
@@ -747,41 +751,40 @@ TEST_CASE("synchronous_event_manager manual disconnection")
     REQUIRE(result == false);
 }
 
-TEST_CASE("synchronous_event_manager connection by type and handler")
+TEST_CASE("event_manager_sync connection by type and handler")
 {
     // connect(poly_typeid type, event_handler handler)
 }
 
-TEST_CASE("synchronous_event_manager connect all ")
+TEST_CASE("event_manager_sync connect all ")
 {
     // connect_all(event_handler handler)
 }
 
-TEST_CASE("synchronous_event_manager disconnect type by owner pointer")
+TEST_CASE("event_manager_sync disconnect type by owner pointer")
 {
     //disconnect<T>(const void * owner)
 }
 
-TEST_CASE("synchronous_event_manager disconnect by type and owner")
+TEST_CASE("event_manager_sync disconnect by type and owner")
 {
     // disconnect(poly_typeid type, const void * owner)
 }
 
-TEST_CASE("synchronous_event_manager disconnect all by owner")
+TEST_CASE("event_manager_sync disconnect all by owner")
 {
     //disconnect_all(const void * owner)
 }
 
-TEST_CASE("synchronous_event_manager connection test")
+TEST_CASE("event_manager_sync connection test")
 {
-    synchronous_event_manager manager;
+    event_manager_sync manager;
 
     handler_test test_handler;
     REQUIRE(test_handler.sum == 0);
 
     auto connection = manager.connect([&](const example_event & event) 
     { 
-        std::cout << "Invoked the callbacl: " << event.value << std::endl;
         test_handler.handle_event(event); 
     });
 
@@ -799,16 +802,12 @@ TEST_CASE("synchronous_event_manager connection test")
     REQUIRE(test_handler.sum == 105);
 }
 
-*/
-
-TEST_CASE("async_event_manager")
+TEST_CASE("event_manager_async")
 {
-    async_event_manager mgr;
-
+    event_manager_async mgr;
     example_queued_event_handler handlerClass;
 
     auto c1 = mgr.connect([&](const queued_event & event) {
-        std::cout << event.value << std::endl;
         example_queued_event_handler::static_handle(event);
     });
 
@@ -833,6 +832,7 @@ TEST_CASE("async_event_manager")
     REQUIRE(0 == handlerClass.accumulator);
     REQUIRE(0 == handlerClass.static_accumulator);
 
+    // Process queue on the main thread by dispatching all events here
     mgr.process();
 
     REQUIRE(2080 * num_producers == handlerClass.accumulator);
