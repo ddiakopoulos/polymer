@@ -20,6 +20,36 @@
 /// Quick reference for doctest macros
 /// REQUIRE, REQUIRE_FALSE, CHECK, WARN, CHECK_THROWS_AS(func(), std::exception)
 
+
+#ifdef _MSC_VER
+    #include <malloc.h>
+#endif
+#include <stdlib.h>
+#include <algorithm>
+#include <cstddef>
+
+
+inline void * polymer_aligned_alloc(size_t size, size_t align) 
+{
+    const size_t min_align = std::max(align, sizeof(max_align_t));
+#ifdef _MSC_VER
+    return _aligned_malloc(size, min_align);
+#else
+    void* ptr = nullptr;
+    posix_memalign(&ptr, min_align, size);
+    return ptr;
+#endif
+}
+
+inline void polymer_aligned_free(void * ptr) 
+{
+#ifdef _MSC_VER
+    _aligned_free(ptr);
+#else
+    free(ptr);
+#endif
+}
+
 struct physics_component : public base_component
 {
     physics_component() {};
@@ -289,27 +319,79 @@ POLYMER_SETUP_TYPEID(transform_system);
 //   Event System   //
 //////////////////////
 
-// note: event wrappers do not own data
+// `event_wrapper` is a modified version of the concept found in Google's Lullaby. 
+// It was modified to only support the notion of a "concrete" event, a compile-time
+// event definition, as separate from a potential future runtime-definable events
+// using a variant type. This implementation persists in Polymer as a point of future extension. 
+// An `event_wrapper` by default does not own an event, however a copy operation 
+// also copies the underlying event and assumes ownership. 
 struct event_wrapper
 {
+    enum op : uint32_t 
+    {
+        copy,
+        destruct
+    };
+
+    enum lifetime : uint32_t 
+    {
+        transient,
+        concrete,
+    };
+
+    using pointer_fn = void(*)(op, void *, const void *);
+    mutable pointer_fn pointer_op{ nullptr };
+
+    template <typename E>
+    static void do_pointer_op(op o, void * dst, const void * src)
+    {
+        switch (o)
+        {
+        case copy: { const E * other = reinterpret_cast<const E *>(src); new (dst) E(*other); break; }
+        case destruct: { E * evt = reinterpret_cast<E*>(dst); evt->~E(); break; }
+        }
+    }
+
     poly_typeid type { 0 };          // typeid of the wrapped event.
     mutable size_t size { 0 };       // sizeof() the wrapped event.
+    mutable size_t align { 0 };      // alignof() the wrapped event.
     mutable void * data { nullptr }; // pointer to the wrapped event.
+    lifetime life{ transient };
 
     event_wrapper() = default;
-    ~event_wrapper() = default;
+    ~event_wrapper()
+    {
+        if (life == lifetime::concrete)
+        {
+            pointer_op(op::destruct, data, nullptr);
+            polymer_aligned_free(data);
+            std::cout << "destruct" << std::endl;
+        }
+    }
 
     template <typename E>
     explicit event_wrapper(const E & evt) 
-        : type(get_typeid<E>()), size(sizeof(E)), data(const_cast<E*>(&evt)) {
+        : type(get_typeid<E>()), size(sizeof(E)), data(const_cast<E*>(&evt)), align(alignof(E)),
+          pointer_op(&do_pointer_op<E>) 
+    {
         std::cout << "construct" << std::endl;
+    }
+
+    event_wrapper(const event_wrapper & rhs) 
+        : type(rhs.type), size(rhs.size), align(rhs.align), pointer_op(rhs.pointer_op), life(lifetime::concrete)
+    {
+        if (rhs.data) 
+        {
+            data = polymer_aligned_alloc(size, align);
+            pointer_op(op::copy, data, rhs.data);
+        }
+        std::cout << "copy construct" << std::endl;
     }
 
     template <typename E>
     const E * get() const
     {
-        if (type != get_typeid<E>()) 
-            return nullptr;
+        if (type != get_typeid<E>())  return nullptr;
         return reinterpret_cast<const E*>(data);
     }
 
@@ -739,7 +821,7 @@ TEST_CASE("async_event_manager")
     {
         producerThreads.emplace_back([&mgr]()
         {
-            for (int j = 0; j < 100; ++j)
+            for (int j = 0; j < 64; ++j)
             {
                 mgr.send(queued_event{ (uint32_t) j + 1 });
             }
