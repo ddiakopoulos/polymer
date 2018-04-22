@@ -11,6 +11,7 @@
 
 #include "polymer-typeid.hpp"
 #include "polymer-ecs.hpp"
+#include "name-system.hpp"
 #include "component-pool.hpp"
 #include "mpmc_blocking_queue.hpp"
 
@@ -20,14 +21,12 @@
 /// Quick reference for doctest macros
 /// REQUIRE, REQUIRE_FALSE, CHECK, WARN, CHECK_THROWS_AS(func(), std::exception)
 
-
 #ifdef _MSC_VER
     #include <malloc.h>
 #endif
 #include <stdlib.h>
 #include <algorithm>
 #include <cstddef>
-
 
 inline void * polymer_aligned_alloc(size_t size, size_t align) 
 {

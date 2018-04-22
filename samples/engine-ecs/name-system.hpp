@@ -1,32 +1,33 @@
 #pragma once
 
 #include "polymer-typeid.hpp"
+#include "polymer-ecs.hpp"
 
 ////////////////////////
 //   name/id system   //
 ////////////////////////
 
-/*
-struct name_system final : public system
+struct name_system final : public base_system
 {
-    name_system(entity_manager * f) : system(f)
+    name_system(entity_orchestrator * orch) : base_system(orch)
     {
-        register_system_for_type(this, hash_fnv1a("NameDefinition"));
+        register_system_for_type(this, hash_fnv1a("std::string"));
     }
 
     ~name_system() override { }
 
-    bool create(entity e, component_hash component_name_hash) override final
+    virtual bool create(entity e, poly_typeid hash, void * data) override final
     {
-        return false;
+        if (hash_fnv1a("std::string") != hash) { return false; }
+        const std::string name = *static_cast<std::string *>(data);
+        set_name(e, name);
+        return true;
     }
 
-    // Associates |entity| with a name. Removes any existing name associated with this entity.
-    bool create(entity entity, poly_hash_value type, void * data) override final
+    bool create(entity e, const std::string & name)
     {
-        if (type != const_hash_fnv1a("NameDefinition")) { return false; }
+        set_name(e, name);
         return true;
-        // todo - set name based on data
     }
 
     // Disassociates any name from |entity|.
@@ -55,15 +56,11 @@ struct name_system final : public system
         const std::string existing_name = get_name(entity);
         if (existing_name == name) { return; } // No need to proceed if current name and desired name are identical
 
-                                               // Ensure a different entity with the same name does not already exist. This
-                                               // may happen if an entity with the name had not been properly deleted or
-                                               // the same entity had been created multiple times.
-        if (find_entity(name) != kInvalidEntity)
-        {
-            std::cout << "entity " << name << " already exists..." << std::endl;
-            return;
-        }
-
+        // Ensure a different entity with the same name does not already exist. This
+        // may happen if an entity with the name had not been properly deleted or
+        // the same entity had been created multiple times.
+        if (find_entity(name) != kInvalidEntity) return; // fail silently
+  
         const auto hash = hash_fnv1a(name.c_str());
 
         hash_to_entity_.erase(hash_fnv1a(existing_name.c_str()));
@@ -86,5 +83,3 @@ struct name_system final : public system
 };
 
 POLYMER_SETUP_TYPEID(name_system);
-
-*/
