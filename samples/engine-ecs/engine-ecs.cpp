@@ -1108,3 +1108,47 @@ TEST_CASE("polymer_component_pool add and remove")
     REQUIRE(sum2 == check);
     REQUIRE(static_cast<int>(scene_graph_pool.size()) == (128 - 101 + 44));
 }
+
+///////////////////////////
+//   Name System Tests   //
+///////////////////////////
+
+TEST_CASE("name_system unified tests")
+{
+    entity_orchestrator orchestrator;
+    name_system * system = orchestrator.create_system<name_system>(&orchestrator);
+
+    const entity e1 = orchestrator.create_entity();
+    const entity e2 = orchestrator.create_entity();
+    const entity e3 = orchestrator.create_entity();
+
+    REQUIRE_FALSE(system->create(0, "oops"));
+
+    REQUIRE(system->create(e1, "first-entity"));
+    REQUIRE(system->create(e2, "second-entity"));
+
+    // Throws on duplicate name
+    CHECK_THROWS_AS(system->create(e1, "first-entity"), std::runtime_error);
+
+    REQUIRE(system->get_name(e1) == "first-entity");
+    REQUIRE(system->get_name(e2) == "second-entity");
+
+    REQUIRE(system->find_entity("first-entity") == e1);
+    REQUIRE(system->find_entity("second-entity") == e2);
+    REQUIRE(system->find_entity("sjdhfk") == kInvalidEntity);
+    REQUIRE(system->find_entity("") == kInvalidEntity);
+
+    // Destroy e1
+    system->destroy(e1);
+    REQUIRE(system->find_entity("first-entity") == kInvalidEntity);
+    REQUIRE(system->get_name(e1).empty());
+
+    // Re-create e1
+    REQUIRE(system->create(e1, "first-entity"));
+    REQUIRE(system->find_entity("first-entity") == e1);
+
+    // Modify name of e2
+    REQUIRE(system->set_name(e2, "second-entity-modified"));
+    REQUIRE(system->find_entity("second-entity-modified") == e2);
+}
+
