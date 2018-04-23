@@ -21,34 +21,6 @@
 /// Quick reference for doctest macros
 /// REQUIRE, REQUIRE_FALSE, CHECK, WARN, CHECK_THROWS_AS(func(), std::exception)
 
-#ifdef _MSC_VER
-    #include <malloc.h>
-#endif
-#include <stdlib.h>
-#include <algorithm>
-#include <cstddef>
-
-inline void * polymer_aligned_alloc(size_t size, size_t align) 
-{
-    const size_t min_align = std::max(align, sizeof(max_align_t));
-#ifdef _MSC_VER
-    return _aligned_malloc(size, min_align);
-#else
-    void* ptr = nullptr;
-    posix_memalign(&ptr, min_align, size);
-    return ptr;
-#endif
-}
-
-inline void polymer_aligned_free(void * ptr) 
-{
-#ifdef _MSC_VER
-    _aligned_free(ptr);
-#else
-    free(ptr);
-#endif
-}
-
 struct physics_component : public base_component
 {
     physics_component() {};
