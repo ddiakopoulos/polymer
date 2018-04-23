@@ -177,7 +177,6 @@ struct world_transform_component : public base_component
 
 class transform_system final : public base_system
 {
-
     void recalculate_world_transform(entity child)
     {
         auto node = scene_graph_transforms.get(child);
@@ -259,6 +258,10 @@ public:
         recalculate_world_transform(parent);
         return true;
     }
+
+    void insert_child(entity parent, entity child, uint32_t idx = -1) { /* todo */ }
+
+    void move_child(entity child, uint32_t idx) { /* todo */ }
 
     const scene_graph_component * get_local_transform(entity e)
     {
@@ -956,6 +959,16 @@ TEST_CASE("transform system scene graph math correctness")
     REQUIRE(system->get_world_transform(root)->world_pose == check_p1); // root (already in worldspace)
     REQUIRE(system->get_world_transform(child1)->world_pose == check_p2);
     REQUIRE(system->get_world_transform(child2)->world_pose == check_p3);
+}
+
+TEST_CASE("transform system insert child via index")
+{
+    // todo - test insert_child
+}
+
+TEST_CASE("transform system move child via index")
+{
+    // todo - test move_child
 }
 
 TEST_CASE("transform system update local transform")
