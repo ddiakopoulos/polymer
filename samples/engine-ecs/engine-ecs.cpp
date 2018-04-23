@@ -141,6 +141,34 @@ struct scene_graph_component : public base_component
     std::vector<entity> children;
 }; POLYMER_SETUP_TYPEID(scene_graph_component);
 
+template<class F> void visit_fields(scene_graph_component & o, F f)
+{
+    f("local_pose", o.local_pose);
+    f("local_scale", o.local_scale);
+    f("children", o.children);
+}
+
+namespace cereal
+{
+    template<class Archive> void serialize(Archive & archive, float2 & m) { archive(cereal::make_nvp("x", m.x), cereal::make_nvp("y", m.y)); }
+    template<class Archive> void serialize(Archive & archive, float3 & m) { archive(cereal::make_nvp("x", m.x), cereal::make_nvp("y", m.y), cereal::make_nvp("z", m.z)); }
+    template<class Archive> void serialize(Archive & archive, float4 & m) { archive(cereal::make_nvp("x", m.x), cereal::make_nvp("y", m.y), cereal::make_nvp("z", m.z), cereal::make_nvp("w", m.w)); }
+    template<class Archive> void serialize(Archive & archive, Pose & m)   { archive(cereal::make_nvp("position", m.position), cereal::make_nvp("orientation", m.orientation)); }
+}
+
+template<class Archive> void serialize(Archive & archive, entity & e)
+{
+    archive(cereal::make_nvp("child", (uint64_t) e));
+}
+
+template<class Archive> void serialize(Archive & archive, scene_graph_component & m)
+{
+    visit_fields(m, [&archive](const char * name, auto & field, auto... metadata) 
+    { 
+        archive(cereal::make_nvp(name, field));
+    });
+}
+
 struct world_transform_component : public base_component
 {
     world_transform_component() {};
@@ -1001,6 +1029,45 @@ TEST_CASE("transform system performance testing 2")
         scoped_timer t("iterate and add");
         system->world_transforms.for_each([&](world_transform_component & t) { t.world_pose.position += float3(0.001f); });
     }
+}
+
+
+TEST_CASE("transform system serialization test")
+{
+    entity_orchestrator orchestrator;
+    transform_system * system = orchestrator.create_system<transform_system>(&orchestrator);
+
+    /*
+    render_component serialize(orchestrator.create_entity());
+    serialize.value1 = 1.f;
+    serialize.value2 = 2.f;
+    serialize.value3 = 3.f;
+    auto str = serialize_to_json(serialize);
+
+    render_component deserialize = (orchestrator.create_entity());
+    deserialize_from_json(str, deserialize);
+    */
+
+    entity root = orchestrator.create_entity();
+    entity child1 = orchestrator.create_entity();
+    entity child2 = orchestrator.create_entity();
+
+    system->create(root, Pose(), float3(1));
+    system->create(child1, Pose(), float3(1));
+    system->create(child2, Pose(), float3(1));
+
+    system->add_child(root, child1);
+    system->add_child(root, child2);
+
+    // Ideally should serialize an entity
+    // Find all systems using entity
+    // Serialize those components
+
+    auto str = serialize_to_json(*system->get_local_transform(root));
+    std::cout << str << std::endl;
+
+    std::cout << "Serialize Test" << std::endl;
+
 }
 
 //////////////////////////////
