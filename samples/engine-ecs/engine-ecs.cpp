@@ -10,7 +10,7 @@
 #include "cereal/access.hpp"
 
 #include "polymer-typeid.hpp"
-#include "polymer-ecs.hpp"
+#include "polymer-base-ecs.hpp"
 #include "name-system.hpp"
 #include "component-pool.hpp"
 #include "mpmc_blocking_queue.hpp"
@@ -130,6 +130,7 @@ template<class F> void visit_systems(base_system * s, F f)
 //   Transform System   //
 //////////////////////////
 
+// todo - to be as lean as possible, we shouldn't inherit from base_component here
 struct scene_graph_component : public base_component
 {
     scene_graph_component() {};
@@ -518,7 +519,7 @@ protected:
     connection_id id{ 0 }; // autoincrementing counter
     std::shared_ptr<event_handler_map> handlers;
 
-    // Function declaration that is used to extract a type from the event handler (const)
+    // Function declaration that is used to extract a type from the event handler
     template <typename Fn, typename Arg> Arg connect_helper(void (Fn::*)(const Arg &) const);
     template <typename Fn, typename Arg> Arg connect_helper(void (Fn::*)(const Arg &));
 

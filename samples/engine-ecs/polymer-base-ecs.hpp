@@ -9,13 +9,17 @@
 
 using namespace polymer;
 
-//////////////////
-//   Entities   //
-//////////////////
+////////////////
+//   Entity   //
+////////////////
 
 // An entity is an uniquely identifiable object in the Polymer runtime.
 using entity = uint64_t;
 constexpr entity kInvalidEntity = 0;
+
+////////////////////////
+//   Base Component   //
+////////////////////////
 
 // Provide a consistent way to retrieve an entity to which a component belongs. 
 class base_component
