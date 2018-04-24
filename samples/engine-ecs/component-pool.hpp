@@ -160,14 +160,8 @@ namespace polymer
         }
 
         iterator begin() { return iterator(objects.begin(), objects.end()); }
-
-        const_iterator begin() const
-        {
-            return const_iterator(objects.begin(), objects.end());
-        }
-
+        const_iterator begin() const { return const_iterator(objects.begin(), objects.end()); }
         iterator end() { return iterator(objects.end()); }
-
         const_iterator end() const { return const_iterator(objects.end()); }
 
     private:
@@ -236,8 +230,7 @@ namespace polymer
             Iterator() = default;
 
             // Allow conversion from the non-const iterator to the const
-            // iterator. Relies on the fact that the internal iterators only support 
-            // conversions from non-const to const.
+            // iterator. Relies on the fact that the internal iterators only support conversions from non-const to const.
             Iterator(const Iterator<false> & other) : outer_(other.outer_), outer_end_(other.outer_end_), inner_(other.inner_) { }
 
             reference operator*() const

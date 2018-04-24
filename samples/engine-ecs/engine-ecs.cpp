@@ -130,7 +130,6 @@ template<class F> void visit_systems(base_system * s, F f)
 //   Transform System   //
 //////////////////////////
 
-// todo - to be as lean as possible, we shouldn't inherit from base_component here
 struct scene_graph_component : public base_component
 {
     scene_graph_component() {};
@@ -145,8 +144,12 @@ template<class F> void visit_fields(scene_graph_component & o, F f)
 {
     f("local_pose", o.local_pose);
     f("local_scale", o.local_scale);
+    f("parent", o.parent);
     f("children", o.children);
 }
+
+void prologue(cereal::JSONOutputArchive & archive, scene_graph_component const & o) {}
+void epilogue(cereal::JSONOutputArchive & archive, scene_graph_component const & o) {}
 
 namespace cereal
 {
@@ -1061,10 +1064,15 @@ TEST_CASE("transform system serialization test")
 
     // Ideally should serialize an entity
     // Find all systems using entity
-    // Serialize those components
+    // Serialize those components as an entity block
 
     auto str = serialize_to_json(*system->get_local_transform(root));
     std::cout << str << std::endl;
+
+    system->scene_graph_transforms.for_each([&](scene_graph_component & t) 
+    { 
+        std::cout << "e? " << t.get_entity() << std::endl;
+    });
 
     std::cout << "Serialize Test" << std::endl;
 
