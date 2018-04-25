@@ -30,20 +30,6 @@ material_library::~material_library()
     instances.clear();
 }
 
-void material_library::create_material(const std::string & name, std::shared_ptr<polymer_pbr_standard> mat)
-{
-    const auto itr = instances.find(name);
-    if (itr != instances.end())
-    {
-        Logger::get_instance()->assetLog->info("material list already contains {}", name);
-        return;
-    }
-    create_handle_for_asset(name.c_str(), std::dynamic_pointer_cast<material_interface>(mat));
-    instances[name] = mat;
-    auto jsonString = cereal::serialize_to_json(instances);
-    polymer::write_file_text(library_path, jsonString);
-}
-
 void material_library::remove_material(const std::string & name)
 {
     const auto itr = instances.find(name);

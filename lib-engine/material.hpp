@@ -15,7 +15,7 @@ namespace polymer
     struct material_interface
     {
         mutable cached_variant compiled_shader{ nullptr };  // cached on first access (because needs to happen on GL thread)
-        shader_handle shader;                                // typically set during object inflation / deserialization
+        shader_handle shader;                               // typically set during object inflation / deserialization
         virtual void update_uniforms() {}                   // generic interface for overriding specific uniform sets
         virtual void use() {}                               // generic interface for binding the program
         virtual void resolve_variants() const = 0;          // all overridden functions need to call this to cache the shader

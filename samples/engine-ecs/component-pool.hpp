@@ -101,7 +101,7 @@ namespace polymer
         // destroys the Object associated with |key|.  The Object being destroyed will
         // be swapped with the object at the end of the internal storage structure,
         // and then will be "popped" off the back.
-        void destroy(const Key& key)
+        void destroy(const Key & key)
         {
             auto iter = lookup_table.find(key);
             if (iter == lookup_table.end()) return;
@@ -116,7 +116,7 @@ namespace polymer
         }
 
         // Returns a pointer to the Object associated with |key|, or nullptr.
-        T * get(const Key& key)
+        T * get(const Key & key)
         {
             auto iter = lookup_table.find(key);
             if (iter == lookup_table.end()) return nullptr;
@@ -127,7 +127,7 @@ namespace polymer
         }
 
         // Returns a pointer to the Object associated with |key|, or nullptr.
-        const T * get(const Key& key) const
+        const T * get(const Key & key) const
         {
             auto iter = lookup_table.find(key);
             if (iter == lookup_table.end())  return nullptr;
