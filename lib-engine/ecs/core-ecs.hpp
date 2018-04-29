@@ -103,7 +103,10 @@ namespace polymer
         }
     };
 
-    void base_system::register_system_for_type(poly_typeid system_type, poly_typeid entity_type) { orchestrator->register_system_for_type(system_type, entity_type); }
+    inline void base_system::register_system_for_type(poly_typeid system_type, poly_typeid entity_type) 
+    { 
+        orchestrator->register_system_for_type(system_type, entity_type); 
+    }
 
 } // end namespace polymer
 

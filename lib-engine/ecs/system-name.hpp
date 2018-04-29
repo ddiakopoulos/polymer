@@ -24,14 +24,14 @@ namespace polymer
 
         name_system(entity_orchestrator * orch) : base_system(orch)
         {
-            register_system_for_type(this, hash_fnv1a("std::string"));
+            register_system_for_type(this, hash("std::string"));
         }
 
         ~name_system() override { }
 
-        virtual bool create(entity e, poly_typeid hash, void * data) override final
+        virtual bool create(entity e, poly_typeid hash_of_data, void * data) override final
         {
-            if (hash_fnv1a("std::string") != hash) { return false; }
+            if (hash("std::string") != hash_of_data) { return false; }
             if (!get_name(e).empty()) throw std::runtime_error("duplicate names are not permitted");
             const std::string name = *static_cast<std::string *>(data);
             return set_name(e, name);
@@ -74,21 +74,21 @@ namespace polymer
             // the same entity had been created multiple times.
             if (find_entity(name) != kInvalidEntity) return false; // fail silently
 
-            const auto hash = hash_fnv1a(name.c_str());
+            const auto h = hash(name.c_str());
 
-            hash_to_entity_.erase(hash_fnv1a(existing_name.c_str()));
-            hash_to_entity_[hash] = entity;
+            hash_to_entity_.erase(hash(existing_name.c_str()));
+            hash_to_entity_[h] = entity;
 
             entity_to_name_[entity] = name;
-            entity_to_hash_[entity] = hash;
+            entity_to_hash_[entity] = h;
 
             return true;
         }
 
         entity find_entity(const std::string & name) const
         {
-            const auto hash = hash_fnv1a(name.c_str());
-            const auto iter = hash_to_entity_.find(hash);
+            const auto h = hash(name.c_str());
+            const auto iter = hash_to_entity_.find(h);
             return iter != hash_to_entity_.end() ? iter->second : kInvalidEntity;
         }
     };

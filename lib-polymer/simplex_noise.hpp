@@ -152,7 +152,6 @@ inline float fast_floor(const float & x)
 
 namespace impl 
 {
-
     // Permutation table. This is just a random jumble of all numbers 0-255,
     // repeated twice to avoid wrapping the index at 255 for each lookup.
     // This needs to be exactly the same for all instances on all platforms,
@@ -380,7 +379,7 @@ inline void regenerate_permutation_table(std::mt19937 & gen)
 //   Dimensional Simplex Noise   //
 ///////////////////////////////////
 
-float noise(float x)
+inline float noise(float x)
 {
     int i0 = fast_floor(x);
     int i1 = i0 + 1;
@@ -403,7 +402,7 @@ float noise(float x)
     return 0.25f * (n0 + n1);
 }
 
-float noise(const float2 & v)
+inline float noise(const float2 & v)
 {
     float n0, n1, n2; // Noise contributions from the three corners
     
@@ -468,7 +467,7 @@ float noise(const float2 & v)
     return 40.0f * (n0 + n1 + n2); // TODO: The scale factor is preliminary!
 }
 
-float noise(const float3 & v)
+inline float noise(const float3 & v)
 {
     float n0, n1, n2, n3; // Noise contributions from the four corners
     
@@ -580,7 +579,7 @@ namespace impl
     };
 }
 
-float noise(const float4 & v)
+inline float noise(const float4 & v)
 {
     float n0, n1, n2, n3, n4; // Noise contributions from the five corners
     
@@ -728,22 +727,22 @@ namespace impl
     inline float compute_ridge_noise(const T & input) { return 1.0f - std::abs(noise(input)); }
 }
 
-float noise_ridged(float x)
+inline float noise_ridged(float x)
 {
     return impl::compute_ridge_noise(x);
 }
 
-float noise_ridged(const float2 & v)
+inline float noise_ridged(const float2 & v)
 {
     return impl::compute_ridge_noise(v);
 }
 
-float noise_ridged(const float3 & v)
+inline float noise_ridged(const float3 & v)
 {
     return impl::compute_ridge_noise(v);
 }
 
-float noise_ridged(const float4 & v)
+inline float noise_ridged(const float4 & v)
 {
     return impl::compute_ridge_noise(v);
 }
@@ -752,7 +751,7 @@ float noise_ridged(const float4 & v)
 //   Simplex Noise Via Analytical Derivative  //
 ////////////////////////////////////////////////
 
-float2 noise_deriv(float x)
+inline float2 noise_deriv(float x)
 {
     int i0 = fast_floor(x);
     int i1 = i0 + 1;
@@ -797,7 +796,7 @@ float2 noise_deriv(float x)
     #endif
 }
 
-float3 noise_deriv(const float2 & v)
+inline float3 noise_deriv(const float2 & v)
 {
     float n0, n1, n2; // Noise contributions from the three corners
     
@@ -896,7 +895,7 @@ float3 noise_deriv(const float2 & v)
     
 }
 
-float4 noise_deriv(const float3 & v)
+inline float4 noise_deriv(const float3 & v)
 {
     float n0, n1, n2, n3; // Noise contributions from the four simplex corners
     float noise;          // Return value
@@ -1041,7 +1040,7 @@ float4 noise_deriv(const float3 & v)
     return float4(noise, dnoise_dx, dnoise_dy, dnoise_dz);
 }
 
-std::array<float,5> noise_deriv(const float4 & v)
+inline std::array<float,5> noise_deriv(const float4 & v)
 {
     float n0, n1, n2, n3, n4; // Noise contributions from the five corners
     float noise; // Return value
@@ -1236,7 +1235,7 @@ std::array<float,5> noise_deriv(const float4 & v)
 //   2D Simplex Worley/Cellular Noise  //
 /////////////////////////////////////////
 
-float noise_worley(const float2 & v)
+inline float noise_worley(const float2 & v)
 {
     float2 p = floor(v);
     float2 f = fract(v);
@@ -1255,7 +1254,7 @@ float noise_worley(const float2 & v)
     return sqrt(res);
 }
 
-float noise_worley(const float3 & v)
+inline float noise_worley(const float3 & v)
 {
     float3 p = floor(v);
     float3 f = fract(v);
@@ -1277,7 +1276,7 @@ float noise_worley(const float3 & v)
     return sqrt(res);
 }
 
-float noise_worley(const float2 & v, float falloff)
+inline float noise_worley(const float2 & v, float falloff)
 {
     auto p = floor(v);
     float2 f = fract(v);
@@ -1296,7 +1295,7 @@ float noise_worley(const float2 & v, float falloff)
     return -(1.0f / falloff) * log(res);
 }
 
-float noise_worley(const float3 & v, float falloff)
+inline float noise_worley(const float3 & v, float falloff)
 {
     float3 p = floor(v);
     float3 f = fract(v);
@@ -1322,7 +1321,7 @@ float noise_worley(const float3 & v, float falloff)
 //   2D/3D Simplex Flow Noise with Rotating Gradients  //
 /////////////////////////////////////////////////////////
 
-float noise_flow(const float2 & v, float angle)
+inline float noise_flow(const float2 & v, float angle)
 {
     float n0, n1, n2; // Noise contributions from the three simplex corners
     float gx0, gy0, gx1, gy1, gx2, gy2; // Gradients at simplex corners
@@ -1400,7 +1399,7 @@ float noise_flow(const float2 & v, float angle)
     return 40.0f * (n0 + n1 + n2);
 }
 
-float noise_flow(const float3 & v, float angle)
+inline float noise_flow(const float3 & v, float angle)
 {
     float n0, n1, n2, n3; // Noise contributions from the four simplex corners
     float gx0, gy0, gz0, gx1, gy1, gz1; // Gradients at simplex corners
@@ -1518,7 +1517,7 @@ float noise_flow(const float3 & v, float angle)
 //   2D/3D Simplex Flow Noise Via Analytical Derivative   //
 ////////////////////////////////////////////////////////////
 
-float3 noise_flow_deriv(const float2 & v, float angle)
+inline float3 noise_flow_deriv(const float2 & v, float angle)
 {
     
     float n0, n1, n2; // Noise contributions from the three simplex corners
@@ -1621,7 +1620,7 @@ float3 noise_flow_deriv(const float2 & v, float angle)
     return float3(noise, dnoise_dx, dnoise_dy);
 }
 
-float4 noise_flow_deriv(const float3 & v, float angle)
+inline float4 noise_flow_deriv(const float3 & v, float angle)
 {
     float n0, n1, n2, n3; // Noise contributions from the four simplex corners
     float noise;
@@ -1779,25 +1778,25 @@ float4 noise_flow_deriv(const float3 & v, float angle)
 //   Compute Curl of 2D Simplex Noise   //
 //////////////////////////////////////////
 
-float2 noise_curl(const float2 & v)
+inline float2 noise_curl(const float2 & v)
 {
     const float3 derivative = noise_deriv(v);
     return float2(derivative.z, -derivative.y);
 }
 
-float2 noise_curl(const float2 & v, float t)
+inline float2 noise_curl(const float2 & v, float t)
 {
     const float3 derivative = noise_flow_deriv(v, t);
     return float2(derivative.z, -derivative.y);
 }
 
-float2 noise_curl(const float2 & v, uint8_t octaves, float lacunarity, float gain)
+inline float2 noise_curl(const float2 & v, uint8_t octaves, float lacunarity, float gain)
 {
     const float3 derivative = noise_fb_deriv(v, octaves, lacunarity, gain);
     return float2(derivative.z, -derivative.y);
 }
 
-float3 noise_curl(const float3 & v)
+inline float3 noise_curl(const float3 & v)
 {
     const float4 derivX = noise_deriv(v);
     const float4 derivY = noise_deriv(v + float3(123.456f, 789.012f, 345.678f));
@@ -1805,7 +1804,7 @@ float3 noise_curl(const float3 & v)
     return float3(derivZ.z - derivY.w, derivX.w - derivZ.y, derivY.y - derivX.z);
 }
 
-float3 noise_curl(const float3 & v, float t)
+inline float3 noise_curl(const float3 & v, float t)
 {
     const float4 derivX = noise_flow_deriv(v, t);
     const float4 derivY = noise_flow_deriv(v + float3(123.456f, 789.012f, 345.678f), t);
@@ -1813,7 +1812,7 @@ float3 noise_curl(const float3 & v, float t)
     return float3(derivZ.z - derivY.w, derivX.w - derivZ.y, derivY.y - derivX.z);
 }
 
-float3 noise_curl(const float3 & v, uint8_t octaves, float lacunarity, float gain)
+inline float3 noise_curl(const float3 & v, uint8_t octaves, float lacunarity, float gain)
 {
     const float4 derivX = noise_fb_deriv(v, octaves, lacunarity, gain);
     const float4 derivY = noise_fb_deriv(v + float3(123.456f, 789.012f, 345.678f), octaves, lacunarity, gain);
@@ -1821,7 +1820,7 @@ float3 noise_curl(const float3 & v, uint8_t octaves, float lacunarity, float gai
     return float3(derivZ.z - derivY.w, derivX.w - derivZ.y, derivY.y - derivX.z);
 }
 
-float2 curl(const float2 & v, const std::function<float(const float2&)> &potential, float delta)
+inline float2 curl(const float2 & v, const std::function<float(const float2&)> &potential, float delta)
 {
     const float2 deltaX = float2(delta, 0.0f);
     const float2 deltaY = float2(0.0f, delta);
@@ -1829,7 +1828,7 @@ float2 curl(const float2 & v, const std::function<float(const float2&)> &potenti
                    (potential(v + deltaX) - potential(v - deltaX))) / (2.0f * delta);
 }
     
-float3 curl(const float3 & v, const std::function<float3(const float3&)> &potential, float delta)
+inline float3 curl(const float3 & v, const std::function<float3(const float3&)> &potential, float delta)
 {
     const float3 deltaX = float3(delta, 0.0f, 0.0f);
     const float3 deltaY = float3(0.0f, delta, 0.0f);
@@ -1849,7 +1848,7 @@ float3 curl(const float3 & v, const std::function<float3(const float3&)> &potent
 namespace impl 
 {
     template<typename T>
-    float compute_fractal_brownian(const T & input, uint8_t octaves, float lacunarity, float gain)
+    inline float compute_fractal_brownian(const T & input, uint8_t octaves, float lacunarity, float gain)
     {
         float sum  = 0.0f;
         float freq = 1.0f;
@@ -1865,22 +1864,22 @@ namespace impl
     }
 }
 
-float noise_fb(float x, uint8_t octaves, float lacunarity, float gain)
+inline float noise_fb(float x, uint8_t octaves, float lacunarity, float gain)
 {
     return impl::compute_fractal_brownian(x, octaves, lacunarity, gain);
 }
 
-float noise_fb(const float2 & v, uint8_t octaves, float lacunarity, float gain)
+inline float noise_fb(const float2 & v, uint8_t octaves, float lacunarity, float gain)
 {
     return impl::compute_fractal_brownian(v, octaves, lacunarity, gain);
 }
 
-float noise_fb(const float3 & v, uint8_t octaves, float lacunarity, float gain)
+inline float noise_fb(const float3 & v, uint8_t octaves, float lacunarity, float gain)
 {
     return impl::compute_fractal_brownian(v, octaves, lacunarity, gain);
 }
 
-float noise_fb(const float4 & v, uint8_t octaves, float lacunarity, float gain)
+inline float noise_fb(const float4 & v, uint8_t octaves, float lacunarity, float gain)
 {
     return impl::compute_fractal_brownian(v, octaves, lacunarity, gain);
 }
@@ -1889,7 +1888,7 @@ float noise_fb(const float4 & v, uint8_t octaves, float lacunarity, float gain)
 //   Fractal Brownian Motion via Analytical Derivative   //
 ///////////////////////////////////////////////////////////
 
-float2 noise_fb_deriv(float x, uint8_t octaves, float lacunarity, float gain)
+inline float2 noise_fb_deriv(float x, uint8_t octaves, float lacunarity, float gain)
 {
     float2 sum = float2(0.0f);
     float freq = 1.0f;
@@ -1904,7 +1903,7 @@ float2 noise_fb_deriv(float x, uint8_t octaves, float lacunarity, float gain)
     return sum;
 }
 
-float3 noise_fb_deriv(const float2 & v, uint8_t octaves, float lacunarity, float gain)
+inline  float3 noise_fb_deriv(const float2 & v, uint8_t octaves, float lacunarity, float gain)
 {
     float3 sum = float3(0.0f);
     float freq = 1.0f;
@@ -1921,7 +1920,7 @@ float3 noise_fb_deriv(const float2 & v, uint8_t octaves, float lacunarity, float
     return sum;
 }
 
-float4 noise_fb_deriv(const float3 & v, uint8_t octaves, float lacunarity, float gain)
+inline float4 noise_fb_deriv(const float3 & v, uint8_t octaves, float lacunarity, float gain)
 {
     float4 sum = float4(0.0f);
     float freq = 1.0f;
@@ -1936,7 +1935,7 @@ float4 noise_fb_deriv(const float3 & v, uint8_t octaves, float lacunarity, float
     return sum;
 }
 
-std::array<float,5> noise_fb_deriv(const float4 & v, uint8_t octaves, float lacunarity, float gain)
+inline std::array<float,5> noise_fb_deriv(const float4 & v, uint8_t octaves, float lacunarity, float gain)
 {
     std::array<float,5> sum = { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
     float freq  = 1.0f;
@@ -1968,7 +1967,7 @@ namespace impl
     }
     
     template<typename T>
-    float compute_ridged_multi_fractal(const T & input, float ridgeOffset, uint8_t octaves, float lacunarity, float gain)
+    inline float compute_ridged_multi_fractal(const T & input, float ridgeOffset, uint8_t octaves, float lacunarity, float gain)
     {
         float sum = 0;
         float freq = 1.0;
@@ -1986,22 +1985,22 @@ namespace impl
     }
 }
 
-float noise_ridged_mf(float x, float ridgeOffset, uint8_t octaves, float lacunarity, float gain)
+inline float noise_ridged_mf(float x, float ridgeOffset, uint8_t octaves, float lacunarity, float gain)
 {
     return impl::compute_ridged_multi_fractal(x, ridgeOffset, octaves, lacunarity, gain);
 }
 
-float noise_ridged_mf(const float2 & v, float ridgeOffset, uint8_t octaves, float lacunarity, float gain)
+inline float noise_ridged_mf(const float2 & v, float ridgeOffset, uint8_t octaves, float lacunarity, float gain)
 {
     return impl::compute_ridged_multi_fractal(v, ridgeOffset, octaves, lacunarity, gain);
 }
 
-float noise_ridged_mf(const float3 & v, float ridgeOffset, uint8_t octaves, float lacunarity, float gain)
+inline float noise_ridged_mf(const float3 & v, float ridgeOffset, uint8_t octaves, float lacunarity, float gain)
 {
     return impl::compute_ridged_multi_fractal(v, ridgeOffset, octaves, lacunarity, gain);
 }
 
-float noise_ridged_mf(const float4 & v, float ridgeOffset, uint8_t octaves, float lacunarity, float gain)
+inline float noise_ridged_mf(const float4 & v, float ridgeOffset, uint8_t octaves, float lacunarity, float gain)
 {
     return impl::compute_ridged_multi_fractal(v, ridgeOffset, octaves, lacunarity, gain);
 }
@@ -2010,7 +2009,7 @@ float noise_ridged_mf(const float4 & v, float ridgeOffset, uint8_t octaves, floa
 //   Noise Fractal Variation Via Iñigo's Methods   //
 /////////////////////////////////////////////////////
 
-float noise_iq_fb(const float2 & v, uint8_t octaves, float lacunarity, float gain)
+inline float noise_iq_fb(const float2 & v, uint8_t octaves, float lacunarity, float gain)
 {
     float sum = 0.0;
     float amp = 0.5;
@@ -2029,7 +2028,7 @@ float noise_iq_fb(const float2 & v, uint8_t octaves, float lacunarity, float gai
     return sum;
 }
 
-float noise_iq_fb(const float3 & v, uint8_t octaves, float lacunarity, float gain)
+inline float noise_iq_fb(const float3 & v, uint8_t octaves, float lacunarity, float gain)
 {
     float sum = 0.0;
     float amp = 0.5;
@@ -2050,7 +2049,7 @@ float noise_iq_fb(const float3 & v, uint8_t octaves, float lacunarity, float gai
     return sum;
 }
 
-float noise_iq_fb(const float2 & v, uint8_t octaves, const float2x2 & mat, float gain)
+inline float noise_iq_fb(const float2 & v, uint8_t octaves, const float2x2 & mat, float gain)
 {
     float sum = 0.0;
     float amp = 1.0;

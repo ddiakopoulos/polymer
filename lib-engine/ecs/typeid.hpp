@@ -36,21 +36,21 @@ namespace polymer
     {
         // Helper function for performing the recursion for the compile time hash.
         template <std::size_t N>
-        inline constexpr poly_hash_value const_hash_fnv1a(const char(&str)[N], int start, poly_hash_value hash)
+        inline constexpr poly_hash_value const_hash(const char(&str)[N], int start, poly_hash_value hash)
         {
             // Perform the static_cast to uint64_t otherwise MSVC complains, about integral constant overflow (warning C4307).
-            return (start == N || start == N - 1) ? hash : const_hash_fnv1a(str, start + 1, static_cast<poly_hash_value>((hash ^ static_cast<unsigned char>(str[start])) * static_cast<uint64_t>(hash_prime_multiplier)));
+            return (start == N || start == N - 1) ? hash : const_hash(str, start + 1, static_cast<poly_hash_value>((hash ^ static_cast<unsigned char>(str[start])) * static_cast<uint64_t>(hash_prime_multiplier)));
         }
     }  // namespace detail
 
     // Compile-time hash function.
     template <std::size_t N>
-    inline constexpr poly_hash_value const_hash_fnv1a(const char(&str)[N])
+    inline constexpr poly_hash_value const_hash(const char(&str)[N])
     {
-        return N <= 1 ? 0 : detail::const_hash_fnv1a(str, 0, hash_offset_basis);
+        return N <= 1 ? 0 : detail::const_hash(str, 0, hash_offset_basis);
     }
 
-    poly_hash_value hash_fnv1a(poly_hash_value basis, const char * str, size_t len)
+    inline poly_hash_value hash(poly_hash_value basis, const char * str, size_t len)
     {
         if (str == nullptr || *str == 0 || len == 0) return 0;
 
@@ -64,22 +64,22 @@ namespace polymer
         return value;
     }
 
-    poly_hash_value hash_fnv1a(const char * str, size_t len)
+    inline poly_hash_value hash(const char * str, size_t len)
     {
-        return hash_fnv1a(hash_offset_basis, str, len);
+        return hash(hash_offset_basis, str, len);
     }
 
-    poly_hash_value hash_fnv1a(const char * str)
+    inline poly_hash_value hash(const char * str)
     {
         const size_t npos = -1;
-        return hash_fnv1a(str, npos);
+        return hash(str, npos);
     }
 
     // Functor for hashable types in STL containers.
     struct hasher
     {
         template <class T>
-        std::size_t operator()(const T & value) const { return hash_fnv1a(value); }
+        std::size_t operator()(const T & value) const { return hash(value); }
     };
 
     //////////////////////////////////////
@@ -114,7 +114,7 @@ namespace polymer
     }                                                   \
     template <>                                         \
         inline poly_typeid get_typeid<X>() {            \
-        return polymer::const_hash_fnv1a(#X);           \
+        return polymer::const_hash(#X);                 \
     }                                          
 
     //////////////////////////////
