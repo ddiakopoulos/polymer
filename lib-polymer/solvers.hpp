@@ -15,7 +15,7 @@ namespace polymer
 
     // Solve linear equation: c0 + c1 * x = 0
     // Returns number of solutions
-    int solve_linear(const double c0, const double c1, double & s0)
+    inline int solve_linear(const double c0, const double c1, double & s0)
     {
         if (std::fabs(c1) < double(1e-9)) return 0;
         s0 = -c0 / c1;

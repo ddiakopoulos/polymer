@@ -118,6 +118,7 @@
     <ClInclude Include="uniforms.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ecs\core-events.cpp" />
     <ClCompile Include="renderer-standard.cpp" />
     <ClCompile Include="gfx\gl\gl-imgui.cpp" />
     <ClCompile Include="gfx\gl\gl-nvg.cpp" />

@@ -23,6 +23,9 @@
       <Filter>assets</Filter>
     </ClCompile>
     <ClCompile Include="renderer-standard.cpp" />
+    <ClCompile Include="ecs\core-events.cpp">
+      <Filter>ecs</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="gfx\gl\gl-api.hpp">

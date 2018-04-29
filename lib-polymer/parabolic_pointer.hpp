@@ -98,7 +98,7 @@ inline float angle_between(float3 a, float3 b, float3 origin)
 // Clamps the given velocity vector so that it can't be more than N degrees above the horizontal.
 // This is done so that it is easier to leverage the maximum distance (at the N degree angle) of parabolic motion.
 // Returns angle with reference to the XZ plane
-float clamp_initial_velocity(const float3 origin, float3 & velocity, float3 & velocity_normalized) 
+inline float clamp_initial_velocity(const float3 origin, float3 & velocity, float3 & velocity_normalized) 
 {
     // Project the initial velocity onto the XZ plane.
     float3 velocity_fwd = project_on_plane(velocity, float3(0, 1, 0));

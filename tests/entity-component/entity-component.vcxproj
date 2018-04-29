@@ -90,6 +90,9 @@
     <ClCompile Include="lib-engine-tests.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\lib-engine\lib-engine.vcxproj">
+      <Project>{71f00a1a-c67d-4cb9-9f37-98d4975fa5c7}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\lib-polymer\lib-polymer.vcxproj">
       <Project>{992e85a7-b590-477b-a1b2-8a04aaad0e10}</Project>
     </ProjectReference>
