@@ -105,6 +105,15 @@
     <ClInclude Include="ecs\system-name.hpp">
       <Filter>ecs</Filter>
     </ClInclude>
+    <ClInclude Include="ecs\system-transform.hpp">
+      <Filter>ecs</Filter>
+    </ClInclude>
+    <ClInclude Include="ecs\typeid.hpp">
+      <Filter>ecs</Filter>
+    </ClInclude>
+    <ClInclude Include="ecs\core-events.hpp">
+      <Filter>ecs</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="gfx">

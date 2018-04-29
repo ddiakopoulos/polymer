@@ -88,7 +88,10 @@
     <ClInclude Include="asset-resolver.hpp" />
     <ClInclude Include="ecs\component-pool.hpp" />
     <ClInclude Include="ecs\core-ecs.hpp" />
+    <ClInclude Include="ecs\core-events.hpp" />
     <ClInclude Include="ecs\system-name.hpp" />
+    <ClInclude Include="ecs\system-transform.hpp" />
+    <ClInclude Include="ecs\typeid.hpp" />
     <ClInclude Include="renderer-standard.hpp" />
     <ClInclude Include="gfx\gl\gl-api.hpp" />
     <ClInclude Include="gfx\gl\gl-async-gpu-timer.hpp" />

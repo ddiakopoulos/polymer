@@ -28,7 +28,6 @@ namespace polymer
     ///////////////////////////////////////
 
     // https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function
-
     using poly_hash_value = uint64_t;
     constexpr poly_hash_value hash_offset_basis = 0x84222325;
     constexpr poly_hash_value hash_prime_multiplier = 0x000001b3;
@@ -44,7 +43,7 @@ namespace polymer
         }
     }  // namespace detail
 
-       // Compile-time hash function.
+    // Compile-time hash function.
     template <std::size_t N>
     inline constexpr poly_hash_value const_hash_fnv1a(const char(&str)[N])
     {
@@ -104,19 +103,19 @@ namespace polymer
     template <typename T>
     struct typeid_traits { static constexpr bool kHasTypeId = false; };
 
-#define POLYMER_SETUP_TYPEID(Type)             \
-template <>                                    \
-struct typeid_traits<Type> {                   \
-    static constexpr bool kHasTypeId = true;   \
-};                                             \
-template <>                                    \
-    inline const char* get_typename<Type>() {  \
-    return #Type;                              \
-}                                              \
-template <>                                    \
-    inline poly_typeid get_typeid<Type>() {    \
-    return const_hash_fnv1a(#Type);            \
-}                                          
+    #define POLYMER_SETUP_TYPEID(X)                     \
+    template <>                                         \
+    struct typeid_traits<X> {                           \
+        static constexpr bool kHasTypeId = true;        \
+    };                                                  \
+    template <>                                         \
+        inline const char* polymer::get_typename<X>() { \
+        return #X;                                      \
+    }                                                   \
+    template <>                                         \
+        inline poly_typeid get_typeid<X>() {            \
+        return polymer::const_hash_fnv1a(#X);           \
+    }                                          
 
     //////////////////////////////
     //   poly_typeid Registry   //

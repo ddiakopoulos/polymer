@@ -14,6 +14,7 @@
     <ProjectGuid>{8C0809F1-CE41-49D3-8286-062D673D887D}</ProjectGuid>
     <RootNamespace>engine-ecs</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+    <ProjectName>lib-engine-tests</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -86,7 +87,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="engine-ecs.cpp" />
+    <ClCompile Include="lib-engine-tests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\lib-polymer\lib-polymer.vcxproj">
