@@ -4,7 +4,7 @@
 #include "polymer-base-ecs.hpp"
 
 ////////////////////////
-//   name/id system   //
+//   name/id system   // 
 ////////////////////////
 
 class name_system final : public base_system
