@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef vr_hmd_hpp
-#define vr_hmd_hpp
+#ifndef polymer_openvr_hmd_hpp
+#define polymer_openvr_hmd_hpp
 
 #include "openvr/include/openvr.h"
 #include "math-core.hpp"
@@ -120,4 +120,4 @@ public:
     void submit(const GLuint leftEye, const GLuint rightEye);
 };
 
-#endif
+#endif // end polymer_openvr_hmd_hpp

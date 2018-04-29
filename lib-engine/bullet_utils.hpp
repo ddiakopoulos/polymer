@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef bullet_utils_hpp
-#define bullet_utils_hpp
+#ifndef polymer_bullet_utils_hpp
+#define polymer_bullet_utils_hpp
 
 #include "math-core.hpp"
 #include "btBulletCollisionCommon.h"

@@ -1,11 +1,12 @@
 #pragma once
 
-#ifndef bullet_debug_hpp
-#define bullet_debug_hpp
+#ifndef polymer_bullet_debug_hpp
+#define polymer_bullet_debug_hpp
 
 #include "math-core.hpp"
 #include "bullet_utils.hpp"
 #include "gl-api.hpp"
+
 #include "stb/stb_easy_font.h"
 #include "btBulletCollisionCommon.h"
 
@@ -102,4 +103,4 @@ public:
 
 };
 
-#endif // end bullet_debug_hpp
+#endif // end polymer_bullet_debug_hpp

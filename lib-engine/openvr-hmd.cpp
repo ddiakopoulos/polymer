@@ -1,4 +1,4 @@
-#include "vr_hmd.hpp"
+#include "openvr-hmd.hpp"
 
 std::string get_tracked_device_string(vr::IVRSystem * pHmd, vr::TrackedDeviceIndex_t unDevice, vr::TrackedDeviceProperty prop, vr::TrackedPropertyError *peError = NULL)
 {

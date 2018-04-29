@@ -1,16 +1,18 @@
 #include "index.hpp"
-#include "vr_hmd.hpp"
-#include "bullet_debug.hpp"
+
+#include "../lib-engine/bullet_engine.hpp"
+#include "../lib-engine/bullet_debug.hpp"
+#include "../lib-engine/openvr-hmd.hpp"
+#include "../lib-engine/shader-library.hpp"
+
 #include "radix_sort.hpp"
 #include "procedural_mesh.hpp"
 #include "parabolic_pointer.hpp"
-#include "bullet_engine.hpp"
+
 #include <future>
 #include "quick_hull.hpp"
 #include "algo_misc.hpp"
 #include "gl-imgui.hpp"
-
-#include "../lib-engine/shader-library.hpp"
 
 using namespace polymer;
 

@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef debug_renderer_hpp
-#define debug_renderer_hpp
+#ifndef polymer_renderer_debug_hpp
+#define polymer_renderer_debug_hpp
 
 #include "math-core.hpp"
 #include "gl-api.hpp"
@@ -112,4 +112,4 @@ public:
 
 };
 
-#endif // end debug_renderer_hpp
+#endif // end polymer_renderer_debug_hpp

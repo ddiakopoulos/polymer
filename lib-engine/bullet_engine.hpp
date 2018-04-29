@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef bullet_engine_vr_hpp
-#define bullet_engine_vr_hpp
+#ifndef polymer_bullet_engine_hpp
+#define polymer_bullet_engine_hpp
 
 #include "btBulletCollisionCommon.h"
 #include "btBulletDynamicsCommon.h"
@@ -9,9 +9,9 @@
 #include "math-core.hpp"
 #include "geometry.hpp"
 #include "bullet_utils.hpp"
-#include <functional>
-
 #include "bullet_object.hpp"
+
+#include <functional>
 
 using namespace polymer;
 
@@ -82,4 +82,4 @@ public:
 
 };
 
-#endif // end bullet_engine_vr_hpp
+#endif // end polymer_bullet_engine_hpp

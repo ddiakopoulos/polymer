@@ -1,13 +1,15 @@
 #pragma once
 
-#ifndef vr_controller_physics_hpp
-#define vr_controller_physics_hpp
+#ifndef polymer_bullet_object_hpp
+#define polymer_bullet_object_hpp
 
 #include "btBulletCollisionCommon.h"
 #include "btBulletDynamicsCommon.h"
+
 #include "math-core.hpp"
 #include "geometry.hpp"
 #include "bullet_utils.hpp"
+
 #include <functional>
 
 using namespace polymer;
@@ -148,5 +150,4 @@ public:
 
 };
 
-
-#endif
+#endif // end polymer_bullet_object_hpp
