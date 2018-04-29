@@ -6,7 +6,7 @@
 #include "math-core.hpp"
 #include "simple_timer.hpp"
 #include "uniforms.hpp"
-#include "circular_buffer.hpp"
+#include "queue-circular.hpp"
 #include "human_time.hpp"
 
 #include "gl-camera.hpp"

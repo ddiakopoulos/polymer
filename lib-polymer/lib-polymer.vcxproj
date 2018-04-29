@@ -24,7 +24,7 @@
     <ClInclude Include="arcball.hpp" />
     <ClInclude Include="bit_mask.hpp" />
     <ClInclude Include="camera.hpp" />
-    <ClInclude Include="circular_buffer.hpp" />
+    <ClInclude Include="queue-circular.hpp" />
     <ClInclude Include="file_io.hpp" />
     <ClInclude Include="geometry.hpp" />
     <ClInclude Include="index.hpp" />
@@ -36,10 +36,10 @@
     <ClInclude Include="math-ray.hpp" />
     <ClInclude Include="math-spatial.hpp" />
     <ClInclude Include="movement_tracker.hpp" />
-    <ClInclude Include="mpmc_blocking_queue.hpp" />
-    <ClInclude Include="mpmc_bounded_queue.hpp" />
-    <ClInclude Include="mpsc_bounded_queue.hpp" />
-    <ClInclude Include="mpsc_queue.hpp" />
+    <ClInclude Include="queue-mpmc-blocking.hpp" />
+    <ClInclude Include="queue-mpmc-bounded.hpp" />
+    <ClInclude Include="queue-mpsc-bounded.hpp" />
+    <ClInclude Include="queue-mpsc.hpp" />
     <ClInclude Include="octree.hpp" />
     <ClInclude Include="one_euro.hpp" />
     <ClInclude Include="parallel_transport_frames.hpp" />
@@ -49,8 +49,8 @@
     <ClInclude Include="simplex_noise.hpp" />
     <ClInclude Include="solvers.hpp" />
     <ClInclude Include="splines.hpp" />
-    <ClInclude Include="spsc_bounded_queue.hpp" />
-    <ClInclude Include="spsc_queue.hpp" />
+    <ClInclude Include="queue-spsc-bounded.hpp" />
+    <ClInclude Include="queue-spsc.hpp" />
     <ClInclude Include="string_utils.hpp" />
     <ClInclude Include="trajectory.hpp" />
     <ClInclude Include="tweens.hpp" />

@@ -3,7 +3,7 @@
 #ifndef polymer_profiling_hpp
 #define polymer_profiling_hpp
 
-#include "circular_buffer.hpp"
+#include "queue-circular.hpp"
 #include "gfx/gl/gl-async-gpu-timer.hpp"
 #include "simple_timer.hpp"
 
@@ -19,7 +19,7 @@ namespace polymer
     {
         struct data_point
         {
-            ring_buffer<double> average{ 30 };
+            circular_queue<double> average{ 30 };
             T timer;
         };
 

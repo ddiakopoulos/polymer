@@ -97,32 +97,12 @@ TEST_CASE("poses, matrices, and transformations")
 
 TEST_CASE("pose and matrix transformations")
 {
-    runtime_mesh m;
-    m.vertices.push_back({ 4, 0, 0 });
-    m.vertices.push_back({ 3, 0, 0 });
-    recenter_geometry(m);
-    for (auto v : m.vertices)
-    {
-        std::cout << v << std::endl;
-    }
 
-    //auto sphere = make_sphere(1.f);
-    //export_obj_model("sphere_export_test", "sphere.obj", sphere);
 }
 
 TEST_CASE("projection matrices")
 {
-    auto && meshes = import_model("../../assets/Hard_Surface_Kitbash_Pack_1_All.obj");
 
-    uint32_t idx = 0;
-    for (auto & mesh : meshes)
-    {
-        scoped_timer t(std::to_string(idx));
-        recenter_geometry(mesh.second);
-        rescale_geometry(mesh.second);
-        export_obj_model(mesh.first, "hard_surface_" + std::to_string(idx) + ".obj", mesh.second);
-        idx++;
-    }
 }
 
 TEST_CASE("glsl mirror functions")

@@ -2,7 +2,7 @@
 
 #include "math-core.hpp"
 #include "string_utils.hpp"
-#include "circular_buffer.hpp"
+#include "queue-circular.hpp"
 #include "human_time.hpp"
 #include "one_euro.hpp"
 #include "bit_mask.hpp"

@@ -5,7 +5,7 @@
 
 #include "typeid.hpp"
 #include "core-ecs.hpp"
-#include "mpmc_blocking_queue.hpp"
+#include "queue-mpmc-blocking.hpp"
 
 namespace polymer
 {

@@ -72,27 +72,6 @@
     <ClInclude Include="math-core.hpp">
       <Filter>src\math-core</Filter>
     </ClInclude>
-    <ClInclude Include="spsc_queue.hpp">
-      <Filter>src\queues</Filter>
-    </ClInclude>
-    <ClInclude Include="spsc_bounded_queue.hpp">
-      <Filter>src\queues</Filter>
-    </ClInclude>
-    <ClInclude Include="mpsc_queue.hpp">
-      <Filter>src\queues</Filter>
-    </ClInclude>
-    <ClInclude Include="mpsc_bounded_queue.hpp">
-      <Filter>src\queues</Filter>
-    </ClInclude>
-    <ClInclude Include="mpmc_bounded_queue.hpp">
-      <Filter>src\queues</Filter>
-    </ClInclude>
-    <ClInclude Include="mpmc_blocking_queue.hpp">
-      <Filter>src\queues</Filter>
-    </ClInclude>
-    <ClInclude Include="circular_buffer.hpp">
-      <Filter>src\queues</Filter>
-    </ClInclude>
     <ClInclude Include="algo_misc.hpp">
       <Filter>src\math</Filter>
     </ClInclude>
@@ -164,6 +143,27 @@
     </ClInclude>
     <ClInclude Include="math-primitives.hpp">
       <Filter>src\math-core</Filter>
+    </ClInclude>
+    <ClInclude Include="queue-spsc.hpp">
+      <Filter>src\queues</Filter>
+    </ClInclude>
+    <ClInclude Include="queue-spsc-bounded.hpp">
+      <Filter>src\queues</Filter>
+    </ClInclude>
+    <ClInclude Include="queue-mpsc.hpp">
+      <Filter>src\queues</Filter>
+    </ClInclude>
+    <ClInclude Include="queue-mpsc-bounded.hpp">
+      <Filter>src\queues</Filter>
+    </ClInclude>
+    <ClInclude Include="queue-mpmc-bounded.hpp">
+      <Filter>src\queues</Filter>
+    </ClInclude>
+    <ClInclude Include="queue-mpmc-blocking.hpp">
+      <Filter>src\queues</Filter>
+    </ClInclude>
+    <ClInclude Include="queue-circular.hpp">
+      <Filter>src\queues</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
