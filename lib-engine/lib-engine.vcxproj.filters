@@ -96,7 +96,13 @@
     <ClInclude Include="asset-resolver.hpp">
       <Filter>assets</Filter>
     </ClInclude>
-    <ClInclude Include="component-pool.hpp">
+    <ClInclude Include="ecs\component-pool.hpp">
+      <Filter>ecs</Filter>
+    </ClInclude>
+    <ClInclude Include="ecs\core-ecs.hpp">
+      <Filter>ecs</Filter>
+    </ClInclude>
+    <ClInclude Include="ecs\system-name.hpp">
       <Filter>ecs</Filter>
     </ClInclude>
   </ItemGroup>

@@ -93,11 +93,6 @@
       <Project>{992e85a7-b590-477b-a1b2-8a04aaad0e10}</Project>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="name-system.hpp" />
-    <ClInclude Include="polymer-base-ecs.hpp" />
-    <ClInclude Include="polymer-typeid.hpp" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
