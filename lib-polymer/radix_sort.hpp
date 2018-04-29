@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <utility>
 #include <vector>
+
 namespace polymer
 {
     class radix_sort
@@ -25,10 +26,10 @@ namespace polymer
         template<typename T>
         void radix_impl(T * data, size_t size)
         {
-            const uint32_t PASSES = (sizeof(T) * 8) % RADIX_LENGTH_BITS == 0 ? (sizeof(T) * 8) / RADIX_LENGTH_BITS : (sizeof(T) * 8) / RADIX_LENGTH_BITS + 1;
-            static_assert(PASSES % 2 == 0, "must be even number");
+            const uint32_t passes = (sizeof(T) * 8) % RADIX_LENGTH_BITS == 0 ? (sizeof(T) * 8) / RADIX_LENGTH_BITS : (sizeof(T) * 8) / RADIX_LENGTH_BITS + 1;
+            static_assert(passes % 2 == 0, "must be even number");
 
-            std::vector<size_t> histograms(PASSES * HISTOGRAM_BUCKETS);
+            std::vector<size_t> histograms(passes * HISTOGRAM_BUCKETS);
             std::vector<T> result(size);
 
             // Build histograms in parallel
@@ -36,7 +37,7 @@ namespace polymer
             {
                 T element = data[i];
 
-                for (int r = 0; r < PASSES; r++)
+                for (int r = 0; r < passes; r++)
                 {
                     T pos = (element >> (r * RADIX_LENGTH_BITS)) & BIT_MASK;
                     histograms[r * HISTOGRAM_BUCKETS + pos] += 1;
@@ -44,7 +45,7 @@ namespace polymer
             }
 
             // Sum the histograms
-            for (uint32_t r = 0; r < PASSES; r++)
+            for (uint32_t r = 0; r < passes; r++)
             {
                 size_t sum = 0;
                 for (uint32_t i = 0; i < HISTOGRAM_BUCKETS; i++)
@@ -57,7 +58,7 @@ namespace polymer
 
             T * src = data;
             T * dst = result.data();
-            for (uint32_t r = 0; r < PASSES; r++)
+            for (uint32_t r = 0; r < passes; r++)
             {
                 for (size_t i = 0; i < size; i++)
                 {

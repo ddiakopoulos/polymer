@@ -21,8 +21,8 @@ class movement_tracker
     // From where shall we calculate velocity? Return false on "not at all"
     bool velocity_calc_begin(size_t & out_index, double now) const
     {
-       // if (timeList.size() < 2) return false; // Not enough data
-       // if (duration() < min_velocity_time()) return false; // Not enough data
+        // if (timeList.size() < 2) return false; // Not enough data
+        // if (duration() < min_velocity_time()) return false; // Not enough data
         double vel_time = velocity_time();
         for (size_t i=0; i<timeList.size()-1; ++i) 
         {
@@ -47,7 +47,7 @@ class movement_tracker
 
     std::unique_ptr<sample> start;
     std::deque<sample> timeList;
-    const uint32_t maxHistory = 10; // Do not keep points older than this
+    const uint32_t maxHistory = 30; // Do not keep points older than this
 
 public:
 
@@ -132,7 +132,7 @@ public:
         return true;
     }
 
-    // Flush out old entries.
+    // Flush out old entries
     void flush(double now)
     {
         while (!timeList.empty() && timeList.front().when < now - (double) maxHistory) 

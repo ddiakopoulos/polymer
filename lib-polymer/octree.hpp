@@ -1,10 +1,19 @@
-// This is free and unencumbered software released into the public domain.
+#pragma once
 
-#ifndef scene_octree_hpp
-#define scene_octree_hpp
+#ifndef polymer_culling_octree_hpp
+#define polymer_culling_octree_hpp
+
+/// An octree is a tree data structure in which each internal node has exactly
+/// eight children. Octrees are most often used to partition a three
+/// dimensional space by recursively subdividing it into eight octants.
+/// This implementation stores 8 pointers per node, instead of the other common
+/// approach, which is to use a flat array with an offset. The `inside` method
+/// defines the comparison function (loose in this case). The main usage of this
+/// class is for basic frustum culling.
+
+#include "../lib-engine/gfx/gl/gl-api.hpp"
 
 #include "math-core.hpp"
-#include "gl-api.hpp"
 #include "util.hpp"
 #include "algo_misc.hpp"
 
@@ -12,27 +21,6 @@
 #include <memory>
 
 using namespace polymer;
-
-/*
- * An octree is a tree data structure in which each internal node has exactly
- * eight children. Octrees are most often used to partition a three
- * dimensional space by recursively subdividing it into eight octants.
- * This implementation stores 8 pointers per node, instead of the other common
- * approach, which is to use a flat array with an offset. The `inside` method
- * defines the comparison function (loose in this case). The main usage of this
- * class is for basic frustum culling.
- */
-
-// Instead of a strict bounds check which might force an object into a parent cell, this function
-// checks centers, aka a "loose" octree. 
-inline bool inside(const aabb_3d & node, const aabb_3d & other)
-{
-    // Compare centers
-    if (!(linalg::all(greater(other.max(), node.center())) && linalg::all(less(other.min(), node.center())))) return false;
-
-    // Otherwise ensure we shouldn't move to parent
-    return linalg::all(less(node.size(), other.size()));
-}
 
 // Forward declare
 template<typename T>
@@ -100,6 +88,18 @@ struct octant
 template<typename T>
 struct octree
 {
+
+    // Instead of a strict bounds check which might force an object into a parent cell, this function
+    // checks centers, aka a "loose" octree. 
+    inline bool inside(const aabb_3d & node, const aabb_3d & other)
+    {
+        // Compare centers
+        if (!(linalg::all(greater(other.max(), node.center())) && linalg::all(less(other.min(), node.center())))) return false;
+
+        // Otherwise ensure we shouldn't move to parent
+        return linalg::all(less(node.size(), other.size()));
+    }
+
     enum class cull_status : uint32_t
     {
         INSIDE,
@@ -115,8 +115,6 @@ struct octree
         root.reset(new octant<T>(nullptr));
         root->box = rootBounds;
     }
-
-    ~octree() { }
 
     float3 get_resolution()
     {
@@ -300,4 +298,4 @@ inline void octree_debug_draw(
     if ((child = node->arr[{1, 1, 1}].get()) != nullptr) octree_debug_draw<T>(octree, shader, boxMesh, sphereMesh, viewProj, child, { 1, 1, 1 });
 }
 
-#endif // octree_hpp
+#endif // end polymer_culling_octree_hpp

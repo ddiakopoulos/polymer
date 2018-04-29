@@ -1,18 +1,18 @@
+/// Quoted from https://hal.inria.fr/hal-00670496/file/CHI2012-casiez.pdf:
+///   "To minimize jitter and lag when tracking human motion, the two parameters can be set using a simple
+///   two-step procedure. First is set to 0 and fcmin to a reasonable middle-ground value such as 1 Hz.
+///   Then the body part is held steady or moved at a very low speed while fcmin is adjusted to re-move
+///   jitter and preserve an acceptable lag during these slow movements. Next, the body part is moved
+///   quickly in different directions while is increased with a focus on minimizing lag. Note that
+///   parameters fcmin and have clear conceptual relationships: if high speed lag is a problem,
+///   increase; if slow speed jitter is a problem, decrease fcmin."
+
 #pragma once
 
 #ifndef one_euro_filter_h
 #define one_euro_filter_h
 
 #include "math-common.hpp"
-
-// Quoted from https://hal.inria.fr/hal-00670496/file/CHI2012-casiez.pdf:
-// "To minimize jitter and lag when tracking human motion, the two parameters can be set using a simple
-// two-step procedure. First is set to 0 and fcmin to a reasonable middle-ground value such as 1 Hz.
-// Then the body part is held steady or moved at a very low speed while fcmin is adjusted to re-move
-// jitter and preserve an acceptable lag during these slow movements. Next, the body part is moved
-// quickly in different directions while is increased with a focus on minimizing lag. Note that
-// parameters fcmin and have clear conceptual relationships: if high speed lag is a problem,
-// increase; if slow speed jitter is a problem, decrease fcmin."
 
 namespace impl
 {

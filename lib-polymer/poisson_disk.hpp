@@ -256,13 +256,13 @@ namespace poisson
     // Returns a set of poisson disk samples inside a rectangular area, with a minimum separation and with
     // a packing determined by how high k is. The higher k is the higher the algorithm will be slow.
     // If no initialSet of points is provided the area center will be used as the initial point.
-    inline std::vector<float2> make_poisson_disk_distribution(const aabb_2d & bounds, const std::vector<float2> & initialSet, int k, float separation = 1.0)
+    inline std::vector<float2> make_poisson_disc_distribution(const aabb_2d & bounds, const std::vector<float2> & initialSet, int k, float separation = 1.0)
     {
         poisson::poisson_sampler_2d sampler;
         return sampler.build(bounds, initialSet, k, separation);
     }
 
-    inline std::vector<float3> make_poisson_disk_distribution(const aabb_3d & bounds, const std::vector<float3> & initialSet, int k, float separation = 1.0)
+    inline std::vector<float3> make_poisson_sphere_distribution(const aabb_3d & bounds, const std::vector<float3> & initialSet, int k, float separation = 1.0)
     {
         poisson::poisson_sampler_3d sampler;
         return sampler.build(bounds, initialSet, k, separation);
