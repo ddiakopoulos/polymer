@@ -12,14 +12,14 @@
 #include "util.hpp"
 
 // Implicit casts for linalg types
-#define IM_VEC2_CLASS_EXTRA                                                     \
-ImVec2(const polymer::float2 & f) { x = f.x; y = f.y; }                         \
-operator polymer::float2() const { return polymer::float2(x,y); }               \
-ImVec2(const polymer::int2 & f) { x = f.x; y = f.y; }                           \
-operator polymer::int2() const { return polymer::int2(x,y); }
-
-#define IM_VEC4_CLASS_EXTRA                                                     \
-ImVec4(const polymer::float4 & f) { x = f.x; y = f.y; z = f.z; w = f.w; }       \
+#define IM_VEC2_CLASS_EXTRA                                               \
+ImVec2(const polymer::float2 & f) { x = f.x; y = f.y; }                   \
+operator polymer::float2() const { return polymer::float2(x,y); }         \
+ImVec2(const polymer::int2 & f) { x = f.x; y = f.y; }                     \
+operator polymer::int2() const { return polymer::int2(x,y); }             
+                                                                          
+#define IM_VEC4_CLASS_EXTRA                                               \
+ImVec4(const polymer::float4 & f) { x = f.x; y = f.y; z = f.z; w = f.w; } \
 operator polymer::float4() const { return polymer::float4(x,y,z,w); }
 
 #include "imgui/imgui.h"

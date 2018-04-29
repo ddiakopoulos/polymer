@@ -97,7 +97,7 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
 
     renderer_settings settings;
     settings.renderSize = int2(width, height);
-    renderer.reset(new forward_renderer(settings));
+    renderer.reset(new renderer_standard(settings));
 
     sceneData.ibl_irradianceCubemap = "wells-irradiance-cubemap";
     sceneData.ibl_radianceCubemap = "wells-radiance-cubemap";
@@ -312,7 +312,7 @@ void scene_editor_app::on_input(const app_input_event & event)
 
 void scene_editor_app::reset_renderer(int2 size, const renderer_settings & settings)
 {
-    renderer.reset(new forward_renderer(settings));
+    renderer.reset(new renderer_standard(settings));
 }
 
 void scene_editor_app::on_update(const app_update_event & e)

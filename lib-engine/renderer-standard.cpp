@@ -4,7 +4,7 @@
 #include "geometry.hpp"
 
 // Update per-object uniform buffer
-void forward_renderer::update_per_object_uniform_buffer(Renderable * r, const view_data & d)
+void renderer_standard::update_per_object_uniform_buffer(Renderable * r, const view_data & d)
 {
     uniforms::per_object object = {};
     object.modelMatrix = mul(r->get_pose().matrix(), make_scaling_matrix(r->get_scale()));
@@ -14,7 +14,7 @@ void forward_renderer::update_per_object_uniform_buffer(Renderable * r, const vi
     perObject.set_buffer_data(sizeof(object), &object, GL_STREAM_DRAW);
 }
 
-uint32_t forward_renderer::get_color_texture(const uint32_t idx) const
+uint32_t renderer_standard::get_color_texture(const uint32_t idx) const
 {
     assert(idx <= settings.cameraCount);
     if (settings.tonemapEnabled)
@@ -24,19 +24,19 @@ uint32_t forward_renderer::get_color_texture(const uint32_t idx) const
     return eyeTextures[idx];
 }
 
-uint32_t forward_renderer::get_depth_texture(const uint32_t idx) const 
+uint32_t renderer_standard::get_depth_texture(const uint32_t idx) const 
 {
     assert(idx <= settings.cameraCount);
     return eyeDepthTextures[idx];
 }
 
-stable_cascaded_shadows * forward_renderer::get_shadow_pass() const
+stable_cascaded_shadows * renderer_standard::get_shadow_pass() const
 {
     if (shadow) return shadow.get();
     return nullptr;
 }
 
-void forward_renderer::run_depth_prepass(const view_data & view, const render_payload & scene)
+void renderer_standard::run_depth_prepass(const view_data & view, const render_payload & scene)
 {
     GLboolean colorMask[4];
     glGetBooleanv(GL_COLOR_WRITEMASK, &colorMask[0]);
@@ -59,7 +59,7 @@ void forward_renderer::run_depth_prepass(const view_data & view, const render_pa
     glColorMask(colorMask[0], colorMask[1], colorMask[2], colorMask[3]);
 }
 
-void forward_renderer::run_skybox_pass(const view_data & view, const render_payload & scene)
+void renderer_standard::run_skybox_pass(const view_data & view, const render_payload & scene)
 {
     if (!scene.skybox) return;
 
@@ -86,7 +86,7 @@ void forward_renderer::run_skybox_pass(const view_data & view, const render_payl
     if (wasDepthTestingEnabled) glEnable(GL_DEPTH_TEST);
 }
 
-void forward_renderer::run_shadow_pass(const view_data & view, const render_payload & scene)
+void renderer_standard::run_shadow_pass(const view_data & view, const render_payload & scene)
 {
     shadow->update_cascades(view.viewMatrix,
         view.nearClip,
@@ -112,7 +112,7 @@ void forward_renderer::run_shadow_pass(const view_data & view, const render_payl
     gl_check_error(__FILE__, __LINE__);
 }
 
-void forward_renderer::run_forward_pass(std::vector<Renderable *> & renderQueueMaterial, std::vector<Renderable *> & renderQueueDefault, const view_data & view, const render_payload & scene)
+void renderer_standard::run_forward_pass(std::vector<Renderable *> & renderQueueMaterial, std::vector<Renderable *> & renderQueueDefault, const view_data & view, const render_payload & scene)
 {
     if (settings.useDepthPrepass)
     {
@@ -155,7 +155,7 @@ void forward_renderer::run_forward_pass(std::vector<Renderable *> & renderQueueM
     }
 }
 
-void forward_renderer::run_post_pass(const view_data & view, const render_payload & scene)
+void renderer_standard::run_post_pass(const view_data & view, const render_payload & scene)
 {
     if (!settings.tonemapEnabled) return;
 
@@ -179,7 +179,7 @@ void forward_renderer::run_post_pass(const view_data & view, const render_payloa
     if (wasDepthTestingEnabled) glEnable(GL_DEPTH_TEST);
 }
 
-forward_renderer::forward_renderer(const renderer_settings settings) : settings(settings)
+renderer_standard::renderer_standard(const renderer_settings settings) : settings(settings)
 {
     assert(settings.renderSize.x > 0 && settings.renderSize.y > 0);
     assert(settings.cameraCount >= 1);
@@ -244,12 +244,12 @@ forward_renderer::forward_renderer(const renderer_settings settings) : settings(
     timer.start();
 }
 
-forward_renderer::~forward_renderer()
+renderer_standard::~renderer_standard()
 {
     timer.stop();
 }
 
-void forward_renderer::render_frame(const render_payload & scene)
+void renderer_standard::render_frame(const render_payload & scene)
 {
     assert(settings.cameraCount == scene.views.size());
 

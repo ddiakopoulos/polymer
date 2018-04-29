@@ -243,7 +243,7 @@ struct render_payload
 //   Primary Renderer Implementation   //
 /////////////////////////////////////////
 
-class forward_renderer
+class renderer_standard
 {
     simple_cpu_timer timer;
 
@@ -283,8 +283,8 @@ public:
     profiler<simple_cpu_timer> cpuProfiler;
     profiler<gl_gpu_timer> gpuProfiler;
 
-    forward_renderer(const renderer_settings settings);
-    ~forward_renderer();
+    renderer_standard(const renderer_settings settings);
+    ~renderer_standard();
 
     void render_frame(const render_payload & scene);
 
@@ -294,7 +294,7 @@ public:
     stable_cascaded_shadows * get_shadow_pass() const;
 };
 
-template<class F> void visit_fields(forward_renderer & o, F f)
+template<class F> void visit_fields(renderer_standard & o, F f)
 {
     f("num_cameras", o.settings.cameraCount, editor_hidden{});
     f("num_msaa_samples", o.settings.msaaSamples, editor_hidden{});

@@ -43,7 +43,7 @@ bool draw_listbox(const std::string & label, ImGuiTextFilter & filter, int & sel
 struct material_editor_window final : public glfw_window
 {
     std::unique_ptr<fullscreen_texture> fullscreen_surface;
-    std::unique_ptr<forward_renderer> preview_renderer;
+    std::unique_ptr<renderer_standard> preview_renderer;
     std::unique_ptr<gui::imgui_instance> auxImgui;
     std::unique_ptr<StaticMesh> previewMesh;
     std::unique_ptr<arcball_controller> arcball;
@@ -84,7 +84,7 @@ struct material_editor_window final : public glfw_window
         previewSettings.tonemapEnabled = false;
         previewSettings.shadowsEnabled = false;
 
-        preview_renderer.reset(new forward_renderer(previewSettings));
+        preview_renderer.reset(new renderer_standard(previewSettings));
 
         previewCam.pose = look_at_pose_rh(float3(0, 0.25f, 2), previewMesh->pose.position);
         auxImgui.reset(new gui::imgui_instance(window, true));
