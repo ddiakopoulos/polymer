@@ -1,6 +1,6 @@
 #pragma once
 
-#include "polymer-typeid.hpp"
+#include "typeid.hpp"
 
 #ifndef polymer_entity_component_system_hpp
 #define polymer_entity_component_system_hpp

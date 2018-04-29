@@ -1,7 +1,7 @@
 #pragma once
 
-#include "polymer-typeid.hpp"
-#include "polymer-base-ecs.hpp"
+#include "typeid.hpp"
+#include "base-ecs.hpp"
 
 ////////////////////////
 //   name/id system   // 

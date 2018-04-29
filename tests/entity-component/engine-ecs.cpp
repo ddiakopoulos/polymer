@@ -9,8 +9,8 @@
 #include "cereal/archives/json.hpp"
 #include "cereal/access.hpp"
 
-#include "polymer-typeid.hpp"
-#include "polymer-base-ecs.hpp"
+#include "typeid.hpp"
+#include "base-ecs.hpp"
 #include "name-system.hpp"
 #include "component-pool.hpp"
 #include "mpmc_blocking_queue.hpp"
