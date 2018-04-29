@@ -94,7 +94,6 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="component-pool.hpp" />
     <ClInclude Include="name-system.hpp" />
     <ClInclude Include="polymer-base-ecs.hpp" />
     <ClInclude Include="polymer-typeid.hpp" />

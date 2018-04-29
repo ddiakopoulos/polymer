@@ -86,6 +86,7 @@
     <ClInclude Include="asset-handle-utils.hpp" />
     <ClInclude Include="asset-handle.hpp" />
     <ClInclude Include="asset-resolver.hpp" />
+    <ClInclude Include="component-pool.hpp" />
     <ClInclude Include="renderer-standard.hpp" />
     <ClInclude Include="gfx\gl\gl-api.hpp" />
     <ClInclude Include="gfx\gl\gl-async-gpu-timer.hpp" />

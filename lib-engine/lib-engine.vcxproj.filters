@@ -96,6 +96,9 @@
     <ClInclude Include="asset-resolver.hpp">
       <Filter>assets</Filter>
     </ClInclude>
+    <ClInclude Include="component-pool.hpp">
+      <Filter>ecs</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="gfx">
@@ -106,6 +109,9 @@
     </Filter>
     <Filter Include="assets">
       <UniqueIdentifier>{ceb9746b-b2d8-4e85-9c06-eb2a3215d6c6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ecs">
+      <UniqueIdentifier>{1f908e1e-1d87-4d1f-9cc8-7f23351e27a5}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
