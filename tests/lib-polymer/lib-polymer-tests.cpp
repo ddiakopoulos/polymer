@@ -1,9 +1,9 @@
 /*
- * File: samples/polymer-types.cpp
- * This file implements test-cases for various built-in types. It is written with
- * inline documentation so that it can be used as a starter-guide and reference
- * to using basic Polymer types in a correct and idiomatic way. 
- */
+* File: tests/lib-polymer-tests.cpp
+* This file implements test-cases for various built-in types. It is written with
+* inline documentation so that it can be used as a starter-guide and reference
+* to using basic Polymer types in a correct and idiomatic way.
+*/
 
 #include "index.hpp"
 
@@ -42,7 +42,7 @@ TEST_CASE("linalg.h matrices & identities")
     const float4x4 model_matrix_a = Identity4x4;
 
     /// Matrices are stored in column-major order and must be initialized accordingly. 
-    const float4x4 model_matrix_b = { {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {3, 4, 5, 1} };
+    const float4x4 model_matrix_b = { { 0, 0, 0, 0 },{ 0, 0, 0, 0 },{ 0, 0, 0, 0 },{ 3, 4, 5, 1 } };
 
     /// Polymer provides ostream operators for all basic types to assist with debugging.
     /// Note that matrices are printed in *row-major* order for easier reading.
@@ -88,7 +88,7 @@ TEST_CASE("poses, matrices, and transformations")
     REQUIRE(pose_a.matrix() == matrix_xform);
     REQUIRE(pose_a == pose_b);
 
-    const Pose pose_c = { make_rotation_quat_axis_angle({1, 0, 0}, POLYMER_TAU / 2), {5, 5, 5} };
+    const Pose pose_c = { make_rotation_quat_axis_angle({ 1, 0, 0 }, POLYMER_TAU / 2),{ 5, 5, 5 } };
     const Pose pose_d = {};
     const Pose pose_e = make_pose_from_to(pose_c, pose_d);
 
@@ -161,6 +161,37 @@ TEST_CASE("simple raycasting")
 }
 
 TEST_CASE("polynomial root solvers")
+{
+
+}
+
+TEST_CASE("string, path and filename manipulation")
+{
+    const std::string comma_delimited_str = { "this,is,the,polymer,framework" };
+    auto result = polymer::split(comma_delimited_str, ',');
+    std::vector<std::string> manual_result{ "this", "is", "the", "polymer", "framework" };
+    REQUIRE(result == manual_result);
+
+    const std::string path_a = { "a/relative/path/to/a/file.txt" };
+    REQUIRE(get_extension(path_a) == "txt");
+
+    const std::string path_b = { "../relative/../path/to/a/image.png" };
+    REQUIRE(get_filename_with_extension(path_b) == "image.png");
+
+    const std::string path_c = { "C:\\users\\dimitri\\profile.png" };
+    REQUIRE(get_filename_without_extension(path_c) == "profile");
+
+    /// Note that this function is purely string based and does not actually resolve relative paths.
+    const std::string path_d = { "../../../path/to/a/image.png" };
+    REQUIRE(parent_directory_from_filepath(path_d) == "../../../path/to/a");
+}
+
+TEST_CASE("loading & saving ascii files")
+{
+
+}
+
+TEST_CASE("loading & saving binary files")
 {
 
 }

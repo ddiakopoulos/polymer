@@ -11,9 +11,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{6D75520D-264F-4EFC-948D-EA01065601D2}</ProjectGuid>
-    <RootNamespace>polymer-utilities</RootNamespace>
+    <ProjectGuid>{83657EE1-DB40-43B8-AB73-905E1D091D15}</ProjectGuid>
+    <RootNamespace>engine-ecs</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+    <ProjectName>lib-polymer-tests</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -54,7 +55,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)third_party;$(SolutionDir)third_party\glew;$(SolutionDir)third_party\glfw3\include;$(SolutionDir)lib-engine\gfx\gl;$(SolutionDir)lib-polymer;$(SolutionDir)lib-engine;$(ProjectDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)third_party;$(SolutionDir)third_party\glew;$(SolutionDir)third_party\glfw3\include;$(SolutionDir)lib-engine\gfx\gl;$(SolutionDir)lib-polymer;$(SolutionDir)lib-engine;$(SolutionDir)third_party\cereal\include;$(ProjectDir)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;__WINDOWS_DS__;NOMINMAX;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -72,7 +73,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)third_party;$(SolutionDir)third_party\glew;$(SolutionDir)third_party\glfw3\include;$(SolutionDir)lib-engine\gfx\gl;$(SolutionDir)lib-polymer;$(SolutionDir)lib-engine;$(ProjectDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)third_party;$(SolutionDir)third_party\glew;$(SolutionDir)third_party\glfw3\include;$(SolutionDir)lib-engine\gfx\gl;$(SolutionDir)lib-polymer;$(SolutionDir)lib-engine;$(SolutionDir)third_party\cereal\include;$(ProjectDir)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;__WINDOWS_DS__;NOMINMAX;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -86,12 +87,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="polymer-utilities.cpp" />
-  </ItemGroup>
-  <ItemGroup>
+    <ProjectReference Include="..\..\lib-engine\lib-engine.vcxproj">
+      <Project>{71f00a1a-c67d-4cb9-9f37-98d4975fa5c7}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\lib-polymer\lib-polymer.vcxproj">
       <Project>{992e85a7-b590-477b-a1b2-8a04aaad0e10}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="lib-polymer-tests.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

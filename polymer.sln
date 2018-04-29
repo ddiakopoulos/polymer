@@ -28,13 +28,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gl-render", "samples\gl-ren
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gl-render-offscreen", "samples\gl-render-offscreen\gl-render-offscreen.vcxproj", "{EFC8C9CF-5417-4D08-BCFD-7EEA59A2853E}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "polymer-types", "samples\polymer-types\polymer-types.vcxproj", "{896644C3-3E50-4E9D-B64C-E7B18EF08CA4}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "polymer-utilities", "samples\polymer-utilities\polymer-utilities.vcxproj", "{6D75520D-264F-4EFC-948D-EA01065601D2}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{A7EC5760-E80E-4DA8-BB5F-D0012CCDE6FE}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "entity-component", "tests\entity-component\entity-component.vcxproj", "{8C0809F1-CE41-49D3-8286-062D673D887D}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lib-engine-tests", "tests\lib-engine\lib-engine.vcxproj", "{8C0809F1-CE41-49D3-8286-062D673D887D}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lib-polymer-tests", "tests\lib-polymer\lib-polymer.vcxproj", "{83657EE1-DB40-43B8-AB73-905E1D091D15}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -74,18 +72,14 @@ Global
 		{EFC8C9CF-5417-4D08-BCFD-7EEA59A2853E}.Debug|x64.Build.0 = Debug|x64
 		{EFC8C9CF-5417-4D08-BCFD-7EEA59A2853E}.Release|x64.ActiveCfg = Release|x64
 		{EFC8C9CF-5417-4D08-BCFD-7EEA59A2853E}.Release|x64.Build.0 = Release|x64
-		{896644C3-3E50-4E9D-B64C-E7B18EF08CA4}.Debug|x64.ActiveCfg = Debug|x64
-		{896644C3-3E50-4E9D-B64C-E7B18EF08CA4}.Debug|x64.Build.0 = Debug|x64
-		{896644C3-3E50-4E9D-B64C-E7B18EF08CA4}.Release|x64.ActiveCfg = Release|x64
-		{896644C3-3E50-4E9D-B64C-E7B18EF08CA4}.Release|x64.Build.0 = Release|x64
-		{6D75520D-264F-4EFC-948D-EA01065601D2}.Debug|x64.ActiveCfg = Debug|x64
-		{6D75520D-264F-4EFC-948D-EA01065601D2}.Debug|x64.Build.0 = Debug|x64
-		{6D75520D-264F-4EFC-948D-EA01065601D2}.Release|x64.ActiveCfg = Release|x64
-		{6D75520D-264F-4EFC-948D-EA01065601D2}.Release|x64.Build.0 = Release|x64
 		{8C0809F1-CE41-49D3-8286-062D673D887D}.Debug|x64.ActiveCfg = Debug|x64
 		{8C0809F1-CE41-49D3-8286-062D673D887D}.Debug|x64.Build.0 = Debug|x64
 		{8C0809F1-CE41-49D3-8286-062D673D887D}.Release|x64.ActiveCfg = Release|x64
 		{8C0809F1-CE41-49D3-8286-062D673D887D}.Release|x64.Build.0 = Release|x64
+		{83657EE1-DB40-43B8-AB73-905E1D091D15}.Debug|x64.ActiveCfg = Debug|x64
+		{83657EE1-DB40-43B8-AB73-905E1D091D15}.Debug|x64.Build.0 = Debug|x64
+		{83657EE1-DB40-43B8-AB73-905E1D091D15}.Release|x64.ActiveCfg = Release|x64
+		{83657EE1-DB40-43B8-AB73-905E1D091D15}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -99,9 +93,8 @@ Global
 		{71F00A1A-C67D-4CB9-9F37-98D4975FA5C7} = {25969120-2DC7-47EA-827F-41616989B284}
 		{20F2353F-E1EE-4825-B1BC-F99446F24954} = {0B054E41-2F3E-4230-8488-B44C3643F315}
 		{EFC8C9CF-5417-4D08-BCFD-7EEA59A2853E} = {0B054E41-2F3E-4230-8488-B44C3643F315}
-		{896644C3-3E50-4E9D-B64C-E7B18EF08CA4} = {0B054E41-2F3E-4230-8488-B44C3643F315}
-		{6D75520D-264F-4EFC-948D-EA01065601D2} = {0B054E41-2F3E-4230-8488-B44C3643F315}
 		{8C0809F1-CE41-49D3-8286-062D673D887D} = {A7EC5760-E80E-4DA8-BB5F-D0012CCDE6FE}
+		{83657EE1-DB40-43B8-AB73-905E1D091D15} = {A7EC5760-E80E-4DA8-BB5F-D0012CCDE6FE}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {E2D0793D-BD41-4F42-A6AA-DAB3D17A46BE}
