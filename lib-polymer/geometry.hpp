@@ -175,6 +175,25 @@ inline void rescale_geometry(runtime_mesh & g, float radius = 1.0f)
     }
 }
 
+inline void recenter_geometry(runtime_mesh & m)
+{
+    float3 average_position = float3(0.f);
+
+    for (auto & v : m.vertices)
+    {
+        average_position += v;
+    }
+
+    average_position /= float(m.vertices.size());
+
+   auto average_relative_pose = Pose({ 0, 0, 0, 1 }, average_position);
+   
+   for (auto & v : m.vertices)
+   {
+       v = average_relative_pose.detransform_coord(v);
+   }
+}
+
 inline Geometry concatenate_geometry(const Geometry & a, const Geometry & b)
 {
     Geometry s;

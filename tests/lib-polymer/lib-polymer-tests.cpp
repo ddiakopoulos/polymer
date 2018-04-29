@@ -97,7 +97,14 @@ TEST_CASE("poses, matrices, and transformations")
 
 TEST_CASE("pose and matrix transformations")
 {
-
+    runtime_mesh m;
+    m.vertices.push_back({ 4, 0, 0 });
+    m.vertices.push_back({ 3, 0, 0 });
+    recenter_geometry(m);
+    for (auto v : m.vertices)
+    {
+        std::cout << v << std::endl;
+    }
 }
 
 TEST_CASE("projection matrices")

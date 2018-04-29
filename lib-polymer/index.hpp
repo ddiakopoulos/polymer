@@ -1,6 +1,5 @@
 #include "util.hpp"
 
-// Utilities
 #include "math-core.hpp"
 #include "string_utils.hpp"
 #include "circular_buffer.hpp"
@@ -21,18 +20,3 @@
 #include "simple_timer.hpp"
 #include "geometry.hpp"
 #include "tweens.hpp"
-
-// OpenGL Rendering + Utilities
-#include "glfw-app.hpp"
-#include "gl-api.hpp"
-#include "gl-async-gpu-timer.hpp"
-#include "gl-camera.hpp"
-#include "gl-imgui.hpp"
-#include "gl-mesh.hpp"
-#include "gl-nvg.hpp"
-#include "gl-procedural-mesh.hpp"
-#include "gl-procedural-sky.hpp"
-#include "gl-renderable-grid.hpp"
-#include "gl-renderable-meshline.hpp"
-#include "gl-texture-view.hpp"
-#include "gl-gizmo.hpp"
