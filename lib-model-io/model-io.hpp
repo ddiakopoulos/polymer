@@ -107,8 +107,14 @@ inline void export_obj_data(std::ofstream & file, runtime_mesh & mesh)
 {
     file << "# vertices\n";
     for (auto & v : mesh.vertices) file << "v " << std::fixed << v.x << " " << std::fixed << v.y << " " << std::fixed << v.z << std::endl;
-    for (auto & v : mesh.normals) file << "vn " << std::fixed << v.x << " " << std::fixed << v.y << " " << std::fixed << v.z << std::endl;
-    for (auto & v : mesh.texcoord0) file << "vt " << std::fixed << v.x << " " << std::fixed << v.y << std::endl;
+
+    float3 normalSum{ 0.f };
+    float2 texcoordSum{ 0.f };
+    for (auto v : mesh.normals) normalSum += v;
+    for (auto v : mesh.texcoord0) texcoordSum += v;
+
+    if (normalSum > float3(0.f)) for (auto & v : mesh.normals) file << "vn " << std::fixed << v.x << " " << std::fixed << v.y << " " << std::fixed << v.z << std::endl;
+    if (texcoordSum > float2(0.f)) for (auto & v : mesh.texcoord0) file << "vt " << std::fixed << v.x << " " << std::fixed << v.y << std::endl;
 
     file << "# faces\n";
     for (auto & v : mesh.faces) file << "f " << v.x + 1 << " " << v.y + 1 << " " << v.z + 1 << std::endl;
