@@ -10,6 +10,8 @@
 #include "algo_misc.hpp"
 #include "gl-imgui.hpp"
 
+#include "../lib-engine/shader-library.hpp"
+
 using namespace polymer;
 
 struct ScreenViewport

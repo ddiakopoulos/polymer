@@ -135,7 +135,7 @@ namespace polymer
         singleton() = default;
         ~singleton() = default;
     public:
-        static T * get_instance() { if (!single) single = new T(); return single; };
+        static T * get() { if (!single) single = new T(); return single; };
     };
 
     class try_locker

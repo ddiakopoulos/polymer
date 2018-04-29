@@ -39,10 +39,10 @@ void material_library::remove_material(const std::string & name)
         material_handle::destroy(name);
         auto jsonString = cereal::serialize_to_json(instances);
         polymer::write_file_text(library_path, jsonString);
-        Logger::get_instance()->assetLog->info("removing {} from the material list", name);
+        log::get()->assetLog->info("removing {} from the material list", name);
     }
     else
     {
-        Logger::get_instance()->assetLog->info("{} was not found in the material list", name);
+        log::get()->assetLog->info("{} was not found in the material list", name);
     }
 }

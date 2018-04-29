@@ -48,7 +48,7 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
     cam.look_at({ 0, 9.5f, -6.0f }, { 0, 0.1f, 0 });
     flycam.set_camera(&cam);
 
-    Logger::get_instance()->add_sink(std::make_shared<ImGui::spdlog_editor_sink>(log));
+    log::get()->add_sink(std::make_shared<ImGui::spdlog_editor_sink>(log));
 
     load_editor_intrinsic_assets("../assets/models/runtime/");
 

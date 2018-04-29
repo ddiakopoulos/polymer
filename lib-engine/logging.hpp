@@ -1,40 +1,45 @@
 #pragma once
 
-#ifndef render_logging_hpp
-#define render_logging_hpp
+#ifndef polymer_engine_log_hpp
+#define polymer_engine_log_hpp
 
 #include "spdlog/spdlog.h"
 #include "spdlog/sinks/ostream_sink.h"
 #include "util.hpp"
 
 namespace spd = spdlog;
-namespace spdlog { class logger; };
-typedef std::shared_ptr<spdlog::logger> Log;
+namespace spdlog { class log; };
 
-struct Logger : public polymer::singleton<Logger>
+namespace polymer
 {
-    const size_t qSize = 256;
-    std::vector<spdlog::sink_ptr> sinks;
-    Log assetLog;
+    typedef std::shared_ptr<spdlog::logger> LogT;
 
-    Logger()
+    struct log : public polymer::singleton<log>
     {
-        spdlog::set_async_mode(qSize);
-        sinks.push_back(std::make_shared<spdlog::sinks::simple_file_sink_mt>("asset_log.txt"));
-        assetLog = std::make_shared<spdlog::logger>("asset_log", std::begin(sinks), std::end(sinks));
-        //sinks.push_back(std::make_shared<spdlog::sinks::stdout_sink_mt>());
-    }
+        const size_t qSize = 256;
+        std::vector<spdlog::sink_ptr> sinks;
+        LogT assetLog;
 
-    void add_sink(spdlog::sink_ptr sink)
-    {
-        sinks.push_back(sink);
-        assetLog = std::make_shared<spdlog::logger>("asset_log", std::begin(sinks), std::end(sinks));
-    }
+        log()
+        {
+            spdlog::set_async_mode(qSize);
+            sinks.push_back(std::make_shared<spdlog::sinks::simple_file_sink_mt>("polymer-engine-log.txt"));
+            assetLog = std::make_shared<spdlog::logger>("polymer-engine-log", std::begin(sinks), std::end(sinks));
+            //sinks.push_back(std::make_shared<spdlog::sinks::stdout_sink_mt>());
+        }
 
-    friend class polymer::singleton<Logger>;
-};
+        void add_sink(spdlog::sink_ptr sink)
+        {
+            sinks.push_back(sink);
+            assetLog = std::make_shared<spdlog::logger>("polymer-engine-log", std::begin(sinks), std::end(sinks));
+        }
 
-// Implement singleton
-template<> Logger * polymer::singleton<Logger>::single = nullptr;
+        friend class polymer::singleton<log>;
+    };
 
-#endif // end render_logging_hpp
+    // Implement singleton
+    template<> log * polymer::singleton<log>::single = nullptr;
+
+} // end namespace polymer
+
+#endif // end polymer_engine_log_hpp
