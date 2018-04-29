@@ -105,6 +105,9 @@ TEST_CASE("pose and matrix transformations")
     {
         std::cout << v << std::endl;
     }
+
+    auto sphere = make_sphere(1.f);
+    export_obj_model("sphere_export_test", "sphere.obj", sphere);
 }
 
 TEST_CASE("projection matrices")

@@ -12,6 +12,8 @@
 #include <memory>
 #include <map>
 #include <unordered_map>
+#include <fstream>
+#include <ostream>
 
 using namespace polymer;
 
@@ -100,5 +102,57 @@ void export_mesh_binary(const std::string & path, runtime_mesh & mesh, bool comp
 std::map<std::string, runtime_mesh> import_fbx_model(const std::string & path);
 std::map<std::string, runtime_mesh> import_obj_model(const std::string & path);
 std::map<std::string, runtime_mesh> import_model(const std::string & path);
+
+inline void export_obj_data(std::ofstream & file, runtime_mesh & mesh)
+{
+    file << "# vertices\n";
+    for (auto & v : mesh.vertices) file << "v " << std::fixed << v.x << " " << std::fixed << v.y << " " << std::fixed << v.z << std::endl;
+    for (auto & v : mesh.normals) file << "vn " << std::fixed << v.x << " " << std::fixed << v.y << " " << std::fixed << v.z << std::endl;
+    for (auto & v : mesh.texcoord0) file << "vt " << std::fixed << v.x << " " << std::fixed << v.y << std::endl;
+
+    file << "# faces\n";
+    for (auto & v : mesh.faces) file << "f " << v.x + 1 << " " << v.y + 1 << " " << v.z + 1 << std::endl;
+}
+
+inline bool export_obj_model(const std::string & name, const std::string & filename, runtime_mesh & mesh)
+{
+    std::ofstream file(filename);
+
+    if (!file.is_open())  return false;
+
+    file.precision(3);
+    file << "# OBJ file created by Polymer\n";
+    file << "o " << name << "\n";
+
+    export_obj_data(file, mesh);
+
+    file.close();
+
+    return true;
+}
+
+inline bool export_obj_multi_model(const std::vector<std::string> & names, const std::string & filename, std::vector<runtime_mesh *> & meshes)
+{
+    assert(names.size() == meshes.size());
+
+    std::ofstream file(filename);
+
+    if (!file.is_open())  return false;
+
+    file.precision(3);
+    file << "# OBJ file created by Polymer\n";
+
+    for (int i = 0; i < meshes.size(); ++i)
+    {
+        auto & mesh = meshes[i];
+        auto & name = names[i];
+        file << "o " << name << "\n";
+        export_obj_data(file, *mesh);
+    }
+
+    file.close();
+
+    return true;
+}
 
 #endif // end runtime_mesh_hpp
