@@ -165,6 +165,9 @@
     <ClInclude Include="queue-circular.hpp">
       <Filter>src\queues</Filter>
     </ClInclude>
+    <ClInclude Include="memory-pool.hpp">
+      <Filter>src\tools</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\third_party\imgui\imgui.cpp">
