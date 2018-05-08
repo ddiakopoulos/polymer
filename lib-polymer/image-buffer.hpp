@@ -4,12 +4,13 @@
 #define polymer_image_buffer_hpp
 
 #include "math-core.hpp"
+#include "util.hpp"
 #include <memory>
 
 namespace polymer
 {
     template <typename T, int C>
-    class image_buffer
+    class image_buffer : public non_copyable
     {
         const int2 dims{ 0, 0 };
         T * alias;
@@ -62,6 +63,8 @@ namespace polymer
         return (1.0f - c1) * ((1.0f - c0) * operator()(y0, x0) + c0 * operator()(y1, x0)) +
             c1 * ((1.0f - c0) * operator()(y0, x1) + c0 * operator()(y1, x1));
     }
+
+    // todo - create image_buffer_view
 
 } // end namespace polymer
 

@@ -7,6 +7,7 @@
 #include "math-core.hpp"
 #include "geometry.hpp"
 #include "gl-api.hpp"
+#include "image-buffer.hpp"
 
 using namespace polymer;
 
@@ -18,20 +19,18 @@ inline Pose make_pose(const vr::HmdMatrix34_t & m)
     };
 }
 
-struct OpenVR_Controller
+struct ControllerRenderData
 {
-private:
+    Geometry mesh;
+    GlTexture2D tex;
+    bool loaded = false;
+};
 
+class OpenVR_Controller
+{
     Pose p;
 
 public:
-
-    struct ControllerRenderData
-    {
-        Geometry mesh;
-        GlTexture2D tex;
-        bool loaded = false;
-    };
 
     struct ButtonState
     {
@@ -51,27 +50,67 @@ public:
 
     ButtonState pad;
     ButtonState trigger;
+
     float2 touchpad = float2(0.0f, 0.0f);
 
     void set_pose(const Pose & newPose) { p = newPose; }
-
     const Pose get_pose(const Pose & worldPose) const { return worldPose * p; }
-
     Ray forward_ray() const { return Ray(p.position, p.transform_vector(float3(0.0f, 0.0f, -1.0f))); }
+};
 
-    std::shared_ptr<ControllerRenderData> renderData;
+struct camera_intrinsics
+{
+    int width;  // width of the image in pixels
+    int height; // height of the image in pixels
+    float ppx;  // horizontal coordinate of the principal point of the image, as a pixel offset from the left edge
+    float ppy;  // vertical coordinate of the principal point of the image, as a pixel offset from the top edge
+    float fx;   // focal length of the image plane, as a multiple of pixel width
+    float fy;   // focal length of the image plane, as a multiple of pixel height
+};
+
+struct tracked_camera_frame
+{
+    Pose render_pose;
+    GlTexture2D texture;
+    image_buffer<uint8_t, 4> rawBytes;
+};
+
+class OpenVR_TrackedCamera
+{
+    vr::IVRSystem * hmd{ nullptr };
+    vr::IVRTrackedCamera * trackedCamera{ nullptr };
+
+    vr::TrackedCameraHandle_t trackedCameraHandle{ INVALID_TRACKED_CAMERA_HANDLE };
+
+    uint32_t lastFrameSequence{ 0 };
+    uint32_t cameraFrameBufferSize{ 0 };
+
+    camera_intrinsics intrin;
+    float4x4 cameraProjectionMatrix;
+    tracked_camera_frame frame;
+
+public:
+
+    bool initialize(vr::IVRSystem * vr_system);
+    bool start();
+    void stop();
+    void capture();
+
+    camera_intrinsics get_intrinsics() const { return intrin; }
+    float4x4 const get_projection_matrix() { return cameraProjectionMatrix; }
+    tracked_camera_frame & get_frame() { return frame; }
 };
 
 class OpenVR_HMD 
 {
-    vr::IVRSystem * hmd = nullptr;
-    vr::IVRRenderModels * renderModels = nullptr;
+    vr::IVRSystem * hmd { nullptr };
+    vr::IVRRenderModels * renderModels { nullptr };
 
     uint2 renderTargetSize;
     Pose hmdPose;
     Pose worldPose;
 
-    std::shared_ptr<OpenVR_Controller::ControllerRenderData> controllerRenderData;
+    std::shared_ptr<ControllerRenderData> controllerRenderData;
     OpenVR_Controller controllers[2];
 
 public:
@@ -87,7 +126,7 @@ public:
         return nullptr;
     }
 
-    std::shared_ptr<OpenVR_Controller::ControllerRenderData> get_controller_render_data() { return controllerRenderData; }
+    std::shared_ptr<ControllerRenderData> get_controller_render_data() { return controllerRenderData; }
 
     void set_world_pose(const Pose & p) { worldPose = p; }
     Pose get_world_pose() { return worldPose; }
