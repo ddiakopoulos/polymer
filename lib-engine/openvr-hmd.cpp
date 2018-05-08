@@ -1,5 +1,7 @@
 #include "openvr-hmd.hpp"
 
+using namespace polymer;
+
 std::string get_tracked_device_string(vr::IVRSystem * pHmd, vr::TrackedDeviceIndex_t unDevice, vr::TrackedDeviceProperty prop, vr::TrackedPropertyError *peError = NULL)
 {
     uint32_t unRequiredBufferLen = pHmd->GetStringTrackedDeviceProperty(unDevice, prop, NULL, 0, peError);
@@ -24,8 +26,6 @@ openvr_hmd::openvr_hmd()
     std::cout << "VR Display: " << get_tracked_device_string(hmd, vr::k_unTrackedDeviceIndex_Hmd, vr::Prop_SerialNumber_String) << std::endl;
 
     controllerRenderData = std::make_shared<cached_controller_render_data>();
-    //controllers[0].renderData = controllerRenderData;
-    //controllers[1].renderData = controllerRenderData;
 
     renderModels = (vr::IVRRenderModels *)vr::VR_GetGenericInterface(vr::IVRRenderModels_Version, &eError);
     if (!renderModels)

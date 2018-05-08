@@ -1,4 +1,5 @@
 #include "openvr-camera.hpp"
+#include "openvr-hmd.hpp" // for make_pose(...)
 
 using namespace polymer;
 
@@ -71,7 +72,7 @@ bool OpenVR_TrackedCamera::start()
     }
 
     // Create a persistent buffer for holding the incoming camera data
-    //frame.rawBytes = image_buffer<uint8_t, 3>(int2(frameWidth, frameHeight));
+    frame.rawBytes = image_buffer<uint8_t, 3>(int2(frameWidth, frameHeight));
 
     lastFrameSequence = 0;
 

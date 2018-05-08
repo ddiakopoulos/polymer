@@ -106,7 +106,7 @@ public:
     // Must be called per-frame in the update loop
     void update();
 
-    // Submit rendered per-eye textures to the OpenVR compositor
+    // Submit rendered per-eye OpenGL textures to the OpenVR compositor
     void submit(const GLuint leftEye, const GLuint rightEye);
 };
 

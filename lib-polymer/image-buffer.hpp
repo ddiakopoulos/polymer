@@ -12,7 +12,7 @@ namespace polymer
     template <typename T, int C>
     class image_buffer
     {
-        const int2 dims{ 0, 0 };
+        int2 dims{ 0, 0 };
         T * alias;
         struct delete_array { void operator()(T * p) { delete[] p; } };
         std::unique_ptr<T, decltype(image_buffer::delete_array())> buffer;
@@ -26,6 +26,15 @@ namespace polymer
         {
             alias = buffer.get();
             if (r.alias) std::memcpy(alias, r.alias, dims.x * dims.y * C * sizeof(T));
+        }
+
+        image_buffer & operator = (const image_buffer<T, C> & r)
+        {
+            buffer = { new T[dims.x * dims.y * C], delete_array() };
+            alias = buffer.get();
+            dims = r.dims;
+            if (r.alias) std::memcpy(alias, r.alias, dims.x * dims.y * C * sizeof(T));
+            return *this;
         }
 
         int2 size() const { return dims; }
