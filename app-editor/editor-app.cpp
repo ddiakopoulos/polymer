@@ -93,7 +93,7 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
         "../assets/shaders/renderer/forward_lighting_blinn_phong_frag.glsl",
         "../assets/shaders/renderer");
 
-    fullscreen_surface.reset(new fullscreen_texture());
+    fullscreen_surface.reset(new simple_texture_view());
 
     renderer_settings settings;
     settings.renderSize = int2(width, height);

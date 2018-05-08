@@ -155,12 +155,12 @@ namespace polymer
         }
     };
 
-    struct fullscreen_texture
+    struct simple_texture_view
     {
         GlShader shader;
         GlMesh fullscreen_quad_ndc;
 
-        fullscreen_texture()
+        simple_texture_view()
         {
             static const char s_textureVert[] = R"(#version 330
             layout(location = 0) in vec3 position;

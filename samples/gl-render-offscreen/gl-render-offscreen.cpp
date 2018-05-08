@@ -1,5 +1,6 @@
 #include "index.hpp"
 #include "gl-camera.hpp"
+#include "gl-texture-view.hpp"
 
 using namespace polymer;
 
@@ -7,6 +8,12 @@ struct sample_gl_render_offscreen final : public polymer_app
 {
     perspective_camera cam;
     fps_camera_controller flycam;
+
+    std::unique_ptr<simple_texture_view> view;
+
+    GlTexture2D renderTextureRGBA;
+    GlTexture2D renderTextureDepth;
+    GlFramebuffer renderFramebuffer;
 
     sample_gl_render_offscreen();
     ~sample_gl_render_offscreen();
@@ -25,6 +32,14 @@ sample_gl_render_offscreen::sample_gl_render_offscreen() : polymer_app(1280, 720
     int width, height;
     glfwGetWindowSize(window, &width, &height);
     glViewport(0, 0, width, height);
+
+    view.reset(new simple_texture_view());
+
+    renderTextureRGBA.setup(width, height, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    renderTextureDepth.setup(width, height, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+    glNamedFramebufferTexture2DEXT(renderFramebuffer, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, renderTextureRGBA, 0);
+    glNamedFramebufferTexture2DEXT(renderFramebuffer, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, renderTextureDepth, 0);
+    renderFramebuffer.check_complete();
 
     cam.look_at({ 0, 9.5f, -6.0f }, { 0, 0.1f, 0 });
     flycam.set_camera(&cam);
@@ -58,19 +73,30 @@ void sample_gl_render_offscreen::on_draw()
     int width, height;
     glfwGetWindowSize(window, &width, &height);
 
-    glViewport(0, 0, width, height);
-    glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    const Pose cameraPose = cam.pose;
-    const float4x4 projectionMatrix = cam.get_projection_matrix(float(width) / float(height));
-    const float4x4 viewMatrix = cam.get_view_matrix();
-    const float4x4 viewProjectionMatrix = mul(projectionMatrix, viewMatrix);
+    // Render to framebuffer
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, renderFramebuffer);
+        glViewport(0, 0, width, height);
+        glClearColor(0.25f, 0.25f, 0.25f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        const float4x4 projectionMatrix = cam.get_projection_matrix(float(width) / float(height));
+        const float4x4 viewMatrix = cam.get_view_matrix();
+        const float4x4 viewProjectionMatrix = mul(projectionMatrix, viewMatrix);
+    }
+
+    // Render to default framebuffer (the screen)
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, width, height);
+    glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    view->draw(renderTextureRGBA);
 
     gl_check_error(__FILE__, __LINE__);
 

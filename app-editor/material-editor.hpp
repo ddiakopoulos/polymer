@@ -42,7 +42,7 @@ bool draw_listbox(const std::string & label, ImGuiTextFilter & filter, int & sel
 
 struct material_editor_window final : public glfw_window
 {
-    std::unique_ptr<fullscreen_texture> fullscreen_surface;
+    std::unique_ptr<simple_texture_view> fullscreen_surface;
     std::unique_ptr<renderer_standard> preview_renderer;
     std::unique_ptr<gui::imgui_instance> auxImgui;
     std::unique_ptr<StaticMesh> previewMesh;
@@ -63,7 +63,7 @@ struct material_editor_window final : public glfw_window
     {
         glfwMakeContextCurrent(window);
 
-        fullscreen_surface.reset(new fullscreen_texture());
+        fullscreen_surface.reset(new simple_texture_view());
 
         // These are created on the this gl context and cached as global variables in the asset table. It will be re-assigned
         // every time this window is opened so we don't need to worry about cleaning it up.

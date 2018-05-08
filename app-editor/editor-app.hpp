@@ -34,7 +34,7 @@ struct scene_editor_app final : public polymer_app
 
     std::unique_ptr<gui::imgui_instance> igm;
     std::unique_ptr<renderer_standard> renderer;
-    std::unique_ptr<fullscreen_texture> fullscreen_surface;
+    std::unique_ptr<simple_texture_view> fullscreen_surface;
 
     render_payload sceneData;
     poly_scene scene;
