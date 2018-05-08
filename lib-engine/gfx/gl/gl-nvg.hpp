@@ -4,7 +4,7 @@
 #define nvg_util_h
 
 #include "gl-api.hpp"
-#include "nanovg.h"
+#include "nanovg/nanovg.h"
 
 #include <stdint.h>
 #include <vector>

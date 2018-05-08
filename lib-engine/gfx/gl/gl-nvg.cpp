@@ -26,7 +26,7 @@ size_t NvgFont::get_cursor_location(const std::string & text, float fontSize, in
 }
 
 #define NANOVG_GL3_IMPLEMENTATION
-#include "nanovg_gl.h"
+#include "nanovg/nanovg_gl.h"
 
 NVGcontext * make_nanovg_context(int flags) { return nvgCreateGL3(flags); }
 void release_nanovg_context(NVGcontext * ctx) { nvgDeleteGL3(ctx); }

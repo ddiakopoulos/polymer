@@ -42,18 +42,6 @@
     <ClInclude Include="..\third_party\imgui\imgui_internal.h">
       <Filter>third_party\imgui</Filter>
     </ClInclude>
-    <ClInclude Include="..\third_party\nanovg_gl_utils.h">
-      <Filter>third_party\nanovg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\third_party\nanovg.h">
-      <Filter>third_party\nanovg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\third_party\nanovg_gl.h">
-      <Filter>third_party\nanovg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\third_party\fontstash.h">
-      <Filter>third_party\nanovg</Filter>
-    </ClInclude>
     <ClInclude Include="..\third_party\tiny-gizmo.hpp">
       <Filter>third_party\tinygizmo</Filter>
     </ClInclude>
@@ -171,6 +159,18 @@
     <ClInclude Include="image-buffer.hpp">
       <Filter>src\tools</Filter>
     </ClInclude>
+    <ClInclude Include="..\third_party\nanovg\fontstash.h">
+      <Filter>third_party\nanovg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third_party\nanovg\nanovg.h">
+      <Filter>third_party\nanovg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third_party\nanovg\nanovg_gl.h">
+      <Filter>third_party\nanovg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third_party\nanovg\nanovg_gl_utils.h">
+      <Filter>third_party\nanovg</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\third_party\imgui\imgui.cpp">
@@ -178,9 +178,6 @@
     </ClCompile>
     <ClCompile Include="..\third_party\imgui\imgui_draw.cpp">
       <Filter>third_party\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\third_party\nanovg.cpp">
-      <Filter>third_party\nanovg</Filter>
     </ClCompile>
     <ClCompile Include="..\third_party\tiny-gizmo.cpp">
       <Filter>third_party\tinygizmo</Filter>
@@ -190,6 +187,9 @@
     </ClCompile>
     <ClCompile Include="..\third_party\tinyexr\tinyexr.cc">
       <Filter>third_party\tinyexr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\third_party\nanovg\nanovg.cpp">
+      <Filter>third_party\nanovg</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
