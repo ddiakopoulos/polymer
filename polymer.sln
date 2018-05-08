@@ -34,6 +34,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lib-engine-tests", "tests\l
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lib-polymer-tests", "tests\lib-polymer\lib-polymer.vcxproj", "{83657EE1-DB40-43B8-AB73-905E1D091D15}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gl-simplex-noise", "samples\gl-simplex-noise\gl-simplex-noise.vcxproj", "{D64D5D28-40D4-4D22-8F91-621AA0A58774}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -80,6 +82,10 @@ Global
 		{83657EE1-DB40-43B8-AB73-905E1D091D15}.Debug|x64.Build.0 = Debug|x64
 		{83657EE1-DB40-43B8-AB73-905E1D091D15}.Release|x64.ActiveCfg = Release|x64
 		{83657EE1-DB40-43B8-AB73-905E1D091D15}.Release|x64.Build.0 = Release|x64
+		{D64D5D28-40D4-4D22-8F91-621AA0A58774}.Debug|x64.ActiveCfg = Debug|x64
+		{D64D5D28-40D4-4D22-8F91-621AA0A58774}.Debug|x64.Build.0 = Debug|x64
+		{D64D5D28-40D4-4D22-8F91-621AA0A58774}.Release|x64.ActiveCfg = Release|x64
+		{D64D5D28-40D4-4D22-8F91-621AA0A58774}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -95,6 +101,7 @@ Global
 		{EFC8C9CF-5417-4D08-BCFD-7EEA59A2853E} = {0B054E41-2F3E-4230-8488-B44C3643F315}
 		{8C0809F1-CE41-49D3-8286-062D673D887D} = {A7EC5760-E80E-4DA8-BB5F-D0012CCDE6FE}
 		{83657EE1-DB40-43B8-AB73-905E1D091D15} = {A7EC5760-E80E-4DA8-BB5F-D0012CCDE6FE}
+		{D64D5D28-40D4-4D22-8F91-621AA0A58774} = {0B054E41-2F3E-4230-8488-B44C3643F315}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {E2D0793D-BD41-4F42-A6AA-DAB3D17A46BE}

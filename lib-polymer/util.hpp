@@ -121,8 +121,8 @@ namespace polymer
     protected:
         non_copyable() = default;
         ~non_copyable() = default;
-        non_copyable (const non_copyable& r) = delete;
-        non_copyable & operator = (const non_copyable& r) = delete;
+        non_copyable (const non_copyable & r) = delete;
+        non_copyable & operator = (const non_copyable & r) = delete;
     };
      
     template <typename T>

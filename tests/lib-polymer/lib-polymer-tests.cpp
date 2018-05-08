@@ -124,6 +124,11 @@ TEST_CASE("glsl mirror functions")
     /// todo - reflect, refact, faceforward
 }
 
+TEST_CASE("coordinate system conversions")
+{
+
+}
+
 TEST_CASE("axis-aligned bounding box (2D)")
 {
 
@@ -179,22 +184,22 @@ TEST_CASE("unifom random number generation")
     }
 }
 
-TEST_CASE("primitive (sphere)")
+TEST_CASE("primitive (analytic sphere)")
 {
 
 }
 
-TEST_CASE("primitive (plane)")
+TEST_CASE("primitive (analytic plane)")
 {
 
 }
 
-TEST_CASE("primitive (lines & segments)")
+TEST_CASE("primitive (analytic lines & segments)")
 {
 
 }
 
-TEST_CASE("primitive (frustum)")
+TEST_CASE("primitive (analytic frustum)")
 {
 
 }

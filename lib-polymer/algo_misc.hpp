@@ -216,7 +216,7 @@ namespace polymer
             children.push_back(child);
         }
 
-        void layout()
+        void recompute()
         {
             for (auto & child : children)
             {
@@ -229,7 +229,7 @@ namespace polymer
                     float ypadding = (1 - std::min((child->bounds.width() / childAspect) / child->bounds.height(), 1.0f)) / 2;
                     child->bounds = urect{ { xpadding, 0 },{ ypadding, 0 },{ 1 - xpadding, 0 },{ 1 - ypadding, 0 } }.resolve(child->bounds);
                 }
-                if (child->bounds.size() != size) child->layout();
+                if (child->bounds.size() != size) child->recompute();
             }
         }
     };
