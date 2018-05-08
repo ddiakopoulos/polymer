@@ -7,7 +7,6 @@
 #include "math-core.hpp"
 #include "geometry.hpp"
 #include "gl-api.hpp"
-#include "image-buffer.hpp"
 
 using namespace polymer;
 
