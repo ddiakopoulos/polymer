@@ -63,8 +63,7 @@ class openvr_hmd
     vr::IVRRenderModels * renderModels { nullptr };
 
     uint2 renderTargetSize;
-    Pose hmdPose;
-    Pose worldPose;
+    Pose hmdPose, worldPose;
 
     std::shared_ptr<cached_controller_render_data> controllerRenderData;
     openvr_controller controllers[2];
@@ -74,22 +73,40 @@ public:
     openvr_hmd();
     ~openvr_hmd();
 
+    // The world pose represents an offset that is applied to `get_hmd_pose()`
+    // It is most useful for teleportation functionality. 
     void set_world_pose(const Pose & p);
     Pose get_world_pose();
 
+    // The pose of the headset, relative to the current world pose.
+    // If no world pose is set, then it is relative to the center of the OpenVR
+    // tracking volume. The view matrix is derived from this data. 
     Pose get_hmd_pose() const;
     void set_hmd_pose(const Pose & p);
 
+    // Returns the per-eye flavor of the view matrix. The eye pose and
+    // hmd pose must be multiplied together to derive the per-eye
+    // view matrix with correct stereo disparity that must be submitted to the
+    // renderer. 
     Pose get_eye_pose(vr::Hmd_Eye eye);
 
+    // OpenVR provides a recommended render target size, in pixels.  
     uint2 get_recommended_render_target_size();
+
+    // Returns the per-eye projection matrix given a near and far clip value. 
     float4x4 get_proj_matrix(vr::Hmd_Eye eye, float near_clip, float far_clip);
+    
+    // Returns the aspect ratio and vertical field of view in radians for a given eye
     void get_optical_properties(vr::Hmd_Eye eye, float & aspectRatio, float & vfov);
 
+    // Returns current controller state.
     const openvr_controller * get_controller(const vr::ETrackedControllerRole controller);
     std::shared_ptr<cached_controller_render_data> get_controller_render_data();
 
+    // Must be called per-frame in the update loop
     void update();
+
+    // Submit rendered per-eye textures to the OpenVR compositor
     void submit(const GLuint leftEye, const GLuint rightEye);
 };
 
