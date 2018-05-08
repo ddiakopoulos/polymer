@@ -95,11 +95,6 @@ TEST_CASE("poses, matrices, and transformations")
     REQUIRE((pose_c.inverse() * pose_d) == pose_e);
 }
 
-TEST_CASE("pose and matrix transformations")
-{
-
-}
-
 TEST_CASE("projection matrices")
 {
 
@@ -127,7 +122,42 @@ TEST_CASE("ring buffer")
 
 TEST_CASE("unifom random number generation")
 {
+    uniform_random_gen gen;
 
+    // Generate a random float between 0 and 1 inclusive
+    for (int i = 0; i < 32768; ++i)
+    {
+        const float rnd_flt = gen.random_float();
+        REQUIRE(rnd_flt >= 0.f && rnd_flt <= 1.f);
+    }
+
+    // Generate a "safe" random float
+    for (int i = 0; i < 32768; ++i)
+    {
+        const float rnd_flt = gen.random_float_safe();
+        REQUIRE(rnd_flt >= 0.001f && rnd_flt <= 0.999f);
+    }
+
+    // Generate a float between 0 and two pi
+    for (int i = 0; i < 32768; ++i)
+    {
+        const float rnd_flt = gen.random_float_sphere();
+        REQUIRE(rnd_flt >= 0.f && rnd_flt <= POLYMER_TAU);
+    }
+
+    // Generate a float between 0.5f and 1.0f
+    for (int i = 0; i < 32768; ++i)
+    {
+        const float rnd_flt = gen.random_float(0.5f, 1.0f);
+        REQUIRE(rnd_flt >= 0.5f && rnd_flt <= 1.f);
+    }
+
+    // Generate an unsigned integer between 0 and 1024
+    for (int i = 0; i < 32768; ++i)
+    {
+        const uint32_t rnd_int = gen.random_int(1024);
+        REQUIRE(rnd_int >= 0 && rnd_int <= 1024);
+    }
 }
 
 TEST_CASE("timers")
@@ -181,7 +211,7 @@ TEST_CASE("string, path and filename manipulation")
     const std::string path_c = { "C:\\users\\dimitri\\profile.png" };
     REQUIRE(get_filename_without_extension(path_c) == "profile");
 
-    /// Note that this function is purely string based and does not actually resolve relative paths.
+    /// Note that this function is purely string based and does not resolve relative paths.
     const std::string path_d = { "../../../path/to/a/image.png" };
     REQUIRE(parent_directory_from_filepath(path_d) == "../../../path/to/a");
 }
