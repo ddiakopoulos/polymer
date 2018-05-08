@@ -1,3 +1,14 @@
+/*
+ * File: samples/gl-render-offscreen.cpp
+ * This sample demonstrates how to setup and render to a framebuffer. This framebuffer
+ * is then drawn as a full-screen quad using the `simple_texture_view` utility class. 
+ * The rendered meshes are all generated procedurally using Polymer's built-in mesh
+ * classes. For illustrative reasons, the CPU geometry is not attached to a GlMesh (GPU)
+ * but instead rendered through the use of Polymer's `renderer_debug` found in lib-engine.
+ * Lastly, the user can click a mesh to highlight it, showing how to raycast against CPU-side
+ * geometry. 
+ */
+
 #include "index.hpp"
 #include "gl-camera.hpp"
 #include "gl-texture-view.hpp"

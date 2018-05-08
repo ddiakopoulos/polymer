@@ -1,5 +1,5 @@
 /*
- * File: samples/gl-render-cpp
+ * File: samples/gl-render.cpp
  * This sample demonstrates the use of Polymer's lowest-level OpenGL API. Polymer
  * uses sevel OpenGL 4.5 features under the hood, namely the direct state access (DSA)
  * extension to simplify the implementation of GL wrapper types. This sample uses 
