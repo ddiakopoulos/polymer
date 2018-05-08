@@ -259,12 +259,37 @@ TEST_CASE("string, path and filename manipulation")
     REQUIRE(parent_directory_from_filepath(path_d) == "../../../path/to/a");
 }
 
-TEST_CASE("loading & saving ascii files")
+TEST_CASE("loading & saving binary files")
 {
+    struct arbitrary_pod
+    {
+        float x;
+        uint32_t y;
+        bool z;
+    };
 
+    arbitrary_pod outData, inData;
+
+    outData.x = 1.f;
+    outData.y = 555;
+    outData.z = false;
+
+    std::vector<uint8_t> outBuffer(sizeof(arbitrary_pod));
+    std::memcpy(outBuffer.data(), &outData, sizeof(outData));
+
+    write_file_binary("binary-sample.bin", outBuffer);
+
+    auto inBuffer = read_file_binary("binary-sample.bin");
+    std::memcpy(&inData, inBuffer.data(), sizeof(inData));
+
+    REQUIRE(inData.x == 1.f);
+    REQUIRE(inData.y == 555);
+    REQUIRE(inData.z == false);
+
+    REQUIRE_THROWS(read_file_binary("binary-sample-does-not-exist.bin"));
 }
 
-TEST_CASE("loading & saving binary files")
+TEST_CASE("loading & saving ascii files")
 {
 
 }

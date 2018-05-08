@@ -10,38 +10,53 @@
 namespace polymer
 {
     
-    inline std::vector<uint8_t> read_file_binary(const std::string pathToFile)
+    inline std::vector<uint8_t> read_file_binary(const std::string & pathToFile)
     {
-        FILE * f = fopen(pathToFile.c_str(), "rb");
-        
-        if (!f) throw std::runtime_error("file not found");
-        
-        fseek(f, 0, SEEK_END);
-        size_t lengthInBytes = ftell(f);
-        fseek(f, 0, SEEK_SET);
-        
-        std::vector<uint8_t> fileBuffer(lengthInBytes);
-        
-        size_t elementsRead = fread(fileBuffer.data(), 1, lengthInBytes, f);
-        
-        if (elementsRead == 0 || fileBuffer.size() < 4) throw std::runtime_error("error reading file or file too small");
-        
-        fclose(f);
-        return fileBuffer;
+        std::ifstream file(pathToFile, std::ios::binary);
+        std::vector<uint8_t> fileBufferBytes;
+
+        if (file.is_open())
+        {
+            file.seekg(0, std::ios::end);
+            size_t sizeBytes = file.tellg();
+            file.seekg(0, std::ios::beg);
+            fileBufferBytes.resize(sizeBytes);
+            if (file.read((char*)fileBufferBytes.data(), sizeBytes)) return fileBufferBytes;
+        }
+        else throw std::runtime_error("could not open binary ifstream to path " + pathToFile);
+        return fileBufferBytes;
+    }
+
+    inline void write_file_binary(const std::string & pathToFile, std::vector<uint8_t> & data)
+    {
+        std::ofstream file(pathToFile, std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
+        if (file.is_open())
+        {
+            file.write((char*)data.data(), data.size());
+        }
+        else throw std::runtime_error("could not open binary ofstream to path " + pathToFile);
     }
     
     inline std::string read_file_text(const std::string & pathToFile)
     {
-        std::ifstream t(pathToFile.c_str());
-        std::string str ((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>());
-        return str;
+        std::ifstream file(pathToFile.c_str());
+        std::string fileBufferAsString;
+        if (file.is_open())
+        {
+            fileBufferAsString = { (std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>() };
+        }
+        else throw std::runtime_error("could not open ascii ifstream to path " + pathToFile);
+        return fileBufferAsString;
     }
 
-    inline void write_file_text(const std::string & fileName, const std::string & output)
+    inline void write_file_text(const std::string & pathToFile, const std::string & output)
     {
-        std::ofstream t(fileName);
-        t << output;
-        t.close();
+        std::ofstream file(pathToFile);
+        if (file.is_open())
+        {
+            file << output;
+        }
+        else throw std::runtime_error("could not open ascii ofstream to path " + pathToFile);
     }
 
 }
