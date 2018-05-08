@@ -97,7 +97,23 @@ TEST_CASE("poses, matrices, and transformations")
 
 TEST_CASE("projection matrices")
 {
+    const uint32_t width = 1024;
+    const uint32_t height = 1024;
+    const float aspectRatio = (float)width / float(height);
 
+    const float4x4 projectionMatrix = make_projection_matrix(to_radians(90.f), aspectRatio, 0.1f, 100.f);
+    const float4x4 viewMatrix = Identity4x4;
+    const float4x4 viewProjectionMatrix = mul(projectionMatrix, viewMatrix);
+
+    float outNear, outFar;
+    near_far_clip_from_projection(projectionMatrix, outNear, outFar);
+
+    REQUIRE(outNear == doctest::Approx(0.1f));
+    REQUIRE(outFar == doctest::Approx(100.f));
+    REQUIRE(vfov_from_projection(projectionMatrix) == doctest::Approx(to_radians(90.f)));
+    REQUIRE(aspect_from_projection(projectionMatrix) == doctest::Approx(aspectRatio));
+
+    const float4x4 orthographicProjectionMatrix = make_orthographic_matrix(0.0f, width, height, 0.0f, -1.0f, 1.0f);
 }
 
 TEST_CASE("glsl mirror functions")
@@ -128,35 +144,40 @@ TEST_CASE("unifom random number generation")
     for (int i = 0; i < 32768; ++i)
     {
         const float rnd_flt = gen.random_float();
-        REQUIRE(rnd_flt >= 0.f && rnd_flt <= 1.f);
+        REQUIRE(rnd_flt >= 0.f);
+        REQUIRE(rnd_flt <= 1.f);
     }
 
     // Generate a "safe" random float
     for (int i = 0; i < 32768; ++i)
     {
         const float rnd_flt = gen.random_float_safe();
-        REQUIRE(rnd_flt >= 0.001f && rnd_flt <= 0.999f);
+        REQUIRE(rnd_flt >= 0.001f);
+        REQUIRE(rnd_flt <= 0.999f);
     }
 
     // Generate a float between 0 and two pi
     for (int i = 0; i < 32768; ++i)
     {
         const float rnd_flt = gen.random_float_sphere();
-        REQUIRE(rnd_flt >= 0.f && rnd_flt <= POLYMER_TAU);
+        REQUIRE(rnd_flt >= 0.f);
+        REQUIRE(rnd_flt <= POLYMER_TAU);
     }
 
     // Generate a float between 0.5f and 1.0f
     for (int i = 0; i < 32768; ++i)
     {
         const float rnd_flt = gen.random_float(0.5f, 1.0f);
-        REQUIRE(rnd_flt >= 0.5f && rnd_flt <= 1.f);
+        REQUIRE(rnd_flt >= 0.5f);
+        REQUIRE(rnd_flt <= 1.f);
     }
 
     // Generate an unsigned integer between 0 and 1024
     for (int i = 0; i < 32768; ++i)
     {
         const uint32_t rnd_int = gen.random_int(1024);
-        REQUIRE(rnd_int >= 0 && rnd_int <= 1024);
+        REQUIRE(rnd_int >= 0);
+        REQUIRE(rnd_int <= 1024);
     }
 }
 
