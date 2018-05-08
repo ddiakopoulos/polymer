@@ -1,9 +1,9 @@
 /*
-* File: tests/lib-polymer-tests.cpp
-* This file implements test-cases for various built-in types. It is written with
-* inline documentation so that it can be used as a starter-guide and reference
-* to using basic Polymer types in a correct and idiomatic way.
-*/
+ * File: tests/lib-polymer-tests.cpp
+ * This file implements test-cases for various built-in types. It is written with
+ * inline documentation so that it can be used as a starter-guide and reference
+ * to using basic Polymer types in a correct and idiomatic way.
+ */
 
 #include "index.hpp"
 
