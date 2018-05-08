@@ -14,7 +14,7 @@ std::string get_tracked_device_string(vr::IVRSystem * pHmd, vr::TrackedDeviceInd
 //   OpenVR HMD Implementation   //
 ///////////////////////////////////
 
-OpenVR_HMD::OpenVR_HMD()
+openvr_hmd::openvr_hmd()
 {
     vr::EVRInitError eError = vr::VRInitError_None;
     hmd = vr::VR_Init(&eError, vr::VRApplication_Scene);
@@ -23,7 +23,7 @@ OpenVR_HMD::OpenVR_HMD()
     std::cout << "VR Driver:  " << get_tracked_device_string(hmd, vr::k_unTrackedDeviceIndex_Hmd, vr::Prop_TrackingSystemName_String) << std::endl;
     std::cout << "VR Display: " << get_tracked_device_string(hmd, vr::k_unTrackedDeviceIndex_Hmd, vr::Prop_SerialNumber_String) << std::endl;
 
-    controllerRenderData = std::make_shared<ControllerRenderData>();
+    controllerRenderData = std::make_shared<cached_controller_render_data>();
     //controllers[0].renderData = controllerRenderData;
     //controllers[1].renderData = controllerRenderData;
 
@@ -79,16 +79,76 @@ OpenVR_HMD::OpenVR_HMD()
     }
 }
 
-OpenVR_HMD::~OpenVR_HMD()
+openvr_hmd::~openvr_hmd()
 {
     glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_FALSE);
     glDebugMessageCallback(nullptr, nullptr);
     if (hmd) vr::VR_Shutdown();
 }
 
-void OpenVR_HMD::update()
+const openvr_controller * openvr_hmd::get_controller(const vr::ETrackedControllerRole controller)
 {
-    // Handle events
+    if (controller == vr::TrackedControllerRole_LeftHand) return &controllers[0];
+    if (controller == vr::TrackedControllerRole_RightHand) return &controllers[1];
+    if (controller == vr::TrackedControllerRole_Invalid) throw std::runtime_error("invalid controller enum");
+    return nullptr;
+}
+
+std::shared_ptr<cached_controller_render_data> openvr_hmd::get_controller_render_data() 
+{ 
+    return controllerRenderData; 
+}
+
+void openvr_hmd::set_world_pose(const Pose & p) 
+{
+    worldPose = p; 
+}
+
+Pose openvr_hmd::get_world_pose() 
+{ 
+    return worldPose; 
+}
+
+Pose openvr_hmd::get_hmd_pose() const 
+{ 
+    return worldPose * hmdPose; 
+}
+
+void openvr_hmd::set_hmd_pose(const Pose & p) 
+{ 
+    hmdPose = p; 
+}
+
+Pose openvr_hmd::get_eye_pose(vr::Hmd_Eye eye) 
+{ 
+    return get_hmd_pose() * make_pose(hmd->GetEyeToHeadTransform(eye)); 
+}
+
+uint2 openvr_hmd::get_recommended_render_target_size()
+{
+    return renderTargetSize;
+}
+
+float4x4  openvr_hmd::get_proj_matrix(vr::Hmd_Eye eye, float near_clip, float far_clip)
+{
+    return transpose(reinterpret_cast<const float4x4 &>(hmd->GetProjectionMatrix(eye, near_clip, far_clip)));
+}
+
+void openvr_hmd::get_optical_properties(vr::Hmd_Eye eye, float & aspectRatio, float & vfov)
+{
+    float l_left = 0.0f, l_right = 0.0f, l_top = 0.0f, l_bottom = 0.0f;
+    hmd->GetProjectionRaw(vr::Hmd_Eye::Eye_Left, &l_left, &l_right, &l_top, &l_bottom);
+
+    float r_left = 0.0f, r_right = 0.0f, r_top = 0.0f, r_bottom = 0.0f;
+    hmd->GetProjectionRaw(vr::Hmd_Eye::Eye_Right, &r_left, &r_right, &r_top, &r_bottom);
+
+    float2 tanHalfFov = float2(max(-l_left, l_right, -r_left, r_right), max(-l_top, l_bottom, -r_top, r_bottom));
+    aspectRatio = tanHalfFov.x / tanHalfFov.y;
+    vfov = 2.0f * std::atan(tanHalfFov.y);
+}
+
+void openvr_hmd::update()
+{
     vr::VREvent_t event;
     while (hmd->PollNextEvent(&event, sizeof(event)))
     {
@@ -162,7 +222,7 @@ void OpenVR_HMD::update()
     }
 }
 
-void OpenVR_HMD::submit(const GLuint leftEye, const GLuint rightEye)
+void openvr_hmd::submit(const GLuint leftEye, const GLuint rightEye)
 {
     const vr::Texture_t leftTex = { (void*)(intptr_t) leftEye, vr::TextureType_OpenGL, vr::ColorSpace_Gamma };
     vr::VRCompositor()->Submit(vr::Eye_Left, &leftTex);

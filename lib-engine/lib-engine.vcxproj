@@ -406,6 +406,7 @@
     <ClInclude Include="ecs\system-name.hpp" />
     <ClInclude Include="ecs\system-transform.hpp" />
     <ClInclude Include="ecs\typeid.hpp" />
+    <ClInclude Include="openvr-camera.hpp" />
     <ClInclude Include="openvr-hmd.hpp" />
     <ClInclude Include="renderer-debug.hpp" />
     <ClInclude Include="renderer-standard.hpp" />
@@ -604,6 +605,7 @@
     <ClCompile Include="..\third_party\bullet3\src\LinearMath\btThreads.cpp" />
     <ClCompile Include="..\third_party\bullet3\src\LinearMath\btVector3.cpp" />
     <ClCompile Include="ecs\core-events.cpp" />
+    <ClCompile Include="openvr-camera.cpp" />
     <ClCompile Include="openvr-hmd.cpp" />
     <ClCompile Include="renderer-standard.cpp" />
     <ClCompile Include="gfx\gl\gl-imgui.cpp" />

@@ -41,13 +41,13 @@ class MotionControllerVR
 public:
 
     std::shared_ptr<BulletEngineVR> engine;
-    const OpenVR_Controller * ctrl;
-    std::shared_ptr<ControllerRenderData> renderData;
+    const openvr_controller * ctrl;
+    std::shared_ptr<cached_controller_render_data> renderData;
 
     btCollisionShape * controllerShape{ nullptr };
     BulletObjectVR * physicsObject{ nullptr };
 
-    MotionControllerVR(std::shared_ptr<BulletEngineVR> engine, const OpenVR_Controller * ctrl, std::shared_ptr<ControllerRenderData> renderData)
+    MotionControllerVR(std::shared_ptr<BulletEngineVR> engine, const openvr_controller * ctrl, std::shared_ptr<cached_controller_render_data> renderData)
         : engine(engine), ctrl(ctrl), renderData(renderData)
     {
 
@@ -110,7 +110,7 @@ struct VirtualRealityApp : public polymer_app
 {
     uint64_t frameCount = 0;
 
-    std::unique_ptr<OpenVR_HMD> hmd;
+    std::unique_ptr<openvr_hmd> hmd;
 
     perspective_camera debugCam;
     fps_camera_controller cameraController;

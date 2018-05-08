@@ -534,6 +534,7 @@
       <Filter>third-party\bullet3</Filter>
     </ClCompile>
     <ClCompile Include="openvr-hmd.cpp" />
+    <ClCompile Include="openvr-camera.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="gfx\gl\gl-api.hpp">
@@ -1569,6 +1570,7 @@
     </ClInclude>
     <ClInclude Include="openvr-hmd.hpp" />
     <ClInclude Include="renderer-debug.hpp" />
+    <ClInclude Include="openvr-camera.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="gfx">

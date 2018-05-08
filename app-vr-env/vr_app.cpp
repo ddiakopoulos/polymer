@@ -19,7 +19,7 @@ VirtualRealityApp::VirtualRealityApp() : polymer_app(1280, 800, "VR Sandbox")
 
     try
     {
-        hmd.reset(new OpenVR_HMD());
+        hmd.reset(new openvr_hmd());
         const uint2 targetSize = hmd->get_recommended_render_target_size();
         glfwSwapInterval(0);
 
@@ -112,7 +112,7 @@ void VirtualRealityApp::on_update(const app_update_event & e)
         //sceneDebugRenderer.draw_axis(scene.controllers[0].get_pose());
         //sceneDebugRenderer.draw_axis(scene.controllers[1].get_pose());
 
-        std::vector<OpenVR_Controller::ButtonState> trackpadStates = { 
+        std::vector<openvr_controller::button_state> trackpadStates = { 
             hmd->get_controller(vr::TrackedControllerRole_LeftHand)->pad, 
             hmd->get_controller(vr::TrackedControllerRole_RightHand)->pad 
         };
@@ -156,7 +156,7 @@ void VirtualRealityApp::on_update(const app_update_event & e)
 
     if (hmd)
     {
-        std::vector<OpenVR_Controller::ButtonState> triggerStates = {
+        std::vector<openvr_controller::button_state> triggerStates = {
             hmd->get_controller(vr::TrackedControllerRole_LeftHand)->trigger,
             hmd->get_controller(vr::TrackedControllerRole_RightHand)->trigger
         };
