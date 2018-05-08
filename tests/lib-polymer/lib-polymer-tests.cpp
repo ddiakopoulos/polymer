@@ -118,7 +118,10 @@ TEST_CASE("projection matrices")
 
 TEST_CASE("glsl mirror functions")
 {
+    // Linear interpolation
+    REQUIRE(mix(0.f, 1.f, 0.5f) == doctest::Approx(0.5f));
 
+    /// todo - reflect, refact, faceforward
 }
 
 TEST_CASE("axis-aligned bounding box (2D)")
@@ -127,11 +130,6 @@ TEST_CASE("axis-aligned bounding box (2D)")
 }
 
 TEST_CASE("axis-aligned bounding box (3D)")
-{
-
-}
-
-TEST_CASE("ring buffer")
 {
 
 }
@@ -181,11 +179,6 @@ TEST_CASE("unifom random number generation")
     }
 }
 
-TEST_CASE("timers")
-{
-
-}
-
 TEST_CASE("primitive (sphere)")
 {
 
@@ -206,12 +199,36 @@ TEST_CASE("primitive (frustum)")
 
 }
 
-TEST_CASE("simple raycasting")
+TEST_CASE("polynomial root solvers")
 {
 
 }
 
-TEST_CASE("polynomial root solvers")
+TEST_CASE("ring buffer")
+{
+
+}
+
+TEST_CASE("timers")
+{
+    // Manual timers are helpful to debug large sections of code
+    manual_timer timer;
+    timer.start();
+
+    // Scoped timers log to std::cout when destructed
+    {
+        scoped_timer t("human readable description of timer");
+        std::this_thread::sleep_for(std::chrono::milliseconds(25));
+    }
+
+    timer.stop();
+
+    std::cout << "Manual timer took: " << timer.get() << " ms" << std::endl;
+    REQUIRE(timer.get() < 28);
+    REQUIRE(timer.get() > 25);
+}
+
+TEST_CASE("simple raycasting")
 {
 
 }
