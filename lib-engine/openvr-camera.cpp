@@ -71,12 +71,15 @@ bool OpenVR_TrackedCamera::start()
         return false;
     }
 
+    // Generate texture handle
+    frame.texture.setup(intrin.width, intrin.height, GL_RGB, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+
     // Create a persistent buffer for holding the incoming camera data
     frame.rawBytes = image_buffer<uint8_t, 3>(int2(frameWidth, frameHeight));
 
     lastFrameSequence = 0;
 
-    // Setup openvr handle
+    // Open and cache OpenVR camera handle
     trackedCamera->AcquireVideoStreamingService(vr::k_unTrackedDeviceIndex_Hmd, &trackedCameraHandle);
     if (trackedCameraHandle == INVALID_TRACKED_CAMERA_HANDLE)
     {
