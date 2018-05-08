@@ -196,7 +196,7 @@ renderer_standard::renderer_standard(const renderer_settings settings) : setting
     multisampleFramebuffer.check_complete();
 
     // Generate textures and framebuffers for `settings.cameraCount`
-    for (int camIdx = 0; camIdx < settings.cameraCount; ++camIdx)
+    for (uint32_t camIdx = 0; camIdx < settings.cameraCount; ++camIdx)
     {
         //GL_RGBA8
         eyeTextures[camIdx].setup(settings.renderSize.x, settings.renderSize.y, GL_RGBA, GL_RGBA, GL_FLOAT, nullptr, false);
@@ -218,7 +218,7 @@ renderer_standard::renderer_standard(const renderer_settings settings) : setting
         postTextures.resize(settings.cameraCount);
         post_quad = make_fullscreen_quad();
 
-        for (int camIdx = 0; camIdx < settings.cameraCount; ++camIdx)
+        for (uint32_t camIdx = 0; camIdx < settings.cameraCount; ++camIdx)
         {
             postTextures[camIdx].setup(settings.renderSize.x, settings.renderSize.y, GL_RGBA, GL_RGBA, GL_FLOAT, nullptr, false);
             glTextureParameteriEXT(postTextures[camIdx], GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -374,7 +374,7 @@ void renderer_standard::render_frame(const render_payload & scene)
     }
     cpuProfiler.end("flatten-queue");
 
-    for (int camIdx = 0; camIdx < settings.cameraCount; ++camIdx)
+    for (uint32_t camIdx = 0; camIdx < settings.cameraCount; ++camIdx)
     {
         // Update per-view uniform buffer
         uniforms::per_view v = {};
@@ -439,7 +439,7 @@ void renderer_standard::render_frame(const render_payload & scene)
     {
         gpuProfiler.begin("postprocess");
         cpuProfiler.begin("post");
-        for (int camIdx = 0; camIdx < settings.cameraCount; ++camIdx)
+        for (uint32_t camIdx = 0; camIdx < settings.cameraCount; ++camIdx)
         {
             run_post_pass(scene.views[camIdx], scene);
         }

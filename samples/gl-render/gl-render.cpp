@@ -8,6 +8,7 @@
  */
 
 #include "index.hpp"
+#include "gl-loaders.hpp"
 
 using namespace polymer;
 

@@ -20,3 +20,4 @@
 #include "simple_timer.hpp"
 #include "geometry.hpp"
 #include "tweens.hpp"
+#include "camera.hpp"

@@ -5,9 +5,15 @@
 #include "../lib-engine/openvr-hmd.hpp"
 #include "../lib-engine/shader-library.hpp"
 
+#include "../lib-engine/gfx/gl/gl-renderable-grid.hpp"
+#include "../lib-engine/gfx/gl/gl-camera.hpp"
+#include "../lib-engine/gfx/gl/gl-async-gpu-timer.hpp"
+
 #include "radix_sort.hpp"
 #include "procedural_mesh.hpp"
 #include "parabolic_pointer.hpp"
+
+
 
 #include <future>
 #include "quick_hull.hpp"

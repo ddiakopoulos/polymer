@@ -1,9 +1,8 @@
 #ifndef texture_view_h
 #define texture_view_h
 
-#include <vector>
 #include "gl-api.hpp"
-#include "util.hpp"
+#include "gl-procedural-mesh.hpp"
 
 static const char s_textureVert[] = R"(#version 330
     layout(location = 0) in vec3 position;

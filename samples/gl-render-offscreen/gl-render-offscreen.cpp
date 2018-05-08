@@ -1,4 +1,5 @@
 #include "index.hpp"
+#include "gl-camera.hpp"
 
 using namespace polymer;
 
