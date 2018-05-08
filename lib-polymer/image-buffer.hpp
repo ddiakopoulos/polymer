@@ -10,7 +10,7 @@
 namespace polymer
 {
     template <typename T, int C>
-    class image_buffer : public non_copyable
+    class image_buffer
     {
         const int2 dims{ 0, 0 };
         T * alias;

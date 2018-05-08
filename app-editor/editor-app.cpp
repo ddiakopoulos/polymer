@@ -137,7 +137,7 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
     uiSurface.add_child({ { 0.1667f, +20 },{ 0, +20 },{ 0.3334f, -10 },{ 0.133f, +10 } });
     uiSurface.add_child({ { 0.3334f, +20 },{ 0, +20 },{ 0.5009f, -10 },{ 0.133f, +10 } });
     uiSurface.add_child({ { 0.5000f, +20 },{ 0, +20 },{ 0.6668f, -10 },{ 0.133f, +10 } });
-    uiSurface.layout();
+    uiSurface.recompute();
 
     debugViews.push_back(std::make_shared<GLTextureView>(true));
     debugViews.push_back(std::make_shared<GLTextureView>(true, float2(cam.nearclip, cam.farclip)));
@@ -188,7 +188,7 @@ void scene_editor_app::on_drop(std::vector<std::string> filepaths)
 void scene_editor_app::on_window_resize(int2 size) 
 { 
     uiSurface.bounds = { 0, 0, (float)size.x, (float)size.y };
-    uiSurface.layout();
+    uiSurface.recompute();
 
     // Iconification/minimization triggers an on_window_resize event with a zero size
     if (size.x > 0 && size.y > 0)

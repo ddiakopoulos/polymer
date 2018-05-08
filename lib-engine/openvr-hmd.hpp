@@ -72,7 +72,7 @@ struct tracked_camera_frame
 {
     Pose render_pose;
     GlTexture2D texture;
-    image_buffer<uint8_t, 4> rawBytes;
+    image_buffer<uint8_t, 3> rawBytes;
 };
 
 class OpenVR_TrackedCamera
@@ -86,7 +86,7 @@ class OpenVR_TrackedCamera
     uint32_t cameraFrameBufferSize{ 0 };
 
     camera_intrinsics intrin;
-    float4x4 cameraProjectionMatrix;
+    float4x4 projectionMatrix;
     tracked_camera_frame frame;
 
 public:
@@ -97,7 +97,7 @@ public:
     void capture();
 
     camera_intrinsics get_intrinsics() const { return intrin; }
-    float4x4 const get_projection_matrix() { return cameraProjectionMatrix; }
+    float4x4 const get_projection_matrix() { return projectionMatrix; }
     tracked_camera_frame & get_frame() { return frame; }
 };
 

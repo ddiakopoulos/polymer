@@ -13,8 +13,6 @@
 #include "procedural_mesh.hpp"
 #include "parabolic_pointer.hpp"
 
-
-
 #include <future>
 #include "quick_hull.hpp"
 #include "algo_misc.hpp"
@@ -44,12 +42,12 @@ public:
 
     std::shared_ptr<BulletEngineVR> engine;
     const OpenVR_Controller * ctrl;
-    std::shared_ptr<OpenVR_Controller::ControllerRenderData> renderData;
+    std::shared_ptr<ControllerRenderData> renderData;
 
     btCollisionShape * controllerShape{ nullptr };
     BulletObjectVR * physicsObject{ nullptr };
 
-    MotionControllerVR(std::shared_ptr<BulletEngineVR> engine, const OpenVR_Controller * ctrl, std::shared_ptr<OpenVR_Controller::ControllerRenderData> renderData)
+    MotionControllerVR(std::shared_ptr<BulletEngineVR> engine, const OpenVR_Controller * ctrl, std::shared_ptr<ControllerRenderData> renderData)
         : engine(engine), ctrl(ctrl), renderData(renderData)
     {
 

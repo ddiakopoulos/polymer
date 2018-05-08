@@ -168,6 +168,9 @@
     <ClInclude Include="memory-pool.hpp">
       <Filter>src\tools</Filter>
     </ClInclude>
+    <ClInclude Include="image-buffer.hpp">
+      <Filter>src\tools</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\third_party\imgui\imgui.cpp">
