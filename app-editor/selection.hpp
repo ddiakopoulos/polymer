@@ -20,7 +20,7 @@ static inline tinygizmo::rigid_transform from_linalg(Pose & p)
 template<typename T>
 class selection_controller
 {
-    GlGizmo gizmo;
+    gl_gizmo gizmo;
     tinygizmo::rigid_transform gizmo_selection;     // Center of mass of multiple objects or the pose of a single object
     tinygizmo::rigid_transform last_gizmo_selection;
 

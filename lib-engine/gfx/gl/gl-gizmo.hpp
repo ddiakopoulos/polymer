@@ -31,7 +31,7 @@ constexpr const char gl_gizmo_frag[] = R"(#version 330
     }
 )";
 
-struct GlGizmo : public non_copyable
+struct gl_gizmo : public non_copyable
 {
     tinygizmo::gizmo_application_state gizmo_state;
     tinygizmo::gizmo_context gizmo_ctx;
@@ -41,7 +41,7 @@ struct GlGizmo : public non_copyable
 
     float4x4 viewProjectionMatrix;
         
-    GlGizmo()
+    gl_gizmo()
     {
         program = GlShader(gl_gizmo_vert, gl_gizmo_frag);
 

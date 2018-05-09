@@ -197,7 +197,6 @@ struct octree
             remove(sceneNode);
             create(sceneNode);
         }
-
     }
 
     void remove(node_container<T> & sceneNode)
@@ -213,30 +212,30 @@ struct octree
         sceneNode.octant = nullptr;
     }
 
-    void cull(Frustum & camera, std::vector<octant<T> *> & visibleNodeList, octant<T> * node, bool alreadyVisible)
+    void cull(const Frustum & camera, std::vector<octant<T> *> & visibleNodeList, octant<T> * node, bool alreadyVisible)
     {
         if (!node) node = root.get();
         if (node->occupancy == 0) return;
 
-        cull_status status = OUTSIDE;
+        cull_status status = cull_status::OUTSIDE;
 
         if (alreadyVisible)
         {
-            status = INSIDE;
+            status = cull_status::INSIDE;
         }
         else if (node == root.get())
         {
-            status = INTERSECT;
+            status = cull_status::INTERSECT;
         }
         else
         {
             if (camera.contains(node->box.center()))
             {
-                status = INSIDE;
+                status = cull_status::INSIDE;
             }
         }
 
-        alreadyVisible = (status == INSIDE);
+        alreadyVisible = (status == cull_status::INSIDE);
 
         if (alreadyVisible)
         {
