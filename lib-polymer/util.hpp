@@ -124,6 +124,16 @@ namespace polymer
         non_copyable (const non_copyable & r) = delete;
         non_copyable & operator = (const non_copyable & r) = delete;
     };
+
+    class non_movable
+    {
+    protected:
+        non_movable() = default;
+        ~non_movable() = default;
+    private:
+        non_movable(non_movable &&) = delete;
+        non_movable & operator = (non_movable &&) = delete;
+    };
      
     template <typename T>
     class singleton : public non_copyable
