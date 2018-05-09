@@ -141,14 +141,27 @@ TEST_CASE("coordinate system conversions")
     REQUIRE(bad.is_orthogonal() == false);
 }
 
-TEST_CASE("axis-aligned bounding box (2D)")
+TEST_CASE("axis-aligned bounding box (float, 2D)")
 {
+    const aabb_2d bounds = { {-1, -1}, {1, 1} };
+    REQUIRE(bounds.size() == float2(2, 2));
+    REQUIRE(bounds.center() == float2(0, 0));
+    REQUIRE(bounds.area() == 4);
+    REQUIRE(bounds.width() == 2);
+    REQUIRE(bounds.height() == 2);
+    REQUIRE(bounds.contains({ 0.5f, 0.5f }));
+    REQUIRE_FALSE(bounds.contains({ 2.f, 0.5f }));
 
+    const aabb_2d other = { { -3, -3 },{ -2, -2 } };
+    REQUIRE_FALSE(bounds.intersects(other));
+
+    const aabb_2d overlap = { { -0.5f, -0.5f },{ 0.5f, 0.5f } };
+    REQUIRE(bounds.intersects(overlap));
 }
 
-TEST_CASE("axis-aligned bounding box (3D)")
+TEST_CASE("axis-aligned bounding box (float, 3D)")
 {
-
+    aabb_3d bounds;
 }
 
 TEST_CASE("unifom random number generation")
