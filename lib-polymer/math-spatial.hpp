@@ -424,16 +424,17 @@ namespace polymer
     // A value type representing an abstract direction vector in 3D space, independent of any coordinate system
     enum class coord_axis { forward, back, left, right, up, down };
 
-    inline float dot(coord_axis a, coord_axis b)
-    {
-        static float table[6][6]{ { +1,-1,0,0,0,0 },{ -1,+1,0,0,0,0 },{ 0,0,+1,-1,0,0 },{ 0,0,-1,+1,0,0 },{ 0,0,0,0,+1,-1 },{ 0,0,0,0,-1,+1 } };
-        return table[static_cast<int>(a)][static_cast<int>(b)];
-    }
+    constexpr float dot(coord_axis a, coord_axis b) { return a == b ? 1 : (static_cast<int>(a) ^ static_cast<int>(b)) == 1 ? -1 : 0.0f; }
 
     // A concrete 3D coordinate system with defined x, y, and z axes
     struct coord_system
     {
         coord_axis x_axis, y_axis, z_axis;
+        constexpr float3 operator ()(coord_axis axis) const { return { dot(x_axis, axis), dot(y_axis, axis), dot(z_axis, axis) }; }
+        constexpr float3 cross(coord_axis a, coord_axis b) const { return linalg::cross((*this)(a), (*this)(b)); }
+        constexpr bool is_orthogonal() const { return dot(x_axis, y_axis) == 0 && dot(y_axis, z_axis) == 0 && dot(z_axis, x_axis) == 0; }
+        constexpr bool is_left_handed() const { return dot(cross(coord_axis::forward, coord_axis::up), (*this)(coord_axis::left)) == 1; }
+        constexpr bool is_right_handed() const { return dot(cross(coord_axis::forward, coord_axis::up), (*this)(coord_axis::right)) == 1; }
         float3 get_axis(coord_axis a) const { return{ dot(x_axis, a), dot(y_axis, a), dot(z_axis, a) }; }
         float3 get_left() const { return get_axis(coord_axis::left); }
         float3 get_right() const { return get_axis(coord_axis::right); }

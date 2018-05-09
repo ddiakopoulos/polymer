@@ -120,13 +120,25 @@ TEST_CASE("glsl mirror functions")
 {
     // Linear interpolation
     REQUIRE(mix(0.f, 1.f, 0.5f) == doctest::Approx(0.5f));
+    REQUIRE(mix(0.f, 2.f, 0.5f) == doctest::Approx(1.0f));
+    REQUIRE(mix(0.f, 2.f, 0.25f) == doctest::Approx(0.5f));
 
     /// todo - reflect, refact, faceforward
 }
 
 TEST_CASE("coordinate system conversions")
 {
+    const coord_system opengl{ coord_axis::right, coord_axis::up, coord_axis::back };
+    const coord_system directx{ coord_axis::right, coord_axis::up, coord_axis::forward };
 
+    const float4x4 ogl_to_directx = coordinate_system_from_to(opengl, directx);
+    REQUIRE(opengl.is_right_handed());
+    REQUIRE(directx.is_left_handed());
+    REQUIRE(opengl.is_orthogonal());
+    REQUIRE(directx.is_orthogonal());
+
+    const coord_system bad{ coord_axis::right, coord_axis::up, coord_axis::up };
+    REQUIRE(bad.is_orthogonal() == false);
 }
 
 TEST_CASE("axis-aligned bounding box (2D)")
@@ -199,6 +211,11 @@ TEST_CASE("primitive (analytic lines & segments)")
 
 }
 
+TEST_CASE("simple raycasting")
+{
+
+}
+
 TEST_CASE("primitive (analytic frustum)")
 {
 
@@ -231,11 +248,6 @@ TEST_CASE("timers")
     std::cout << "Manual timer took: " << timer.get() << " ms" << std::endl;
     REQUIRE(timer.get() < 28);
     REQUIRE(timer.get() > 25);
-}
-
-TEST_CASE("simple raycasting")
-{
-
 }
 
 TEST_CASE("string, path and filename manipulation")
