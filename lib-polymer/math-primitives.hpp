@@ -253,6 +253,11 @@ namespace polymer
         return (dot(p1, n1) * cross(n2, n3) + dot(p2, n2) * cross(n3, n1) + dot(p3, n3) * cross(n1, n2)) / det;
     }
 
+    inline std::ostream & operator << (std::ostream & o, const Plane & b)
+    {
+        return o << "{" << b.equation << "}";
+    }
+
     ////////////////////////////
     //   Lines and Segments   //
     ////////////////////////////
@@ -264,11 +269,21 @@ namespace polymer
         float3 get_direction() const { return safe_normalize(b - a); };
     };
 
+    inline std::ostream & operator << (std::ostream & o, const Segment & b)
+    {
+        return o << "{" << b.a << " to " << b.b << "}";
+    }
+
     struct Line
     {
         float3 origin, direction;
         Line(const float3 & origin, const float3 & direction) : origin(origin), direction(direction) {}
     };
+
+    inline std::ostream & operator << (std::ostream & o, const Line & b)
+    {
+        return o << "{" << b.origin << " => " << b.direction << "}";
+    }
 
     inline float3 closest_point_on_segment(const float3 & point, const Segment & s)
     {
@@ -405,6 +420,17 @@ namespace polymer
         corners[7] = plane_intersection(f.planes[FrustumPlane::NEAR], f.planes[FrustumPlane::TOP],      f.planes[FrustumPlane::RIGHT]);
 
         return corners;
+    }
+
+    inline std::ostream & operator << (std::ostream & o, const Frustum & f)
+    {
+        return o << "{Right:  " << f.planes[FrustumPlane::RIGHT] << "}";
+        return o << "{Left:   " << f.planes[FrustumPlane::LEFT] << "}";
+        return o << "{Bottom: " << f.planes[FrustumPlane::BOTTOM] << "}";
+        return o << "{Top:    " << f.planes[FrustumPlane::TOP] << "}";
+        return o << "{Near:   " << f.planes[FrustumPlane::NEAR] << "}";
+        return o << "{Far:    " << f.planes[FrustumPlane::FAR] << "}";
+
     }
 
 }
