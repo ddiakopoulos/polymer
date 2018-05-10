@@ -88,7 +88,6 @@ struct octant
 template<typename T>
 struct octree
 {
-
     // Instead of a strict bounds check which might force an object into a parent cell, this function
     // checks centers, aka a "loose" octree. 
     inline bool inside(const aabb_3d & node, const aabb_3d & other)
@@ -100,11 +99,11 @@ struct octree
         return linalg::all(less(node.size(), other.size()));
     }
 
-    enum class cull_status : uint32_t
+    enum class visibility : uint32_t
     {
-        INSIDE,
-        INTERSECT,
-        OUTSIDE
+        inside,
+        intersect,
+        outside
     };
 
     std::unique_ptr<octant<T>> root;
@@ -116,7 +115,7 @@ struct octree
         root->box = rootBounds;
     }
 
-    float3 get_resolution()
+    float3 get_resolution() const
     {
         return root->box.size() / (float)maxDepth;
     }
@@ -217,25 +216,25 @@ struct octree
         if (!node) node = root.get();
         if (node->occupancy == 0) return;
 
-        cull_status status = cull_status::OUTSIDE;
+        visibility status = visibility::outside;
 
         if (alreadyVisible)
         {
-            status = cull_status::INSIDE;
+            status = visibility::inside;
         }
         else if (node == root.get())
         {
-            status = cull_status::INTERSECT;
+            status = visibility::intersect;
         }
         else
         {
             if (camera.contains(node->box.center()))
             {
-                status = cull_status::INSIDE;
+                status = visibility::inside;
             }
         }
 
-        alreadyVisible = (status == cull_status::INSIDE);
+        alreadyVisible = (status == visibility::inside);
 
         if (alreadyVisible)
         {
