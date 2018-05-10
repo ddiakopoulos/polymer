@@ -14,10 +14,14 @@
 #pragma warning(disable : 4305)
 #endif
 
-namespace detail
+namespace
 {
     #include "hosek_data_rgb.inl"
-    
+}
+
+namespace detail
+{
+
     inline double evaluate_spline(const double * spline, size_t stride, double value)
     {
         return
@@ -98,19 +102,19 @@ namespace detail
 
         for (int i = 0; i < 3; ++i)
         {
-            A[i] = evaluate(datasetsRGB[i] + 0, 9, turbidity, albedo, sunTheta);
-            B[i] = evaluate(datasetsRGB[i] + 1, 9, turbidity, albedo, sunTheta);
-            C[i] = evaluate(datasetsRGB[i] + 2, 9, turbidity, albedo, sunTheta);
-            D[i] = evaluate(datasetsRGB[i] + 3, 9, turbidity, albedo, sunTheta);
-            E[i] = evaluate(datasetsRGB[i] + 4, 9, turbidity, albedo, sunTheta);
-            F[i] = evaluate(datasetsRGB[i] + 5, 9, turbidity, albedo, sunTheta);
-            G[i] = evaluate(datasetsRGB[i] + 6, 9, turbidity, albedo, sunTheta);
+            A[i] = evaluate(::datasetsRGB[i] + 0, 9, turbidity, albedo, sunTheta);
+            B[i] = evaluate(::datasetsRGB[i] + 1, 9, turbidity, albedo, sunTheta);
+            C[i] = evaluate(::datasetsRGB[i] + 2, 9, turbidity, albedo, sunTheta);
+            D[i] = evaluate(::datasetsRGB[i] + 3, 9, turbidity, albedo, sunTheta);
+            E[i] = evaluate(::datasetsRGB[i] + 4, 9, turbidity, albedo, sunTheta);
+            F[i] = evaluate(::datasetsRGB[i] + 5, 9, turbidity, albedo, sunTheta);
+            G[i] = evaluate(::datasetsRGB[i] + 6, 9, turbidity, albedo, sunTheta);
         
             // Swapped in the dataset
-            H[i] = evaluate(datasetsRGB[i] + 8, 9, turbidity, albedo, sunTheta);
-            I[i] = evaluate(datasetsRGB[i] + 7, 9, turbidity, albedo, sunTheta);
+            H[i] = evaluate(::datasetsRGB[i] + 8, 9, turbidity, albedo, sunTheta);
+            I[i] = evaluate(::datasetsRGB[i] + 7, 9, turbidity, albedo, sunTheta);
         
-            Z[i] = evaluate(datasetsRGBRad[i], 1, turbidity, albedo, sunTheta);
+            Z[i] = evaluate(::datasetsRGBRad[i], 1, turbidity, albedo, sunTheta);
         }
     
         if (normalizedSunY)

@@ -182,8 +182,8 @@ void glfw_window::consume_cursor(double xpos, double ypos)
 void glfw_window::consume_scroll(double deltaX, double deltaY)
 {
     auto e = generate_input_event(window, app_input_event::SCROLL, get_cursor_position(window), 0);
-    e.value[0] = (float)deltaX;
-    e.value[1] = (float)deltaY;
+    e.value[0] = static_cast<int>(deltaX);
+    e.value[1] = static_cast<int>(deltaY);
     preprocess_input(e);
 }
 
@@ -258,7 +258,7 @@ void polymer_app::main_loop()
             app_update_event e;
             e.elapsed_s = glfwGetTime();
             e.timestep_ms = timestep;
-            e.framesPerSecond = fps;
+            e.framesPerSecond = static_cast<float>(fps);
             e.elapsedFrames = elapsedFrames;
 
             on_update(e);
