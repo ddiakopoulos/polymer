@@ -42,6 +42,7 @@ namespace polymer
         gl_shader_asset(const std::string & n, const std::string & v, const std::string & f, const std::string & g = "", const std::string & inc = "");
         GlShader compile_variant(const std::vector<std::string> defines);
         std::shared_ptr<shader_variant> get_variant(const std::vector<std::string> defines = {});
+        GlShader & default(); // returns compiled shader, assumes no defines
         void recompile_all();
     };
 }

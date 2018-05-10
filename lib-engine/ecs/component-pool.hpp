@@ -24,6 +24,8 @@
 #include <type_traits>
 #include <unordered_map>
 #include <vector>
+
+#include "core-ecs.hpp"
 #include "typeid.hpp"
 
 namespace polymer

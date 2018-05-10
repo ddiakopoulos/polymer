@@ -229,34 +229,36 @@ namespace polymer
 
     class gl_hosek_sky : public gl_procedural_sky
     {
-        std::unique_ptr<GlShader> sky;
+        shader_handle sky = { "sky-hosek" };
+
         detail::HosekSkyRadianceData data;
     
         virtual void render_internal(float4x4 viewProj, float3 sunDir, float4x4 world) override
         {
-            sky->bind();
-            sky->uniform("ViewProjection", viewProj);
-            sky->uniform("World", world);
-            sky->uniform("A", data.A);
-            sky->uniform("B", data.B);
-            sky->uniform("C", data.C);
-            sky->uniform("D", data.D);
-            sky->uniform("E", data.E);
-            sky->uniform("F", data.F);
-            sky->uniform("G", data.G);
-            sky->uniform("H", data.H);
-            sky->uniform("I", data.I);
-            sky->uniform("Z", data.Z);
-            sky->uniform("SunDirection", sunDir);
+            GlShader & shader = sky.get()->default();
+
+            shader.bind();
+            shader.uniform("ViewProjection", viewProj);
+            shader.uniform("World", world);
+            shader.uniform("A", data.A);
+            shader.uniform("B", data.B);
+            shader.uniform("C", data.C);
+            shader.uniform("D", data.D);
+            shader.uniform("E", data.E);
+            shader.uniform("F", data.F);
+            shader.uniform("G", data.G);
+            shader.uniform("H", data.H);
+            shader.uniform("I", data.I);
+            shader.uniform("Z", data.Z);
+            shader.uniform("SunDirection", sunDir);
             skyMesh.draw_elements();
-            sky->unbind();
+            shader.unbind();
         }
     
     public:
     
         gl_hosek_sky()
         {
-            sky.reset(new GlShader(read_file_text("../assets/shaders/sky_vert.glsl"), read_file_text("../assets/shaders/sky_hosek_frag.glsl")));
             recompute(turbidity, albedo, normalizedSunY);
         }
     
@@ -270,30 +272,31 @@ namespace polymer
 
     class gl_preetham_sky : public gl_procedural_sky
     {
-        std::unique_ptr<GlShader> sky;
+        shader_handle sky = { "sky-preetham" };
         detail::PreethamSkyRadianceData data;
     
         virtual void render_internal(float4x4 viewProj, float3 sunDir, float4x4 world) override
         {
-            sky->bind();
-            sky->uniform("ViewProjection", viewProj);
-            sky->uniform("World", world);
-            sky->uniform("A", data.A);
-            sky->uniform("B", data.B);
-            sky->uniform("C", data.C);
-            sky->uniform("D", data.D);
-            sky->uniform("E", data.E);
-            sky->uniform("Z", data.Z);
-            sky->uniform("SunDirection", sunDir);
+            GlShader & shader = sky.get()->default();
+
+            shader.bind();
+            shader.uniform("ViewProjection", viewProj);
+            shader.uniform("World", world);
+            shader.uniform("A", data.A);
+            shader.uniform("B", data.B);
+            shader.uniform("C", data.C);
+            shader.uniform("D", data.D);
+            shader.uniform("E", data.E);
+            shader.uniform("Z", data.Z);
+            shader.uniform("SunDirection", sunDir);
             skyMesh.draw_elements();
-            sky->unbind();
+            shader.unbind();
         }
     
     public:
     
         gl_preetham_sky()
         {
-            sky.reset(new GlShader(read_file_text("../assets/shaders/sky_vert.glsl"), read_file_text("../assets/shaders/sky_preetham_frag.glsl")));
             recompute(turbidity, albedo, normalizedSunY);
         }
     

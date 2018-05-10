@@ -138,12 +138,19 @@ std::shared_ptr<shader_variant> gl_shader_asset::get_variant(const std::vector<s
         return itr->second;
     }
 
-
     auto newVariant = std::make_shared<shader_variant>();
     newVariant->shader = std::move(compile_variant(defines));
     newVariant->defines = defines;
     shaders[sumOfHashes] = newVariant;
     return newVariant;
+}
+
+GlShader & gl_shader_asset::default()
+{
+    assert(shaders.size() > 0);
+    std::shared_ptr<shader_variant> def = shaders[0];
+    if (def == nullptr) throw std::runtime_error("shader was nullptr; was it compiled?");
+    return def->shader;
 }
 
 void gl_shader_asset::recompile_all()
