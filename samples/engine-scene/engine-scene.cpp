@@ -62,7 +62,6 @@ sample_engine_scene::sample_engine_scene() : polymer_app(1280, 720, "sample-engi
     settings.renderSize = int2(width, height);
     renderer.reset(new renderer_standard(settings));
 
-
     // Setup default objects/state on scene
     scene.skybox.reset(new gl_hosek_sky());
     sceneData.skybox = scene.skybox.get();

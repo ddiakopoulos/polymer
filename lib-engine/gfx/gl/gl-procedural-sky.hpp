@@ -6,6 +6,10 @@
 #include "gl-api.hpp"
 #include "gl-procedural-mesh.hpp"
 #include "gl-loaders.hpp"
+
+#include "../../shader.hpp"
+#include "../../asset-handle-utils.hpp"
+
 #include <functional>
 
 #if defined(POLYMER_PLATFORM_WINDOWS)
@@ -229,7 +233,7 @@ namespace polymer
 
     class gl_hosek_sky : public gl_procedural_sky
     {
-        shader_handle sky = { "sky-hosek" };
+        shader_handle sky { "sky-hosek" };
 
         detail::HosekSkyRadianceData data;
     
@@ -272,7 +276,7 @@ namespace polymer
 
     class gl_preetham_sky : public gl_procedural_sky
     {
-        shader_handle sky = { "sky-preetham" };
+        shader_handle sky { "sky-preetham" };
         detail::PreethamSkyRadianceData data;
     
         virtual void render_internal(float4x4 viewProj, float3 sunDir, float4x4 world) override
