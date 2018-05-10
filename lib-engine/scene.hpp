@@ -3,17 +3,22 @@
 #ifndef core_scene_hpp
 #define core_scene_hpp
 
+#include "geometry.hpp"
+
 #include "gl-api.hpp"
 #include "gl-mesh.hpp"
 #include "gl-camera.hpp"
+#include "gl-mesh.hpp"
+#include "gl-procedural-sky.hpp"
 
 #include "uniforms.hpp"
-#include "asset-handle-utils.hpp"
 #include "material.hpp"
-#include "geometry.hpp"
-#include "gl-mesh.hpp"
 #include "material-library.hpp"
-#include "gl-procedural-sky.hpp"
+#include "asset-handle-utils.hpp"
+
+#include "ecs/typeid.hpp"
+#include "ecs/core-ecs.hpp"
+
 
 ///////////////////////
 //   Scene Objects   //
@@ -214,6 +219,61 @@ struct StaticMesh final : public Renderable
 namespace polymer
 {
     struct material_library;
+
+    // Static Mesh (GPU-side GlMesh)
+    struct static_mesh_component : public base_component
+    {
+        static_mesh_component() {};
+        static_mesh_component(entity e) : base_component(e) {}
+    };
+    POLYMER_SETUP_TYPEID(static_mesh_component);
+
+    // Geometry (CPU-side runtime_mesh)
+    struct geometry_component : public base_component
+    {
+        geometry_component() {};
+        geometry_component(entity e) : base_component(e) {}
+    };
+    POLYMER_SETUP_TYPEID(geometry_component);
+
+    // Point Light
+    struct point_light_component : public base_component
+    {
+        point_light_component() {};
+        point_light_component(entity e) : base_component(e) {}
+    };
+    POLYMER_SETUP_TYPEID(point_light_component);
+
+    // Directional Light
+    struct directional_light_component : public base_component
+    {
+        directional_light_component() {};
+        directional_light_component(entity e) : base_component(e) {}
+    };
+    POLYMER_SETUP_TYPEID(directional_light_component);
+
+    class render_system final : public base_system
+    {
+    public:
+        render_system(entity_orchestrator * orch) : base_system(orch)
+        {
+            register_system_for_type(this, hash(get_typename<static_mesh_component>()));
+            register_system_for_type(this, hash(get_typename<point_light_component>()));
+            register_system_for_type(this, hash(get_typename<directional_light_component>()));
+        }
+    };
+    POLYMER_SETUP_TYPEID(render_system);
+
+    class collision_system final : public base_system
+    {
+    public:
+        collision_system(entity_orchestrator * orch) : base_system(orch)
+        {
+            register_system_for_type(this, hash(get_typename<geometry_component>()));
+        }
+    };
+    POLYMER_SETUP_TYPEID(collision_system);
+
 }
 
 struct poly_scene

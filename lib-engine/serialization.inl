@@ -44,13 +44,13 @@ struct input_field { };
 namespace cereal
 {
     // Asset Handles
-    template<class Archive> void serialize(Archive & archive, texture_handle & m) { archive(cereal::make_nvp("id", m.name)); }
-    template<class Archive> void serialize(Archive & archive, shader_handle & m) { archive(cereal::make_nvp("id", m.name)); }
+    template<class Archive> void serialize(Archive & archive, texture_handle & m)  { archive(cereal::make_nvp("id", m.name)); }
     template<class Archive> void serialize(Archive & archive, gpu_mesh_handle & m) { archive(cereal::make_nvp("id", m.name)); }
     template<class Archive> void serialize(Archive & archive, cpu_mesh_handle & m) { archive(cereal::make_nvp("id", m.name)); }
     template<class Archive> void serialize(Archive & archive, material_handle & m) { archive(cereal::make_nvp("id", m.name)); }
+    template<class Archive> void serialize(Archive & archive, shader_handle & m)   { archive(cereal::make_nvp("id", m.name)); }
 
-    // Polymer types
+    // Linalg Types
     template<class Archive> void serialize(Archive & archive, int2 & m) { archive(cereal::make_nvp("x", m.x), cereal::make_nvp("y", m.y)); }
     template<class Archive> void serialize(Archive & archive, int3 & m) { archive(cereal::make_nvp("x", m.x), cereal::make_nvp("y", m.y), cereal::make_nvp("z", m.z)); }
     template<class Archive> void serialize(Archive & archive, int4 & m) { archive(cereal::make_nvp("x", m.x), cereal::make_nvp("y", m.y), cereal::make_nvp("z", m.z), cereal::make_nvp("w", m.w)); }
@@ -62,11 +62,12 @@ namespace cereal
     template<class Archive> void serialize(Archive & archive, float2x2 & m) { archive(cereal::make_size_tag(2), m[0], m[1]); }
     template<class Archive> void serialize(Archive & archive, float3x3 & m) { archive(cereal::make_size_tag(3), m[0], m[1], m[2]); }
     template<class Archive> void serialize(Archive & archive, float4x4 & m) { archive(cereal::make_size_tag(4), m[0], m[1], m[2], m[3]); }
-    template<class Archive> void serialize(Archive & archive, Frustum & m) { archive(cereal::make_size_tag(6)); for (auto const & p : m.planes) archive(p); }
 
-    template<class Archive> void serialize(Archive & archive, Pose & m) { archive(cereal::make_nvp("position", m.position), cereal::make_nvp("orientation", m.orientation)); }
+    // Polymer Types
     template<class Archive> void serialize(Archive & archive, aabb_2d & m) { archive(cereal::make_nvp("min", m._min), cereal::make_nvp("max", m._max)); }
     template<class Archive> void serialize(Archive & archive, aabb_3d & m) { archive(cereal::make_nvp("min", m._min), cereal::make_nvp("max", m._max)); }
+    template<class Archive> void serialize(Archive & archive, Pose & m) { archive(cereal::make_nvp("position", m.position), cereal::make_nvp("orientation", m.orientation)); }
+    template<class Archive> void serialize(Archive & archive, Frustum & m) { archive(cereal::make_size_tag(6)); for (auto const & p : m.planes) archive(p); }
     template<class Archive> void serialize(Archive & archive, Ray & m) { archive(cereal::make_nvp("origin", m.origin), cereal::make_nvp("direction", m.direction)); }
     template<class Archive> void serialize(Archive & archive, Plane & m) { archive(cereal::make_nvp("equation", m.equation)); }
     template<class Archive> void serialize(Archive & archive, Line & m) { archive(cereal::make_nvp("origin", m.origin), cereal::make_nvp("direction", m.direction)); }

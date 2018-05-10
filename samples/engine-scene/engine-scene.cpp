@@ -19,7 +19,7 @@ struct sample_engine_scene final : public polymer_app
     std::unique_ptr<renderer_standard> renderer;
     std::unique_ptr<simple_texture_view> fullscreen_surface;
 
-    render_payload sceneData;
+    render_payload payload;
     poly_scene scene;
 
     sample_engine_scene();
@@ -64,16 +64,16 @@ sample_engine_scene::sample_engine_scene() : polymer_app(1280, 720, "sample-engi
 
     // Setup default objects/state on scene
     scene.skybox.reset(new gl_hosek_sky());
-    sceneData.skybox = scene.skybox.get();
     scene.skybox->onParametersChanged = [&]
     {
-        uniforms::directional_light updatedSun;
-        updatedSun.direction = scene.skybox->get_sun_direction();
-        updatedSun.color = float3(1.f, 1.0f, 1.0f);
-        updatedSun.amount = 1.0f;
-        sceneData.sunlight = updatedSun;
+        payload.sunlight.direction = scene.skybox->get_sun_direction();
+        payload.sunlight.color = float3(1.f, 1.0f, 1.0f);
+        payload.sunlight.amount = 1.0f;
     };
     scene.skybox->onParametersChanged(); // call for initial set
+
+    // Set skybox on the `render_payload` only once
+    payload.skybox = scene.skybox.get();
 
     scene.materialLib.reset(new polymer::material_library("../../assets/materials.json"));
 
