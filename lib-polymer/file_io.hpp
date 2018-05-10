@@ -39,6 +39,8 @@ namespace polymer
     
     inline std::string read_file_text(const std::string & pathToFile)
     {
+        if (pathToFile.empty()) return {}; // no-op if path is empty
+
         std::ifstream file(pathToFile.c_str());
         std::string fileBufferAsString;
         if (file.is_open())
@@ -51,6 +53,8 @@ namespace polymer
 
     inline void write_file_text(const std::string & pathToFile, const std::string & output)
     {
+        if (pathToFile.empty()) return; // no-op if path is empty
+
         std::ofstream file(pathToFile);
         if (file.is_open())
         {
