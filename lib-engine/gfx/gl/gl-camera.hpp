@@ -143,11 +143,11 @@ namespace polymer
         }
     };
     
-    ////////////////////////
-    //   Cubemap Camera   //
-    ////////////////////////
+    ////////////////////////////
+    //   gl_cubemap_capture   //
+    ////////////////////////////
 
-    class CubemapCamera
+    class gl_cubemap_capture
     {
         GlFramebuffer framebuffer;
         GlTexture2D cubeMapColor;
@@ -175,7 +175,7 @@ namespace polymer
 
         std::function<void(float3 eyePosition, float4x4 viewMatrix, float4x4 projMatrix)> render;
 
-        CubemapCamera(int resolution) : resolution(static_cast<float>(resolution))
+        gl_cubemap_capture(int resolution) : resolution(static_cast<float>(resolution))
         {
             cubeMapColor.setup_cube(resolution, resolution, GL_RGB, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
             cubeMapDepth.setup_cube(resolution, resolution, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);

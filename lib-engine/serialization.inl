@@ -52,12 +52,12 @@ struct input_field { };
 //   Engine Relationship Declarations  //
 /////////////////////////////////////////
 
-template<class F> void visit_subclasses(ProceduralSky * p, F f)
+template<class F> void visit_subclasses(gl_procedural_sky * p, F f)
 {
-    f("hosek_model",    dynamic_cast<HosekProceduralSky *>(p));
+    f("hosek_model",    dynamic_cast<gl_hosek_sky *>(p));
 }
 
-template<class F> void visit_fields(HosekProceduralSky & o, F f)
+template<class F> void visit_fields(gl_hosek_sky & o, F f)
 {
     f("sun_position_theta",     o.sunPosition.x,    range_metadata<float>{ 0.f, (float) POLYMER_PI });
     f("sun_position_phi",       o.sunPosition.y,    range_metadata<float>{ 0.f, (float) POLYMER_TWO_PI });

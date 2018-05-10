@@ -20,7 +20,7 @@ struct sample_gl_simplex_noise final : public polymer_app
     universal_layout_container layout;
 
     std::vector<std::shared_ptr<GlTexture2D>> textures;
-    std::vector<std::shared_ptr<GLTextureView>> views;
+    std::vector<std::shared_ptr<gl_texture_view_2d>> views;
 
     const int texResolution = 512;
     std::vector<uint8_t> data;
@@ -62,7 +62,7 @@ sample_gl_simplex_noise::sample_gl_simplex_noise() : polymer_app(1024, 1024, "sa
         auto t = std::make_shared<GlTexture2D>();
         t->setup(texResolution, texResolution, GL_RED, GL_RED, GL_UNSIGNED_BYTE, nullptr);
 
-        auto tv = std::make_shared<GLTextureView>(false);
+        auto tv = std::make_shared<gl_texture_view_2d>(false);
 
         textures.push_back(t);
         views.push_back(tv);

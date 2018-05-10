@@ -41,7 +41,7 @@ struct scene_editor_app final : public polymer_app
 
     ImGui::editor_app_log log;
     universal_layout_container uiSurface;
-    std::vector<std::shared_ptr<GLTextureView>> debugViews;
+    std::vector<std::shared_ptr<gl_texture_view_2d>> debugViews;
     bool showUI = true;
 
     scene_editor_app();

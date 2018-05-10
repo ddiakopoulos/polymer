@@ -3,7 +3,9 @@
 #include <string>
 #include <vector>
 
-NvgFont::NvgFont(NVGcontext * nvg, const std::string & name, std::vector<uint8_t> & buffer)
+using namespace polymer;
+
+nvg_font::nvg_font(NVGcontext * nvg, const std::string & name, std::vector<uint8_t> & buffer)
 {
     this->buffer = std::move(buffer);
     this->nvg = nvg;
@@ -11,7 +13,7 @@ NvgFont::NvgFont(NVGcontext * nvg, const std::string & name, std::vector<uint8_t
     if (id < 0) throw std::runtime_error("Failed to load font: " + name);
 }
 
-size_t NvgFont::get_cursor_location(const std::string & text, float fontSize, int xCoord) const
+size_t nvg_font::get_cursor_location(const std::string & text, float fontSize, int xCoord) const
 {
     std::vector<NVGglyphPosition> positions(text.size());
     nvgFontSize(nvg, fontSize);
@@ -28,5 +30,5 @@ size_t NvgFont::get_cursor_location(const std::string & text, float fontSize, in
 #define NANOVG_GL3_IMPLEMENTATION
 #include "nanovg/nanovg_gl.h"
 
-NVGcontext * make_nanovg_context(int flags) { return nvgCreateGL3(flags); }
-void release_nanovg_context(NVGcontext * ctx) { nvgDeleteGL3(ctx); }
+NVGcontext * polymer::make_nanovg_context(int flags) { return nvgCreateGL3(flags); }
+void polymer::release_nanovg_context(NVGcontext * ctx) { nvgDeleteGL3(ctx); }

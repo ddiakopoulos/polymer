@@ -102,7 +102,7 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
     sceneData.ibl_irradianceCubemap = "wells-irradiance-cubemap";
     sceneData.ibl_radianceCubemap = "wells-radiance-cubemap";
 
-    scene.skybox.reset(new HosekProceduralSky());
+    scene.skybox.reset(new gl_hosek_sky());
     sceneData.skybox = scene.skybox.get();
     scene.skybox->onParametersChanged = [&]
     {
@@ -139,8 +139,8 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
     uiSurface.add_child({ { 0.5000f, +20 },{ 0, +20 },{ 0.6668f, -10 },{ 0.133f, +10 } });
     uiSurface.recompute();
 
-    debugViews.push_back(std::make_shared<GLTextureView>(true));
-    debugViews.push_back(std::make_shared<GLTextureView>(true, float2(cam.nearclip, cam.farclip)));
+    debugViews.push_back(std::make_shared<gl_texture_view_2d>(true));
+    debugViews.push_back(std::make_shared<gl_texture_view_2d>(true, float2(cam.nearclip, cam.farclip)));
 }
 
 scene_editor_app::~scene_editor_app()

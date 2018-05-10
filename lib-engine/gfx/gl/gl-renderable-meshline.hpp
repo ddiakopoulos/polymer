@@ -10,7 +10,7 @@
 namespace polymer
 {
 
-class GlRenderableMeshline
+class gl_meshline
 {
     GlShader shader;
     GlMesh mesh;
@@ -59,7 +59,7 @@ class GlRenderableMeshline
 
 public:
 
-    GlRenderableMeshline()
+    gl_meshline()
     {
         shader = GlShader(read_file_text("../assets/shaders/prototype/meshline_vert.glsl"), read_file_text("../assets/shaders/prototype/meshline_frag.glsl"));
     }

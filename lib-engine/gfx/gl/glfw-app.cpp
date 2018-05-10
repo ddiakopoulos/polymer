@@ -7,7 +7,6 @@
 
 using namespace polymer;
 
-
 static app_input_event generate_input_event(GLFWwindow * window, app_input_event::Type type, const float2 & cursor, int action)
 {
     app_input_event e;

@@ -229,7 +229,7 @@ struct view_data
 
 struct render_payload
 {
-    ProceduralSky * skybox{ nullptr };
+    gl_procedural_sky * skybox{ nullptr };
     std::vector<Renderable *> renderSet;
     std::vector<uniforms::point_light> pointLights;
     uniforms::directional_light sunlight;

@@ -126,6 +126,6 @@ namespace polymer
         return make_mesh_from_geometry(make_supershape_3d(segments, m, n1, n2, n3, a, b));
     }
     
-}
+} // end namespace polymer
 
 #endif // gl_procedural_mesh_hpp

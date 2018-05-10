@@ -89,7 +89,7 @@ public:
 
 struct poly_scene
 {
-    RenderableGrid grid {0.25f, 24, 24 };
+    gl_renderable_grid grid {0.25f, 24, 24 };
     Geometry navMesh;
 
     ParabolicPointerParams params;

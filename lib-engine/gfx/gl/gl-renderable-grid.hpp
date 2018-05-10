@@ -29,7 +29,7 @@ constexpr const char gridFragmentShader[] = R"(#version 330
 namespace polymer
 {
 
-class RenderableGrid
+class gl_renderable_grid
 {
     GlShader gridShader;
     GlMesh gridMesh;
@@ -39,7 +39,7 @@ class RenderableGrid
 
 public:
 
-    RenderableGrid(float density = 1.0f, int qx = 32, int qy = 32) : qx(qx), qy(qy)
+    gl_renderable_grid(float density = 1.0f, int qx = 32, int qy = 32) : qx(qx), qy(qy)
     {
         gridShader = GlShader(gridVertexShader, gridFragmentShader);
 

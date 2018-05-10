@@ -93,14 +93,14 @@ static const char s_textureFrag3D[] = R"(#version 330
 namespace polymer
 {
 
-    struct GLTextureView : public non_copyable
+    struct gl_texture_view_2d : public non_copyable
     {
         GlShader program;
         GlMesh mesh = make_fullscreen_quad_screenspace();
         bool hasDepth = false;
         float2 nearFarDepth;
 
-        GLTextureView(bool flip = false, float2 nearFarDepth = float2(0, 0)) : nearFarDepth(nearFarDepth)
+        gl_texture_view_2d(bool flip = false, float2 nearFarDepth = float2(0, 0)) : nearFarDepth(nearFarDepth)
         {
             if (nearFarDepth.x > 0 || nearFarDepth.y > 0) hasDepth = true;
 
@@ -135,12 +135,12 @@ namespace polymer
         
     };
     
-    class GLTextureView3D : public non_copyable
+    class gl_texture_view_3d : public non_copyable
     {
         GlShader program;
         GlMesh mesh = make_fullscreen_quad_screenspace(); 
     public:
-        GLTextureView3D() { program = GlShader(s_textureVert3D, s_textureFrag3D); }
+        gl_texture_view_3d() { program = GlShader(s_textureVert3D, s_textureFrag3D); }
         void draw(const aabb_2d & rect, const float2 windowSize, const GLuint tex, const GLenum target, const int slice)
         {
             const float4x4 projection = make_orthographic_matrix(0.0f, windowSize.x, windowSize.y, 0.0f, -1.0f, 1.0f);

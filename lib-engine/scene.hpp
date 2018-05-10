@@ -218,7 +218,7 @@ namespace polymer
 
 struct poly_scene
 {
-    std::shared_ptr<ProceduralSky> skybox;
+    std::shared_ptr<gl_procedural_sky> skybox;
     std::unique_ptr<polymer::material_library> materialLib;
     std::vector<std::shared_ptr<GameObject>> objects;
 };
