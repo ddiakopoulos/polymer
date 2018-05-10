@@ -1571,6 +1571,7 @@
     <ClInclude Include="openvr-hmd.hpp" />
     <ClInclude Include="renderer-debug.hpp" />
     <ClInclude Include="openvr-camera.hpp" />
+    <ClInclude Include="engine.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="gfx">

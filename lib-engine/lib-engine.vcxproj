@@ -406,6 +406,7 @@
     <ClInclude Include="ecs\system-name.hpp" />
     <ClInclude Include="ecs\system-transform.hpp" />
     <ClInclude Include="ecs\typeid.hpp" />
+    <ClInclude Include="engine.hpp" />
     <ClInclude Include="openvr-camera.hpp" />
     <ClInclude Include="openvr-hmd.hpp" />
     <ClInclude Include="renderer-debug.hpp" />
