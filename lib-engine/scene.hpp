@@ -18,7 +18,8 @@
 
 #include "ecs/typeid.hpp"
 #include "ecs/core-ecs.hpp"
-
+#include "ecs/system-name.hpp"
+#include "ecs/system-transform.hpp"
 
 ///////////////////////
 //   Scene Objects   //
@@ -220,13 +221,13 @@ namespace polymer
 {
     struct material_library;
 
-    // Static Mesh (GPU-side GlMesh)
-    struct static_mesh_component : public base_component
+    // Mesh Component (GPU-side GlMesh)
+    struct mesh_component : public base_component
     {
-        static_mesh_component() {};
-        static_mesh_component(entity e) : base_component(e) {}
+        mesh_component() {};
+        mesh_component(entity e) : base_component(e) {}
     };
-    POLYMER_SETUP_TYPEID(static_mesh_component);
+    POLYMER_SETUP_TYPEID(mesh_component);
 
     // Geometry (CPU-side runtime_mesh)
     struct geometry_component : public base_component
@@ -257,7 +258,7 @@ namespace polymer
     public:
         render_system(entity_orchestrator * orch) : base_system(orch)
         {
-            register_system_for_type(this, hash(get_typename<static_mesh_component>()));
+            register_system_for_type(this, hash(get_typename<mesh_component>()));
             register_system_for_type(this, hash(get_typename<point_light_component>()));
             register_system_for_type(this, hash(get_typename<directional_light_component>()));
         }
@@ -278,9 +279,12 @@ namespace polymer
 
 struct poly_scene
 {
-    std::shared_ptr<gl_procedural_sky> skybox;
-    std::unique_ptr<polymer::material_library> materialLib;
-    std::vector<std::shared_ptr<GameObject>> objects;
+    std::unique_ptr<polymer::material_library> mat_library;
+    std::unique_ptr<polymer::render_system> render_system;
+    std::unique_ptr<polymer::collision_system> collision_system;
+    std::unique_ptr<polymer::transform_system> xform_system;
+    std::unique_ptr<polymer::name_system> name_system;
+    std::shared_ptr<polymer::gl_procedural_sky> skybox;
 };
 
 #endif // end core_scene_hpp

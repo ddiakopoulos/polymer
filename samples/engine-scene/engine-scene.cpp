@@ -75,11 +75,11 @@ sample_engine_scene::sample_engine_scene() : polymer_app(1280, 720, "sample-engi
     // Set skybox on the `render_payload` only once
     payload.skybox = scene.skybox.get();
 
-    scene.materialLib.reset(new polymer::material_library("../../assets/materials.json"));
+    scene.mat_library.reset(new polymer::material_library("../../assets/materials.json"));
 
     // Resolve asset_handles to resources on disk
     resolver.reset(new asset_resolver());
-    resolver->resolve("../../assets/", &scene, scene.materialLib.get());
+    resolver->resolve("../../assets/", &scene, scene.mat_library.get());
 
     cam.look_at({ 0, 0, 2 }, { 0, 0.1f, 0 });
     flycam.set_camera(&cam);

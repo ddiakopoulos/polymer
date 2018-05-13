@@ -85,7 +85,6 @@ template<class F> void visit_fields(polymer_blinn_phong_standard & o, F f)
 
 namespace cereal
 {
-
     // Asset Handles
     template<class Archive> void serialize(Archive & archive, texture_handle & m)  { archive(cereal::make_nvp("id", m.name)); }
     template<class Archive> void serialize(Archive & archive, gpu_mesh_handle & m) { archive(cereal::make_nvp("id", m.name)); }

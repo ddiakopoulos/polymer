@@ -235,7 +235,7 @@ namespace polymer
     {
         shader_handle sky { "sky-hosek" };
 
-        detail::HosekSkyRadianceData data;
+        ::detail::HosekSkyRadianceData data;
     
         virtual void render_internal(float4x4 viewProj, float3 sunDir, float4x4 world) override
         {
@@ -268,7 +268,7 @@ namespace polymer
     
         virtual void recompute(float turbidity, float albedo, float normalizedSunY) override
         {
-            data = detail::HosekSkyRadianceData::compute(get_sun_direction(), turbidity, albedo, normalizedSunY);
+            data = ::detail::HosekSkyRadianceData::compute(get_sun_direction(), turbidity, albedo, normalizedSunY);
             if (onParametersChanged) onParametersChanged();
         }
 
@@ -277,7 +277,7 @@ namespace polymer
     class gl_preetham_sky : public gl_procedural_sky
     {
         shader_handle sky { "sky-preetham" };
-        detail::PreethamSkyRadianceData data;
+        ::detail::PreethamSkyRadianceData data;
     
         virtual void render_internal(float4x4 viewProj, float3 sunDir, float4x4 world) override
         {
@@ -306,7 +306,7 @@ namespace polymer
     
         virtual void recompute(float turbidity, float albedo, float normalizedSunY) override
         {
-            data = detail::PreethamSkyRadianceData::compute(get_sun_direction(), turbidity, albedo, normalizedSunY);
+            data = ::detail::PreethamSkyRadianceData::compute(get_sun_direction(), turbidity, albedo, normalizedSunY);
             if (onParametersChanged) onParametersChanged();
         }
     
