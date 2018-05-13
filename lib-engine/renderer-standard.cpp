@@ -142,14 +142,13 @@ GLuint stable_cascaded_shadows::get_output_texture() const
 //   pbr_render_system implementation   //
 //////////////////////////////////////////
 
-// Update per-object uniform buffer
-void pbr_render_system::update_per_object_uniform_buffer(mesh_component * r, const view_data & d)
+void pbr_render_system::update_per_object_uniform_buffer(const Pose & p, const float3 & scale, const bool recieveShadow, const view_data & d)
 {
     uniforms::per_object object = {};
-    object.modelMatrix = mul(r->get_pose().matrix(), make_scaling_matrix(r->get_scale()));
+    object.modelMatrix = mul(p.matrix(), make_scaling_matrix(scale));
     object.modelMatrixIT = inverse(transpose(object.modelMatrix));
     object.modelViewMatrix = mul(d.viewMatrix, object.modelMatrix);
-    object.receiveShadow = (float)r->get_receive_shadow();
+    object.receiveShadow = static_cast<float>(recieveShadow);
     perObject.set_buffer_data(sizeof(object), &object, GL_STREAM_DRAW);
 }
 
@@ -187,7 +186,7 @@ void pbr_render_system::run_depth_prepass(const view_data & view, const render_p
 
     auto & shader = renderPassEarlyZ.get()->get_variant()->shader;
     shader.bind();
-    for (auto obj : scene.renderSet)
+    for (entity e : scene.render_set)
     {
         update_per_object_uniform_buffer(obj, view);
         obj->draw();
@@ -212,20 +211,22 @@ void pbr_render_system::run_skybox_pass(const view_data & view, const render_pay
 
 void pbr_render_system::run_shadow_pass(const view_data & view, const render_payload & scene)
 {
+    auto sunlight = directional_lights.begin()->second;
+
     shadow->update_cascades(view.viewMatrix,
         view.nearClip,
         view.farClip,
         aspect_from_projection(view.projectionMatrix),
         vfov_from_projection(view.projectionMatrix),
-        scene.sunlight.direction);
+        sunlight.data.direction);
 
     shadow->pre_draw();
 
-    for (mesh_component * obj : scene.renderSet)
+    for (entity e : scene.render_set)
     {
         if (obj->get_cast_shadow())
         {
-            float4x4 modelMatrix = mul(obj->get_pose().matrix(), make_scaling_matrix(obj->get_scale()));
+            const float4x4 modelMatrix = mul(obj->get_pose().matrix(), make_scaling_matrix(obj->get_scale()));
             shadow->get_program().uniform("u_modelShadowMatrix", modelMatrix);
             obj->draw();
         }
@@ -236,7 +237,7 @@ void pbr_render_system::run_shadow_pass(const view_data & view, const render_pay
     gl_check_error(__FILE__, __LINE__);
 }
 
-void pbr_render_system::run_forward_pass(std::vector<mesh_component *> & renderQueueMaterial, std::vector<mesh_component *> & renderQueueDefault, const view_data & view, const render_payload & scene)
+void pbr_render_system::run_forward_pass(std::vector<entity> & renderQueueMaterial, const view_data & view, const render_payload & scene)
 {
     if (settings.useDepthPrepass)
     {
@@ -245,7 +246,7 @@ void pbr_render_system::run_forward_pass(std::vector<mesh_component *> & renderQ
         glDepthMask(GL_FALSE); // depth already comes from the prepass
     }
 
-    for (auto r : renderQueueMaterial)
+    for (entity e : renderQueueMaterial)
     {
         update_per_object_uniform_buffer(r, view);
 
@@ -263,13 +264,6 @@ void pbr_render_system::run_forward_pass(std::vector<mesh_component *> & renderQ
         }
         mat->use();
 
-        r->draw();
-    }
-
-    // We assume that objects without a valid material take care of their own shading in the `draw()` function. 
-    for (auto r : renderQueueDefault)
-    {
-        update_per_object_uniform_buffer(r, view);
         r->draw();
     }
 
@@ -381,6 +375,10 @@ pbr_render_system::~pbr_render_system()
 void pbr_render_system::render_frame(const render_payload & scene)
 {
     assert(settings.cameraCount == scene.views.size());
+    assert(directional_lights.size() == 1);
+
+    base_system * xform_base = orchestrator->get_system(get_typeid<world_transform_component>());
+    transform_system * xform_system = dynamic_cast<transform_system *>(xform_base);
 
     cpuProfiler.begin("renderloop");
 
@@ -398,12 +396,23 @@ void pbr_render_system::render_frame(const render_payload & scene)
     b.time = timer.milliseconds().count() / 1000.f; // expressed in seconds
     b.resolution = float2(settings.renderSize);
     b.invResolution = 1.f / b.resolution;
-    b.activePointLights = static_cast<int>(scene.pointLights.size());
+    b.activePointLights = static_cast<int>(point_lights.size());
 
-    b.directional_light.color = scene.sunlight.color;
-    b.directional_light.direction = scene.sunlight.direction;
-    b.directional_light.amount = scene.sunlight.amount;
-    for (int i = 0; i < (int) std::min(scene.pointLights.size(), size_t(uniforms::MAX_POINT_LIGHTS)); ++i) b.point_lights[i] = scene.pointLights[i];
+    auto sunlight = directional_lights.begin()->second;
+
+    b.directional_light.color = sunlight.data.color;
+    b.directional_light.direction = sunlight.data.direction;
+    b.directional_light.amount = sunlight.data.amount;
+
+    assert(point_lights.size() <= uniforms::MAX_POINT_LIGHTS);
+
+    uint32_t lightIdx = 0;
+    for (auto & light : point_lights)
+    {
+        if (!light.second.enabled) continue;
+        b.point_lights[lightIdx] = light.second.data;
+        lightIdx++;
+    }
 
     GLfloat defaultColor[] = { scene.clear_color.x, scene.clear_color.y, scene.clear_color.z, scene.clear_color.w };
     GLfloat defaultDepth = 1.f;
@@ -451,56 +460,42 @@ void pbr_render_system::render_frame(const render_payload & scene)
     perScene.set_buffer_data(sizeof(b), &b, GL_STREAM_DRAW);
 
     // We follow the sorting strategy outlined here: http://realtimecollisiondetection.net/blog/?p=86
-    auto materialSortFunc = [shadowAndCullingView](mesh_component * lhs, mesh_component * rhs)
+    auto materialSortFunc = [xform_system, shadowAndCullingView, this](entity lhs, entity rhs)
     {
-        const float lDist = distance(shadowAndCullingView.pose.position, lhs->get_pose().position);
-        const float rDist = distance(shadowAndCullingView.pose.position, rhs->get_pose().position);
+        const float lDist = distance(shadowAndCullingView.pose.position, xform_system->get_world_transform(lhs)->world_pose.position);
+        const float rDist = distance(shadowAndCullingView.pose.position, xform_system->get_world_transform(rhs)->world_pose.position);
 
         // Sort by material (expensive shader state change)
-        auto lid = lhs->get_material()->id();
-        auto rid = rhs->get_material()->id();
+        auto lid = materials[lhs].material.get()->id();
+        auto rid = materials[rhs].material.get()->id();
         if (lid != rid) return lid > rid;
 
         // Otherwise sort by distance
         return lDist < rDist;
     };
 
-    auto distanceSortFunc = [shadowAndCullingView](mesh_component * lhs, mesh_component * rhs)
+    auto distanceSortFunc = [xform_system, shadowAndCullingView](entity lhs, entity rhs)
     {
-        const float lDist = distance(shadowAndCullingView.pose.position, lhs->get_pose().position);
-        const float rDist = distance(shadowAndCullingView.pose.position, rhs->get_pose().position);
+        const float lDist = distance(shadowAndCullingView.pose.position, xform_system->get_world_transform(lhs)->world_pose.position);
+        const float rDist = distance(shadowAndCullingView.pose.position, xform_system->get_world_transform(rhs)->world_pose.position);
         return lDist < rDist;
     };
 
-    std::priority_queue<mesh_component *, std::vector<mesh_component*>, decltype(materialSortFunc)> renderQueueMaterial(materialSortFunc);
-    std::priority_queue<mesh_component *, std::vector<mesh_component*>, decltype(distanceSortFunc)> renderQueueDefault(distanceSortFunc);
-
     cpuProfiler.begin("push-queue");
-    for (auto obj : scene.renderSet)
-    {
-        // Can't sort by material if the renderable doesn't *have* a material; bucket all other objects 
-        if (obj->get_material() != nullptr) renderQueueMaterial.push(obj);
-        else renderQueueDefault.push(obj);
-    }
+    std::priority_queue<entity, std::vector<entity>, decltype(materialSortFunc)> renderQueueMaterial(materialSortFunc);
+    for (const entity ent : scene.render_set) { renderQueueMaterial.push(ent); }
     cpuProfiler.end("push-queue");
 
     cpuProfiler.begin("flatten-queue");
     // Resolve render queues into flat lists
-    std::vector<mesh_component *> materialRenderList;
+    std::vector<entity> materialRenderList;
     while (!renderQueueMaterial.empty())
     {
-        mesh_component * top = renderQueueMaterial.top();
+        entity top = renderQueueMaterial.top();
         renderQueueMaterial.pop();
         materialRenderList.push_back(top);
     }
 
-    std::vector<mesh_component *> defaultRenderList;
-    while (!renderQueueDefault.empty())
-    {
-        mesh_component * top = renderQueueDefault.top();
-        renderQueueDefault.pop();
-        defaultRenderList.push_back(top);
-    }
     cpuProfiler.end("flatten-queue");
 
     for (uint32_t camIdx = 0; camIdx < settings.cameraCount; ++camIdx)
@@ -536,7 +531,7 @@ void pbr_render_system::render_frame(const render_payload & scene)
         run_skybox_pass(scene.views[camIdx], scene);
         cpuProfiler.end("skybox");
         cpuProfiler.begin("forward");
-        run_forward_pass(materialRenderList, defaultRenderList, scene.views[camIdx], scene);
+        run_forward_pass(materialRenderList, scene.views[camIdx], scene);
         cpuProfiler.end("forward");
         gpuProfiler.end("forward-pass");
 
@@ -581,4 +576,14 @@ void pbr_render_system::render_frame(const render_payload & scene)
     cpuProfiler.end("renderloop");
 
     gl_check_error(__FILE__, __LINE__);
+}
+
+bool pbr_render_system::create(entity e, poly_typeid hash, void * data)
+{
+
+}
+
+void pbr_render_system::destroy(entity e)
+{
+
 }

@@ -83,7 +83,7 @@ namespace polymer
             return ptr;
         }
 
-        void register_system_for_type(poly_typeid system_type, poly_hash_value def_type)
+        void register_system_for_type(const poly_typeid system_type, poly_hash_value def_type)
         {
             system_type_map[def_type] = system_type;
         }
@@ -95,11 +95,18 @@ namespace polymer
             return e;
         }
 
-        void add_system(poly_typeid system_type, base_system * system)
+        void add_system(const poly_typeid system_type, base_system * system)
         {
             if (!system) return;
             auto itr = systems.find(system_type);
             if (itr == systems.end()) systems.emplace(system_type, system);
+        }
+
+        base_system * get_system(const poly_typeid system_type)
+        {
+            auto itr = systems.find(system_type);
+            if (itr != systems.end()) return itr->second;
+            else return nullptr;
         }
     };
 

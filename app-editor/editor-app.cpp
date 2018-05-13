@@ -97,7 +97,7 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
 
     renderer_settings settings;
     settings.renderSize = int2(width, height);
-    renderer.reset(new renderer_standard(settings));
+    renderer.reset(new pbr_render_system(settings));
 
     sceneData.ibl_irradianceCubemap = "wells-irradiance-cubemap";
     sceneData.ibl_radianceCubemap = "wells-radiance-cubemap";
@@ -272,7 +272,7 @@ void scene_editor_app::on_input(const app_input_event & event)
 
                 for (auto & obj : scene.objects)
                 {
-                    RaycastResult result = obj->raycast(r);
+                    raycast_result result = obj->raycast(r);
                     if (result.hit)
                     {
                         if (result.distance < best_t)
@@ -312,7 +312,7 @@ void scene_editor_app::on_input(const app_input_event & event)
 
 void scene_editor_app::reset_renderer(int2 size, const renderer_settings & settings)
 {
-    renderer.reset(new renderer_standard(settings));
+    renderer.reset(new pbr_render_system(settings));
 }
 
 void scene_editor_app::on_update(const app_update_event & e)

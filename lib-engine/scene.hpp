@@ -53,19 +53,10 @@ namespace polymer
     struct mesh_component : public base_component
     {
         gpu_mesh_handle mesh;
-
-        void set_mesh_render_mode(const GLenum mode)
-        {
-            if (mode != GL_TRIANGLE_STRIP) mesh.get().set_non_indexed(mode);
-        }
-
-        void draw() const
-        {
-            mesh.get().draw_elements();
-        }
-
         mesh_component() {};
         mesh_component(entity e) : base_component(e) {}
+        void set_mesh_render_mode(const GLenum mode) { if (mode != GL_TRIANGLE_STRIP) mesh.get().set_non_indexed(mode); }
+        void draw() const { mesh.get().draw_elements(); }
     };
     POLYMER_SETUP_TYPEID(mesh_component);
 
@@ -94,7 +85,6 @@ namespace polymer
     {
         bool enabled = true;
         uniforms::point_light data;
-
         point_light_component() {};
         point_light_component(entity e) : base_component(e) {}
     };
@@ -105,7 +95,6 @@ namespace polymer
     {
         bool enabled = true;
         uniforms::directional_light data;
-
         directional_light_component() {};
         directional_light_component(entity e) : base_component(e) {}
     };

@@ -25,9 +25,9 @@
 
 namespace polymer
 {
-    ////////////////////////////////////////
-    //   Stable Cascaded Shadow Mapping   //
-    ////////////////////////////////////////
+    /////////////////////////////////
+    //   stable_cascaded_shadows   //
+    /////////////////////////////////
 
     class stable_cascaded_shadows
     {
@@ -67,12 +67,12 @@ namespace polymer
     struct renderer_settings
     {
         int2 renderSize{ 0, 0 };
-        uint32_t cameraCount = 1;
-        uint32_t msaaSamples = 4;
-        bool performanceProfiling = true;
-        bool useDepthPrepass = false;
-        bool tonemapEnabled = true;
-        bool shadowsEnabled = true;
+        uint32_t cameraCount{ 1 };
+        uint32_t msaaSamples{ 4 };
+        bool performanceProfiling{ true };
+        bool useDepthPrepass{ false };
+        bool tonemapEnabled{ true };
+        bool shadowsEnabled{ true };
     };
 
     struct view_data
@@ -96,10 +96,10 @@ namespace polymer
         }
     };
 
-    // Transient
     struct render_payload
     {
         std::vector<view_data> views;
+        std::vector<entity> render_set;
         float4 clear_color{ 1, 0, 0, 1 };
         texture_handle ibl_radianceCubemap;
         texture_handle ibl_irradianceCubemap;
@@ -112,6 +112,14 @@ namespace polymer
 
     class pbr_render_system : public base_system
     {
+        struct transient_renderable
+        {
+            entity e;
+            world_transform_component * transform;
+            mesh_component * mesh;
+            material_component * material;
+        };
+
         std::unordered_map<entity, mesh_component> meshes;
         std::unordered_map<entity, material_component> materials;
         std::unordered_map<entity, point_light_component> point_lights;
@@ -123,7 +131,7 @@ namespace polymer
         GlBuffer perView;
         GlBuffer perObject;
 
-        // MSAA 
+        // MSAA Targets
         GlRenderbuffer multisampleRenderbuffers[2];
         GlFramebuffer multisampleFramebuffer;
 
@@ -138,11 +146,11 @@ namespace polymer
         shader_handle renderPassEarlyZ = { "depth-prepass" };
         shader_handle renderPassTonemap = { "post-tonemap" };
 
-        void update_per_object_uniform_buffer(mesh_component * top, const view_data & d);
+        void update_per_object_uniform_buffer(const Pose & p, const float3 & scale, const bool recieveShadow, const view_data & d);
         void run_depth_prepass(const view_data & view, const render_payload & scene);
         void run_skybox_pass(const view_data & view, const render_payload & scene);
         void run_shadow_pass(const view_data & view, const render_payload & scene);
-        void run_forward_pass(std::vector<mesh_component *> & renderQueueMaterial, std::vector<mesh_component *> & renderQueueDefault, const view_data & view, const render_payload & scene);
+        void run_forward_pass(std::vector<entity> & renderQueueMaterial, const view_data & view, const render_payload & scene);
         void run_post_pass(const view_data & view, const render_payload & scene);
 
     public:
@@ -156,6 +164,9 @@ namespace polymer
 
         pbr_render_system(entity_orchestrator * orch, const renderer_settings settings);
         ~pbr_render_system();
+
+        virtual bool create(entity e, poly_typeid hash, void * data) override final;
+        virtual void destroy(entity e) override final;
 
         void render_frame(const render_payload & scene);
 
