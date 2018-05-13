@@ -41,8 +41,51 @@ template<class T> struct range_metadata { T min, max; };
 struct editor_hidden { };
 struct input_field { };
 
+CEREAL_REGISTER_TYPE_WITH_NAME(material_interface, "material_interface");
+CEREAL_REGISTER_TYPE_WITH_NAME(polymer_pbr_standard, "polymer_pbr_standard");
+CEREAL_REGISTER_TYPE_WITH_NAME(polymer_blinn_phong_standard, "polymer_pbr_standard");
+CEREAL_REGISTER_POLYMORPHIC_RELATION(material_interface, polymer_pbr_standard);
+CEREAL_REGISTER_POLYMORPHIC_RELATION(material_interface, polymer_blinn_phong_standard);
+
+template<class F> void visit_subclasses(material_interface * p, F f)
+{
+    f("polymer_pbr_standard", dynamic_cast<polymer_pbr_standard *>(p));
+    f("polymer_blinn_phong_standard", dynamic_cast<polymer_blinn_phong_standard *>(p));
+}
+
+template<class F> void visit_fields(polymer_pbr_standard & o, F f)
+{
+    f("base_albedo", o.baseAlbedo);
+    f("opacity", o.opacity, range_metadata<float>{ 0.f, 1.f });
+    f("roughness_factor", o.roughnessFactor, range_metadata<float>{ 0.04f, 1.f });
+    f("metallic_factor", o.metallicFactor, range_metadata<float>{ 0.f, 1.f });
+    f("base_emissive", o.baseEmissive);
+    f("emissive_strength", o.emissiveStrength, range_metadata<float>{ 0.f, 1.f });
+    f("specularLevel", o.specularLevel, range_metadata<float>{ 0.f, 2.f });
+    f("occulusion_strength", o.occlusionStrength, range_metadata<float>{ 0.f, 1.f });
+    f("ambient_strength", o.ambientStrength, range_metadata<float>{ 0.f, 1.f });
+    f("shadow_opacity", o.shadowOpacity, range_metadata<float>{ 0.f, 1.f });
+    f("texcoord_scale", o.texcoordScale, range_metadata<int>{ -32, 32 });
+
+    f("albedo_handle", o.albedo);
+    f("normal_handle", o.normal);
+    f("metallic_handle", o.metallic);
+    f("roughness_handle", o.roughness);
+    f("emissive_handle", o.emissive);
+    f("height_handle", o.height);
+    f("occlusion_handle", o.occlusion);
+
+    f("program_handle", o.shader, editor_hidden{}); // hidden because shaders are tied to materials
+}
+
+template<class F> void visit_fields(polymer_blinn_phong_standard & o, F f)
+{
+    f("program_handle", o.shader, editor_hidden{});
+}
+
 namespace cereal
 {
+
     // Asset Handles
     template<class Archive> void serialize(Archive & archive, texture_handle & m)  { archive(cereal::make_nvp("id", m.name)); }
     template<class Archive> void serialize(Archive & archive, gpu_mesh_handle & m) { archive(cereal::make_nvp("id", m.name)); }
@@ -74,8 +117,6 @@ namespace cereal
     template<class Archive> void serialize(Archive & archive, Segment & m) { archive(cereal::make_nvp("a", m.a), cereal::make_nvp("b", m.b)); }
     template<class Archive> void serialize(Archive & archive, Sphere & m) { archive(cereal::make_nvp("center", m.center), cereal::make_nvp("radius", m.radius)); }
 }
-
-// CEREAL_REGISTER_TYPE_WITH_NAME(StaticMesh, "StaticMesh");
 
 namespace cereal
 {
