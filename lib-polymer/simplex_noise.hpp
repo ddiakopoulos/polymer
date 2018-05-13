@@ -1292,7 +1292,7 @@ inline float noise_worley(const float2 & v, float falloff)
             res += exp(-falloff*d);
         }
     }
-    return -(1.0f / falloff) * log(res);
+    return -(1.0f / falloff) * std::log(res);
 }
 
 inline float noise_worley(const float3 & v, float falloff)
@@ -1314,7 +1314,7 @@ inline float noise_worley(const float3 & v, float falloff)
             }
         }
     }
-    return -(1.0f / falloff) * log(res);
+    return -(1.0f / falloff) * std::log(res);
 }
     
 /////////////////////////////////////////////////////////
