@@ -4,7 +4,7 @@
 #include "geometry.hpp"
 
 // Update per-object uniform buffer
-void renderer_standard::update_per_object_uniform_buffer(mesh_component * r, const view_data & d)
+void pbr_render_system::update_per_object_uniform_buffer(mesh_component * r, const view_data & d)
 {
     uniforms::per_object object = {};
     object.modelMatrix = mul(r->get_pose().matrix(), make_scaling_matrix(r->get_scale()));
@@ -14,7 +14,7 @@ void renderer_standard::update_per_object_uniform_buffer(mesh_component * r, con
     perObject.set_buffer_data(sizeof(object), &object, GL_STREAM_DRAW);
 }
 
-uint32_t renderer_standard::get_color_texture(const uint32_t idx) const
+uint32_t pbr_render_system::get_color_texture(const uint32_t idx) const
 {
     assert(idx <= settings.cameraCount);
     if (settings.tonemapEnabled)
@@ -24,19 +24,19 @@ uint32_t renderer_standard::get_color_texture(const uint32_t idx) const
     return eyeTextures[idx];
 }
 
-uint32_t renderer_standard::get_depth_texture(const uint32_t idx) const 
+uint32_t pbr_render_system::get_depth_texture(const uint32_t idx) const 
 {
     assert(idx <= settings.cameraCount);
     return eyeDepthTextures[idx];
 }
 
-stable_cascaded_shadows * renderer_standard::get_shadow_pass() const
+stable_cascaded_shadows * pbr_render_system::get_shadow_pass() const
 {
     if (shadow) return shadow.get();
     return nullptr;
 }
 
-void renderer_standard::run_depth_prepass(const view_data & view, const render_payload & scene)
+void pbr_render_system::run_depth_prepass(const view_data & view, const render_payload & scene)
 {
     GLboolean colorMask[4];
     glGetBooleanv(GL_COLOR_WRITEMASK, &colorMask[0]);
@@ -59,34 +59,19 @@ void renderer_standard::run_depth_prepass(const view_data & view, const render_p
     glColorMask(colorMask[0], colorMask[1], colorMask[2], colorMask[3]);
 }
 
-void renderer_standard::run_skybox_pass(const view_data & view, const render_payload & scene)
+void pbr_render_system::run_skybox_pass(const view_data & view, const render_payload & scene)
 {
     if (!scene.skybox) return;
 
     GLboolean wasDepthTestingEnabled = glIsEnabled(GL_DEPTH_TEST);
     glDisable(GL_DEPTH_TEST);
 
-    glDisable(GL_DEPTH_TEST);
-    glDepthMask(GL_FALSE);
-
-    /* fixme
-    auto & program = GlShaderHandle("ibl").get();
-    program.bind();
-    program.uniform("u_mvp", mul(view.projectionMatrix, rotation_matrix(qconj(view.pose.orientation))));
-    program.texture("sc_ibl", 0, texture_handle("wells-radiance-cubemap").get(), GL_TEXTURE_CUBE_MAP);
-    gpu_mesh_handle("cube").get().draw_elements();
-    program.unbind();
-    */
-
-    glEnable(GL_DEPTH_TEST);
-    glDepthMask(GL_TRUE);
-
     scene.skybox->render(view.viewProjMatrix, view.pose.position, view.farClip);
 
     if (wasDepthTestingEnabled) glEnable(GL_DEPTH_TEST);
 }
 
-void renderer_standard::run_shadow_pass(const view_data & view, const render_payload & scene)
+void pbr_render_system::run_shadow_pass(const view_data & view, const render_payload & scene)
 {
     shadow->update_cascades(view.viewMatrix,
         view.nearClip,
@@ -112,7 +97,7 @@ void renderer_standard::run_shadow_pass(const view_data & view, const render_pay
     gl_check_error(__FILE__, __LINE__);
 }
 
-void renderer_standard::run_forward_pass(std::vector<mesh_component *> & renderQueueMaterial, std::vector<mesh_component *> & renderQueueDefault, const view_data & view, const render_payload & scene)
+void pbr_render_system::run_forward_pass(std::vector<mesh_component *> & renderQueueMaterial, std::vector<mesh_component *> & renderQueueDefault, const view_data & view, const render_payload & scene)
 {
     if (settings.useDepthPrepass)
     {
@@ -155,7 +140,7 @@ void renderer_standard::run_forward_pass(std::vector<mesh_component *> & renderQ
     }
 }
 
-void renderer_standard::run_post_pass(const view_data & view, const render_payload & scene)
+void pbr_render_system::run_post_pass(const view_data & view, const render_payload & scene)
 {
     if (!settings.tonemapEnabled) return;
 
@@ -179,8 +164,13 @@ void renderer_standard::run_post_pass(const view_data & view, const render_paylo
     if (wasDepthTestingEnabled) glEnable(GL_DEPTH_TEST);
 }
 
-renderer_standard::renderer_standard(const renderer_settings settings) : settings(settings)
+pbr_render_system::pbr_render_system(entity_orchestrator * orch, const renderer_settings settings) :  base_system(orch), settings(settings)
 {
+    register_system_for_type(this, hash(get_typename<mesh_component>()));
+    register_system_for_type(this, hash(get_typename<material_component>()));
+    register_system_for_type(this, hash(get_typename<point_light_component>()));
+    register_system_for_type(this, hash(get_typename<directional_light_component>()));
+
     assert(settings.renderSize.x > 0 && settings.renderSize.y > 0);
     assert(settings.cameraCount >= 1);
 
@@ -195,7 +185,7 @@ renderer_standard::renderer_standard(const renderer_settings settings) : setting
     glNamedFramebufferRenderbufferEXT(multisampleFramebuffer, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, multisampleRenderbuffers[1]);
     multisampleFramebuffer.check_complete();
 
-    // Generate textures and framebuffers for `settings.cameraCount`
+    // Generate textures and framebuffers for |settings.cameraCount|
     for (uint32_t camIdx = 0; camIdx < settings.cameraCount; ++camIdx)
     {
         //GL_RGBA8
@@ -244,12 +234,12 @@ renderer_standard::renderer_standard(const renderer_settings settings) : setting
     timer.start();
 }
 
-renderer_standard::~renderer_standard()
+pbr_render_system::~pbr_render_system()
 {
     timer.stop();
 }
 
-void renderer_standard::render_frame(const render_payload & scene)
+void pbr_render_system::render_frame(const render_payload & scene)
 {
     assert(settings.cameraCount == scene.views.size());
 

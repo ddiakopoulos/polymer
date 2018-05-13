@@ -13,12 +13,27 @@
 #include "gl-async-gpu-timer.hpp"
 #include "gl-procedural-sky.hpp"
 #include "profiling.hpp"
+
+#include "ecs/typeid.hpp"
+#include "ecs/core-ecs.hpp"
+#include "ecs/system-name.hpp"
+#include "ecs/system-transform.hpp"
 #include "scene.hpp"
 
 using namespace polymer;
 
 #undef near
 #undef far
+
+/*
+// Render System
+class render_system final : public base_system
+{
+public:
+
+};
+POLYMER_SETUP_TYPEID(render_system);
+*/
 
 ////////////////////////////////////////
 //   Stable Cascaded Shadow Mapping   //
@@ -232,20 +247,22 @@ struct render_payload
 {
     std::vector<view_data> views;
     float4 clear_color{ 1, 0, 0, 1 };
-    std::vector<mesh_component *> renderSet;
     texture_handle ibl_radianceCubemap;
     texture_handle ibl_irradianceCubemap;
     gl_procedural_sky * skybox{ nullptr };
-    std::vector<uniforms::point_light> pointLights;
-    uniforms::directional_light sunlight;
 };
 
-/////////////////////////////////////////
-//   Primary Renderer Implementation   //
-/////////////////////////////////////////
+///////////////////////////
+//   pbr_render_system   //
+///////////////////////////
 
-class renderer_standard
+class pbr_render_system : public base_system
 {
+    std::unordered_map<entity, mesh_component> meshes;
+    std::unordered_map<entity, material_component> materials;
+    std::unordered_map<entity, point_light_component> point_lights;
+    std::unordered_map<entity, directional_light_component> directional_lights;
+
     simple_cpu_timer timer;
 
     GlBuffer perScene;
@@ -268,7 +285,6 @@ class renderer_standard
     shader_handle renderPassTonemap = { "post-tonemap" };
 
     void update_per_object_uniform_buffer(mesh_component * top, const view_data & d);
-
     void run_depth_prepass(const view_data & view, const render_payload & scene);
     void run_skybox_pass(const view_data & view, const render_payload & scene);
     void run_shadow_pass(const view_data & view, const render_payload & scene);
@@ -284,8 +300,8 @@ public:
     profiler<simple_cpu_timer> cpuProfiler;
     profiler<gl_gpu_timer> gpuProfiler;
 
-    renderer_standard(const renderer_settings settings);
-    ~renderer_standard();
+    pbr_render_system(entity_orchestrator * orch, const renderer_settings settings);
+    ~pbr_render_system();
 
     void render_frame(const render_payload & scene);
 
@@ -295,7 +311,7 @@ public:
     stable_cascaded_shadows * get_shadow_pass() const;
 };
 
-template<class F> void visit_fields(renderer_standard & o, F f)
+template<class F> void visit_fields(pbr_render_system & o, F f)
 {
     f("num_cameras", o.settings.cameraCount, editor_hidden{});
     f("num_msaa_samples", o.settings.msaaSamples, editor_hidden{});

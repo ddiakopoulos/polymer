@@ -106,25 +106,6 @@ namespace polymer
     };
     POLYMER_SETUP_TYPEID(directional_light_component);
 
-    // Render System
-    class render_system final : public base_system
-    {
-    public:
-        std::unordered_map<entity, mesh_component> meshes;
-        std::unordered_map<entity, material_component> materials;
-        std::unordered_map<entity, point_light_component> point_lights;
-        std::unordered_map<entity, directional_light_component> directional_lights;
-
-        render_system(entity_orchestrator * orch) : base_system(orch)
-        {
-            register_system_for_type(this, hash(get_typename<mesh_component>()));
-            register_system_for_type(this, hash(get_typename<material_component>()));
-            register_system_for_type(this, hash(get_typename<point_light_component>()));
-            register_system_for_type(this, hash(get_typename<directional_light_component>()));
-        }
-    };
-    POLYMER_SETUP_TYPEID(render_system);
-
     // Collision System
     class collision_system final : public base_system
     {
