@@ -227,16 +227,17 @@ struct view_data
     }
 };
 
+// Transient
 struct render_payload
 {
-    gl_procedural_sky * skybox{ nullptr };
-    std::vector<Renderable *> renderSet;
-    std::vector<uniforms::point_light> pointLights;
-    uniforms::directional_light sunlight;
     std::vector<view_data> views;
     float4 clear_color{ 1, 0, 0, 1 };
+    std::vector<mesh_component *> renderSet;
     texture_handle ibl_radianceCubemap;
     texture_handle ibl_irradianceCubemap;
+    gl_procedural_sky * skybox{ nullptr };
+    std::vector<uniforms::point_light> pointLights;
+    uniforms::directional_light sunlight;
 };
 
 /////////////////////////////////////////
@@ -266,12 +267,12 @@ class renderer_standard
     shader_handle renderPassEarlyZ = { "depth-prepass" };
     shader_handle renderPassTonemap = { "post-tonemap" };
 
-    void update_per_object_uniform_buffer(Renderable * top, const view_data & d);
+    void update_per_object_uniform_buffer(mesh_component * top, const view_data & d);
 
     void run_depth_prepass(const view_data & view, const render_payload & scene);
     void run_skybox_pass(const view_data & view, const render_payload & scene);
     void run_shadow_pass(const view_data & view, const render_payload & scene);
-    void run_forward_pass(std::vector<Renderable *> & renderQueueMaterial, std::vector<Renderable *> & renderQueueDefault, const view_data & view, const render_payload & scene);
+    void run_forward_pass(std::vector<mesh_component *> & renderQueueMaterial, std::vector<mesh_component *> & renderQueueDefault, const view_data & view, const render_payload & scene);
     void run_post_pass(const view_data & view, const render_payload & scene);
 
 public:

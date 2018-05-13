@@ -85,14 +85,19 @@ namespace polymer
         {
             assert(scene != nullptr && library != nullptr && asset_dir.size() > 1);
 
-            for (auto & obj : scene->objects)
+            for (auto & m : scene->render_system->materials)
             {
-                if (auto * mesh = dynamic_cast<StaticMesh*>(obj.get()))
-                {
-                    material_names.push_back(mesh->mat.name);
-                    mesh_names.push_back(mesh->mesh.name);
-                    geometry_names.push_back(mesh->geom.name);
-                }
+                material_names.push_back(m.second.material.name);
+            }
+
+            for (auto & m : scene->render_system->meshes)
+            {
+                mesh_names.push_back(m.second.mesh.name);
+            }
+
+            for (auto & m : scene->collision_system->meshes)
+            {
+                geometry_names.push_back(m.second.geom.name);
             }
 
             remove_duplicates(material_names);

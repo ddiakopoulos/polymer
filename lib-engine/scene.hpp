@@ -41,7 +41,6 @@ namespace polymer
     };
 }
 
-
 //////////////////////////
 //   Scene Definition   //
 //////////////////////////
@@ -55,9 +54,9 @@ namespace polymer
     {
         gpu_mesh_handle mesh;
 
-        void set_mesh_render_mode(GLenum renderMode)
+        void set_mesh_render_mode(const GLenum mode)
         {
-            if (renderMode != GL_TRIANGLE_STRIP) mesh.get().set_non_indexed(renderMode);
+            if (mode != GL_TRIANGLE_STRIP) mesh.get().set_non_indexed(mode);
         }
 
         mesh_component() {};
@@ -111,6 +110,11 @@ namespace polymer
     class render_system final : public base_system
     {
     public:
+        std::unordered_map<entity, mesh_component> meshes;
+        std::unordered_map<entity, material_component> materials;
+        std::unordered_map<entity, point_light_component> point_lights;
+        std::unordered_map<entity, directional_light_component> directional_lights;
+
         render_system(entity_orchestrator * orch) : base_system(orch)
         {
             register_system_for_type(this, hash(get_typename<mesh_component>()));
@@ -125,6 +129,7 @@ namespace polymer
     class collision_system final : public base_system
     {
     public:
+        std::unordered_map<entity, geometry_component> meshes;
         collision_system(entity_orchestrator * orch) : base_system(orch)
         {
             register_system_for_type(this, hash(get_typename<geometry_component>()));

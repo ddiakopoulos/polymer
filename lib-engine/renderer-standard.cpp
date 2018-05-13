@@ -4,7 +4,7 @@
 #include "geometry.hpp"
 
 // Update per-object uniform buffer
-void renderer_standard::update_per_object_uniform_buffer(Renderable * r, const view_data & d)
+void renderer_standard::update_per_object_uniform_buffer(mesh_component * r, const view_data & d)
 {
     uniforms::per_object object = {};
     object.modelMatrix = mul(r->get_pose().matrix(), make_scaling_matrix(r->get_scale()));
@@ -97,7 +97,7 @@ void renderer_standard::run_shadow_pass(const view_data & view, const render_pay
 
     shadow->pre_draw();
 
-    for (Renderable * obj : scene.renderSet)
+    for (mesh_component * obj : scene.renderSet)
     {
         if (obj->get_cast_shadow())
         {
@@ -112,7 +112,7 @@ void renderer_standard::run_shadow_pass(const view_data & view, const render_pay
     gl_check_error(__FILE__, __LINE__);
 }
 
-void renderer_standard::run_forward_pass(std::vector<Renderable *> & renderQueueMaterial, std::vector<Renderable *> & renderQueueDefault, const view_data & view, const render_payload & scene)
+void renderer_standard::run_forward_pass(std::vector<mesh_component *> & renderQueueMaterial, std::vector<mesh_component *> & renderQueueDefault, const view_data & view, const render_payload & scene)
 {
     if (settings.useDepthPrepass)
     {
@@ -322,7 +322,7 @@ void renderer_standard::render_frame(const render_payload & scene)
     perScene.set_buffer_data(sizeof(b), &b, GL_STREAM_DRAW);
 
     // We follow the sorting strategy outlined here: http://realtimecollisiondetection.net/blog/?p=86
-    auto materialSortFunc = [shadowAndCullingView](Renderable * lhs, Renderable * rhs)
+    auto materialSortFunc = [shadowAndCullingView](mesh_component * lhs, mesh_component * rhs)
     {
         const float lDist = distance(shadowAndCullingView.pose.position, lhs->get_pose().position);
         const float rDist = distance(shadowAndCullingView.pose.position, rhs->get_pose().position);
@@ -336,15 +336,15 @@ void renderer_standard::render_frame(const render_payload & scene)
         return lDist < rDist;
     };
 
-    auto distanceSortFunc = [shadowAndCullingView](Renderable * lhs, Renderable * rhs)
+    auto distanceSortFunc = [shadowAndCullingView](mesh_component * lhs, mesh_component * rhs)
     {
         const float lDist = distance(shadowAndCullingView.pose.position, lhs->get_pose().position);
         const float rDist = distance(shadowAndCullingView.pose.position, rhs->get_pose().position);
         return lDist < rDist;
     };
 
-    std::priority_queue<Renderable *, std::vector<Renderable*>, decltype(materialSortFunc)> renderQueueMaterial(materialSortFunc);
-    std::priority_queue<Renderable *, std::vector<Renderable*>, decltype(distanceSortFunc)> renderQueueDefault(distanceSortFunc);
+    std::priority_queue<mesh_component *, std::vector<mesh_component*>, decltype(materialSortFunc)> renderQueueMaterial(materialSortFunc);
+    std::priority_queue<mesh_component *, std::vector<mesh_component*>, decltype(distanceSortFunc)> renderQueueDefault(distanceSortFunc);
 
     cpuProfiler.begin("push-queue");
     for (auto obj : scene.renderSet)
@@ -357,18 +357,18 @@ void renderer_standard::render_frame(const render_payload & scene)
 
     cpuProfiler.begin("flatten-queue");
     // Resolve render queues into flat lists
-    std::vector<Renderable *> materialRenderList;
+    std::vector<mesh_component *> materialRenderList;
     while (!renderQueueMaterial.empty())
     {
-        Renderable * top = renderQueueMaterial.top();
+        mesh_component * top = renderQueueMaterial.top();
         renderQueueMaterial.pop();
         materialRenderList.push_back(top);
     }
 
-    std::vector<Renderable *> defaultRenderList;
+    std::vector<mesh_component *> defaultRenderList;
     while (!renderQueueDefault.empty())
     {
-        Renderable * top = renderQueueDefault.top();
+        mesh_component * top = renderQueueDefault.top();
         renderQueueDefault.pop();
         defaultRenderList.push_back(top);
     }
