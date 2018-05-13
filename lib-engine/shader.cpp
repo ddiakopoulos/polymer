@@ -149,6 +149,7 @@ GlShader & gl_shader_asset::default()
 {
     std::shared_ptr<shader_variant> theDefault;
     if (shaders.size() == 0) theDefault = get_variant();
+    else theDefault = shaders[0];
     return theDefault->shader;
 }
 

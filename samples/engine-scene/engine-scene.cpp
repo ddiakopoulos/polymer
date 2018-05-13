@@ -104,13 +104,6 @@ sample_engine_scene::sample_engine_scene() : polymer_app(1280, 720, "sample-engi
         scene.render_system->directional_lights[sunlight].data.amount = 1.0f;
     };
 
-    // Add a single directional light representing the sun to the renderer. 
-    polymer::directional_light_component dirSunlight;
-    dirSunlight.data.amount = 1.f;
-    dirSunlight.data.direction = scene.skybox->get_sun_direction();
-    dirSunlight.data.color = float3(1.f, 1.0f, 1.0f);
-    //scene.render_system->create(sunlight, polymer::get_typeid<polymer::directional_light_component>(), &dirSunlight);
-
     // Set initial values on the skybox with the sunlight entity we just created
     scene.skybox->onParametersChanged();
 
@@ -166,6 +159,7 @@ void sample_engine_scene::on_draw()
     payload.views.emplace_back(view_data(viewIndex, cam.pose, projectionMatrix));
     scene.render_system->render_frame(payload);
     fullscreen_surface->draw(scene.render_system->get_color_texture(viewIndex));
+    payload.views.clear();
 
     gl_check_error(__FILE__, __LINE__);
 
