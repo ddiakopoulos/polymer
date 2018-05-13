@@ -109,6 +109,8 @@ namespace polymer
         {
             register_system_for_type(this, hash(get_typename<geometry_component>()));
         }
+        virtual bool create(entity e, poly_typeid hash, void * data) override final { return true; }
+        virtual void destroy(entity e) override final {}
     };
     POLYMER_SETUP_TYPEID(collision_system);
 }
@@ -121,11 +123,11 @@ namespace polymer
 struct poly_scene
 {
     std::unique_ptr<polymer::material_library> mat_library;
-    std::unique_ptr<polymer::pbr_render_system> render_system;
-    std::unique_ptr<polymer::collision_system> collision_system;
-    std::unique_ptr<polymer::transform_system> xform_system;
-    std::unique_ptr<polymer::name_system> name_system;
-    std::shared_ptr<polymer::gl_procedural_sky> skybox;
+    std::unique_ptr<polymer::gl_procedural_sky> skybox;
+    polymer::pbr_render_system * render_system;
+    polymer::collision_system * collision_system;
+    polymer::transform_system * xform_system;
+    polymer::name_system * name_system;
 };
 
 #endif // end core_scene_hpp

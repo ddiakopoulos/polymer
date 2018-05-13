@@ -147,10 +147,9 @@ std::shared_ptr<shader_variant> gl_shader_asset::get_variant(const std::vector<s
 
 GlShader & gl_shader_asset::default()
 {
-    assert(shaders.size() > 0);
-    std::shared_ptr<shader_variant> def = shaders[0];
-    if (def == nullptr) throw std::runtime_error("shader was nullptr; was it compiled?");
-    return def->shader;
+    std::shared_ptr<shader_variant> theDefault;
+    if (shaders.size() == 0) theDefault = get_variant();
+    return theDefault->shader;
 }
 
 void gl_shader_asset::recompile_all()

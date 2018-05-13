@@ -234,7 +234,7 @@ void pbr_render_system::run_shadow_pass(const view_data & view, const render_pay
         {
             const Pose & p = xform_system->get_world_transform(e)->world_pose;
             const float3 & scale = xform_system->get_local_transform(e)->local_scale;
-            const float4x4 modelMatrix = mul(p.matrix(), scale);
+            const float4x4 modelMatrix = mul(p.matrix(), make_scaling_matrix(scale));
             shadow->update_shadow_matrix(modelMatrix);
             meshes[e].draw();
         }
@@ -313,10 +313,10 @@ void pbr_render_system::run_post_pass(const view_data & view, const render_paylo
 
 pbr_render_system::pbr_render_system(entity_orchestrator * orch, const renderer_settings settings) :  base_system(orch), settings(settings)
 {
-    register_system_for_type(this, hash(get_typename<mesh_component>()));
-    register_system_for_type(this, hash(get_typename<material_component>()));
-    register_system_for_type(this, hash(get_typename<point_light_component>()));
-    register_system_for_type(this, hash(get_typename<directional_light_component>()));
+    register_system_for_type(this, get_typeid<mesh_component>());
+    register_system_for_type(this, get_typeid<material_component>());
+    register_system_for_type(this, get_typeid<point_light_component>());
+    register_system_for_type(this, get_typeid<directional_light_component>());
 
     assert(settings.renderSize.x > 0 && settings.renderSize.y > 0);
     assert(settings.cameraCount >= 1);
@@ -393,7 +393,7 @@ void pbr_render_system::render_frame(const render_payload & scene)
 
     if (!xform_system)
     {
-        base_system * xform_base = orchestrator->get_system(get_typeid<world_transform_component>());
+        base_system * xform_base = orchestrator->get_system(get_typeid<transform_system>());
         xform_system = dynamic_cast<transform_system *>(xform_base);
         assert(xform_system != nullptr);
     }
@@ -590,15 +590,21 @@ void pbr_render_system::render_frame(const render_payload & scene)
     }
 
     glDisable(GL_FRAMEBUFFER_SRGB);
-
     cpuProfiler.end("renderloop");
-
     gl_check_error(__FILE__, __LINE__);
 }
 
-bool pbr_render_system::create(entity e, poly_typeid hash, void * data)
+bool pbr_render_system::create(entity e, poly_typeid type, void * data)
 {
-
+    /*
+    if (type == get_typeid<polymer::directional_light_component>())
+    {
+        polymer::directional_light_component sunlight;
+        std::memcpy(&sunlight, data, sizeof(polymer::directional_light_component));
+        directional_lights[e] = sunlight;
+    }
+    */
+    return true;
 }
 
 void pbr_render_system::destroy(entity e)

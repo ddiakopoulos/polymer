@@ -87,7 +87,7 @@ namespace polymer
 
         bool create(entity e, poly_typeid hash, void * data) override final { return true; }
 
-        bool create(entity e, const polymer::Pose local_pose, const float3 local_scale)
+        bool create(entity e, const Pose local_pose, const float3 local_scale)
         {
             const auto check_node = scene_graph_transforms.get(e);
             const auto check_world = world_transforms.get(e);

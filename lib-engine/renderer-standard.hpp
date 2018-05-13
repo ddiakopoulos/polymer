@@ -116,10 +116,6 @@ namespace polymer
 
     class pbr_render_system : public base_system
     {
-        std::unordered_map<entity, mesh_component> meshes;
-        std::unordered_map<entity, material_component> materials;
-        std::unordered_map<entity, point_light_component> point_lights;
-        std::unordered_map<entity, directional_light_component> directional_lights;
         transform_system * xform_system{ nullptr };// dependency
 
         simple_cpu_timer timer;
@@ -152,6 +148,10 @@ namespace polymer
 
     public:
 
+        std::unordered_map<entity, mesh_component> meshes;
+        std::unordered_map<entity, material_component> materials;
+        std::unordered_map<entity, point_light_component> point_lights;
+        std::unordered_map<entity, directional_light_component> directional_lights;
         std::vector<GlFramebuffer> postFramebuffers;
         std::vector<GlTexture2D> postTextures;
 
@@ -172,6 +172,7 @@ namespace polymer
 
         stable_cascaded_shadows * get_shadow_pass() const;
     };
+    POLYMER_SETUP_TYPEID(pbr_render_system);
 
     template<class F> void visit_fields(pbr_render_system & o, F f)
     {

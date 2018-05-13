@@ -23,6 +23,8 @@
 #include "asset-handle.hpp"
 #include "asset-handle-utils.hpp"
 #include "string_utils.hpp"
+
+#include "renderer-standard.hpp"
 #include "scene.hpp"
 
 namespace polymer

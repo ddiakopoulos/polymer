@@ -33,7 +33,7 @@ struct scene_editor_app final : public polymer_app
     std::unique_ptr<selection_controller<GameObject>> gizmo_selector;
 
     std::unique_ptr<gui::imgui_instance> igm;
-    std::unique_ptr<renderer_standard> renderer;
+    std::unique_ptr<pbr_render_system> renderer;
     std::unique_ptr<simple_texture_view> fullscreen_surface;
 
     render_payload sceneData;

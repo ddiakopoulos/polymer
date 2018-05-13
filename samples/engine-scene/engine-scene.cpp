@@ -14,9 +14,9 @@ struct sample_engine_scene final : public polymer_app
 
     gl_shader_monitor shaderMonitor{ "../assets/" };
 
+    std::unique_ptr<entity_orchestrator> orchestrator;
     std::unique_ptr<asset_resolver> resolver;
-
-    std::unique_ptr<renderer_standard> renderer;
+    std::unique_ptr<pbr_render_system> renderer;
     std::unique_ptr<simple_texture_view> fullscreen_surface;
 
     render_payload payload;
@@ -55,24 +55,66 @@ sample_engine_scene::sample_engine_scene() : polymer_app(1280, 720, "sample-engi
         "../../assets/shaders/sky_vert.glsl", 
         "../../assets/shaders/sky_hosek_frag.glsl");
 
+    shaderMonitor.watch("depth-prepass",
+        "../../assets/shaders/renderer/depth_prepass_vert.glsl",
+        "../../assets/shaders/renderer/depth_prepass_frag.glsl",
+        "../../assets/shaders/renderer");
+
+    shaderMonitor.watch("post-tonemap",
+        "../../assets/shaders/renderer/post_tonemap_vert.glsl",
+        "../../assets/shaders/renderer/post_tonemap_frag.glsl");
+
+    shaderMonitor.watch("cascaded-shadows",
+        "../../assets/shaders/renderer/shadowcascade_vert.glsl",
+        "../../assets/shaders/renderer/shadowcascade_frag.glsl",
+        "../../assets/shaders/renderer/shadowcascade_geom.glsl",
+        "../../assets/shaders/renderer");
+
     fullscreen_surface.reset(new simple_texture_view());
+
+    orchestrator.reset(new entity_orchestrator());
 
     // Initial renderer settings
     renderer_settings settings;
     settings.renderSize = int2(width, height);
-    renderer.reset(new renderer_standard(settings));
+    renderer.reset(new pbr_render_system(orchestrator.get(), settings));
 
-    // Setup default objects/state on scene
+    scene.render_system = orchestrator->create_system<pbr_render_system>(orchestrator.get(), settings);
+    scene.collision_system = orchestrator->create_system<collision_system>(orchestrator.get());
+    scene.xform_system = orchestrator->create_system<transform_system>(orchestrator.get());
+    scene.name_system = orchestrator->create_system<name_system>(orchestrator.get());
+
+    auto radianceBinary = read_file_binary("../../assets/textures/envmaps/wells_radiance.dds");
+    auto irradianceBinary = read_file_binary("../../assets/textures/envmaps/wells_irradiance.dds");
+    gli::texture_cube radianceHandle(gli::load_dds((char *)radianceBinary.data(), radianceBinary.size()));
+    gli::texture_cube irradianceHandle(gli::load_dds((char *)irradianceBinary.data(), irradianceBinary.size()));
+    payload.ibl_radianceCubemap = create_handle_for_asset("wells-radiance-cubemap", load_cubemap(radianceHandle));
+    payload.ibl_irradianceCubemap = create_handle_for_asset("wells-irradiance-cubemap", load_cubemap(irradianceHandle));
+
+    // Create a sun entity
+    entity sunlight = orchestrator->create_entity();
+
+    // Setup the skybox; link internal parameters to a directional light entity owned by the
+    // render system. 
     scene.skybox.reset(new gl_hosek_sky());
     scene.skybox->onParametersChanged = [&]
     {
-        payload.sunlight.direction = scene.skybox->get_sun_direction();
-        payload.sunlight.color = float3(1.f, 1.0f, 1.0f);
-        payload.sunlight.amount = 1.0f;
+        scene.render_system->directional_lights[sunlight].data.direction = scene.skybox->get_sun_direction();
+        scene.render_system->directional_lights[sunlight].data.color = float3(1.f, 1.0f, 1.0f);
+        scene.render_system->directional_lights[sunlight].data.amount = 1.0f;
     };
-    scene.skybox->onParametersChanged(); // call for initial set
 
-    // Set skybox on the `render_payload` only once
+    // Add a single directional light representing the sun to the renderer. 
+    polymer::directional_light_component dirSunlight;
+    dirSunlight.data.amount = 1.f;
+    dirSunlight.data.direction = scene.skybox->get_sun_direction();
+    dirSunlight.data.color = float3(1.f, 1.0f, 1.0f);
+    //scene.render_system->create(sunlight, polymer::get_typeid<polymer::directional_light_component>(), &dirSunlight);
+
+    // Set initial values on the skybox with the sunlight entity we just created
+    scene.skybox->onParametersChanged();
+
+    // Only need to set the skybox on the |render_payload| once (unless we clear the payload)
     payload.skybox = scene.skybox.get();
 
     scene.mat_library.reset(new polymer::material_library("../../assets/materials.json"));
@@ -116,10 +158,14 @@ void sample_engine_scene::on_draw()
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
 
-    const Pose cameraPose = cam.pose;
+    const uint32_t viewIndex = 0;
     const float4x4 projectionMatrix = cam.get_projection_matrix(float(width) / float(height));
     const float4x4 viewMatrix = cam.get_view_matrix();
     const float4x4 viewProjectionMatrix = mul(projectionMatrix, viewMatrix);
+
+    payload.views.emplace_back(view_data(viewIndex, cam.pose, projectionMatrix));
+    scene.render_system->render_frame(payload);
+    fullscreen_surface->draw(scene.render_system->get_color_texture(viewIndex));
 
     gl_check_error(__FILE__, __LINE__);
 
