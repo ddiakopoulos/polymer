@@ -163,28 +163,28 @@ namespace polymer
         simple_texture_view()
         {
             static const char s_textureVert[] = R"(#version 330
-            layout(location = 0) in vec3 position;
-            layout(location = 1) in vec2 uvs;
-            uniform mat4 u_mvp = mat4(1);
-            out vec2 texCoord;
-            void main()
-            {
-                texCoord = uvs;
-                gl_Position = u_mvp * vec4(position.xy, 0.0, 1.0);
+                layout(location = 0) in vec3 position;
+                layout(location = 1) in vec2 uvs;
+                uniform mat4 u_mvp = mat4(1);
+                out vec2 texCoord;
+                void main()
+                {
+                    texCoord = uvs;
+                    gl_Position = u_mvp * vec4(position.xy, 0.0, 1.0);
     
-            }
-        )";
+                }
+            )";
 
             static const char s_textureFrag[] = R"(#version 330
-            uniform sampler2D s_texture;
-            in vec2 texCoord;
-            out vec4 f_color;
-            void main()
-            {
-                vec4 sample = texture(s_texture, texCoord);
-                f_color = vec4(sample.rgb, 1.0);
-            }
-        )";
+                uniform sampler2D s_texture;
+                in vec2 texCoord;
+                out vec4 f_color;
+                void main()
+                {
+                    vec4 sample = texture(s_texture, texCoord);
+                    f_color = vec4(sample.rgb, 1.0);
+                }
+            )";
 
             shader = GlShader(s_textureVert, s_textureFrag);
 

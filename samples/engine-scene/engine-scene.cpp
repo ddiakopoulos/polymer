@@ -192,9 +192,10 @@ void sample_engine_scene::on_draw()
     payload.views.emplace_back(view_data(viewIndex, cam.pose, projectionMatrix));
     scene.render_system->render_frame(payload);
 
+    glDisable(GL_DEPTH_TEST);
+
     glUseProgram(0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0, 0, width, height);
     glViewport(0, 0, width, height);
     glClearColor(1.f, 0.25f, 0.25f, 1.0f);
 
