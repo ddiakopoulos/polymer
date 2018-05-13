@@ -3,6 +3,145 @@
 #include "math-spatial.hpp"
 #include "geometry.hpp"
 
+////////////////////////////////////////////////
+//   stable_cascaded_shadows implementation   //
+////////////////////////////////////////////////
+
+stable_cascaded_shadows::stable_cascaded_shadows()
+{
+    shadowArrayDepth.setup(GL_TEXTURE_2D_ARRAY, resolution, resolution, uniforms::NUM_CASCADES, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+    glNamedFramebufferTextureEXT(shadowArrayFramebuffer, GL_DEPTH_ATTACHMENT, shadowArrayDepth, 0);
+    shadowArrayFramebuffer.check_complete();
+    gl_check_error(__FILE__, __LINE__);
+}
+
+void stable_cascaded_shadows::update_cascades(const float4x4 & view, const float near, const float far, const float aspectRatio, const float vfov, const float3 & lightDir)
+{
+    nearPlanes.clear();
+    farPlanes.clear();
+    splitPlanes.clear();
+    viewMatrices.clear();
+    projMatrices.clear();
+    shadowMatrices.clear();
+
+    for (size_t C = 0; C < uniforms::NUM_CASCADES; ++C)
+    {
+        const float splitIdx = uniforms::NUM_CASCADES;
+
+        // Find the split planes using GPU Gem 3. Chap 10 "Practical Split Scheme".
+        // http://http.developer.nvidia.com/GPUGems3/gpugems3_ch10.html
+        const float splitNear = C > 0 ? mix(near + (static_cast<float>(C) / splitIdx) * (far - near),
+            near * pow(far / near, static_cast<float>(C) / splitIdx), splitLambda) : near;
+
+        const float splitFar = C < splitIdx - 1 ? mix(near + (static_cast<float>(C + 1) / splitIdx) * (far - near),
+            near * pow(far / near, static_cast<float>(C + 1) / splitIdx), splitLambda) : far;
+
+        const float4x4 splitProjectionMatrix = make_projection_matrix(vfov, aspectRatio, splitNear, splitFar);
+
+        // Extract the frustum points
+        float4 splitFrustumVerts[8] = {
+            { -1.f, -1.f, -1.f, 1.f }, // Near plane
+            { -1.f,  1.f, -1.f, 1.f },
+            { +1.f,  1.f, -1.f, 1.f },
+            { +1.f, -1.f, -1.f, 1.f },
+            { -1.f, -1.f,  1.f, 1.f }, // Far plane
+            { -1.f,  1.f,  1.f, 1.f },
+            { +1.f,  1.f,  1.f, 1.f },
+            { +1.f, -1.f,  1.f, 1.f }
+        };
+
+        for (unsigned int j = 0; j < 8; ++j)
+        {
+            splitFrustumVerts[j] = float4(transform_coord(inverse(mul(splitProjectionMatrix, view)), splitFrustumVerts[j].xyz()), 1);
+        }
+
+        float3 frustumCentroid = float3(0, 0, 0);
+        for (size_t i = 0; i < 8; ++i) frustumCentroid += splitFrustumVerts[i].xyz();
+        frustumCentroid /= 8.0f;
+
+        // Calculate the radius of a bounding sphere surrounding the frustum corners in worldspace
+        // This can be precomputed if the camera frustum does not change
+        float sphereRadius = 0.0f;
+        for (int i = 0; i < 8; ++i)
+        {
+            float dist = length(splitFrustumVerts[i].xyz() - frustumCentroid) * 1.0;
+            sphereRadius = std::max(sphereRadius, dist);
+        }
+
+        sphereRadius = (std::ceil(sphereRadius * 32.0f) / 32.0f);
+
+        const float3 maxExtents = float3(sphereRadius, sphereRadius, sphereRadius);
+        const float3 minExtents = -maxExtents;
+
+        const Pose cascadePose = look_at_pose_rh(frustumCentroid + lightDir * -minExtents.z, frustumCentroid);
+        const float4x4 splitViewMatrix = cascadePose.view_matrix();
+
+        const float3 cascadeExtents = maxExtents - minExtents;
+        float4x4 shadowProjectionMatrix = make_orthographic_matrix(minExtents.x, maxExtents.x, minExtents.y, maxExtents.y, 0.0f, cascadeExtents.z);
+
+        // Create a rounding matrix by projecting the world-space origin and determining the fractional offset in texel space
+        float3 shadowOrigin = transform_coord(mul(shadowProjectionMatrix, splitViewMatrix), float3(0, 0, 0));
+        shadowOrigin *= (resolution * 0.5f);
+
+        const float4 roundedOrigin = round(float4(shadowOrigin, 1));
+        float4 roundOffset = roundedOrigin - float4(shadowOrigin, 1);
+        roundOffset *= 2.0f / resolution;
+        roundOffset.z = 0;
+        roundOffset.w = 0;
+        shadowProjectionMatrix[3] += roundOffset;
+
+        const float4x4 theShadowMatrix = mul(shadowProjectionMatrix, splitViewMatrix);
+
+        viewMatrices.push_back(splitViewMatrix);
+        projMatrices.push_back(shadowProjectionMatrix);
+        shadowMatrices.push_back(theShadowMatrix);
+        splitPlanes.push_back(float2(splitNear, splitFar));
+        nearPlanes.push_back(-maxExtents.z);
+        farPlanes.push_back(-minExtents.z);
+    }
+}
+
+void stable_cascaded_shadows::pre_draw()
+{
+    glEnable(GL_DEPTH_TEST);
+
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_FRONT);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, shadowArrayFramebuffer);
+    glViewport(0, 0, resolution, resolution);
+    glClear(GL_DEPTH_BUFFER_BIT);
+
+    auto & shader = program.get()->get_variant()->shader;
+
+    shader.bind();
+    shader.uniform("u_cascadeViewMatrixArray", uniforms::NUM_CASCADES, viewMatrices);
+    shader.uniform("u_cascadeProjMatrixArray", uniforms::NUM_CASCADES, projMatrices);
+}
+
+GlShader & stable_cascaded_shadows::get_program()
+{
+    return program.get()->get_variant()->shader;
+}
+
+void stable_cascaded_shadows::post_draw()
+{
+    auto & shader = program.get()->get_variant()->shader; // should this be a call to default()?
+    glCullFace(GL_BACK);
+    glEnable(GL_CULL_FACE);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    shader.unbind();
+}
+
+GLuint stable_cascaded_shadows::get_output_texture() const
+{
+    return shadowArrayDepth.id();
+}
+
+//////////////////////////////////////////
+//   pbr_render_system implementation   //
+//////////////////////////////////////////
+
 // Update per-object uniform buffer
 void pbr_render_system::update_per_object_uniform_buffer(mesh_component * r, const view_data & d)
 {

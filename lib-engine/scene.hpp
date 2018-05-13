@@ -59,6 +59,11 @@ namespace polymer
             if (mode != GL_TRIANGLE_STRIP) mesh.get().set_non_indexed(mode);
         }
 
+        void draw() const
+        {
+            mesh.get().draw_elements();
+        }
+
         mesh_component() {};
         mesh_component(entity e) : base_component(e) {}
     };
@@ -119,10 +124,15 @@ namespace polymer
     POLYMER_SETUP_TYPEID(collision_system);
 }
 
+namespace polymer
+{
+    class pbr_render_system;
+}
+
 struct poly_scene
 {
     std::unique_ptr<polymer::material_library> mat_library;
-    std::unique_ptr<polymer::render_system> render_system;
+    std::unique_ptr<polymer::pbr_render_system> render_system;
     std::unique_ptr<polymer::collision_system> collision_system;
     std::unique_ptr<polymer::transform_system> xform_system;
     std::unique_ptr<polymer::name_system> name_system;
