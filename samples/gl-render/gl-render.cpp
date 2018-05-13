@@ -12,7 +12,7 @@
 
 using namespace polymer;
 
-struct sample_engine_scene final : public polymer_app
+struct sample_gl_render final : public polymer_app
 {
     perspective_camera cam;
     std::unique_ptr<arcball_controller> arcball;
@@ -24,8 +24,8 @@ struct sample_engine_scene final : public polymer_app
     GlShader matcapShader;
     GlTexture2D matcapTexture;
 
-    sample_engine_scene();
-    ~sample_engine_scene();
+    sample_gl_render();
+    ~sample_gl_render();
 
     void on_window_resize(int2 size) override;
     void on_input(const app_input_event & event) override;
@@ -70,7 +70,7 @@ void draw_mesh_matcap(GlShader & shader, GlMesh & mesh, const GlTexture2D & tex,
     shader.unbind();
 }
 
-sample_engine_scene::sample_engine_scene() : polymer_app(1280, 720, "sample-gl-render")
+sample_gl_render::sample_gl_render() : polymer_app(1280, 720, "sample-gl-render")
 {
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
@@ -95,11 +95,11 @@ sample_engine_scene::sample_engine_scene() : polymer_app(1280, 720, "sample-gl-r
     cam.look_at({ 0, 0, 2 }, { 0, 0.1f, 0 });
 }
 
-sample_engine_scene::~sample_engine_scene() {}
+sample_gl_render::~sample_gl_render() {}
 
-void sample_engine_scene::on_window_resize(int2 size) {}
+void sample_gl_render::on_window_resize(int2 size) {}
 
-void sample_engine_scene::on_input(const app_input_event & event)
+void sample_gl_render::on_input(const app_input_event & event)
 {
     deltaMotion = (length(lastEvent.cursor - event.cursor) > 0);
 
@@ -116,13 +116,13 @@ void sample_engine_scene::on_input(const app_input_event & event)
     lastEvent = event;
 }
 
-void sample_engine_scene::on_update(const app_update_event & e)
+void sample_gl_render::on_update(const app_update_event & e)
 {
     int width, height;
     glfwGetWindowSize(window, &width, &height);
 }
 
-void sample_engine_scene::on_draw()
+void sample_gl_render::on_draw()
 {
     glfwMakeContextCurrent(window);
 
@@ -161,7 +161,7 @@ int main(int argc, char * argv[])
 {
     try
     {
-        sample_engine_scene app;
+        sample_gl_render app;
         app.main_loop();
     }
     catch (const std::exception & e)
