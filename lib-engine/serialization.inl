@@ -43,7 +43,7 @@ struct input_field { };
 
 CEREAL_REGISTER_TYPE_WITH_NAME(material_interface, "material_interface");
 CEREAL_REGISTER_TYPE_WITH_NAME(polymer_pbr_standard, "polymer_pbr_standard");
-CEREAL_REGISTER_TYPE_WITH_NAME(polymer_blinn_phong_standard, "polymer_pbr_standard");
+CEREAL_REGISTER_TYPE_WITH_NAME(polymer_blinn_phong_standard, "polymer_blinn_phong_standard");
 CEREAL_REGISTER_POLYMORPHIC_RELATION(material_interface, polymer_pbr_standard);
 CEREAL_REGISTER_POLYMORPHIC_RELATION(material_interface, polymer_blinn_phong_standard);
 
@@ -80,7 +80,14 @@ template<class F> void visit_fields(polymer_pbr_standard & o, F f)
 
 template<class F> void visit_fields(polymer_blinn_phong_standard & o, F f)
 {
-    f("program_handle", o.shader, editor_hidden{});
+    f("diffuse_color", o.diffuseColor);
+    f("specular_color", o.specularColor);
+    f("specular_shininess", o.specularShininess);
+    f("specular_strength", o.specularStrength);
+    f("texcoord_scale", o.texcoordScale, range_metadata<int>{ -32, 32 });
+    f("diffuse_handle", o.diffuse);
+    f("normal_handle", o.normal);
+    f("program_handle", o.shader, editor_hidden{}); // hidden because shaders are tied to materials
 }
 
 namespace cereal

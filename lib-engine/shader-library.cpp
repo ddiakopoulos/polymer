@@ -45,7 +45,7 @@ void gl_shader_monitor::watch(const std::string & name, const std::string & vert
     create_handle_for_asset(name.c_str(), std::move(asset));
 }
 
-void gl_shader_monitor::watch( const std::string & name, const std::string & vert_path, const std::string & frag_path, const std::string & include_path)
+void gl_shader_monitor::watch(const std::string & name, const std::string & vert_path, const std::string & frag_path, const std::string & include_path)
 {
     auto asset = std::make_shared<gl_shader_asset>(name, vert_path, frag_path, "", include_path);
     assets[name] = asset;

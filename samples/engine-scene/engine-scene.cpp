@@ -70,6 +70,11 @@ sample_engine_scene::sample_engine_scene() : polymer_app(1280, 720, "sample-engi
         "../../assets/shaders/renderer/shadowcascade_geom.glsl",
         "../../assets/shaders/renderer");
 
+    for (auto & shader : shader_handle::list())
+    {
+        std::cout << "Shader Handle: " << shader.name << std::endl;
+    }
+
     fullscreen_surface.reset(new simple_texture_view());
 
     orchestrator.reset(new entity_orchestrator());
@@ -110,11 +115,43 @@ sample_engine_scene::sample_engine_scene() : polymer_app(1280, 720, "sample-engi
     // Only need to set the skybox on the |render_payload| once (unless we clear the payload)
     payload.skybox = scene.skybox.get();
 
-    scene.mat_library.reset(new polymer::material_library("../../assets/materials.json"));
+    scene.mat_library.reset(new polymer::material_library("../../assets/sample-material.json"));
 
     // Resolve asset_handles to resources on disk
     resolver.reset(new asset_resolver());
     resolver->resolve("../../assets/", &scene, scene.mat_library.get());
+
+    // Debugging
+    {
+        // Create a debug entity
+        const entity debug_sphere = orchestrator->create_entity();
+
+        // Create assets and assign them to handles
+        create_handle_for_asset("debug-sphere", make_sphere_mesh(1.f));
+        create_handle_for_asset("debug-sphere", make_sphere(1.0));
+
+        // Create mesh component for the gpu mesh
+        polymer::mesh_component mesh_component(debug_sphere);
+        mesh_component.mesh = gpu_mesh_handle("debug-sphere");
+        scene.render_system->meshes[debug_sphere] = mesh_component;
+
+        // Create material component
+        polymer::material_component mat_component(debug_sphere);
+        mat_component.material = material_handle("sample-material");
+        scene.render_system->materials[debug_sphere] = mat_component;
+
+        // Create geom component for the cpu geometry (for collision + raycasting)
+        polymer::geometry_component geom_component(debug_sphere);
+        geom_component.geom = cpu_mesh_handle("debug-sphere");
+        scene.collision_system->meshes[debug_sphere] = geom_component;
+
+        // Create transform component
+        scene.xform_system->create(debug_sphere, Pose(), { 1.f, 1.f, 1.f });
+
+        scene.name_system->set_name(debug_sphere, "debug object: sphere");
+
+        payload.render_set.push_back(debug_sphere);
+    }
 
     cam.look_at({ 0, 0, 2 }, { 0, 0.1f, 0 });
     flycam.set_camera(&cam);
@@ -144,10 +181,6 @@ void sample_engine_scene::on_draw()
     int width, height;
     glfwGetWindowSize(window, &width, &height);
 
-    glViewport(0, 0, width, height);
-    glClearColor(0.25f, 0.25f, 0.25f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
 
@@ -158,6 +191,13 @@ void sample_engine_scene::on_draw()
 
     payload.views.emplace_back(view_data(viewIndex, cam.pose, projectionMatrix));
     scene.render_system->render_frame(payload);
+
+    glUseProgram(0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, width, height);
+    glViewport(0, 0, width, height);
+    glClearColor(1.f, 0.25f, 0.25f, 1.0f);
+
     fullscreen_surface->draw(scene.render_system->get_color_texture(viewIndex));
     payload.views.clear();
 

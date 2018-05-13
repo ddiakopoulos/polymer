@@ -87,6 +87,11 @@ void polymer_blinn_phong_standard::update_uniforms()
 //   Physically-Based Metallic-Roughness Material   //
 //////////////////////////////////////////////////////
 
+polymer_pbr_standard::polymer_pbr_standard()
+{
+    shader = { "pbr-forward-lighting" };
+}
+
 void polymer_pbr_standard::resolve_variants() const
 {
     if (!compiled_shader)

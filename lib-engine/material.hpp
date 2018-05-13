@@ -62,6 +62,8 @@ namespace polymer
 
     public:
 
+        polymer_pbr_standard();
+
         virtual void update_uniforms() override final;
         virtual void use() override final;
         virtual void resolve_variants() const override final;
