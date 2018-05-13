@@ -76,7 +76,6 @@ inline void polymer_aligned_free(void * ptr)
 
 namespace polymer
 {
-
     class scoped_timer
     {
         std::string message;

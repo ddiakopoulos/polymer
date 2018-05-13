@@ -45,7 +45,7 @@ void polymer_blinn_phong_standard::resolve_variants() const
 {
     if (!compiled_shader)
     {
-        compiled_shader = shader.get()->get_variant();
+        compiled_shader = shader.get()->get_variant({ "HAS_NORMAL_MAP", "HAS_DIFFUSE_MAP" });
     }
 }
 

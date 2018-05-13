@@ -119,6 +119,13 @@ namespace polymer
                     texture_names.push_back(pbr->height.name);
                     texture_names.push_back(pbr->occlusion.name);
                 }
+
+                if (auto * phong = dynamic_cast<polymer_blinn_phong_standard*>(mat.second.get()))
+                {
+                    shader_names.push_back(phong->shader.name);
+                    texture_names.push_back(phong->diffuse.name);
+                    texture_names.push_back(phong->normal.name);
+                }
             }
 
             remove_duplicates(shader_names);

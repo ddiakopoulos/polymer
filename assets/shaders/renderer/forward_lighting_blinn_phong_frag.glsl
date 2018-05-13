@@ -1,4 +1,5 @@
 #include "renderer_common.glsl"
+#include "colorspace_conversions.glsl"
 
 in vec3 v_world_position;
 in vec3 v_view_space_position;

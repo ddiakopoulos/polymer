@@ -12,7 +12,7 @@ struct sample_engine_scene final : public polymer_app
     perspective_camera cam;
     fps_camera_controller flycam;
 
-    gl_shader_monitor shaderMonitor{ "../assets/" };
+    gl_shader_monitor shaderMonitor{ "../../assets/" };
 
     std::unique_ptr<entity_orchestrator> orchestrator;
     std::unique_ptr<asset_resolver> resolver;
@@ -127,8 +127,8 @@ sample_engine_scene::sample_engine_scene() : polymer_app(1280, 720, "sample-engi
         const entity debug_sphere = orchestrator->create_entity();
 
         // Create assets and assign them to handles
-        create_handle_for_asset("debug-sphere", make_sphere_mesh(1.f));
-        create_handle_for_asset("debug-sphere", make_sphere(1.0));
+        create_handle_for_asset("debug-sphere", make_icosasphere());
+        create_handle_for_asset("debug-sphere", make_mesh_from_geometry(make_icosasphere()));
 
         // Create mesh component for the gpu mesh
         polymer::mesh_component mesh_component(debug_sphere);
