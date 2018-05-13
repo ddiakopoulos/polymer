@@ -119,9 +119,10 @@ void stable_cascaded_shadows::pre_draw()
     shader.uniform("u_cascadeProjMatrixArray", uniforms::NUM_CASCADES, projMatrices);
 }
 
-GlShader & stable_cascaded_shadows::get_program()
+void stable_cascaded_shadows::update_shadow_matrix(const float4x4 & shadowModelMatrix)
 {
-    return program.get()->get_variant()->shader;
+    auto & shader = program.get()->get_variant()->shader;
+    shader.uniform("u_modelShadowMatrix", shadowModelMatrix);
 }
 
 void stable_cascaded_shadows::post_draw()
@@ -186,11 +187,16 @@ void pbr_render_system::run_depth_prepass(const view_data & view, const render_p
 
     auto & shader = renderPassEarlyZ.get()->get_variant()->shader;
     shader.bind();
+
     for (entity e : scene.render_set)
     {
-        update_per_object_uniform_buffer(obj, view);
-        obj->draw();
+        const Pose & p = xform_system->get_world_transform(e)->world_pose;
+        const float3 & scale = xform_system->get_local_transform(e)->local_scale;
+        const bool receiveShadow = materials[e].receive_shadow;
+        update_per_object_uniform_buffer(p, scale, receiveShadow, view);
+        meshes[e].draw();
     }
+
     shader.unbind();
 
     // Restore color mask state
@@ -224,11 +230,13 @@ void pbr_render_system::run_shadow_pass(const view_data & view, const render_pay
 
     for (entity e : scene.render_set)
     {
-        if (obj->get_cast_shadow())
+        if (materials[e].cast_shadow)
         {
-            const float4x4 modelMatrix = mul(obj->get_pose().matrix(), make_scaling_matrix(obj->get_scale()));
-            shadow->get_program().uniform("u_modelShadowMatrix", modelMatrix);
-            obj->draw();
+            const Pose & p = xform_system->get_world_transform(e)->world_pose;
+            const float3 & scale = xform_system->get_local_transform(e)->local_scale;
+            const float4x4 modelMatrix = mul(p.matrix(), scale);
+            shadow->update_shadow_matrix(modelMatrix);
+            meshes[e].draw();
         }
     }
 
@@ -248,10 +256,16 @@ void pbr_render_system::run_forward_pass(std::vector<entity> & renderQueueMateri
 
     for (entity e : renderQueueMaterial)
     {
-        update_per_object_uniform_buffer(r, view);
+        const Pose & p = xform_system->get_world_transform(e)->world_pose;
+        const float3 & scale = xform_system->get_local_transform(e)->local_scale;
+        const bool receiveShadow = materials[e].receive_shadow;
 
-        material_interface * mat = r->get_material();
+        update_per_object_uniform_buffer(p, scale, receiveShadow, view);
+
+        material_interface * mat = materials[e].material.get().get();
         mat->update_uniforms();
+
+        // todo - handle other specific material requirements here
         if (auto * mr = dynamic_cast<polymer_pbr_standard*>(mat))
         {
             if (settings.shadowsEnabled)
@@ -264,7 +278,7 @@ void pbr_render_system::run_forward_pass(std::vector<entity> & renderQueueMateri
         }
         mat->use();
 
-        r->draw();
+        meshes[e].draw();
     }
 
     if (settings.useDepthPrepass)
@@ -377,22 +391,12 @@ void pbr_render_system::render_frame(const render_payload & scene)
     assert(settings.cameraCount == scene.views.size());
     assert(directional_lights.size() == 1);
 
-    base_system * xform_base = orchestrator->get_system(get_typeid<world_transform_component>());
-    transform_system * xform_system = dynamic_cast<transform_system *>(xform_base);
-
-    cpuProfiler.begin("build-transient_renderable");
-    std::vector<transient_renderable> transient_renderables(scene.render_set.size());
-
-    for (int i = 0; i < scene.render_set.size(); ++i)
+    if (!xform_system)
     {
-
+        base_system * xform_base = orchestrator->get_system(get_typeid<world_transform_component>());
+        xform_system = dynamic_cast<transform_system *>(xform_base);
+        assert(xform_system != nullptr);
     }
-
-    for (entity e : scene.render_set)
-    {
-        transient_renderable
-    }
-    cpuProfiler.end("build-transient_renderable");
 
     cpuProfiler.begin("renderloop");
 
@@ -474,7 +478,7 @@ void pbr_render_system::render_frame(const render_payload & scene)
     perScene.set_buffer_data(sizeof(b), &b, GL_STREAM_DRAW);
 
     // We follow the sorting strategy outlined here: http://realtimecollisiondetection.net/blog/?p=86
-    auto materialSortFunc = [xform_system, shadowAndCullingView, this](entity lhs, entity rhs)
+    auto materialSortFunc = [this, shadowAndCullingView](entity lhs, entity rhs)
     {
         const float lDist = distance(shadowAndCullingView.pose.position, xform_system->get_world_transform(lhs)->world_pose.position);
         const float rDist = distance(shadowAndCullingView.pose.position, xform_system->get_world_transform(rhs)->world_pose.position);
@@ -488,7 +492,7 @@ void pbr_render_system::render_frame(const render_payload & scene)
         return lDist < rDist;
     };
 
-    auto distanceSortFunc = [xform_system, shadowAndCullingView](entity lhs, entity rhs)
+    auto distanceSortFunc = [this, shadowAndCullingView](entity lhs, entity rhs)
     {
         const float lDist = distance(shadowAndCullingView.pose.position, xform_system->get_world_transform(lhs)->world_pose.position);
         const float rDist = distance(shadowAndCullingView.pose.position, xform_system->get_world_transform(rhs)->world_pose.position);

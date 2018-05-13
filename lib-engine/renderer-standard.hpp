@@ -49,12 +49,12 @@ namespace polymer
         std::vector<float4x4> shadowMatrices;
 
         stable_cascaded_shadows();
-        void update_cascades(const float4x4 & view, const float near, const float far, const float aspectRatio, const float vfov, const float3 & lightDir);
 
+        void update_cascades(const float4x4 & view, const float near, const float far, const float aspectRatio, const float vfov, const float3 & lightDir);
+        void update_shadow_matrix(const float4x4 & shadowModelMatrix);
         void pre_draw();
         void post_draw();
 
-        GlShader & get_program();
         GLuint get_output_texture() const;
     };
 
@@ -116,18 +116,11 @@ namespace polymer
 
     class pbr_render_system : public base_system
     {
-        struct transient_renderable
-        {
-            entity e;
-            world_transform_component * transform;
-            mesh_component * mesh;
-            material_component * material;
-        };
-
         std::unordered_map<entity, mesh_component> meshes;
         std::unordered_map<entity, material_component> materials;
         std::unordered_map<entity, point_light_component> point_lights;
         std::unordered_map<entity, directional_light_component> directional_lights;
+        transform_system * xform_system{ nullptr };// dependency
 
         simple_cpu_timer timer;
 
@@ -150,7 +143,7 @@ namespace polymer
         shader_handle renderPassEarlyZ = { "depth-prepass" };
         shader_handle renderPassTonemap = { "post-tonemap" };
 
-        void update_per_object_uniform_buffer(const Pose & p, const float3 & scale, const bool recieveShadow, const view_data & d);
+        void update_per_object_uniform_buffer(const Pose & p, const float3 & scale, const bool receiveShadow, const view_data & d);
         void run_depth_prepass(const view_data & view, const render_payload & scene);
         void run_skybox_pass(const view_data & view, const render_payload & scene);
         void run_shadow_pass(const view_data & view, const render_payload & scene);
