@@ -29,11 +29,11 @@ namespace polymer
         void look_at(const float3 & eyePoint, const float3 target) { pose = look_at_pose_rh(eyePoint, target); }
         void look_at(const float3 & eyePoint, float3 const & target, float3 const & worldup) { pose = look_at_pose_rh(eyePoint, target, worldup); }
 
-        Ray get_world_ray(const float2 cursor, const float2 viewport)
+        Ray get_world_ray(const float2 cursor, const float2 viewport) const
         {
             const float aspect = viewport.x / viewport.y;
-            auto cameraRay = ray_from_viewport_pixel(cursor, viewport, get_projection_matrix(aspect));
-            return pose * cameraRay;
+            const Ray r = ray_from_viewport_pixel(cursor, viewport, get_projection_matrix(aspect));
+            return pose * r;
         }
     };
 
