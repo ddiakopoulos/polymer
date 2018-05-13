@@ -64,6 +64,10 @@ namespace polymer
         f("cascade_split", o.splitLambda, range_metadata<float>{ 0.1f, 1.0f });
     }
 
+    ////////////////////////////////////////
+    //   render system data + utilities   //
+    ////////////////////////////////////////
+
     struct renderer_settings
     {
         int2 renderSize{ 0, 0 };
@@ -132,7 +136,7 @@ namespace polymer
         GlBuffer perObject;
 
         // MSAA Targets
-        GlRenderbuffer multisampleRenderbuffers[2];
+        GlRenderbuffer multisampleRenderbuffers[2]; 
         GlFramebuffer multisampleFramebuffer;
 
         // Non-MSAA Targets
@@ -150,7 +154,7 @@ namespace polymer
         void run_depth_prepass(const view_data & view, const render_payload & scene);
         void run_skybox_pass(const view_data & view, const render_payload & scene);
         void run_shadow_pass(const view_data & view, const render_payload & scene);
-        void run_forward_pass(std::vector<entity> & renderQueueMaterial, const view_data & view, const render_payload & scene);
+        void run_forward_pass(std::vector<entity> & render_queue, const view_data & view, const render_payload & scene);
         void run_post_pass(const view_data & view, const render_payload & scene);
 
     public:

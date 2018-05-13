@@ -64,7 +64,7 @@ void stable_cascaded_shadows::update_cascades(const float4x4 & view, const float
         float sphereRadius = 0.0f;
         for (int i = 0; i < 8; ++i)
         {
-            float dist = length(splitFrustumVerts[i].xyz() - frustumCentroid) * 1.0;
+            const float dist = length(splitFrustumVerts[i].xyz() - frustumCentroid) * 1.0;
             sphereRadius = std::max(sphereRadius, dist);
         }
 
@@ -379,6 +379,20 @@ void pbr_render_system::render_frame(const render_payload & scene)
 
     base_system * xform_base = orchestrator->get_system(get_typeid<world_transform_component>());
     transform_system * xform_system = dynamic_cast<transform_system *>(xform_base);
+
+    cpuProfiler.begin("build-transient_renderable");
+    std::vector<transient_renderable> transient_renderables(scene.render_set.size());
+
+    for (int i = 0; i < scene.render_set.size(); ++i)
+    {
+
+    }
+
+    for (entity e : scene.render_set)
+    {
+        transient_renderable
+    }
+    cpuProfiler.end("build-transient_renderable");
 
     cpuProfiler.begin("renderloop");
 
