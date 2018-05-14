@@ -60,6 +60,11 @@ namespace polymer
     };
     POLYMER_SETUP_TYPEID(mesh_component);
 
+    template<class F> void visit_fields(mesh_component & o, F f)
+    {
+        f("gpu_mesh_handle", o.mesh);
+    }
+
     // Material
     struct material_component : public base_component
     {
@@ -71,6 +76,13 @@ namespace polymer
     };
     POLYMER_SETUP_TYPEID(material_component);
 
+    template<class F> void visit_fields(material_component & o, F f)
+    {
+        f("material_handle", o.material);
+        f("receive_shadow", o.receive_shadow);
+        f("cast_shadow", o.cast_shadow);
+    }
+
     // Geometry (CPU-side runtime_mesh)
     struct geometry_component : public base_component
     {
@@ -79,6 +91,11 @@ namespace polymer
         geometry_component(entity e) : base_component(e) {}
     };
     POLYMER_SETUP_TYPEID(geometry_component);
+
+    template<class F> void visit_fields(geometry_component & o, F f)
+    {
+        f("cpu_mesh_handle", o.geom);
+    }
 
     // Point Light
     struct point_light_component : public base_component
@@ -90,6 +107,14 @@ namespace polymer
     };
     POLYMER_SETUP_TYPEID(point_light_component);
 
+    template<class F> void visit_fields(point_light_component & o, F f)
+    {
+        f("enabled", o.enabled);
+        f("position", o.data.position);
+        f("color", o.data.color);
+        f("radius", o.data.radius);
+    }
+
     // Directional Light
     struct directional_light_component : public base_component
     {
@@ -99,6 +124,14 @@ namespace polymer
         directional_light_component(entity e) : base_component(e) {}
     };
     POLYMER_SETUP_TYPEID(directional_light_component);
+
+    template<class F> void visit_fields(directional_light_component & o, F f)
+    {
+        f("enabled", o.enabled);
+        f("direction", o.data.direction);
+        f("color", o.data.color);
+        f("amount", o.data.amount);
+    }
 
     // Collision System
     class collision_system final : public base_system
