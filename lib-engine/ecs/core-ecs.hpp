@@ -60,8 +60,8 @@ namespace polymer
 
         // Helper function to signal to the entity manager that this system operates on these types of components
         template <typename S>
-        void register_system_for_type(S * system, poly_typeid type) { register_system_for_type(get_typeid<S>(), type); }
-        void register_system_for_type(poly_typeid system_type, poly_typeid type);
+        void register_system_for_type(S * system, poly_typeid component_type) { register_system_for_type(get_typeid<S>(), component_type); }
+        void register_system_for_type(poly_typeid system_type, poly_typeid component_type);
     };
 
     /////////////////////////////

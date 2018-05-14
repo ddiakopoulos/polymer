@@ -3,11 +3,12 @@
 #ifndef imgui_utils_hpp
 #define imgui_utils_hpp
 
+#include "scene.hpp"
 #include "gl-api.hpp"
+#include "gl-imgui.hpp"
+#include "material.hpp"
 #include "uniforms.hpp"
 #include "asset-handle-utils.hpp"
-#include "material.hpp"
-#include "gl-imgui.hpp"
 #include "serialization.inl"
 #include "imgui/imgui_internal.h"
 
@@ -166,18 +167,13 @@ build_imgui(const char * label, T & object)
     return r;
 }
 
-template<class T> bool 
-inspect_object(const char * label, T * ptr)
+bool inspect_entity(const char * label)
 {
     bool r = false;
-    visit_subclasses(ptr, [&r, label](const char * name, auto * p)
-    {
-        if (p)
-        {
-            if (label) r = build_imgui((std::string(label) + " - " + name).c_str(), *p);
-            else r = build_imgui(name, *p);
-        }
-    });
+
+    if (label) r = build_imgui((std::string(label) + " - " + name).c_str(), *p);
+    else r = build_imgui(name, *p);
+
     return r;
 }
 

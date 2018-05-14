@@ -37,6 +37,8 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
     glfwGetWindowSize(window, &width, &height);
     glViewport(0, 0, width, height);
 
+    log::get()->add_sink(std::make_shared<ImGui::spdlog_editor_sink>(log));
+
     auto droidSansTTFBytes = read_file_binary("../assets/fonts/droid_sans.ttf");
 
     igm.reset(new gui::imgui_instance(window));
@@ -45,8 +47,6 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
 
     cam.look_at({ 0, 9.5f, -6.0f }, { 0, 0.1f, 0 });
     flycam.set_camera(&cam);
-
-    log::get()->add_sink(std::make_shared<ImGui::spdlog_editor_sink>(log));
 
     load_editor_intrinsic_assets("../assets/models/runtime/");
 
@@ -475,21 +475,21 @@ void scene_editor_app::on_draw()
         }
         menu.end();
 
-        menu.begin("Spawn");
-        visit_subclasses((GameObject*)0, [&](const char * name, auto * p)
-        {
-            if (menu.item(name))
-            {
-                auto obj = std::make_shared<std::remove_reference_t<decltype(*p)>>();
-                obj->set_material(material_library::kDefaultMaterialId);
-                scene.objects.push_back(obj);
-
-                // Newly spawned objects are selected by default
-                std::vector<GameObject *> selectedObjects;
-                selectedObjects.push_back(obj.get());
-                gizmo_selector->set_selection(selectedObjects);
-            }
-        });
+        //menu.begin("Spawn");
+        //visit_subclasses((GameObject*)0, [&](const char * name, auto * p)
+        //{
+        //    if (menu.item(name))
+        //    {
+        //        auto obj = std::make_shared<std::remove_reference_t<decltype(*p)>>();
+        //        obj->set_material(material_library::kDefaultMaterialId);
+        //        scene.objects.push_back(obj);
+        //
+        //        // Newly spawned objects are selected by default
+        //        std::vector<entity> selectedObjects;
+        //        selectedObjects.push_back(obj.get());
+        //        gizmo_selector->set_selection(selectedObjects);
+        //    }
+        //});
         menu.end();
 
     }
@@ -509,19 +509,17 @@ void scene_editor_app::on_draw()
         ui_rect topRightPane = { { int2(split2.second.min()) }, { int2(split2.second.max()) } };  // top half
         ui_rect bottomRightPane = { { int2(split2.first.min()) },{ int2(split2.first.max()) } };  // bottom half
 
-        gui::imgui_fixed_window_begin("Entity Inspector", topRightPane);
+        gui::imgui_fixed_window_begin("Inspector", topRightPane);
         if (gizmo_selector->get_selection().size() >= 1)
         {
-            inspect_object(nullptr, gizmo_selector->get_selection()[0]);
+            inspect_entity(nullptr, gizmo_selector->get_selection()[0]);
         }
         gui::imgui_fixed_window_end();
 
-        // Scene Object List
-        gui::imgui_fixed_window_begin("Scene Entity List", bottomRightPane);
-
+        gui::imgui_fixed_window_begin("Scene Entities", bottomRightPane);
         for (size_t i = 0; i < scene.render_system->meshes.size(); ++i)
         {
-            scene.render_system->meshes[i];
+            //auto entity = scene.render_system->meshes[i];
 
             ImGui::PushID(static_cast<int>(i));
             bool selected = gizmo_selector->selected(scene.objects[i].get());
@@ -548,7 +546,6 @@ void scene_editor_app::on_draw()
 
         gui::imgui_fixed_window_begin("Renderer", topLeftPane);
         {
-
             ImGui::Dummy({ 0, 10 });
 
             if (ImGui::TreeNode("Core"))
@@ -568,7 +565,7 @@ void scene_editor_app::on_draw()
 
             if (ImGui::TreeNode("Procedural Sky"))
             {
-                inspect_object(nullptr, scene_payload.skybox);
+                inspect_entity(nullptr, scene_payload.skybox);
                 ImGui::TreePop();
             }
 
@@ -602,7 +599,6 @@ void scene_editor_app::on_draw()
             log.Draw("-");
         }
         gui::imgui_fixed_window_end();
-
     }
 
     igm->end_frame();
