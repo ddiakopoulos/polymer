@@ -563,11 +563,11 @@ void scene_editor_app::on_draw()
 
             ImGui::Dummy({ 0, 10 });
 
-            if (ImGui::TreeNode("Procedural Sky"))
-            {
-                inspect_entity(nullptr, scene_payload.skybox);
-                ImGui::TreePop();
-            }
+            //if (ImGui::TreeNode("Procedural Sky"))
+            //{
+            //    inspect_entity(nullptr, scene_payload.skybox);
+            //    ImGui::TreePop();
+            //}
 
             ImGui::Dummy({ 0, 10 });
 

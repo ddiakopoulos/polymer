@@ -55,7 +55,7 @@ struct material_editor_window final : public glfw_window
     int assetSelection = -1;
     const uint32_t previewHeight = 420;
     material_library & lib;
-    selection_controller<GameObject> & selector;
+    selection_controller & selector;
     StaticMesh * inspectedObject{ nullptr };
 
     material_editor_window(gl_context * context, int w, int h, const std::string title, int samples, polymer::material_library & lib, selection_controller<GameObject> & selector)
@@ -279,7 +279,7 @@ struct material_editor_window final : public glfw_window
                 ImGui::Dummy({ 0, 12 });
 
                 // Inspect
-                inspect_object(nullptr, mat.get());
+                inspect_entity(nullptr, mat.get());
 
                 ImGui::Dummy({ 0, 12 });
 

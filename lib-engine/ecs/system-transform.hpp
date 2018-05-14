@@ -25,6 +25,14 @@ namespace polymer
     };
     POLYMER_SETUP_TYPEID(scene_graph_component);
 
+    template<class F> void visit_fields(scene_graph_component & o, F f)
+    {
+        f("local_pose", o.local_pose);
+        f("local_scale", o.local_scale);
+        f("parent", o.parent;
+        f("children", o.children);
+    }
+
     struct world_transform_component : public base_component
     {
         world_transform_component() {};

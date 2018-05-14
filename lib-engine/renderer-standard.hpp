@@ -116,7 +116,7 @@ namespace polymer
 
     class pbr_render_system : public base_system
     {
-        transform_system * xform_system{ nullptr };// dependency
+        transform_system * xform_system{ nullptr }; // dependency
 
         simple_cpu_timer timer;
 

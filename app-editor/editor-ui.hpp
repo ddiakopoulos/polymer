@@ -167,12 +167,21 @@ build_imgui(const char * label, T & object)
     return r;
 }
 
-bool inspect_entity(const char * label)
+// We should be using component pools to make this logic easer
+bool inspect_entity(const char * label, entity e, poly_scene * scene)
 {
     bool r = false;
+    
+    auto name = scene->name_system->get_name(e);
 
-    if (label) r = build_imgui((std::string(label) + " - " + name).c_str(), *p);
-    else r = build_imgui(name, *p);
+    if (auto * xform = scene->xform_system->get_local_transform(e))
+    {
+        if (label) r = build_imgui((std::string(label) + " - " + name).c_str(), *xform);
+        else r = build_imgui(name.c_str(), *xform);
+    }
+
+    // todo
+    // scene->render_system;
 
     return r;
 }
