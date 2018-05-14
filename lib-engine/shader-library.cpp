@@ -40,6 +40,7 @@ gl_shader_monitor::~gl_shader_monitor()
 
 void gl_shader_monitor::watch(const std::string & name, const std::string & vert_path, const std::string & frag_path)
 {
+    std::lock_guard<std::mutex> guard(watch_mutex);
     auto asset = std::make_shared<gl_shader_asset>(name, vert_path, frag_path);
     assets[name] = asset;
     create_handle_for_asset(name.c_str(), std::move(asset));
@@ -47,6 +48,7 @@ void gl_shader_monitor::watch(const std::string & name, const std::string & vert
 
 void gl_shader_monitor::watch(const std::string & name, const std::string & vert_path, const std::string & frag_path, const std::string & include_path)
 {
+    std::lock_guard<std::mutex> guard(watch_mutex);
     auto asset = std::make_shared<gl_shader_asset>(name, vert_path, frag_path, "", include_path);
     assets[name] = asset;
     create_handle_for_asset(name.c_str(), std::move(asset));
@@ -54,6 +56,7 @@ void gl_shader_monitor::watch(const std::string & name, const std::string & vert
 
 void gl_shader_monitor::watch(const std::string & name, const std::string & vert_path, const std::string & frag_path, const std::string & geom_path, const std::string & include_path)
 {
+    std::lock_guard<std::mutex> guard(watch_mutex);
     auto asset = std::make_shared<gl_shader_asset>(name, vert_path, frag_path, geom_path, include_path);
     assets[name] = asset;
     create_handle_for_asset(name.c_str(), std::move(asset));
@@ -86,7 +89,7 @@ void gl_shader_monitor::walk_asset_dir()
 
             // Each shader keeps a list of the files it includes. gl_shader_monitor watches a base path,
             // so we should be able to recompile shaders dependent on common includes
-            for (auto & includePath : asset.second->includes)
+            for (const std::string & includePath : asset.second->includes)
             {
                 if (get_filename_with_extension(path) == get_filename_with_extension(includePath))
                 {
@@ -114,7 +117,6 @@ void gl_shader_monitor::handle_recompile()
         if (asset.second->shouldRecompile)
         {
             std::lock_guard<std::mutex> guard(watch_mutex);
-
             asset.second->recompile_all();
             asset.second->shouldRecompile = false;
         }

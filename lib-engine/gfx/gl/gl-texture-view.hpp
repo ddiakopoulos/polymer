@@ -201,12 +201,15 @@ namespace polymer
             fullscreen_quad_ndc.set_elements(faces, GL_STATIC_DRAW);
         }
 
-        void draw(GLuint texture_handle)
+        void draw(const GLuint texture_handle)
         {
+            GLboolean wasDepthTestingEnabled = glIsEnabled(GL_DEPTH_TEST);
+            glDisable(GL_DEPTH_TEST);
             shader.bind();
             shader.texture("s_texture", 0, texture_handle, GL_TEXTURE_2D);
             fullscreen_quad_ndc.draw_elements();
             shader.unbind();
+            if (wasDepthTestingEnabled) glEnable(GL_DEPTH_TEST);
         }
     };
  

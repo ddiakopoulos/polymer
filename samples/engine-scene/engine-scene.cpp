@@ -145,10 +145,9 @@ sample_engine_scene::sample_engine_scene() : polymer_app(1280, 720, "sample-engi
         geom_component.geom = cpu_mesh_handle("debug-sphere");
         scene.collision_system->meshes[debug_sphere] = geom_component;
 
-        // Create transform component
+        // Create transform and name components
         scene.xform_system->create(debug_sphere, Pose(), { 1.f, 1.f, 1.f });
-
-        scene.name_system->set_name(debug_sphere, "debug object: sphere");
+        scene.name_system->create(debug_sphere, "debug object: sphere");
 
         payload.render_set.push_back(debug_sphere);
     }
@@ -191,8 +190,6 @@ void sample_engine_scene::on_draw()
 
     payload.views.emplace_back(view_data(viewIndex, cam.pose, projectionMatrix));
     scene.render_system->render_frame(payload);
-
-    glDisable(GL_DEPTH_TEST);
 
     glUseProgram(0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
