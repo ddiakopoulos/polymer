@@ -264,22 +264,20 @@ void scene_editor_app::on_input(const app_input_event & event)
 
                 entity hitObject = kInvalidEntity;
 
-                for (auto mesh : scene.collision_system->meshes)
+                for (auto & mesh : scene.collision_system->meshes)
                 {
-                    entity e = mesh.first;
-
-                    raycast_result result = obj->raycast(r);
+                    raycast_result result = scene.collision_system->raycast(mesh.first, r);
                     if (result.hit)
                     {
                         if (result.distance < best_t)
                         {
                             best_t = result.distance;
-                            hitObject = obj.get();
+                            hitObject = mesh.first;
                         }
                     }
                 }
 
-                if (hitObject) selectedObjects.push_back(hitObject);
+                if (hitObject != kInvalidEntity) selectedObjects.push_back(hitObject);
 
                 // New object was selected
                 if (selectedObjects.size() > 0)
@@ -340,7 +338,6 @@ void scene_editor_app::on_draw()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    const Pose cameraPose = cam.pose;
     const float4x4 projectionMatrix = cam.get_projection_matrix(float(width) / float(height));
     const float4x4 viewMatrix = cam.get_view_matrix();
     const float4x4 viewProjectionMatrix = mul(projectionMatrix, viewMatrix);
@@ -372,27 +369,27 @@ void scene_editor_app::on_draw()
             }
         }
 
-        // Single-viewport camera
-        scene_payload.views.push_back(view_data(0, cameraPose, projectionMatrix));
+        // Add single-viewport camera
+        scene_payload.views.push_back(view_data(0, cam.pose, projectionMatrix));
 
         editorProfiler.end("gather-scene");
 
-        // Submit scene to the renderer
+        // Submit scene to the scene renderer
         editorProfiler.begin("submit-scene");
-        renderer->render_frame(scene_payload);
+        scene.render_system->render_frame(scene_payload);
         editorProfiler.end("submit-scene");
 
+        // Draw to screen framebuffer
         glUseProgram(0);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, width, height);
-
-        fullscreen_surface->draw(renderer->get_color_texture(0));
+        fullscreen_surface->draw(scene.render_system->get_color_texture(0));
 
         gl_check_error(__FILE__, __LINE__);
     }
 
+    // Draw selected objects as wireframe without the use of the scene renderer
     editorProfiler.begin("wireframe-rendering");
-    // Selected objects as wireframe
     {
         glDisable(GL_DEPTH_TEST);
 
@@ -437,8 +434,8 @@ void scene_editor_app::on_draw()
                 cereal::deserialize_from_json(selected_open_path, scene.objects);
                 glfwSetWindowTitle(window, selected_open_path.c_str());
             }
-
         }
+
         if (menu.item("Save Scene", GLFW_MOD_CONTROL, GLFW_KEY_S, mod_enabled))
         {
             const auto save_path = windows_file_dialog("anvil scene", "json", false);
@@ -449,15 +446,18 @@ void scene_editor_app::on_draw()
                 glfwSetWindowTitle(window, save_path.c_str());
             }
         }
+
         if (menu.item("New Scene", GLFW_MOD_CONTROL, GLFW_KEY_N, mod_enabled))
         {
             gizmo_selector->clear();
             scene.objects.clear();
         }
+
         if (menu.item("Take Screenshot", GLFW_MOD_CONTROL, GLFW_KEY_EQUAL, mod_enabled))
         {
             request_screenshot("scene-editor");
         }
+
         if (menu.item("Exit", GLFW_MOD_ALT, GLFW_KEY_F4)) exit();
         menu.end();
 
@@ -475,7 +475,7 @@ void scene_editor_app::on_draw()
         }
         if (menu.item("Select All", GLFW_MOD_CONTROL, GLFW_KEY_A)) 
         {
-            std::vector<GameObject *> selectedObjects;
+            std::vector<entity> selectedObjects;
             for (auto & obj : scene.objects)
             {
                 selectedObjects.push_back(obj.get());
@@ -560,42 +560,12 @@ void scene_editor_app::on_draw()
 
             if (ImGui::TreeNode("Core"))
             {
-                renderer_settings lastSettings = renderer->settings;
+                renderer_settings lastSettings = scene.render_system->settings;
 
-                if (build_imgui("renderer", *renderer))
+                if (build_imgui("renderer", *scene.render_system))
                 {
-                    renderer->gpuProfiler.set_enabled(renderer->settings.performanceProfiling);
-                    renderer->cpuProfiler.set_enabled(renderer->settings.performanceProfiling);
-
-                    /*
-                    // fixme
-                    if (renderer->settings.shadowsEnabled != lastSettings.shadowsEnabled)
-                    {
-                        auto & shaderAsset = shaderMonitor.get_asset(pbrProgramAsset);
-                        auto & defines = shaderAsset.defines;
-
-                        if (renderer->settings.shadowsEnabled)
-                        {
-                            // Enable, but check if it's already in there first
-                            auto itr = std::find(defines.begin(), defines.end(), "ENABLE_SHADOWS");
-                            if (itr == defines.end()) defines.push_back("ENABLE_SHADOWS");
-
-                            auto render_settings_copy = renderer->settings;
-                            reset_renderer(renderer->settings.renderSize, render_settings_copy);
-                        }
-                        else
-                        {
-                            // Disable
-                            auto & defines = shaderMonitor.get_asset(pbrProgramAsset).defines;
-                            auto itr = std::find(defines.begin(), defines.end(), "ENABLE_SHADOWS");
-                            if (itr != defines.end()) defines.erase(itr);
-
-                            auto render_settings_copy = renderer->settings;
-                            reset_renderer(renderer->settings.renderSize, render_settings_copy);
-                        }
-                        shaderAsset.shouldRecompile = true;
-                    }
-                    */
+                    scene.render_system->gpuProfiler.set_enabled(scene.render_system->settings.performanceProfiling);
+                    scene.render_system->cpuProfiler.set_enabled(scene.render_system->settings.performanceProfiling);
                 }
 
                 ImGui::TreePop();
@@ -611,7 +581,7 @@ void scene_editor_app::on_draw()
 
             ImGui::Dummy({ 0, 10 });
 
-            if (auto * shadows = renderer->get_shadow_pass())
+            if (auto * shadows = scene.render_system->get_shadow_pass())
             {
                 if (ImGui::TreeNode("Cascaded Shadow Mapping"))
                 {
@@ -622,10 +592,10 @@ void scene_editor_app::on_draw()
 
             ImGui::Dummy({ 0, 10 });
 
-            if (renderer->settings.performanceProfiling)
+            if (scene.render_system->settings.performanceProfiling)
             {
-                for (auto & t : renderer->gpuProfiler.get_data()) ImGui::Text("[Renderer GPU] %s %f ms", t.first.c_str(), t.second);
-                for (auto & t : renderer->cpuProfiler.get_data()) ImGui::Text("[Renderer CPU] %s %f ms", t.first.c_str(), t.second);
+                for (auto & t : scene.render_system->gpuProfiler.get_data()) ImGui::Text("[Renderer GPU] %s %f ms", t.first.c_str(), t.second);
+                for (auto & t : scene.render_system->cpuProfiler.get_data()) ImGui::Text("[Renderer CPU] %s %f ms", t.first.c_str(), t.second);
             }
 
             ImGui::Dummy({ 0, 10 });
