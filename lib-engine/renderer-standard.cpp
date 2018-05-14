@@ -609,5 +609,11 @@ bool pbr_render_system::create(entity e, poly_typeid type, void * data)
 
 void pbr_render_system::destroy(entity e)
 {
-
+    if (e == kAllEntities)
+    {
+        meshes.clear();
+        materials.clear();
+        point_lights.clear();
+        directional_lights.clear();
+    }
 }

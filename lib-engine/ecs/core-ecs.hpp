@@ -4,6 +4,7 @@
 #define polymer_base_ecs_hpp
 
 #include <unordered_map>
+#include <limits>
 #include "typeid.hpp"
 
 namespace polymer
@@ -15,6 +16,7 @@ namespace polymer
     // An entity is an uniquely identifiable object in the Polymer runtime.
     using entity = uint64_t;
     constexpr entity kInvalidEntity = 0;
+    constexpr entity kAllEntities = std::numeric_limits<uint64_t>::max();
 
     ////////////////////////
     //   Base Component   //

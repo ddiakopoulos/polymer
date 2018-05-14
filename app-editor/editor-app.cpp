@@ -92,17 +92,22 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
 
     gizmo_selector.reset(new selection_controller(scene.xform_system));
 
-    //scene.skybox.reset(new gl_hosek_sky());
-    //scene_payload.skybox = scene.skybox.get();
-    //scene.skybox->onParametersChanged = [&]
-    //{
-    //    uniforms::directional_light updatedSun;
-    //    updatedSun.direction = scene.skybox->get_sun_direction();
-    //    updatedSun.color = float3(1.f, 1.0f, 1.0f);
-    //    updatedSun.amount = 1.0f;
-    //    scene_payload.sunlight = updatedSun;
-    //};
-    //scene.skybox->onParametersChanged(); // call for initial set
+    const entity sunlight = orchestrator.create_entity();
+
+    // Setup the skybox; link internal parameters to a directional light entity owned by the render system. 
+    scene.skybox.reset(new gl_hosek_sky());
+    scene.skybox->onParametersChanged = [&]
+    {
+        scene.render_system->directional_lights[sunlight].data.direction = scene.skybox->get_sun_direction();
+        scene.render_system->directional_lights[sunlight].data.color = float3(1.f, 1.0f, 1.0f);
+        scene.render_system->directional_lights[sunlight].data.amount = 1.0f;
+    };
+
+    // Set initial values on the skybox with the sunlight entity we just created
+    scene.skybox->onParametersChanged();
+
+    // Only need to set the skybox on the |render_payload| once (unless we clear the payload)
+    scene_payload.skybox = scene.skybox.get();
 
     // fixme to be resolved
     auto radianceBinary = read_file_binary("../assets/textures/envmaps/wells_radiance.dds");
@@ -123,17 +128,6 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
     // Resolve asset_handles to resources on disk
     resolver.reset(new asset_resolver());
     resolver->resolve("../assets/", &scene, scene.mat_library.get());
-
-    // Setup Debug visualizations
-    layout.bounds = { 0, 0, (float)width, (float)height };
-    layout.add_child({ { 0.0000f, +20 },{ 0, +20 },{ 0.1667f, -10 },{ 0.133f, +10 } });
-    layout.add_child({ { 0.1667f, +20 },{ 0, +20 },{ 0.3334f, -10 },{ 0.133f, +10 } });
-    layout.add_child({ { 0.3334f, +20 },{ 0, +20 },{ 0.5009f, -10 },{ 0.133f, +10 } });
-    layout.add_child({ { 0.5000f, +20 },{ 0, +20 },{ 0.6668f, -10 },{ 0.133f, +10 } });
-    layout.recompute();
-
-    debugViews.push_back(std::make_shared<gl_texture_view_2d>(true));
-    debugViews.push_back(std::make_shared<gl_texture_view_2d>(true, float2(cam.nearclip, cam.farclip)));
 }
 
 scene_editor_app::~scene_editor_app()
@@ -180,9 +174,6 @@ void scene_editor_app::on_drop(std::vector<std::string> filepaths)
 
 void scene_editor_app::on_window_resize(int2 size) 
 { 
-    layout.bounds = { 0, 0, (float)size.x, (float)size.y };
-    layout.recompute();
-
     // Iconification/minimization triggers an on_window_resize event with a zero size
     if (size.x > 0 && size.y > 0)
     {
@@ -232,7 +223,7 @@ void scene_editor_app::on_input(const app_input_event & event)
             // Togle drawing ImGUI
             if (event.value[0] == GLFW_KEY_TAB && event.action == GLFW_RELEASE)
             {
-                showUI = !showUI;
+                show_imgui = !show_imgui;
             }
 
             if (event.value[0] == GLFW_KEY_SPACE && event.action == GLFW_RELEASE)
@@ -345,6 +336,7 @@ void scene_editor_app::on_draw()
     {
         editorProfiler.begin("gather-scene");
 
+        /*
         // Remember to clear any transient per-frame data
         scene_payload.pointLights.clear();
         scene_payload.renderSet.clear();
@@ -368,6 +360,7 @@ void scene_editor_app::on_draw()
                 scene_payload.renderSet.push_back(r);
             }
         }
+        */
 
         // Add single-viewport camera
         scene_payload.views.push_back(view_data(0, cam.pose, projectionMatrix));
@@ -388,28 +381,24 @@ void scene_editor_app::on_draw()
         gl_check_error(__FILE__, __LINE__);
     }
 
-    // Draw selected objects as wireframe without the use of the scene renderer
+    // Draw selected objects as wireframe by directly
     editorProfiler.begin("wireframe-rendering");
     {
         glDisable(GL_DEPTH_TEST);
 
-        auto & program = wireframeHandle.get()->get_variant()->shader;
+        GlShader & program = wireframeHandle.get()->get_variant()->shader;
 
         program.bind();
-
         program.uniform("u_eyePos", cam.get_eye_point());
         program.uniform("u_viewProjMatrix", viewProjectionMatrix);
-
-        for (auto obj : gizmo_selector->get_selection())
+        for (const entity e : gizmo_selector->get_selection())
         {
-            if (auto * r = dynamic_cast<Renderable*>(obj))
-            {
-                auto modelMatrix = mul(obj->get_pose().matrix(), make_scaling_matrix(obj->get_scale()));
-                program.uniform("u_modelMatrix", modelMatrix);
-                r->draw();
-            }
+            const Pose p = scene.xform_system->get_world_transform(e)->world_pose;
+            const float3 scale = scene.xform_system->get_local_transform(e)->local_scale;
+            const float4x4 modelMatrix = mul(p.matrix(), make_scaling_matrix(scale));
+            program.uniform("u_modelMatrix", modelMatrix);
+            scene.render_system->meshes[e].draw();
         }
-
         program.unbind();
 
         glEnable(GL_DEPTH_TEST);
@@ -429,9 +418,9 @@ void scene_editor_app::on_draw()
             const auto selected_open_path = windows_file_dialog("anvil scene", "json", true);
             if (!selected_open_path.empty())
             {
+                scene.render_system->destroy(kAllEntities);
                 gizmo_selector->clear();
-                scene.objects.clear();
-                cereal::deserialize_from_json(selected_open_path, scene.objects);
+                //cereal::deserialize_from_json(selected_open_path, scene.objects);
                 glfwSetWindowTitle(window, selected_open_path.c_str());
             }
         }
@@ -442,7 +431,7 @@ void scene_editor_app::on_draw()
             if (!save_path.empty())
             {
                 gizmo_selector->clear();
-                write_file_text(save_path, cereal::serialize_to_json(scene.objects));
+                //write_file_text(save_path, cereal::serialize_to_json(scene.objects));
                 glfwSetWindowTitle(window, save_path.c_str());
             }
         }
@@ -450,7 +439,7 @@ void scene_editor_app::on_draw()
         if (menu.item("New Scene", GLFW_MOD_CONTROL, GLFW_KEY_N, mod_enabled))
         {
             gizmo_selector->clear();
-            scene.objects.clear();
+            scene.render_system->destroy(kAllEntities);
         }
 
         if (menu.item("Take Screenshot", GLFW_MOD_CONTROL, GLFW_KEY_EQUAL, mod_enabled))
@@ -465,22 +454,24 @@ void scene_editor_app::on_draw()
         if (menu.item("Clone", GLFW_MOD_CONTROL, GLFW_KEY_D)) {}
         if (menu.item("Delete", 0, GLFW_KEY_DELETE)) 
         {
-            auto it = std::remove_if(std::begin(scene.objects), std::end(scene.objects), [this](std::shared_ptr<GameObject> obj) 
-            { 
-                return gizmo_selector->selected(obj.get());
-            });
-            scene.objects.erase(it, std::end(scene.objects));
+            // todo - destroy on all systems
+
+            //auto it = std::remove_if(std::begin(scene.objects), std::end(scene.objects), [this](std::shared_ptr<GameObject> obj) 
+            //{ 
+            //    return gizmo_selector->selected(obj.get());
+            //});
+            //scene.objects.erase(it, std::end(scene.objects));
 
             gizmo_selector->clear();
         }
         if (menu.item("Select All", GLFW_MOD_CONTROL, GLFW_KEY_A)) 
         {
-            std::vector<entity> selectedObjects;
-            for (auto & obj : scene.objects)
+            std::vector<entity> all_entities;
+            for (auto mesh : scene.render_system->meshes)
             {
-                selectedObjects.push_back(obj.get());
+                all_entities.push_back(mesh.first);
             }
-            gizmo_selector->set_selection(selectedObjects);
+            gizmo_selector->set_selection(all_entities);
         }
         menu.end();
 
@@ -506,7 +497,7 @@ void scene_editor_app::on_draw()
     editorProfiler.end("imgui-menu");
 
     editorProfiler.begin("imgui-editor");
-    if (showUI)
+    if (show_imgui)
     {
         static int horizSplit = 380;
         static int rightSplit1 = (height / 2) - 17;
@@ -515,7 +506,7 @@ void scene_editor_app::on_draw()
         auto rightRegion = ImGui::Split({ { 0.f ,17.f },{ (float)width, (float)height } }, &horizSplit, ImGui::SplitType::Right);
         auto split2 = ImGui::Split(rightRegion.second, &rightSplit1, ImGui::SplitType::Top);
 
-        ui_rect topRightPane = { { int2(split2.second.min()) }, { int2(split2.second.max()) } };    // top half
+        ui_rect topRightPane = { { int2(split2.second.min()) }, { int2(split2.second.max()) } };  // top half
         ui_rect bottomRightPane = { { int2(split2.first.min()) },{ int2(split2.first.max()) } };  // bottom half
 
         gui::imgui_fixed_window_begin("Entity Inspector", topRightPane);
@@ -528,8 +519,10 @@ void scene_editor_app::on_draw()
         // Scene Object List
         gui::imgui_fixed_window_begin("Scene Entity List", bottomRightPane);
 
-        for (size_t i = 0; i < scene.objects.size(); ++i)
+        for (size_t i = 0; i < scene.render_system->meshes.size(); ++i)
         {
+            scene.render_system->meshes[i];
+
             ImGui::PushID(static_cast<int>(i));
             bool selected = gizmo_selector->selected(scene.objects[i].get());
 
@@ -614,17 +607,6 @@ void scene_editor_app::on_draw()
 
     igm->end_frame();
     editorProfiler.end("imgui-editor");
-
-    // Debug Views
-    /*
-    {
-        glViewport(0, 0, width, height);
-        glDisable(GL_DEPTH_TEST);
-        debugViews[0]->draw(layout.children[0]->bounds, float2(width, height), renderer->get_output_texture(0));
-        debugViews[1]->draw(layout.children[1]->bounds, float2(width, height), renderer->get_output_texture(TextureType::DEPTH, 0));
-        glEnable(GL_DEPTH_TEST);
-    }
-    */
 
     {
         editorProfiler.begin("gizmo_on_draw");

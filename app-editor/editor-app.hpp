@@ -25,29 +25,23 @@ struct scene_editor_app final : public polymer_app
 {
     perspective_camera cam;
     fps_camera_controller flycam;
-
+    profiler<simple_cpu_timer> editorProfiler;
     gl_shader_monitor shaderMonitor { "../assets/" };
+    ImGui::editor_app_log log;
+    bool show_imgui = true;
 
     shader_handle wireframeHandle{ "wireframe" };
     shader_handle iblHandle{ "ibl" };
 
-    profiler<simple_cpu_timer> editorProfiler;
-
     std::unique_ptr<asset_resolver> resolver;
     std::unique_ptr<material_editor_window> material_editor;
     std::unique_ptr<selection_controller> gizmo_selector;
-
-    std::unique_ptr<gui::imgui_instance> igm;
     std::unique_ptr<simple_texture_view> fullscreen_surface;
+    std::unique_ptr<gui::imgui_instance> igm;
 
     entity_orchestrator orchestrator;
     render_payload scene_payload;
     poly_scene scene;
-
-    ImGui::editor_app_log log;
-    universal_layout_container layout;
-    std::vector<std::shared_ptr<gl_texture_view_2d>> debugViews;
-    bool showUI = true;
 
     scene_editor_app();
     ~scene_editor_app();
