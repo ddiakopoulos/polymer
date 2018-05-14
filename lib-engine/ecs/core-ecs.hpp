@@ -99,7 +99,8 @@ namespace polymer
         {
             if (!system) return;
             auto itr = systems.find(system_type);
-            if (itr == systems.end()) systems.emplace(system_type, system);
+            if (itr == systems.end()) systems.emplace(system_type, system); // new
+            else itr->second = system; // replace
         }
 
         base_system * get_system(const poly_typeid system_type)

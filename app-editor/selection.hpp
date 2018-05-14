@@ -6,6 +6,8 @@
 #include "gl-gizmo.hpp"
 #include "gl-imgui.hpp"
 #include "scene.hpp"
+#include "ecs/core-ecs.hpp"
+#include "ecs/system-transform.hpp"
 
 static inline Pose to_linalg(tinygizmo::rigid_transform & t)
 {
@@ -17,7 +19,6 @@ static inline tinygizmo::rigid_transform from_linalg(Pose & p)
     return{ reinterpret_cast<minalg::float4 &>(p.orientation), reinterpret_cast<minalg::float3 &>(p.position) };
 }
 
-template<typename T>
 class selection_controller
 {
     gl_gizmo gizmo;
@@ -25,10 +26,11 @@ class selection_controller
     tinygizmo::rigid_transform last_gizmo_selection;
 
     Pose selection;
-    std::vector<T *> selected_objects;     // Array of selected objects
-    std::vector<Pose> relative_transforms;          // Pose of the objects relative to the selection
+    std::vector<entity> selected_objects;     // Array of selected objects
+    std::vector<Pose> relative_transforms;    // Pose of the objects relative to the selection
 
-    bool gizmo_active = false;
+    bool gizmo_active{ false };
+    transform_system * xform_system{ nullptr };
 
     void compute_selection()
     {
@@ -40,7 +42,7 @@ class selection_controller
         // Single object selection
         else if (selected_objects.size() == 1)
         {
-            selection = (*selected_objects.begin())->get_pose();
+            selection = selected_objects[0]->get_pose();
         }
         // Multi-object selection
         else
@@ -75,25 +77,25 @@ class selection_controller
 
 public:
 
-    selection_controller() { }
+    selection_controller(transform_system * system) : xform_system(system) { }
 
-    bool selected(T * object) const
+    bool selected(entity object) const
     {
         return std::find(selected_objects.begin(), selected_objects.end(), object) != selected_objects.end();
     }
 
-    std::vector<T *> & get_selection()
+    std::vector<entity> get_selection()
     {
         return selected_objects;
     }
 
-    void set_selection(const std::vector<T *> & new_selection)
+    void set_selection(const std::vector<entity> & new_selection)
     {
         selected_objects = new_selection;
         compute_selection();
     }
 
-    void update_selection(T * object)
+    void update_selection(entity object)
     {
         auto it = std::find(std::begin(selected_objects), std::end(selected_objects), object);
         if (it == std::end(selected_objects)) selected_objects.push_back(object);
@@ -132,7 +134,7 @@ public:
         {
             for (int i = 0; i < selected_objects.size(); ++i)
             {
-                T * object = selected_objects[i];
+                entity object = selected_objects[i];
                 auto newPose = to_linalg(gizmo_selection) * relative_transforms[i];
                 object->set_pose(newPose);
             }

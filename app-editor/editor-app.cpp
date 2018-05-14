@@ -43,8 +43,6 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
     gui::make_light_theme();
     igm->add_font(droidSansTTFBytes);
 
-    gizmo_selector.reset(new selection_controller<GameObject>());
-
     cam.look_at({ 0, 9.5f, -6.0f }, { 0, 0.1f, 0 });
     flycam.set_camera(&cam);
 
@@ -56,11 +54,6 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
         "../assets/shaders/wireframe_vert.glsl",
         "../assets/shaders/wireframe_frag.glsl",
         "../assets/shaders/wireframe_geom.glsl",
-        "../assets/shaders/renderer");
-
-    shaderMonitor.watch("ibl", 
-        "../assets/shaders/ibl_vert.glsl",
-        "../assets/shaders/ibl_frag.glsl",
         "../assets/shaders/renderer");
 
     shaderMonitor.watch("depth-prepass",
@@ -88,31 +81,28 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
         "../assets/shaders/renderer/forward_lighting_frag.glsl",
         "../assets/shaders/renderer");
 
-    shaderMonitor.watch("blinn-phong",
-        "../assets/shaders/renderer/forward_lighting_vert.glsl",
-        "../assets/shaders/renderer/forward_lighting_blinn_phong_frag.glsl",
-        "../assets/shaders/renderer");
-
     fullscreen_surface.reset(new simple_texture_view());
 
-    renderer_settings settings;
-    settings.renderSize = int2(width, height);
-    renderer.reset(new pbr_render_system(settings));
+    renderer_settings initialSettings;
+    initialSettings.renderSize = int2(width, height);
+    scene.render_system = orchestrator.create_system<pbr_render_system>(&orchestrator, initialSettings);
+    scene.collision_system = orchestrator.create_system<collision_system>(&orchestrator);
+    scene.xform_system = orchestrator.create_system<transform_system>(&orchestrator);
+    scene.name_system = orchestrator.create_system<name_system>(&orchestrator);
 
-    sceneData.ibl_irradianceCubemap = "wells-irradiance-cubemap";
-    sceneData.ibl_radianceCubemap = "wells-radiance-cubemap";
+    gizmo_selector.reset(new selection_controller(scene.xform_system));
 
-    scene.skybox.reset(new gl_hosek_sky());
-    sceneData.skybox = scene.skybox.get();
-    scene.skybox->onParametersChanged = [&]
-    {
-        uniforms::directional_light updatedSun;
-        updatedSun.direction = scene.skybox->get_sun_direction();
-        updatedSun.color = float3(1.f, 1.0f, 1.0f);
-        updatedSun.amount = 1.0f;
-        sceneData.sunlight = updatedSun;
-    };
-    scene.skybox->onParametersChanged(); // call for initial set
+    //scene.skybox.reset(new gl_hosek_sky());
+    //scene_payload.skybox = scene.skybox.get();
+    //scene.skybox->onParametersChanged = [&]
+    //{
+    //    uniforms::directional_light updatedSun;
+    //    updatedSun.direction = scene.skybox->get_sun_direction();
+    //    updatedSun.color = float3(1.f, 1.0f, 1.0f);
+    //    updatedSun.amount = 1.0f;
+    //    scene_payload.sunlight = updatedSun;
+    //};
+    //scene.skybox->onParametersChanged(); // call for initial set
 
     // fixme to be resolved
     auto radianceBinary = read_file_binary("../assets/textures/envmaps/wells_radiance.dds");
@@ -122,22 +112,25 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
     create_handle_for_asset("wells-radiance-cubemap", load_cubemap(radianceHandle));
     create_handle_for_asset("wells-irradiance-cubemap", load_cubemap(irradianceHandle));
 
-    scene.objects.clear();
-    cereal::deserialize_from_json("../assets/scene.json", scene.objects);
+    scene_payload.ibl_irradianceCubemap = texture_handle("wells-irradiance-cubemap");
+    scene_payload.ibl_radianceCubemap = texture_handle("wells-radiance-cubemap");
 
-    scene.materialLib.reset(new polymer::material_library("../assets/materials.json"));
+    //scene.objects.clear();
+    //cereal::deserialize_from_json("../assets/scene.json", scene.objects);
+
+    scene.mat_library.reset(new polymer::material_library("../assets/materials.json"));
 
     // Resolve asset_handles to resources on disk
     resolver.reset(new asset_resolver());
-    resolver->resolve("../assets/", &scene, scene.materialLib.get());
+    resolver->resolve("../assets/", &scene, scene.mat_library.get());
 
     // Setup Debug visualizations
-    uiSurface.bounds = { 0, 0, (float)width, (float)height };
-    uiSurface.add_child({ { 0.0000f, +20 },{ 0, +20 },{ 0.1667f, -10 },{ 0.133f, +10 } });
-    uiSurface.add_child({ { 0.1667f, +20 },{ 0, +20 },{ 0.3334f, -10 },{ 0.133f, +10 } });
-    uiSurface.add_child({ { 0.3334f, +20 },{ 0, +20 },{ 0.5009f, -10 },{ 0.133f, +10 } });
-    uiSurface.add_child({ { 0.5000f, +20 },{ 0, +20 },{ 0.6668f, -10 },{ 0.133f, +10 } });
-    uiSurface.recompute();
+    layout.bounds = { 0, 0, (float)width, (float)height };
+    layout.add_child({ { 0.0000f, +20 },{ 0, +20 },{ 0.1667f, -10 },{ 0.133f, +10 } });
+    layout.add_child({ { 0.1667f, +20 },{ 0, +20 },{ 0.3334f, -10 },{ 0.133f, +10 } });
+    layout.add_child({ { 0.3334f, +20 },{ 0, +20 },{ 0.5009f, -10 },{ 0.133f, +10 } });
+    layout.add_child({ { 0.5000f, +20 },{ 0, +20 },{ 0.6668f, -10 },{ 0.133f, +10 } });
+    layout.recompute();
 
     debugViews.push_back(std::make_shared<gl_texture_view_2d>(true));
     debugViews.push_back(std::make_shared<gl_texture_view_2d>(true, float2(cam.nearclip, cam.farclip)));
@@ -187,8 +180,8 @@ void scene_editor_app::on_drop(std::vector<std::string> filepaths)
 
 void scene_editor_app::on_window_resize(int2 size) 
 { 
-    uiSurface.bounds = { 0, 0, (float)size.x, (float)size.y };
-    uiSurface.recompute();
+    layout.bounds = { 0, 0, (float)size.x, (float)size.y };
+    layout.recompute();
 
     // Iconification/minimization triggers an on_window_resize event with a zero size
     if (size.x > 0 && size.y > 0)
@@ -227,10 +220,10 @@ void scene_editor_app::on_input(const app_input_event & event)
             if (event.value[0] == GLFW_KEY_F && event.action == GLFW_RELEASE)
             {
                 if (gizmo_selector->get_selection().size() == 0) return;
-                if (auto * sel = gizmo_selector->get_selection()[0])
+                if (entity theSelection = gizmo_selector->get_selection()[0])
                 {
-                    auto selectedObjectPose = sel->get_pose();
-                    auto focusOffset = selectedObjectPose.position + float3(0.f, 0.5f, 4.f);
+                    const Pose selectedObjectPose = scene.xform_system->get_world_transform(theSelection)->world_pose;
+                    const float3 focusOffset = selectedObjectPose.position + float3(0.f, 0.5f, 4.f);
                     cam.look_at(focusOffset, selectedObjectPose.position);
                     flycam.update_yaw_pitch();
                 }
@@ -246,12 +239,12 @@ void scene_editor_app::on_input(const app_input_event & event)
             {
                 if (!material_editor)
                 {
-                    material_editor.reset(new material_editor_window(get_shared_gl_context(), 500, 1200, "", 1, *scene.materialLib.get(), *gizmo_selector.get()));
+                    material_editor.reset(new material_editor_window(get_shared_gl_context(), 500, 1200, "", 1, *scene.mat_library.get(), *gizmo_selector.get()));
                 }
                 else if (!material_editor->get_window())
                 {
                     // Workaround since there's no convenient way to reset the material_editor when it's been closed
-                    material_editor.reset(new material_editor_window(get_shared_gl_context(), 500, 1200, "", 1, *scene.materialLib.get(), *gizmo_selector.get()));
+                    material_editor.reset(new material_editor_window(get_shared_gl_context(), 500, 1200, "", 1, *scene.mat_library.get(), *gizmo_selector.get()));
                 }
             }
         }
@@ -266,12 +259,15 @@ void scene_editor_app::on_input(const app_input_event & event)
 
             if (length(r.direction) > 0 && !gizmo_selector->active())
             {
-                std::vector<GameObject *> selectedObjects;
+                std::vector<entity> selectedObjects;
                 float best_t = std::numeric_limits<float>::max();
-                GameObject * hitObject = nullptr;
 
-                for (auto & obj : scene.objects)
+                entity hitObject = kInvalidEntity;
+
+                for (auto mesh : scene.collision_system->meshes)
                 {
+                    entity e = mesh.first;
+
                     raycast_result result = obj->raycast(r);
                     if (result.hit)
                     {
@@ -312,7 +308,7 @@ void scene_editor_app::on_input(const app_input_event & event)
 
 void scene_editor_app::reset_renderer(int2 size, const renderer_settings & settings)
 {
-    renderer.reset(new pbr_render_system(settings));
+    scene.render_system = orchestrator.create_system<pbr_render_system>(&orchestrator, settings);
 }
 
 void scene_editor_app::on_update(const app_update_event & e)
@@ -353,16 +349,16 @@ void scene_editor_app::on_draw()
         editorProfiler.begin("gather-scene");
 
         // Remember to clear any transient per-frame data
-        sceneData.pointLights.clear();
-        sceneData.renderSet.clear();
-        sceneData.views.clear();
+        scene_payload.pointLights.clear();
+        scene_payload.renderSet.clear();
+        scene_payload.views.clear();
 
         // Gather Lighting
         for (auto & obj : scene.objects)
         {
             if (auto * r = dynamic_cast<PointLight*>(obj.get()))
             {
-                sceneData.pointLights.push_back(r->data);
+                scene_payload.pointLights.push_back(r->data);
             }
         }
 
@@ -372,18 +368,18 @@ void scene_editor_app::on_draw()
         {
             if (auto * r = dynamic_cast<Renderable*>(obj.get()))
             {
-                sceneData.renderSet.push_back(r);
+                scene_payload.renderSet.push_back(r);
             }
         }
 
         // Single-viewport camera
-        sceneData.views.push_back(view_data(0, cameraPose, projectionMatrix));
+        scene_payload.views.push_back(view_data(0, cameraPose, projectionMatrix));
 
         editorProfiler.end("gather-scene");
 
         // Submit scene to the renderer
         editorProfiler.begin("submit-scene");
-        renderer->render_frame(sceneData);
+        renderer->render_frame(scene_payload);
         editorProfiler.end("submit-scene");
 
         glUseProgram(0);
@@ -609,7 +605,7 @@ void scene_editor_app::on_draw()
 
             if (ImGui::TreeNode("Procedural Sky"))
             {
-                inspect_object(nullptr, sceneData.skybox);
+                inspect_object(nullptr, scene_payload.skybox);
                 ImGui::TreePop();
             }
 
@@ -654,8 +650,8 @@ void scene_editor_app::on_draw()
     {
         glViewport(0, 0, width, height);
         glDisable(GL_DEPTH_TEST);
-        debugViews[0]->draw(uiSurface.children[0]->bounds, float2(width, height), renderer->get_output_texture(0));
-        debugViews[1]->draw(uiSurface.children[1]->bounds, float2(width, height), renderer->get_output_texture(TextureType::DEPTH, 0));
+        debugViews[0]->draw(layout.children[0]->bounds, float2(width, height), renderer->get_output_texture(0));
+        debugViews[1]->draw(layout.children[1]->bounds, float2(width, height), renderer->get_output_texture(TextureType::DEPTH, 0));
         glEnable(GL_DEPTH_TEST);
     }
     */
