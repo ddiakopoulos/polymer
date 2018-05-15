@@ -180,7 +180,7 @@ namespace polymer
 
 struct poly_scene
 {
-    std::unique_ptr<polymer::material_library> mat_library;
+    std::shared_ptr<polymer::material_library> mat_library;
     std::unique_ptr<polymer::gl_procedural_sky> skybox;
     polymer::pbr_render_system * render_system;
     polymer::collision_system * collision_system;

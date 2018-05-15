@@ -6,6 +6,7 @@
 #include "material.hpp"
 #include "renderer-standard.hpp"
 #include "asset-handle-utils.hpp"
+#include "selection.hpp"
 #include "scene.hpp"
 #include "editor-ui.hpp"
 #include "arcball.hpp"
@@ -44,21 +45,30 @@ struct material_editor_window final : public glfw_window
 {
     std::unique_ptr<simple_texture_view> fullscreen_surface;
     std::unique_ptr<pbr_render_system> preview_renderer;
+    std::unique_ptr<transform_system> transform_system;
     std::unique_ptr<gui::imgui_instance> auxImgui;
-    std::unique_ptr<StaticMesh> previewMesh;
     std::unique_ptr<arcball_controller> arcball;
 
     perspective_camera previewCam;
-    render_payload previewSceneData;
+    render_payload preview_payload;
 
     std::string stringBuffer;
     int assetSelection = -1;
     const uint32_t previewHeight = 420;
-    material_library & lib;
-    selection_controller & selector;
-    StaticMesh * inspectedObject{ nullptr };
 
-    material_editor_window(gl_context * context, int w, int h, const std::string title, int samples, polymer::material_library & lib, selection_controller<GameObject> & selector)
+    std::shared_ptr<polymer::material_library> lib;
+    selection_controller & selector;
+
+    entity inspectedObject{ kInvalidEntity };
+    entity debug_sphere{ kInvalidEntity };
+
+    material_editor_window(gl_context * context, 
+        int w, int h, 
+        const std::string title, 
+        int samples, 
+        std::shared_ptr<polymer::material_library> lib,
+        selection_controller & selector,
+        entity_orchestrator & orch)
         : glfw_window(context, w, h, title, samples), lib(lib), selector(selector)
     {
         glfwMakeContextCurrent(window);
@@ -67,14 +77,22 @@ struct material_editor_window final : public glfw_window
 
         // These are created on the this gl context and cached as global variables in the asset table. It will be re-assigned
         // every time this window is opened so we don't need to worry about cleaning it up.
-        auto cap = make_icosasphere(3);
-        create_handle_for_asset("preview-cube", make_mesh_from_geometry(cap));
-        create_handle_for_asset("preview-cube", std::move(cap));
 
-        previewMesh.reset(new StaticMesh());
-        previewMesh->mesh = "preview-cube";
-        previewMesh->geom = "preview-cube";
-        previewMesh->pose.position = float3(0, 0, 0);
+        // Create a debug entity
+        debug_sphere = orch.create_entity();
+
+        // Create assets and assign them to handles
+        create_handle_for_asset("debug-sphere", make_mesh_from_geometry(make_icosasphere(3)));
+
+        // Create mesh component for the gpu mesh
+        polymer::mesh_component mesh_component(debug_sphere);
+        mesh_component.mesh = gpu_mesh_handle("debug-sphere");
+        preview_renderer->meshes[debug_sphere] = mesh_component;
+
+        // Create material component
+        // polymer::material_component mat_component(debug_sphere);
+        // mat_component.material = material_handle("sample-material");
+        // preview_renderer->materials[debug_sphere] = mat_component;
 
         renderer_settings previewSettings;
         previewSettings.renderSize = int2(w, previewHeight);
@@ -84,9 +102,13 @@ struct material_editor_window final : public glfw_window
         previewSettings.tonemapEnabled = false;
         previewSettings.shadowsEnabled = false;
 
-        preview_renderer.reset(new pbr_render_system(previewSettings));
+        preview_renderer.reset(new pbr_render_system(&orch, previewSettings));
 
-        previewCam.pose = look_at_pose_rh(float3(0, 0.25f, 2), previewMesh->pose.position);
+        transform_system->create(debug_sphere, {}, { 1.f, 1.f, 1.f });
+
+        preview_payload.render_set.push_back(debug_sphere);
+
+        previewCam.pose = look_at_pose_rh(float3(0, 0.25f, 2), float3(0, 0.001f, 0));
         auxImgui.reset(new gui::imgui_instance(window, true));
 
         auto fontAwesomeBytes = read_file_binary("../assets/fonts/font_awesome_4.ttf");
@@ -109,7 +131,9 @@ struct material_editor_window final : public glfw_window
         else if (e.type == app_input_event::CURSOR && e.drag)
         {
             arcball->mouse_drag(e.cursor);
-            previewMesh->pose.orientation = safe_normalize(qmul(arcball->currentQuat, previewMesh->pose.orientation));
+            auto p = transform_system->get_world_transform(debug_sphere)->world_pose;
+            p.orientation = safe_normalize(qmul(arcball->currentQuat, p.orientation));
+            transform_system->update_local_transform(debug_sphere, p);
         }
     }
 
@@ -124,10 +148,8 @@ struct material_editor_window final : public glfw_window
         fullscreen_surface.reset();
         preview_renderer.reset();
         auxImgui.reset();
-        previewMesh.reset();
 
-        asset_handle<GlMesh>::destroy("preview-cube");
-        asset_handle<Geometry>::destroy("preview-cube");
+        gpu_mesh_handle::destroy("debug-sphere");
 
         if (window)
         {
@@ -165,7 +187,7 @@ struct material_editor_window final : public glfw_window
                 for (auto & m : asset_handle<std::shared_ptr<material_interface>>::list()) materialNames.push_back(m.name);
 
                 // Get the object from the selection
-                GameObject * selected_object = entitySelection[0];
+                entity selected_object = entitySelection[0];
 
                 // Can it have a material?
                 if (auto * obj_as_mesh = dynamic_cast<StaticMesh *>(selected_object))
@@ -181,24 +203,23 @@ struct material_editor_window final : public glfw_window
                         mat_idx++;
                     }
                 }
-                else inspectedObject = nullptr;
+                else inspectedObject = kInvalidEntity;
             }
             else
             {
-                inspectedObject = nullptr;
+                inspectedObject = kInvalidEntity;
             }
 
             // A non-zero asset selection also means the preview mesh would have a valid material
             if (assetSelection > 0)
             {
                 // Single-viewport camera
-                previewSceneData = {};
-                previewSceneData.clear_color = float4(0, 0, 0, 0);
-                previewSceneData.renderSet.push_back(previewMesh.get());
-                previewSceneData.ibl_irradianceCubemap = "wells-irradiance-cubemap"; // these handles could be cached
-                previewSceneData.ibl_radianceCubemap = "wells-radiance-cubemap";
-                previewSceneData.views.push_back(view_data(0, previewCam.pose, previewCam.get_projection_matrix(width / float(previewHeight))));
-                preview_renderer->render_frame(previewSceneData);
+                preview_payload = {};
+                preview_payload.clear_color = float4(0, 0, 0, 0);
+                preview_payload.ibl_irradianceCubemap = texture_handle("wells-irradiance-cubemap"); // tofix - these handles could be cached
+                preview_payload.ibl_radianceCubemap = texture_handle("wells-radiance-cubemap");
+                preview_payload.views.push_back(view_data(0, previewCam.pose, previewCam.get_projection_matrix(width / float(previewHeight))));
+                preview_renderer->render_frame(preview_payload);
             }
 
             glUseProgram(0);
@@ -209,7 +230,7 @@ struct material_editor_window final : public glfw_window
             gui::imgui_fixed_window_begin("material-editor", { { 0, 0 },{ width, int(height - previewHeight) } });
 
             ImGui::Dummy({ 0, 12 });
-            ImGui::Text("Library: %s", lib.library_path.c_str());
+            ImGui::Text("Library: %s", lib->library_path.c_str());
             ImGui::Dummy({ 0, 12 });
 
             if (ImGui::Button(" " ICON_FA_PLUS " Create Material ", { 160, 24 })) ImGui::OpenPopup("Create Material");
@@ -270,8 +291,8 @@ struct material_editor_window final : public glfw_window
                     }
                 };
 
-                // This is by index
-                auto mat = asset_handle<std::shared_ptr<material_interface>>::list()[assetSelection].get();
+                // This is by index. Future: might be easier if materials were entities too.
+                auto mat = material_handle::list()[assetSelection].get();
                 const std::string material_handle_name = index_to_handle_name(assetSelection);
                 previewMesh->mat = material_handle_name;
 
@@ -300,7 +321,7 @@ struct material_editor_window final : public glfw_window
                     if (ImGui::Button("OK", ImVec2(120, 0)))
                     {
                         if (inspectedObject) inspectedObject->set_material(material_library::kDefaultMaterialId);
-                        lib.remove_material(material_handle_name);
+                        lib->remove_material(material_handle_name);
                         ImGui::CloseCurrentPopup();
                     }
 
