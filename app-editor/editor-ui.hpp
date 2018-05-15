@@ -168,20 +168,32 @@ build_imgui(const char * label, T & object)
 }
 
 // We should be using component pools to make this logic easer
-bool inspect_entity(const char * label, entity e, poly_scene * scene)
+bool inspect_scene_entity(const char * label, entity e, poly_scene & scene)
 {
     bool r = false;
     
-    auto name = scene->name_system->get_name(e);
-
-    if (auto * xform = scene->xform_system->get_local_transform(e))
+    visit_systems(&scene, [e](const char * name, auto * system_pointer)
     {
-        if (label) r = build_imgui((std::string(label) + " - " + name).c_str(), *xform);
-        else r = build_imgui(name.c_str(), *xform);
-    }
+        if (system_pointer)
+        {
+            // visit entity in system (visit_entity?)
+            //r |= build_imgui(name, *material_pointer);
+        }
+    });
 
-    // todo
-    // scene->render_system;
+    return r;
+}
+
+bool inspect_material(material_interface * material)
+{
+    bool r = false;
+    visit_subclasses(material, [](const char * name, auto * material_pointer)
+    {
+        if (material_pointer)
+        {
+            r |= build_imgui(name, *material_pointer);
+        }
+    });
 
     return r;
 }

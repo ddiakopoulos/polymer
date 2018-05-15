@@ -66,7 +66,6 @@ template<class F> void visit_fields(polymer_pbr_standard & o, F f)
     f("ambient_strength", o.ambientStrength, range_metadata<float>{ 0.f, 1.f });
     f("shadow_opacity", o.shadowOpacity, range_metadata<float>{ 0.f, 1.f });
     f("texcoord_scale", o.texcoordScale, range_metadata<int>{ -32, 32 });
-
     f("albedo_handle", o.albedo);
     f("normal_handle", o.normal);
     f("metallic_handle", o.metallic);
@@ -74,7 +73,6 @@ template<class F> void visit_fields(polymer_pbr_standard & o, F f)
     f("emissive_handle", o.emissive);
     f("height_handle", o.height);
     f("occlusion_handle", o.occlusion);
-
     f("program_handle", o.shader, editor_hidden{}); // hidden because shaders are tied to materials
 }
 

@@ -44,10 +44,10 @@ bool draw_listbox(const std::string & label, ImGuiTextFilter & filter, int & sel
 struct material_editor_window final : public glfw_window
 {
     std::unique_ptr<simple_texture_view> fullscreen_surface;
-    std::unique_ptr<pbr_render_system> preview_renderer;
-    std::unique_ptr<transform_system> transform_system;
     std::unique_ptr<gui::imgui_instance> auxImgui;
     std::unique_ptr<arcball_controller> arcball;
+    std::unique_ptr<pbr_render_system> preview_renderer;
+    std::unique_ptr<transform_system> transform_system;
 
     perspective_camera previewCam;
     render_payload preview_payload;
@@ -89,10 +89,7 @@ struct material_editor_window final : public glfw_window
         mesh_component.mesh = gpu_mesh_handle("debug-sphere");
         preview_renderer->meshes[debug_sphere] = mesh_component;
 
-        // Create material component
-        // polymer::material_component mat_component(debug_sphere);
-        // mat_component.material = material_handle("sample-material");
-        // preview_renderer->materials[debug_sphere] = mat_component;
+        // preview_renderer->materials[debug_sphere]->
 
         renderer_settings previewSettings;
         previewSettings.renderSize = int2(w, previewHeight);
@@ -292,15 +289,15 @@ struct material_editor_window final : public glfw_window
                 };
 
                 // This is by index. Future: might be easier if materials were entities too.
-                auto mat = material_handle::list()[assetSelection].get();
+                std::shared_ptr<material_interface> mat = material_handle::list()[assetSelection].get();
                 const std::string material_handle_name = index_to_handle_name(assetSelection);
-                previewMesh->mat = material_handle_name;
+                preview_renderer->materials[debug_sphere].material = material_handle(material_handle_name);
 
                 ImGui::Text("Material: %s", material_handle_name.c_str());
                 ImGui::Dummy({ 0, 12 });
 
                 // Inspect
-                inspect_entity(nullptr, mat.get());
+                inspect_material(mat.get());
 
                 ImGui::Dummy({ 0, 12 });
 
@@ -320,7 +317,10 @@ struct material_editor_window final : public glfw_window
 
                     if (ImGui::Button("OK", ImVec2(120, 0)))
                     {
-                        if (inspectedObject) inspectedObject->set_material(material_library::kDefaultMaterialId);
+                        if (inspectedObject)
+                        {
+                            inspectedObject->set_material(material_library::kDefaultMaterialId);
+                        }
                         lib->remove_material(material_handle_name);
                         ImGui::CloseCurrentPopup();
                     }
