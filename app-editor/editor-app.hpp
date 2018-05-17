@@ -35,9 +35,9 @@ struct scene_editor_app final : public polymer_app
 
     std::unique_ptr<asset_resolver> resolver;
     std::unique_ptr<material_editor_window> material_editor;
-    std::unique_ptr<selection_controller> gizmo_selector;
     std::unique_ptr<simple_texture_view> fullscreen_surface;
     std::unique_ptr<gui::imgui_instance> igm;
+    std::shared_ptr<selection_controller> gizmo_selector;
 
     entity_orchestrator orchestrator;
     render_payload scene_payload;

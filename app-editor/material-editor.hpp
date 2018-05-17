@@ -57,7 +57,7 @@ struct material_editor_window final : public glfw_window
     const uint32_t previewHeight = 420;
 
     std::shared_ptr<polymer::material_library> lib;
-    selection_controller & selector;
+    std::shared_ptr<selection_controller> selector;
 
     entity inspectedObject{ kInvalidEntity };
     entity debug_sphere{ kInvalidEntity };
@@ -66,8 +66,8 @@ struct material_editor_window final : public glfw_window
         int w, int h, 
         const std::string title, 
         int samples, 
-        std::shared_ptr<polymer::material_library> lib,
-        selection_controller & selector,
+        std::shared_ptr<material_library> lib,
+        std::shared_ptr<selection_controller> selector,
         entity_orchestrator & orch)
         : glfw_window(context, w, h, title, samples), lib(lib), selector(selector)
     {
@@ -172,7 +172,7 @@ struct material_editor_window final : public glfw_window
             glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            auto entitySelection = selector.get_selection();
+            auto entitySelection = selector->get_selection();
 
             // Only one object->material can be edited at once
             if (entitySelection.size() == 1)

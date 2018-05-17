@@ -230,12 +230,12 @@ void scene_editor_app::on_input(const app_input_event & event)
             {
                 if (!material_editor)
                 {
-                    material_editor.reset(new material_editor_window(get_shared_gl_context(), 500, 1200, "", 1, *scene.mat_library.get(), *gizmo_selector.get()));
+                    material_editor.reset(new material_editor_window(get_shared_gl_context(), 500, 1200, "", 1, scene.mat_library, gizmo_selector, orchestrator));
                 }
                 else if (!material_editor->get_window())
                 {
                     // Workaround since there's no convenient way to reset the material_editor when it's been closed
-                    material_editor.reset(new material_editor_window(get_shared_gl_context(), 500, 1200, "", 1, *scene.mat_library.get(), *gizmo_selector.get()));
+                    material_editor.reset(new material_editor_window(get_shared_gl_context(), 500, 1200, "", 1, scene.mat_library, gizmo_selector, orchestrator));
                 }
             }
         }
@@ -512,7 +512,7 @@ void scene_editor_app::on_draw()
         gui::imgui_fixed_window_begin("Inspector", topRightPane);
         if (gizmo_selector->get_selection().size() >= 1)
         {
-            inspect_scene_entity(nullptr, gizmo_selector->get_selection()[0], &scene);
+            inspect_scene_entity(nullptr, gizmo_selector->get_selection()[0], scene);
         }
         gui::imgui_fixed_window_end();
 

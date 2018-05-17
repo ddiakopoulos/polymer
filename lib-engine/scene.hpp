@@ -178,14 +178,25 @@ namespace polymer
     class pbr_render_system;
 }
 
-struct poly_scene
+class poly_scene
 {
+    std::vector<entity> active_entities;
+public:
     std::shared_ptr<polymer::material_library> mat_library;
     std::unique_ptr<polymer::gl_procedural_sky> skybox;
     polymer::pbr_render_system * render_system;
     polymer::collision_system * collision_system;
     polymer::transform_system * xform_system;
     polymer::name_system * name_system;
+    void track_entity(entity e) { active_entities.push_back(e); }
+    void clear_tracked_entities() { active_entities.clear(); }
+    void destroy(entity e)
+    {
+        visit_systems(this, [e](const char * name, auto * system_pointer)
+        {
+            if (system_pointer) system_pointer->destroy(e);
+        });
+    }
 };
 
 template<class F> void visit_systems(poly_scene * p, F f)
