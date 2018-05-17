@@ -92,7 +92,7 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
 
     gizmo_selector.reset(new selection_controller(scene.xform_system));
 
-    const entity sunlight = orchestrator.create_entity();
+    const entity sunlight = scene.track_entity(orchestrator.create_entity());
 
     // Setup the skybox; link internal parameters to a directional light entity owned by the render system. 
     scene.skybox.reset(new gl_hosek_sky());
@@ -107,7 +107,7 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
     scene.skybox->onParametersChanged();
 
     // Only need to set the skybox on the |render_payload| once (unless we clear the payload)
-    scene_payload.skybox = scene.skybox.get();
+    the_render_payload.skybox = scene.skybox.get();
 
     // fixme to be resolved
     auto radianceBinary = read_file_binary("../assets/textures/envmaps/wells_radiance.dds");
@@ -117,8 +117,8 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
     create_handle_for_asset("wells-radiance-cubemap", load_cubemap(radianceHandle));
     create_handle_for_asset("wells-irradiance-cubemap", load_cubemap(irradianceHandle));
 
-    scene_payload.ibl_irradianceCubemap = texture_handle("wells-irradiance-cubemap");
-    scene_payload.ibl_radianceCubemap = texture_handle("wells-radiance-cubemap");
+    the_render_payload.ibl_irradianceCubemap = texture_handle("wells-irradiance-cubemap");
+    the_render_payload.ibl_radianceCubemap = texture_handle("wells-radiance-cubemap");
 
     //scene.objects.clear();
     //cereal::deserialize_from_json("../assets/scene.json", scene.objects);
@@ -338,16 +338,16 @@ void scene_editor_app::on_draw()
 
         /*
         // Remember to clear any transient per-frame data
-        scene_payload.pointLights.clear();
-        scene_payload.renderSet.clear();
-        scene_payload.views.clear();
+        the_render_payload.pointLights.clear();
+        the_render_payload.renderSet.clear();
+        the_render_payload.views.clear();
 
         // Gather Lighting
         for (auto & obj : scene.objects)
         {
             if (auto * r = dynamic_cast<PointLight*>(obj.get()))
             {
-                scene_payload.pointLights.push_back(r->data);
+                the_render_payload.pointLights.push_back(r->data);
             }
         }
 
@@ -357,19 +357,19 @@ void scene_editor_app::on_draw()
         {
             if (auto * r = dynamic_cast<Renderable*>(obj.get()))
             {
-                scene_payload.renderSet.push_back(r);
+                the_render_payload.renderSet.push_back(r);
             }
         }
         */
 
         // Add single-viewport camera
-        scene_payload.views.push_back(view_data(0, cam.pose, projectionMatrix));
+        the_render_payload.views.push_back(view_data(0, cam.pose, projectionMatrix));
 
         editorProfiler.end("gather-scene");
 
         // Submit scene to the scene renderer
         editorProfiler.begin("submit-scene");
-        scene.render_system->render_frame(scene_payload);
+        scene.render_system->render_frame(the_render_payload);
         editorProfiler.end("submit-scene");
 
         // Draw to screen framebuffer
@@ -517,20 +517,18 @@ void scene_editor_app::on_draw()
         gui::imgui_fixed_window_end();
 
         gui::imgui_fixed_window_begin("Scene Entities", bottomRightPane);
-        for (size_t i = 0; i < scene.render_system->meshes.size(); ++i)
+        for (auto entity : scene.entity_list())
         {
-            //auto entity = scene.render_system->meshes[i];
+            ImGui::PushID(static_cast<int>(entity));
 
-            ImGui::PushID(static_cast<int>(i));
-            bool selected = gizmo_selector->selected(scene.objects[i].get());
-
-            // For polymorphic typeids, the trick is to dereference it first
-            std::string name = scene.objects[i]->id.size() > 0 ? scene.objects[i]->id : std::string(typeid(*scene.objects[i]).name()); 
+            const bool selected = gizmo_selector->selected(entity);
+            std::string name = scene.name_system->get_name(entity);
+            name = name.empty() ? "entity" : name;
 
             if (ImGui::Selectable(name.c_str(), &selected))
             {
                 if (!ImGui::GetIO().KeyCtrl) gizmo_selector->clear();
-                gizmo_selector->update_selection(scene.objects[i].get());
+                gizmo_selector->update_selection(entity);
             }
             ImGui::PopID();
         }
@@ -565,7 +563,7 @@ void scene_editor_app::on_draw()
 
             //if (ImGui::TreeNode("Procedural Sky"))
             //{
-            //    inspect_entity(nullptr, scene_payload.skybox);
+            //    inspect_entity(nullptr, the_render_payload.skybox);
             //    ImGui::TreePop();
             //}
 

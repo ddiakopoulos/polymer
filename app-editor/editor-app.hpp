@@ -33,14 +33,14 @@ struct scene_editor_app final : public polymer_app
     shader_handle wireframeHandle{ "wireframe" };
     shader_handle iblHandle{ "ibl" };
 
+    std::unique_ptr<gui::imgui_instance> igm;
     std::unique_ptr<asset_resolver> resolver;
     std::unique_ptr<material_editor_window> material_editor;
     std::unique_ptr<simple_texture_view> fullscreen_surface;
-    std::unique_ptr<gui::imgui_instance> igm;
     std::shared_ptr<selection_controller> gizmo_selector;
 
+    render_payload the_render_payload;
     entity_orchestrator orchestrator;
-    render_payload scene_payload;
     poly_scene scene;
 
     scene_editor_app();

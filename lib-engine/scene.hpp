@@ -188,7 +188,8 @@ public:
     polymer::collision_system * collision_system;
     polymer::transform_system * xform_system;
     polymer::name_system * name_system;
-    void track_entity(entity e) { active_entities.push_back(e); }
+    entity track_entity(entity e) { active_entities.push_back(e); return e; }
+    std::vector<entity> & entity_list() { return active_entities; }
     void clear_tracked_entities() { active_entities.clear(); }
     void destroy(entity e)
     {

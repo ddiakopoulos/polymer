@@ -22,12 +22,12 @@ static inline tinygizmo::rigid_transform from_linalg(Pose & p)
 class selection_controller
 {
     gl_gizmo gizmo;
-    tinygizmo::rigid_transform gizmo_selection;     // Center of mass of multiple objects or the pose of a single object
+    tinygizmo::rigid_transform gizmo_selection; // Center of mass of multiple objects or the pose of a single object
     tinygizmo::rigid_transform last_gizmo_selection;
 
     Pose selection;
-    std::vector<entity> selected_objects;     // Array of selected objects
-    std::vector<Pose> relative_transforms;    // Pose of the objects relative to the selection
+    std::vector<entity> selected_entities;       // Array of selected objects
+    std::vector<Pose> relative_transforms;      // Pose of the objects relative to the selection
 
     bool gizmo_active{ false };
     transform_system * xform_system{ nullptr };
@@ -35,14 +35,14 @@ class selection_controller
     void compute_selection()
     {
         // No selected objects? The selection pose is nil
-        if (selected_objects.size() == 0)
+        if (selected_entities.size() == 0)
         {
             selection = {};
         }
         // Single object selection
-        else if (selected_objects.size() == 1)
+        else if (selected_entities.size() == 1)
         {
-            selection = selected_objects[0]->get_pose();
+            selection = xform_system->get_world_transform(selected_entities[0])->world_pose;
         }
         // Multi-object selection
         else
@@ -50,9 +50,9 @@ class selection_controller
             // todo: orientation... bounding boxes?
             float3 center_of_mass = {};
             float numObjects = 0;
-            for (auto & obj : selected_objects)
+            for (auto entity : selected_entities)
             {
-                center_of_mass += obj->get_pose().position;
+                center_of_mass += xform_system->get_world_transform(entity)->world_pose.position;
                 numObjects++;
             }
             center_of_mass /= numObjects;
@@ -69,9 +69,10 @@ class selection_controller
     {
         relative_transforms.clear();
 
-        for (auto & s : selected_objects)
+        for (entity e : selected_entities)
         {
-            relative_transforms.push_back(selection.inverse() * s->get_pose());
+            const Pose x = xform_system->get_world_transform(e)->world_pose;
+            relative_transforms.push_back(selection.inverse() * x);
         }
     }
 
@@ -81,31 +82,31 @@ public:
 
     bool selected(entity object) const
     {
-        return std::find(selected_objects.begin(), selected_objects.end(), object) != selected_objects.end();
+        return std::find(selected_entities.begin(), selected_entities.end(), object) != selected_entities.end();
     }
 
     std::vector<entity> get_selection()
     {
-        return selected_objects;
+        return selected_entities;
     }
 
     void set_selection(const std::vector<entity> & new_selection)
     {
-        selected_objects = new_selection;
+        selected_entities = new_selection;
         compute_selection();
     }
 
     void update_selection(entity object)
     {
-        auto it = std::find(std::begin(selected_objects), std::end(selected_objects), object);
-        if (it == std::end(selected_objects)) selected_objects.push_back(object);
-        else selected_objects.erase(it);
+        auto it = std::find(std::begin(selected_entities), std::end(selected_entities), object);
+        if (it == std::end(selected_entities)) selected_entities.push_back(object);
+        else selected_entities.erase(it);
         compute_selection();
     }
 
     void clear()
     {
-        selected_objects.clear();
+        selected_entities.clear();
         compute_selection();
     }
 
@@ -132,11 +133,11 @@ public:
         // Perform editing updates on selected objects
         if (gizmo_selection != last_gizmo_selection)
         {
-            for (int i = 0; i < selected_objects.size(); ++i)
+            for (int i = 0; i < selected_entities.size(); ++i)
             {
-                entity object = selected_objects[i];
-                auto newPose = to_linalg(gizmo_selection) * relative_transforms[i];
-                object->set_pose(newPose);
+                const entity object = selected_entities[i];
+                const Pose updated_pose = to_linalg(gizmo_selection) * relative_transforms[i];
+                xform_system->update_local_transform(object, updated_pose);
             }
         }
 
@@ -145,7 +146,7 @@ public:
 
     void on_draw()
     {
-        if (selected_objects.size())
+        if (selected_entities.size())
         {
             gizmo.draw();
         }
