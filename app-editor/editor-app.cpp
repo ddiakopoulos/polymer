@@ -97,7 +97,7 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
     gizmo_selector.reset(new selection_controller(scene.xform_system));
 
     const entity sunlight = scene.track_entity(orchestrator.create_entity());
-    scene.xform_system->create(sunlight, {}, {});
+    scene.xform_system->create(sunlight, Pose(), {});
     scene.name_system->create(sunlight, "sunlight");
 
     // Setup the skybox; link internal parameters to a directional light entity owned by the render system. 
@@ -423,7 +423,7 @@ void scene_editor_app::on_draw()
         bool mod_enabled = !gizmo_selector->active();
         if (menu.item("Open Scene", GLFW_MOD_CONTROL, GLFW_KEY_O, mod_enabled))
         {
-            const auto selected_open_path = windows_file_dialog("anvil scene", "json", true);
+            const auto selected_open_path = windows_file_dialog("polymer scene", "json", true);
             if (!selected_open_path.empty())
             {
                 scene.render_system->destroy(kAllEntities);
@@ -435,7 +435,7 @@ void scene_editor_app::on_draw()
 
         if (menu.item("Save Scene", GLFW_MOD_CONTROL, GLFW_KEY_S, mod_enabled))
         {
-            const auto save_path = windows_file_dialog("anvil scene", "json", false);
+            const auto save_path = windows_file_dialog("polymer scene", "json", false);
             if (!save_path.empty())
             {
                 gizmo_selector->clear();
