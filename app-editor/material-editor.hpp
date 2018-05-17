@@ -56,20 +56,20 @@ struct material_editor_window final : public glfw_window
     int assetSelection = -1;
     const uint32_t previewHeight = 420;
 
-    std::shared_ptr<polymer::material_library> lib;
+    poly_scene & scene;
     std::shared_ptr<selection_controller> selector;
 
-    entity inspectedObject{ kInvalidEntity };
+    entity inspected_entity{ kInvalidEntity };
     entity debug_sphere{ kInvalidEntity };
 
     material_editor_window(gl_context * context, 
         int w, int h, 
-        const std::string title, 
+        const std::string & title, 
         int samples, 
-        std::shared_ptr<material_library> lib,
+        poly_scene & scene,
         std::shared_ptr<selection_controller> selector,
         entity_orchestrator & orch)
-        : glfw_window(context, w, h, title, samples), lib(lib), selector(selector)
+        : glfw_window(context, w, h, title, samples), scene(scene), selector(selector)
     {
         glfwMakeContextCurrent(window);
 
@@ -172,39 +172,36 @@ struct material_editor_window final : public glfw_window
             glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            auto entitySelection = selector->get_selection();
+            const std::vector<entity> selected_entities = selector->get_selection();
 
             // Only one object->material can be edited at once
-            if (entitySelection.size() == 1)
+            if (selected_entities.size() == 1)
             {
                 // Produce a list of material instance names. This could also be done by
-                // iterating the keys of instances in the material library, but using
-                // asset_handles is more canonical.
+                // iterating the keys of instances in the mat library, but using asset_handles is more canonical.
                 std::vector<std::string> materialNames;
                 for (auto & m : asset_handle<std::shared_ptr<material_interface>>::list()) materialNames.push_back(m.name);
 
-                // Get the object from the selection
-                entity selected_object = entitySelection[0];
+                // Get an entity from the selection
+                entity selected_entity = selected_entities[0];
 
-                // Can it have a material?
-                if (auto * obj_as_mesh = dynamic_cast<StaticMesh *>(selected_object))
+                // We can only edit entities with a material component
+                auto iter = scene.render_system->materials.find(selected_entity);
+                if (iter != scene.render_system->materials.end())
                 {
-                    inspectedObject = obj_as_mesh;
+                    inspected_entity = iter->first;
                     uint32_t mat_idx = 0;
-                    for (std::string & name : materialNames)
+                    for (const std::string & name : materialNames)
                     {
-                        if (obj_as_mesh->mat.name == name)
-                        {
-                            assetSelection = mat_idx;
-                        }
+                        const std::string match_name = iter->second.material.name;
+                        if (match_name == name) assetSelection = mat_idx;
                         mat_idx++;
                     }
                 }
-                else inspectedObject = kInvalidEntity;
-            }
-            else
-            {
-                inspectedObject = kInvalidEntity;
+                else
+                {
+                    inspected_entity = kInvalidEntity;
+                }
             }
 
             // A non-zero asset selection also means the preview mesh would have a valid material
@@ -227,7 +224,7 @@ struct material_editor_window final : public glfw_window
             gui::imgui_fixed_window_begin("material-editor", { { 0, 0 },{ width, int(height - previewHeight) } });
 
             ImGui::Dummy({ 0, 12 });
-            ImGui::Text("Library: %s", lib->library_path.c_str());
+            ImGui::Text("Library: %s", scene.mat_library->library_path.c_str());
             ImGui::Dummy({ 0, 12 });
 
             if (ImGui::Button(" " ICON_FA_PLUS " Create Material ", { 160, 24 })) ImGui::OpenPopup("Create Material");
@@ -263,7 +260,7 @@ struct material_editor_window final : public glfw_window
 
             // Only draw the list of materials if there's no asset selected in the editor. 
             // This is a bit of a UX hack.
-            if (!inspectedObject)
+            if (!inspected_entity)
             {
                 ImGui::Dummy({ 0, 12 });
                 ImGuiTextFilter textFilter;
@@ -317,11 +314,11 @@ struct material_editor_window final : public glfw_window
 
                     if (ImGui::Button("OK", ImVec2(120, 0)))
                     {
-                        if (inspectedObject)
+                        if (inspected_entity)
                         {
-                            inspectedObject->set_material(material_library::kDefaultMaterialId);
+                            scene.render_system->materials[inspected_entity].material = material_handle(material_library::kDefaultMaterialId);
                         }
-                        lib->remove_material(material_handle_name);
+                        scene.mat_library->remove_material(material_handle_name);
                         ImGui::CloseCurrentPopup();
                     }
 

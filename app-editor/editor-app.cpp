@@ -123,7 +123,7 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
     //scene.objects.clear();
     //cereal::deserialize_from_json("../assets/scene.json", scene.objects);
 
-    scene.mat_library.reset(new polymer::material_library("../assets/materials.json"));
+    //scene.mat_library.reset(new polymer::material_library("../assets/materials.json"));
 
     // Resolve asset_handles to resources on disk
     resolver.reset(new asset_resolver());
@@ -230,12 +230,12 @@ void scene_editor_app::on_input(const app_input_event & event)
             {
                 if (!material_editor)
                 {
-                    material_editor.reset(new material_editor_window(get_shared_gl_context(), 500, 1200, "", 1, scene.mat_library, gizmo_selector, orchestrator));
+                    material_editor.reset(new material_editor_window(get_shared_gl_context(), 500, 1200, "", 1, scene, gizmo_selector, orchestrator));
                 }
                 else if (!material_editor->get_window())
                 {
                     // Workaround since there's no convenient way to reset the material_editor when it's been closed
-                    material_editor.reset(new material_editor_window(get_shared_gl_context(), 500, 1200, "", 1, scene.mat_library, gizmo_selector, orchestrator));
+                    material_editor.reset(new material_editor_window(get_shared_gl_context(), 500, 1200, "", 1, scene, gizmo_selector, orchestrator));
                 }
             }
         }
