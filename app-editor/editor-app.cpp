@@ -483,24 +483,18 @@ void scene_editor_app::on_draw()
         }
         menu.end();
 
-        //menu.begin("Spawn");
-        //visit_subclasses((GameObject*)0, [&](const char * name, auto * p)
-        //{
-        //    if (menu.item(name))
-        //    {
-        //        auto obj = std::make_shared<std::remove_reference_t<decltype(*p)>>();
-        //        obj->set_material(material_library::kDefaultMaterialId);
-        //        scene.objects.push_back(obj);
-        //
-        //        // Newly spawned objects are selected by default
-        //        std::vector<entity> selectedObjects;
-        //        selectedObjects.push_back(obj.get());
-        //        gizmo_selector->set_selection(selectedObjects);
-        //    }
-        //});
-        //menu.end();
-
+        menu.begin("Create");
+        if (menu.item("entity", GLFW_MOD_CONTROL, GLFW_KEY_P)) 
+        {
+            // Newly spawned objects are selected by default
+            std::vector<entity> list = { scene.track_entity(orchestrator.create_entity()) };
+            scene.xform_system->create(list[0], Pose(), {});
+            scene.name_system->create(list[0], "new entity");
+            gizmo_selector->set_selection(list);
+        }
+        menu.end();
     }
+
     menu.app_menu_end();
     editorProfiler.end("imgui-menu");
 
