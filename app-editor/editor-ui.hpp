@@ -167,7 +167,7 @@ build_imgui(const char * label, T & object)
     return r;
 }
 
-// We should be using component pools to make this logic easer
+// todo - we should be using component pools to make this logic easer
 bool inspect_scene_entity(const char * label, entity e, poly_scene & scene)
 {
     bool r = false;
@@ -187,7 +187,7 @@ bool inspect_scene_entity(const char * label, entity e, poly_scene & scene)
 bool inspect_material(material_interface * material)
 {
     bool r = false;
-    visit_subclasses(material, [](const char * name, auto * material_pointer)
+    visit_subclasses(material, [&r](const char * name, auto * material_pointer)
     {
         if (material_pointer)
         {

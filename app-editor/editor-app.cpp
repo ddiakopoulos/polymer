@@ -56,6 +56,10 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
         "../assets/shaders/wireframe_geom.glsl",
         "../assets/shaders/renderer");
 
+    shaderMonitor.watch("sky-hosek",
+        "../assets/shaders/sky_vert.glsl",
+        "../assets/shaders/sky_hosek_frag.glsl");
+
     shaderMonitor.watch("depth-prepass",
         "../assets/shaders/renderer/depth_prepass_vert.glsl",
         "../assets/shaders/renderer/depth_prepass_frag.glsl",
@@ -93,6 +97,8 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
     gizmo_selector.reset(new selection_controller(scene.xform_system));
 
     const entity sunlight = scene.track_entity(orchestrator.create_entity());
+    scene.xform_system->create(sunlight, {}, {});
+    scene.name_system->create(sunlight, "sunlight");
 
     // Setup the skybox; link internal parameters to a directional light entity owned by the render system. 
     scene.skybox.reset(new gl_hosek_sky());
@@ -123,7 +129,7 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
     //scene.objects.clear();
     //cereal::deserialize_from_json("../assets/scene.json", scene.objects);
 
-    //scene.mat_library.reset(new polymer::material_library("../assets/materials.json"));
+    scene.mat_library.reset(new polymer::material_library("../assets/materials.json"));
 
     // Resolve asset_handles to resources on disk
     resolver.reset(new asset_resolver());
@@ -336,6 +342,8 @@ void scene_editor_app::on_draw()
     {
         editorProfiler.begin("gather-scene");
 
+        the_render_payload.views.clear();
+
         /*
         // Remember to clear any transient per-frame data
         the_render_payload.pointLights.clear();
@@ -490,7 +498,7 @@ void scene_editor_app::on_draw()
         //        gizmo_selector->set_selection(selectedObjects);
         //    }
         //});
-        menu.end();
+        //menu.end();
 
     }
     menu.app_menu_end();

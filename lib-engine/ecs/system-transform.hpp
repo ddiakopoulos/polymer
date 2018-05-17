@@ -29,7 +29,7 @@ namespace polymer
     {
         f("local_pose", o.local_pose);
         f("local_scale", o.local_scale);
-        f("parent", o.parent;
+        f("parent", o.parent);
         f("children", o.children);
     }
 

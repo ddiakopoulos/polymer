@@ -88,6 +88,14 @@ template<class F> void visit_fields(polymer_blinn_phong_standard & o, F f)
     f("program_handle", o.shader, editor_hidden{}); // hidden because shaders are tied to materials
 }
 
+template<class F> void visit_systems(poly_scene * p, F f)
+{
+    f("name_system", p->name_system);
+    f("xform_system", p->xform_system);
+    f("render_system", p->render_system);
+    f("collision_system", p->collision_system);
+}
+
 namespace cereal
 {
     // Asset Handles

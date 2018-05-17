@@ -159,8 +159,8 @@ namespace polymer
             const runtime_mesh & geometry = meshes[e].geom.get();
 
             Ray localRay = meshPose.inverse() * worldRay;
-            localRay.origin /= meshPose;
-            localRay.direction /= meshPose;
+            localRay.origin /= meshScale;
+            localRay.direction /= meshScale;
             float outT = 0.0f;
             float3 outNormal = { 0, 0, 0 };
             const bool hit = intersect_ray_mesh(localRay, geometry, &outT, &outNormal);
@@ -193,19 +193,11 @@ public:
     void clear_tracked_entities() { active_entities.clear(); }
     void destroy(entity e)
     {
-        visit_systems(this, [e](const char * name, auto * system_pointer)
-        {
-            if (system_pointer) system_pointer->destroy(e);
-        });
+       //visit_systems(this, [e](const char * name, auto * system_pointer)
+       //{
+       //    if (system_pointer) system_pointer->destroy(e);
+       //});
     }
 };
-
-template<class F> void visit_systems(poly_scene * p, F f)
-{
-    f("name_system", p->name_system);
-    f("xform_system", p->xform_system);
-    f("render_system", p->render_system);
-    f("collision_system", p->collision_system);
-}
 
 #endif // end core_scene_hpp
