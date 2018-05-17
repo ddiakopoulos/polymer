@@ -140,36 +140,4 @@ namespace polymer
 
 } // end namespace polymer
 
-/*
-// Find missing Geometry and GlMesh asset_handles first
-std::unordered_map<std::string, uint32_t> missingGeometryAssets;
-std::unordered_map<std::string, uint32_t> missingMeshAssets;
-
-for (auto & obj : scene->objects)
-{
-if (auto * mesh = dynamic_cast<StaticMesh*>(obj.get()))
-{
-bool foundGeom = false;
-bool foundMesh = false;
-
-for (auto & h : asset_handle<Geometry>::list())
-{
-if (h.name == mesh->geom.name) foundGeom = true;
-}
-
-for (auto & h : asset_handle<GlMesh>::list())
-{
-if (h.name == mesh->mesh.name) foundMesh = true;
-}
-
-if (!foundGeom) missingGeometryAssets[mesh->geom.name] += 1;
-if (!foundMesh) missingMeshAssets[mesh->mesh.name] += 1;
-
-}
-}
-
-for (auto & e : missingGeometryAssets) std::cout << "Asset table does not have " << e.first << " geometry required by " << e.second << " game object instances" << std::endl;
-for (auto & e : missingMeshAssets) std::cout << "Asset table does not have " << e.first << " mesh required by " << e.second << " game object instances" << std::endl;
-*/
-
 #endif // end polymer_asset_resolver_hpp
