@@ -245,7 +245,7 @@ void scene_editor_app::on_input(const app_input_event & event)
             int width, height;
             glfwGetWindowSize(window, &width, &height);
 
-            const ray r = cam.get_world_ray(event.cursor, float2(width, height));
+            const ray r = cam.get_world_ray(event.cursor, float2(static_cast<float>(width), static_cast<float>(height)));
 
             if (length(r.direction) > 0 && !gizmo_selector->active())
             {
@@ -322,7 +322,7 @@ void scene_editor_app::on_update(const app_update_event & e)
     editorProfiler.begin("on_update");
     flycam.update(e.timestep_ms);
     shaderMonitor.handle_recompile();
-    gizmo_selector->on_update(cam, float2(width, height));
+    gizmo_selector->on_update(cam, float2(static_cast<float>(width), static_cast<float>(height)));
     editorProfiler.end("on_update");
 }
 

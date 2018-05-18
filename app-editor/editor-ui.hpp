@@ -216,13 +216,13 @@ namespace ImGui
     bool Combo(const char* label, int* currIndex, std::vector<std::string> & values)
     {
         if (values.empty()) { return false; }
-        return Combo(label, currIndex, vector_getter, static_cast<void*>(&values), values.size());
+        return Combo(label, currIndex, vector_getter, static_cast<void*>(&values), static_cast<int>(values.size()));
     }
 
     bool ListBox(const char* label, int* currIndex, std::vector<std::string>& values)
     {
         if (values.empty()) { return false; }
-        return ListBox(label, currIndex, vector_getter, static_cast<void*>(&values), values.size());
+        return ListBox(label, currIndex, vector_getter, static_cast<void*>(&values), static_cast<int>(values.size()));
     }
 
     struct editor_app_log
@@ -322,7 +322,7 @@ namespace ImGui
             // Get the current mouse position relative to the desired axis
             if (io.MouseDown[0])
             {
-                uint32_t position = 0;
+                float position = 0.f;
 
                 switch (t)
                 {
@@ -332,7 +332,7 @@ namespace ImGui
                 case Bottom: position = r.max().y - cursor.y; break;
                 }
 
-                *v = position;
+                *v = static_cast<uint32_t>(position);
             }
             else ImGui::SetActiveID(0, nullptr);
         }

@@ -303,12 +303,14 @@ struct material_editor_window final : public glfw_window
                         if (index == idx) return m.name;
                         idx++;
                     }
+                    return {};
                 };
 
                 // This is by index. Future: might be easier if materials were entities too.
                 std::shared_ptr<material_interface> mat = material_handle::list()[assetSelection].get();
                 const std::string material_handle_name = index_to_handle_name(assetSelection);
                 preview_renderer->materials[debug_sphere].material = material_handle(material_handle_name);
+                assert(!material_handle_name.empty());
 
                 ImGui::Text("Material: %s", material_handle_name.c_str());
                 ImGui::Dummy({ 0, 12 });

@@ -8,31 +8,41 @@
 
 using namespace polymer;
 
-constexpr const char gl_gizmo_vert[] = R"(#version 330
-    layout(location = 0) in vec3 vertex;
-    layout(location = 1) in vec3 normal;
-    layout(location = 2) in vec3 color;
-    out vec3 v_color;
-    uniform mat4 u_mvp;
-    void main()
-    {
-        gl_Position = u_mvp * vec4(vertex.xyz, 1);
-        v_color = color;
-    }
-)";
+static inline transform to_linalg(tinygizmo::rigid_transform & t)
+{
+    return{ reinterpret_cast<polymer::float4 &>(t.orientation), reinterpret_cast<polymer::float3 &>(t.position) };
+}
 
-constexpr const char gl_gizmo_frag[] = R"(#version 330
-    in vec3 v_color;
-    out vec4 f_color;
-
-    void main()
-    {
-        f_color = vec4(v_color, 1);
-    }
-)";
+static inline tinygizmo::rigid_transform from_linalg(transform & p)
+{
+    return{ reinterpret_cast<minalg::float4 &>(p.orientation), reinterpret_cast<minalg::float3 &>(p.position) };
+}
 
 namespace polymer
 {
+    constexpr const char gl_gizmo_vert[] = R"(#version 330
+        layout(location = 0) in vec3 vertex;
+        layout(location = 1) in vec3 normal;
+        layout(location = 2) in vec3 color;
+        out vec3 v_color;
+        uniform mat4 u_mvp;
+        void main()
+        {
+            gl_Position = u_mvp * vec4(vertex.xyz, 1);
+            v_color = color;
+        }
+    )";
+
+    constexpr const char gl_gizmo_frag[] = R"(#version 330
+        in vec3 v_color;
+        out vec4 f_color;
+
+        void main()
+        {
+            f_color = vec4(v_color, 1);
+        }
+    )";
+
     struct gl_gizmo : public non_copyable
     {
         tinygizmo::gizmo_application_state gizmo_state;
