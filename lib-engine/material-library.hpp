@@ -26,6 +26,7 @@ namespace polymer
         ~material_library();
         template<typename T> void create_material(const std::string & name, std::shared_ptr<T> mat);
         void remove_material(const std::string & name);
+        void serialize();
     };
 
     template<typename T>
