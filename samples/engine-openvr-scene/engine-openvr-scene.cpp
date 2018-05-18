@@ -1,4 +1,5 @@
-#include "vr_app.hpp"
+#include "engine-openvr-scene.hpp"
+
 #include "gl-imgui.hpp"
 #include "gl-loaders.hpp"
 #include "math-core.hpp"

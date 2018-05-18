@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27130.0
+VisualStudioVersion = 15.0.27130.2024
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lib-polymer", "lib-polymer\lib-polymer.vcxproj", "{992E85A7-B590-477B-A1B2-8A04AAAD0E10}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -17,8 +17,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "apps", "apps", "{E4F5BE92-478B-4514-9F4C-1709C40EF65B}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "scene-editor", "app-editor\scene-editor.vcxproj", "{516363FB-3F0D-463F-9CE5-8B739253C9E3}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vr-environment", "app-vr-env\vr-environment.vcxproj", "{8935AE6A-79E7-421D-B215-C1DEEB35EBA3}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lib-engine", "lib-engine\lib-engine.vcxproj", "{71F00A1A-C67D-4CB9-9F37-98D4975FA5C7}"
 EndProject
@@ -39,6 +37,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gl-octree-culling", "samples\gl-octree-culling\gl-octree-culling.vcxproj", "{05244336-1D7F-460D-A618-703AAD7A868B}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "engine-scene", "samples\engine-scene\engine-scene.vcxproj", "{6A6930FE-F60E-4B0E-9122-232B73686BC8}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "engine-openvr-scene", "samples\engine-openvr-scene\engine-openvr-scene.vcxproj", "{8935AE6A-79E7-421D-B215-C1DEEB35EBA3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -62,10 +62,6 @@ Global
 		{516363FB-3F0D-463F-9CE5-8B739253C9E3}.Debug|x64.Build.0 = Debug|x64
 		{516363FB-3F0D-463F-9CE5-8B739253C9E3}.Release|x64.ActiveCfg = Release|x64
 		{516363FB-3F0D-463F-9CE5-8B739253C9E3}.Release|x64.Build.0 = Release|x64
-		{8935AE6A-79E7-421D-B215-C1DEEB35EBA3}.Debug|x64.ActiveCfg = Debug|x64
-		{8935AE6A-79E7-421D-B215-C1DEEB35EBA3}.Debug|x64.Build.0 = Debug|x64
-		{8935AE6A-79E7-421D-B215-C1DEEB35EBA3}.Release|x64.ActiveCfg = Release|x64
-		{8935AE6A-79E7-421D-B215-C1DEEB35EBA3}.Release|x64.Build.0 = Release|x64
 		{71F00A1A-C67D-4CB9-9F37-98D4975FA5C7}.Debug|x64.ActiveCfg = Debug|x64
 		{71F00A1A-C67D-4CB9-9F37-98D4975FA5C7}.Debug|x64.Build.0 = Debug|x64
 		{71F00A1A-C67D-4CB9-9F37-98D4975FA5C7}.Release|x64.ActiveCfg = Release|x64
@@ -98,6 +94,10 @@ Global
 		{6A6930FE-F60E-4B0E-9122-232B73686BC8}.Debug|x64.Build.0 = Debug|x64
 		{6A6930FE-F60E-4B0E-9122-232B73686BC8}.Release|x64.ActiveCfg = Release|x64
 		{6A6930FE-F60E-4B0E-9122-232B73686BC8}.Release|x64.Build.0 = Release|x64
+		{8935AE6A-79E7-421D-B215-C1DEEB35EBA3}.Debug|x64.ActiveCfg = Debug|x64
+		{8935AE6A-79E7-421D-B215-C1DEEB35EBA3}.Debug|x64.Build.0 = Debug|x64
+		{8935AE6A-79E7-421D-B215-C1DEEB35EBA3}.Release|x64.ActiveCfg = Release|x64
+		{8935AE6A-79E7-421D-B215-C1DEEB35EBA3}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -107,7 +107,6 @@ Global
 		{BE423E72-28C2-4FB7-9FE1-42AA2F393BBC} = {25969120-2DC7-47EA-827F-41616989B284}
 		{BDDB4BE8-092B-4C42-B39E-7EF79011403C} = {25969120-2DC7-47EA-827F-41616989B284}
 		{516363FB-3F0D-463F-9CE5-8B739253C9E3} = {E4F5BE92-478B-4514-9F4C-1709C40EF65B}
-		{8935AE6A-79E7-421D-B215-C1DEEB35EBA3} = {E4F5BE92-478B-4514-9F4C-1709C40EF65B}
 		{71F00A1A-C67D-4CB9-9F37-98D4975FA5C7} = {25969120-2DC7-47EA-827F-41616989B284}
 		{20F2353F-E1EE-4825-B1BC-F99446F24954} = {0B054E41-2F3E-4230-8488-B44C3643F315}
 		{EFC8C9CF-5417-4D08-BCFD-7EEA59A2853E} = {0B054E41-2F3E-4230-8488-B44C3643F315}
@@ -116,6 +115,7 @@ Global
 		{D64D5D28-40D4-4D22-8F91-621AA0A58774} = {0B054E41-2F3E-4230-8488-B44C3643F315}
 		{05244336-1D7F-460D-A618-703AAD7A868B} = {0B054E41-2F3E-4230-8488-B44C3643F315}
 		{6A6930FE-F60E-4B0E-9122-232B73686BC8} = {0B054E41-2F3E-4230-8488-B44C3643F315}
+		{8935AE6A-79E7-421D-B215-C1DEEB35EBA3} = {0B054E41-2F3E-4230-8488-B44C3643F315}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {E2D0793D-BD41-4F42-A6AA-DAB3D17A46BE}

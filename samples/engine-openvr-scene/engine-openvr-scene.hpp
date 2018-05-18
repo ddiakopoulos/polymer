@@ -1,13 +1,13 @@
 #include "index.hpp"
 
-#include "../lib-engine/bullet_engine.hpp"
-#include "../lib-engine/bullet_visualizer.hpp"
-#include "../lib-engine/openvr-hmd.hpp"
-#include "../lib-engine/shader-library.hpp"
+#include "bullet_engine.hpp"
+#include "bullet_visualizer.hpp"
+#include "openvr-hmd.hpp"
+#include "shader-library.hpp"
 
-#include "../lib-engine/gfx/gl/gl-renderable-grid.hpp"
-#include "../lib-engine/gfx/gl/gl-camera.hpp"
-#include "../lib-engine/gfx/gl/gl-async-gpu-timer.hpp"
+#include "gfx/gl/gl-renderable-grid.hpp"
+#include "gfx/gl/gl-camera.hpp"
+#include "gfx/gl/gl-async-gpu-timer.hpp"
 
 #include "radix_sort.hpp"
 #include "procedural_mesh.hpp"
@@ -116,7 +116,7 @@ struct sample_vr_app : public polymer_app
     gl_shader_monitor shaderMonitor = { "../assets/" };
     
     std::vector<viewport_t> viewports;
-    poly_scene scene;
+    vr_app_state scene;
 
     simple_cpu_timer t;
     gl_gpu_timer gpuTimer;
