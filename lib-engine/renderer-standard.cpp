@@ -270,7 +270,7 @@ void pbr_render_system::run_forward_pass(std::vector<entity> & renderQueueMateri
         {
             if (settings.shadowsEnabled)
             {
-                // ideally compile this out from the shader if not using shadows
+                // todo - ideally compile this out from the shader if not using shadows
                 mr->update_uniforms_shadow(shadow->get_output_texture());
             }
 
@@ -437,6 +437,8 @@ void pbr_render_system::render_frame(const render_payload & scene)
 
     view_data shadowAndCullingView = scene.views[0];
 
+    // For stereo rendering, we project the shadows from a center view frustum combining
+    // both eyes
     if (settings.cameraCount == 2)
     {
         cpuProfiler.begin("center-view");
@@ -532,8 +534,6 @@ void pbr_render_system::render_frame(const render_payload & scene)
         glClearNamedFramebufferfv(multisampleFramebuffer, GL_COLOR, 0, &defaultColor[0]);
         glClearNamedFramebufferfv(multisampleFramebuffer, GL_DEPTH, 0, &defaultDepth);
 
-        gl_check_error(__FILE__, __LINE__);
-
         // Execute the forward passes
         if (settings.useDepthPrepass)
         {
@@ -541,8 +541,6 @@ void pbr_render_system::render_frame(const render_payload & scene)
             run_depth_prepass(scene.views[camIdx], scene);
             gpuProfiler.end("depth-prepass");
         }
-
-        gl_check_error(__FILE__, __LINE__);
 
         gpuProfiler.begin("forward-pass");
         cpuProfiler.begin("skybox");
@@ -552,8 +550,6 @@ void pbr_render_system::render_frame(const render_payload & scene)
         run_forward_pass(materialRenderList, scene.views[camIdx], scene);
         cpuProfiler.end("forward");
         gpuProfiler.end("forward-pass");
-
-        gl_check_error(__FILE__, __LINE__);
 
         glDisable(GL_MULTISAMPLE);
 
@@ -573,8 +569,6 @@ void pbr_render_system::render_frame(const render_payload & scene)
 
             gpuProfiler.end("blit");
         }
-
-        gl_check_error(__FILE__, __LINE__);
     }
 
     // Execute the post passes after having resolved the multisample framebuffers
@@ -591,6 +585,7 @@ void pbr_render_system::render_frame(const render_payload & scene)
 
     glDisable(GL_FRAMEBUFFER_SRGB);
     cpuProfiler.end("renderloop");
+
     gl_check_error(__FILE__, __LINE__);
 }
 

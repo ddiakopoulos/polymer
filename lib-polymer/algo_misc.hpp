@@ -5,6 +5,10 @@
 #include "math-core.hpp"
 #include <functional>
 #include <memory>
+#include <algorithm>
+
+#undef min
+#undef max
 
 namespace polymer
 {
@@ -119,11 +123,12 @@ namespace polymer
 
     inline float3 rgb_to_hsv(const float3 & rgb)
     {
+
         float rd = rgb.x / 255;
         float gd = rgb.y / 255;
         float bd = rgb.z / 255;
 
-        float max = ::max(rd, gd, bd), min = ::min(rd, gd, bd);
+        float max = polymer::max(rd, gd, bd), min = polymer::min(rd, gd, bd);
         float h, s, v = max;
 
         float d = max - min;

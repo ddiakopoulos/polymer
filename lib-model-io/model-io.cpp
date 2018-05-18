@@ -9,7 +9,9 @@
 #include <assert.h>
 #include <fstream>
 
-std::map<std::string, runtime_mesh> import_model(const std::string & path)
+using namespace polymer;
+
+std::map<std::string, runtime_mesh> polymer::import_model(const std::string & path)
 {
     std::map<std::string, runtime_mesh> results;
 
@@ -33,7 +35,7 @@ std::map<std::string, runtime_mesh> import_model(const std::string & path)
     return results;
 }
 
-std::map<std::string, runtime_mesh> import_fbx_model(const std::string & path)
+std::map<std::string, runtime_mesh> polymer::import_fbx_model(const std::string & path)
 {
 # if (USING_FBX == 1)
     
@@ -59,7 +61,7 @@ std::map<std::string, runtime_mesh> import_fbx_model(const std::string & path)
     return {};
 }
 
-std::map<std::string, runtime_mesh> import_obj_model(const std::string & path)
+std::map<std::string, runtime_mesh> polymer::import_obj_model(const std::string & path)
 {
     std::map<std::string, runtime_mesh> meshes;
 
@@ -149,12 +151,12 @@ std::map<std::string, runtime_mesh> import_obj_model(const std::string & path)
     return meshes;
 }
 
-void optimize_model(runtime_mesh & input)
+void polymer::optimize_model(runtime_mesh & input)
 {
     // todo 
 }
 
-runtime_mesh import_mesh_binary(const std::string & path)
+runtime_mesh polymer::import_mesh_binary(const std::string & path)
 {
     std::ifstream file(path, std::ios::binary | std::ios::ate);
     if (!file.good()) throw std::runtime_error("couldn't open");
@@ -194,7 +196,7 @@ runtime_mesh import_mesh_binary(const std::string & path)
     return mesh;
 }
 
-void export_mesh_binary(const std::string & path, runtime_mesh & mesh, bool compressed)
+void polymer::export_mesh_binary(const std::string & path, runtime_mesh & mesh, bool compressed)
 {
     auto file = std::ofstream(path, std::ios::out | std::ios::binary);
 

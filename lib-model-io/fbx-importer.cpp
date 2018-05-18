@@ -1,5 +1,7 @@
 #include "fbx-importer.hpp"
 
+using namespace polymer;
+
 #if (USING_FBX == 1)
 
 #include <fbxsdk.h>
@@ -23,7 +25,7 @@ inline TValue get_vertex_element(TGeometryElement * pElement, int iPoint, int iT
     return pElement->GetDirectArray().GetAt(index);
 }
 
-void gather_meshes(fbx_container & file, fbxsdk::FbxNode * node)
+void polymer::gather_meshes(fbx_container & file, fbxsdk::FbxNode * node)
 {
     auto * attrib = node->GetNodeAttribute();
 
@@ -192,7 +194,7 @@ fbxsdk::FbxScene * import_scene(const std::string & file, fbxsdk::FbxManager * m
     return scene;
 }
 
-fbx_container import_fbx_file(const std::string & path)
+fbx_container polymer::import_fbx_file(const std::string & path)
 {
     fbx_container container;
 

@@ -9,7 +9,7 @@ using namespace polymer;
 
 polymer_default_material::polymer_default_material()
 {
-    shader = { "default-shader" };
+    shader = shader_handle("default-shader");
 }
 
 void polymer_default_material::use()
@@ -38,7 +38,7 @@ uint32_t polymer_default_material::id() const
 
 polymer_blinn_phong_standard::polymer_blinn_phong_standard()
 {
-    shader = { "blinn-phong" };
+    shader = shader_handle("blinn-phong");
 }
 
 void polymer_blinn_phong_standard::resolve_variants() const
@@ -89,7 +89,7 @@ void polymer_blinn_phong_standard::update_uniforms()
 
 polymer_pbr_standard::polymer_pbr_standard()
 {
-    shader = { "pbr-forward-lighting" };
+    shader = shader_handle("pbr-forward-lighting");
 }
 
 void polymer_pbr_standard::resolve_variants() const

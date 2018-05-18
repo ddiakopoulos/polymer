@@ -16,8 +16,6 @@
 
 #include "../../../lib-engine/asset-handle-utils.hpp"
 
-
-
 namespace polymer
 {
     struct shader_variant

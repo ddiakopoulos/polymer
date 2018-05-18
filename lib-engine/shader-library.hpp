@@ -20,6 +20,7 @@ using namespace std::chrono;
 
 namespace polymer 
 {
+
     class gl_shader_monitor
     {
         std::unordered_map<std::string, std::shared_ptr<gl_shader_asset>> assets;

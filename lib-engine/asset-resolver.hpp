@@ -29,6 +29,7 @@
 
 namespace polymer
 {
+
     template <typename T>
     void remove_duplicates(std::vector<T> & vec)
     {

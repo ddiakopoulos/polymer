@@ -1,4 +1,5 @@
 #include "core-events.hpp"
+#include <unordered_map>
 
 namespace polymer
 {
