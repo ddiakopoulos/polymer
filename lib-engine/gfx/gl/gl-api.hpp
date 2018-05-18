@@ -5,6 +5,7 @@
 
 #include "glfw-app.hpp"
 #include <map>
+#include <unordered_map>
 #include <string>
 #include <vector>
 #include <fstream>
@@ -522,15 +523,27 @@ public:
 class gl_mesh
 {
     gl_vertex_array_object vao;
-    gl_buffer vertexBuffer, instanceBuffer, indexBuffer;
+
+    gl_buffer vertexBuffer;
+    gl_buffer instanceBuffer;
+
+    struct submesh
+    {
+        gl_buffer indexBuffer;
+        GLsizei count;
+    };
+
+    mutable std::unordered_map<int, submesh> indexBuffers;
 
     GLenum drawMode = GL_TRIANGLES;
     GLenum indexType = 0;
-    GLsizei vertexStride = 0, instanceStride = 0, indexCount = 0;
+    GLsizei vertexStride = 0, instanceStride = 0;
 
 public:
      
-    gl_mesh() {}
+    gl_mesh() = default;
+    ~gl_mesh() = default;
+
     gl_mesh(gl_mesh && r) { *this = std::move(r); }
     gl_mesh(const gl_mesh & r) = delete;
     gl_mesh & operator = (gl_mesh && r)
@@ -542,26 +555,27 @@ public:
         return *this;
     }
     gl_mesh & operator = (const gl_mesh & r) = delete;
-    ~gl_mesh() {};
 
     void set_non_indexed(GLenum newMode)
     {
         drawMode = newMode;
-        indexBuffer = {};
         indexType = 0;
-        indexCount = 0;
+        indexBuffers.clear();
     }
-     
-    void draw_elements(int instances = 0) const
+    
+    void draw_elements(int instances = 0, int submesh_index = 0) const
     {
         if (vertexBuffer.size)
         {
             glBindVertexArray(vao);
-            if (indexCount)
+
+            const submesh & idx = indexBuffers[submesh_index]; // note: will default construct
+
+            if (idx.count)
             {
-                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
-                if (instances) glDrawElementsInstanced(drawMode, indexCount, indexType, 0, instances);
-                else glDrawElements(drawMode, indexCount, indexType, nullptr);
+                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idx.indexBuffer);
+                if (instances) glDrawElementsInstanced(drawMode, idx.count, indexType, 0, instances);
+                else glDrawElements(drawMode, idx.count, indexType, nullptr);
             }
             else
             {
@@ -577,15 +591,19 @@ public:
 
     void set_instance_data(GLsizeiptr size, const GLvoid * data, GLenum usage) { instanceBuffer.set_buffer_data(size, data, usage); }
 
-    void set_index_data(GLenum mode, GLenum type, GLsizei count, const GLvoid * data, GLenum usage)
+    void set_index_data(GLenum mode, GLenum type, GLsizei count, const GLvoid * data, GLenum usage, int submesh_index = 0)
     {
         size_t size = gl_size_bytes(type);
-        indexBuffer.set_buffer_data(size * count, data, usage);
         drawMode = mode;
         indexType = type;
-        indexCount = count;
+
+        submesh & idx = indexBuffers[submesh_index];
+        idx.count = count;
+        idx.indexBuffer = {};
+        idx.indexBuffer.set_buffer_data(size * count, data, usage);
     }
-    gl_buffer & get_index_data_buffer() { return indexBuffer; };
+
+    gl_buffer & get_index_data_buffer(int submesh_index = 0) { return indexBuffers[0].indexBuffer; };
 
     void set_attribute(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid * offset)
     {
