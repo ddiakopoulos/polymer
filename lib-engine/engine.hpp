@@ -31,7 +31,7 @@
 #include "gl-gizmo.hpp"
 #include "gl-imgui.hpp"
 #include "gl-loaders.hpp"
-#include "gl-mesh.hpp"
+#include "gl-mesh-util.hpp"
 #include "gl-nvg.hpp"
 #include "gl-procedural-mesh.hpp"
 #include "gl-procedural-sky.hpp"

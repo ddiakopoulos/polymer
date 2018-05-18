@@ -1,5 +1,5 @@
-#ifndef gl_mesh_hpp
-#define gl_mesh_hpp
+#ifndef gl_mesh_util_hpp
+#define gl_mesh_util_hpp
 
 #include "math-core.hpp"
 #include "string_utils.hpp"
@@ -126,4 +126,4 @@ namespace polymer
 
 #pragma warning(pop)
 
-#endif // gl_mesh_hpp
+#endif // gl_mesh_util_hpp

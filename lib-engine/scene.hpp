@@ -6,9 +6,8 @@
 #include "geometry.hpp"
 
 #include "gl-api.hpp"
-#include "gl-mesh.hpp"
+#include "gl-mesh-util.hpp"
 #include "gl-camera.hpp"
-#include "gl-mesh.hpp"
 #include "gl-procedural-sky.hpp"
 
 #include "uniforms.hpp"

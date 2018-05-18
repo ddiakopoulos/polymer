@@ -417,7 +417,7 @@
     <ClInclude Include="gfx\gl\gl-gizmo.hpp" />
     <ClInclude Include="gfx\gl\gl-imgui.hpp" />
     <ClInclude Include="gfx\gl\gl-loaders.hpp" />
-    <ClInclude Include="gfx\gl\gl-mesh.hpp" />
+    <ClInclude Include="gfx\gl\gl-mesh-util.hpp" />
     <ClInclude Include="gfx\gl\gl-nvg.hpp" />
     <ClInclude Include="gfx\gl\gl-procedural-mesh.hpp" />
     <ClInclude Include="gfx\gl\gl-procedural-sky.hpp" />

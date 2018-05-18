@@ -558,9 +558,6 @@
     <ClInclude Include="gfx\gl\gl-loaders.hpp">
       <Filter>gfx\gl</Filter>
     </ClInclude>
-    <ClInclude Include="gfx\gl\gl-mesh.hpp">
-      <Filter>gfx\gl</Filter>
-    </ClInclude>
     <ClInclude Include="gfx\gl\gl-nvg.hpp">
       <Filter>gfx\gl</Filter>
     </ClInclude>
@@ -1571,6 +1568,9 @@
     <ClInclude Include="engine.hpp" />
     <ClInclude Include="bullet_visualizer.hpp">
       <Filter>physics</Filter>
+    </ClInclude>
+    <ClInclude Include="gfx\gl\gl-mesh-util.hpp">
+      <Filter>gfx\gl</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
