@@ -73,7 +73,7 @@ void stable_cascaded_shadows::update_cascades(const float4x4 & view, const float
         const float3 maxExtents = float3(sphereRadius, sphereRadius, sphereRadius);
         const float3 minExtents = -maxExtents;
 
-        const Pose cascadePose = look_at_pose_rh(frustumCentroid + lightDir * -minExtents.z, frustumCentroid);
+        const transform cascadePose = lookat_rh(frustumCentroid + lightDir * -minExtents.z, frustumCentroid);
         const float4x4 splitViewMatrix = cascadePose.view_matrix();
 
         const float3 cascadeExtents = maxExtents - minExtents;
@@ -143,7 +143,7 @@ GLuint stable_cascaded_shadows::get_output_texture() const
 //   pbr_render_system implementation   //
 //////////////////////////////////////////
 
-void pbr_render_system::update_per_object_uniform_buffer(const Pose & p, const float3 & scale, const bool recieveShadow, const view_data & d)
+void pbr_render_system::update_per_object_uniform_buffer(const transform & p, const float3 & scale, const bool recieveShadow, const view_data & d)
 {
     uniforms::per_object object = {};
     object.modelMatrix = mul(p.matrix(), make_scaling_matrix(scale));
@@ -190,7 +190,7 @@ void pbr_render_system::run_depth_prepass(const view_data & view, const render_p
 
     for (entity e : scene.render_set)
     {
-        const Pose & p = xform_system->get_world_transform(e)->world_pose;
+        const transform & p = xform_system->get_world_transform(e)->world_pose;
         const float3 & scale = xform_system->get_local_transform(e)->local_scale;
         const bool receiveShadow = materials[e].receive_shadow;
         update_per_object_uniform_buffer(p, scale, receiveShadow, view);
@@ -232,7 +232,7 @@ void pbr_render_system::run_shadow_pass(const view_data & view, const render_pay
     {
         if (materials[e].cast_shadow)
         {
-            const Pose & p = xform_system->get_world_transform(e)->world_pose;
+            const transform & p = xform_system->get_world_transform(e)->world_pose;
             const float3 & scale = xform_system->get_local_transform(e)->local_scale;
             const float4x4 modelMatrix = mul(p.matrix(), make_scaling_matrix(scale));
             shadow->update_shadow_matrix(modelMatrix);
@@ -256,7 +256,7 @@ void pbr_render_system::run_forward_pass(std::vector<entity> & renderQueueMateri
 
     for (entity e : renderQueueMaterial)
     {
-        const Pose & p = xform_system->get_world_transform(e)->world_pose;
+        const transform & p = xform_system->get_world_transform(e)->world_pose;
         const float3 & scale = xform_system->get_local_transform(e)->local_scale;
         const bool receiveShadow = materials[e].receive_shadow;
 
@@ -270,7 +270,7 @@ void pbr_render_system::run_forward_pass(std::vector<entity> & renderQueueMateri
         {
             if (settings.shadowsEnabled)
             {
-                // ideally compile this out from the shader if not using shadows
+                // todo - ideally compile this out from the shader if not using shadows
                 mr->update_uniforms_shadow(shadow->get_output_texture());
             }
 
@@ -437,12 +437,14 @@ void pbr_render_system::render_frame(const render_payload & scene)
 
     view_data shadowAndCullingView = scene.views[0];
 
+    // For stereo rendering, we project the shadows from a center view frustum combining
+    // both eyes
     if (settings.cameraCount == 2)
     {
         cpuProfiler.begin("center-view");
 
         // Take the mid-point between the eyes
-        shadowAndCullingView.pose = Pose(scene.views[0].pose.orientation, (scene.views[0].pose.position + scene.views[1].pose.position) * 0.5f);
+        shadowAndCullingView.pose = transform(scene.views[0].pose.orientation, (scene.views[0].pose.position + scene.views[1].pose.position) * 0.5f);
 
         // Compute the interocular distance
         const float3 interocularDistance = scene.views[1].pose.position - scene.views[0].pose.position;
@@ -532,8 +534,6 @@ void pbr_render_system::render_frame(const render_payload & scene)
         glClearNamedFramebufferfv(multisampleFramebuffer, GL_COLOR, 0, &defaultColor[0]);
         glClearNamedFramebufferfv(multisampleFramebuffer, GL_DEPTH, 0, &defaultDepth);
 
-        gl_check_error(__FILE__, __LINE__);
-
         // Execute the forward passes
         if (settings.useDepthPrepass)
         {
@@ -541,8 +541,6 @@ void pbr_render_system::render_frame(const render_payload & scene)
             run_depth_prepass(scene.views[camIdx], scene);
             gpuProfiler.end("depth-prepass");
         }
-
-        gl_check_error(__FILE__, __LINE__);
 
         gpuProfiler.begin("forward-pass");
         cpuProfiler.begin("skybox");
@@ -552,8 +550,6 @@ void pbr_render_system::render_frame(const render_payload & scene)
         run_forward_pass(materialRenderList, scene.views[camIdx], scene);
         cpuProfiler.end("forward");
         gpuProfiler.end("forward-pass");
-
-        gl_check_error(__FILE__, __LINE__);
 
         glDisable(GL_MULTISAMPLE);
 
@@ -573,8 +569,6 @@ void pbr_render_system::render_frame(const render_payload & scene)
 
             gpuProfiler.end("blit");
         }
-
-        gl_check_error(__FILE__, __LINE__);
     }
 
     // Execute the post passes after having resolved the multisample framebuffers
@@ -591,6 +585,7 @@ void pbr_render_system::render_frame(const render_payload & scene)
 
     glDisable(GL_FRAMEBUFFER_SRGB);
     cpuProfiler.end("renderloop");
+
     gl_check_error(__FILE__, __LINE__);
 }
 

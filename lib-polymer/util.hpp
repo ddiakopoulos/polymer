@@ -1,5 +1,7 @@
-#ifndef main_util_h
-#define main_util_h
+#pragma once
+
+#ifndef polymer_utils_hpp
+#define polymer_utils_hpp
 
 #include <sstream>
 #include <iostream>
@@ -76,6 +78,7 @@ inline void polymer_aligned_free(void * ptr)
 
 namespace polymer
 {
+
     class scoped_timer
     {
         std::string message;
@@ -195,6 +198,7 @@ namespace polymer
 
     #define POLYMER_ERROR(...) polymer::pretty_print(__FILE__, __LINE__, polymer::as_string() << __VA_ARGS__)
     #define POLYMER_INFO(...) polymer::pretty_print(__FILE__, __LINE__, polymer::as_string() << __VA_ARGS__)
-}
 
-#endif
+} // end namespace polymer
+
+#endif // end polymer_utils_hpp

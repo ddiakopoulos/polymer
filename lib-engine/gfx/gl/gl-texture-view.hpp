@@ -95,8 +95,8 @@ namespace polymer
 
     struct gl_texture_view_2d : public non_copyable
     {
-        GlShader program;
-        GlMesh mesh = make_fullscreen_quad_screenspace();
+        gl_shader program;
+        gl_mesh mesh = make_fullscreen_quad_screenspace();
         bool hasDepth = false;
         float2 nearFarDepth;
 
@@ -106,13 +106,13 @@ namespace polymer
 
             if (flip)
             {
-                if (hasDepth) program = GlShader(s_textureVertFlip, s_textureFragDepth);
-                else program = GlShader(s_textureVertFlip, s_textureFrag);
+                if (hasDepth) program = gl_shader(s_textureVertFlip, s_textureFragDepth);
+                else program = gl_shader(s_textureVertFlip, s_textureFrag);
             }
             else
             {
-                if (hasDepth) program = GlShader(s_textureVert, s_textureFragDepth);
-                else program = GlShader(s_textureVert, s_textureFrag);
+                if (hasDepth) program = gl_shader(s_textureVert, s_textureFragDepth);
+                else program = gl_shader(s_textureVert, s_textureFrag);
             }
         }
         
@@ -137,10 +137,10 @@ namespace polymer
     
     class gl_texture_view_3d : public non_copyable
     {
-        GlShader program;
-        GlMesh mesh = make_fullscreen_quad_screenspace(); 
+        gl_shader program;
+        gl_mesh mesh = make_fullscreen_quad_screenspace(); 
     public:
-        gl_texture_view_3d() { program = GlShader(s_textureVert3D, s_textureFrag3D); }
+        gl_texture_view_3d() { program = gl_shader(s_textureVert3D, s_textureFrag3D); }
         void draw(const aabb_2d & rect, const float2 windowSize, const GLuint tex, const GLenum target, const int slice)
         {
             const float4x4 projection = make_orthographic_matrix(0.0f, windowSize.x, windowSize.y, 0.0f, -1.0f, 1.0f);
@@ -157,8 +157,8 @@ namespace polymer
 
     struct simple_texture_view
     {
-        GlShader shader;
-        GlMesh fullscreen_quad_ndc;
+        gl_shader shader;
+        gl_mesh fullscreen_quad_ndc;
 
         simple_texture_view()
         {
@@ -186,7 +186,7 @@ namespace polymer
                 }
             )";
 
-            shader = GlShader(s_textureVert, s_textureFrag);
+            shader = gl_shader(s_textureVert, s_textureFrag);
 
             struct Vertex { float3 position; float2 texcoord; };
             const float3 verts[6] = { { -1.0f, -1.0f, 0.0f },{ 1.0f, -1.0f, 0.0f },{ -1.0f, 1.0f, 0.0f },{ -1.0f, 1.0f, 0.0f },{ 1.0f, -1.0f, 0.0f },{ 1.0f, 1.0f, 0.0f } };

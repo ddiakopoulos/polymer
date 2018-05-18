@@ -1,13 +1,13 @@
 #include "index.hpp"
 
-#include "../lib-engine/bullet_engine.hpp"
-#include "../lib-engine/bullet_debug.hpp"
-#include "../lib-engine/openvr-hmd.hpp"
-#include "../lib-engine/shader-library.hpp"
+#include "bullet_engine.hpp"
+#include "bullet_visualizer.hpp"
+#include "openvr-hmd.hpp"
+#include "shader-library.hpp"
 
-#include "../lib-engine/gfx/gl/gl-renderable-grid.hpp"
-#include "../lib-engine/gfx/gl/gl-camera.hpp"
-#include "../lib-engine/gfx/gl/gl-async-gpu-timer.hpp"
+#include "gfx/gl/gl-renderable-grid.hpp"
+#include "gfx/gl/gl-camera.hpp"
+#include "gfx/gl/gl-async-gpu-timer.hpp"
 
 #include "radix_sort.hpp"
 #include "procedural_mesh.hpp"
@@ -20,19 +20,19 @@
 
 using namespace polymer;
 
-struct ScreenViewport
+struct viewport_t
 {
     float2 bmin, bmax;
     GLuint texture;
 };
 
-// MotionControllerVR wraps BulletObjectVR and is responsible for creating a controlled physically-activating 
+// physics_object_openvr_controller wraps physics_object and is responsible for creating a controlled physically-activating 
 // object, and keeping the physics engine aware of the latest user-controlled pose.
-class MotionControllerVR
+class physics_object_openvr_controller
 {
-    Pose latestPose;
+    transform latestPose;
 
-    void update_physics(const float dt, BulletEngineVR * engine)
+    void update_physics(const float dt, bullet_engine * engine)
     {
         physicsObject->body->clearForces();
         physicsObject->body->setWorldTransform(to_bt(latestPose.matrix()));
@@ -40,26 +40,26 @@ class MotionControllerVR
 
 public:
 
-    std::shared_ptr<BulletEngineVR> engine;
+    std::shared_ptr<bullet_engine> engine;
     const openvr_controller * ctrl;
     std::shared_ptr<cached_controller_render_data> renderData;
 
     btCollisionShape * controllerShape{ nullptr };
-    BulletObjectVR * physicsObject{ nullptr };
+    physics_object * physicsObject{ nullptr };
 
-    MotionControllerVR(std::shared_ptr<BulletEngineVR> engine, const openvr_controller * ctrl, std::shared_ptr<cached_controller_render_data> renderData)
+    physics_object_openvr_controller(std::shared_ptr<bullet_engine> engine, const openvr_controller * ctrl, std::shared_ptr<cached_controller_render_data> renderData)
         : engine(engine), ctrl(ctrl), renderData(renderData)
     {
 
         // Physics tick
-        engine->add_task([=](float time, BulletEngineVR * engine)
+        engine->add_task([=](float time, bullet_engine * engine)
         {
             this->update_physics(time, engine);
         });
 
         controllerShape = new btBoxShape(btVector3(0.096, 0.096, 0.0123)); // fixme to use renderData
 
-        physicsObject = new BulletObjectVR(new btDefaultMotionState(), controllerShape, engine->get_world(), 0.5f); // Controllers require non-zero mass
+        physicsObject = new physics_object(new btDefaultMotionState(), controllerShape, engine->get_world(), 0.5f); // Controllers require non-zero mass
 
         physicsObject->body->setFriction(2.f);
         physicsObject->body->setRestitution(0.1f);
@@ -69,17 +69,17 @@ public:
         engine->add_object(physicsObject);
     }
 
-    ~MotionControllerVR()
+    ~physics_object_openvr_controller()
     {
         engine->remove_object(physicsObject);
         delete physicsObject;
     }
 
-    void update(const Pose & latestControllerPose)
+    void update(const transform & latestControllerPose)
     {
         latestPose = latestControllerPose;
 
-        auto collisionList = physicsObject->CollideWorld();
+        auto collisionList = physicsObject->collide_world();
         for (auto & c : collisionList)
         {
             // Contact points
@@ -87,26 +87,24 @@ public:
     }
 };
 
-struct poly_scene
+struct vr_app_state
 {
     gl_renderable_grid grid {0.25f, 24, 24 };
-    Geometry navMesh;
+    geometry navMesh;
 
-    ParabolicPointerParams params;
+    pointer_data params;
     bool regeneratePointer = false;
 
-    std::unique_ptr<MotionControllerVR> leftController;
-    std::unique_ptr<MotionControllerVR> rightController;
+    std::unique_ptr<physics_object_openvr_controller> leftController;
+    std::unique_ptr<physics_object_openvr_controller> rightController;
+    std::vector<std::shared_ptr<physics_object>> physicsObjects;
 
     bool needsTeleport{ false };
     float3 teleportLocation;
     /* StaticMesh teleportationArc; */
-
-    std::vector<std::shared_ptr<BulletObjectVR>> physicsObjects;
-
 };
 
-struct VirtualRealityApp : public polymer_app
+struct sample_vr_app : public polymer_app
 {
     uint64_t frameCount = 0;
 
@@ -117,19 +115,19 @@ struct VirtualRealityApp : public polymer_app
 
     gl_shader_monitor shaderMonitor = { "../assets/" };
     
-    std::vector<ScreenViewport> viewports;
-    poly_scene scene;
+    std::vector<viewport_t> viewports;
+    vr_app_state scene;
 
     simple_cpu_timer t;
     gl_gpu_timer gpuTimer;
 
-    std::shared_ptr<BulletEngineVR> physicsEngine;
-    std::unique_ptr<PhysicsDebugRenderer> physicsDebugRenderer;
+    std::shared_ptr<bullet_engine> physicsEngine;
+    std::unique_ptr<physics_visualizer> physicsDebugRenderer;
 
     std::unique_ptr<gui::imgui_instance> igm;
 
-    VirtualRealityApp();
-    ~VirtualRealityApp();
+    sample_vr_app();
+    ~sample_vr_app();
 
     void setup_physics();
 

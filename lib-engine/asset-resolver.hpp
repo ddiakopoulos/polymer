@@ -29,6 +29,7 @@
 
 namespace polymer
 {
+
     template <typename T>
     void remove_duplicates(std::vector<T> & vec)
     {
@@ -68,7 +69,7 @@ namespace polymer
                         if (name == filename_no_extension)
                         {
                             create_handle_for_asset(name.c_str(), load_image(path, false));
-                            log::get()->assetLog->info("resolved {} ({})", name, typeid(GlTexture2D).name());
+                            log::get()->assetLog->info("resolved {} ({})", name, typeid(gl_texture_2d).name());
                         }
                     }
                 }

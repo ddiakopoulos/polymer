@@ -1,9 +1,10 @@
-#include "vr_app.hpp"
+#include "engine-openvr-scene.hpp"
+
 #include "gl-imgui.hpp"
 #include "gl-loaders.hpp"
 #include "math-core.hpp"
 
-VirtualRealityApp::VirtualRealityApp() : polymer_app(1280, 800, "VR Sandbox")
+sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "VR Sandbox")
 {
     scoped_timer t("constructor");
 
@@ -24,8 +25,8 @@ VirtualRealityApp::VirtualRealityApp() : polymer_app(1280, 800, "VR Sandbox")
         glfwSwapInterval(0);
 
         auto controllerRenderModel = hmd->get_controller_render_data();
-        scene.leftController.reset(new MotionControllerVR(physicsEngine, hmd->get_controller(vr::TrackedControllerRole_LeftHand), controllerRenderModel));
-        scene.rightController.reset(new MotionControllerVR(physicsEngine, hmd->get_controller(vr::TrackedControllerRole_RightHand), controllerRenderModel));
+        scene.leftController.reset(new physics_object_openvr_controller(physicsEngine, hmd->get_controller(vr::TrackedControllerRole_LeftHand), controllerRenderModel));
+        scene.rightController.reset(new physics_object_openvr_controller(physicsEngine, hmd->get_controller(vr::TrackedControllerRole_RightHand), controllerRenderModel));
     }
     catch (const std::exception & e)
     {
@@ -36,16 +37,16 @@ VirtualRealityApp::VirtualRealityApp() : polymer_app(1280, 800, "VR Sandbox")
     gl_check_error(__FILE__, __LINE__);
 }
 
-VirtualRealityApp::~VirtualRealityApp()
+sample_vr_app::~sample_vr_app()
 {
     hmd.reset();
 }
 
-void VirtualRealityApp::setup_physics()
+void sample_vr_app::setup_physics()
 {
-    physicsEngine.reset(new BulletEngineVR());
+    physicsEngine.reset(new bullet_engine());
 
-    physicsDebugRenderer.reset(new PhysicsDebugRenderer()); // Sets up a few gl objects
+    physicsDebugRenderer.reset(new physics_visualizer()); // Sets up a few gl objects
     physicsDebugRenderer->setDebugMode(
         btIDebugDraw::DBG_DrawWireframe |
         btIDebugDraw::DBG_DrawContactPoints |
@@ -58,19 +59,19 @@ void VirtualRealityApp::setup_physics()
     physicsEngine->get_world()->setDebugDrawer(physicsDebugRenderer.get());
 }
 
-void VirtualRealityApp::on_window_resize(int2 size)
+void sample_vr_app::on_window_resize(int2 size)
 {
     int windowWidth, windowHeight;
     glfwGetWindowSize(window, &windowWidth, &windowHeight);
 }
 
-void VirtualRealityApp::on_input(const app_input_event & event) 
+void sample_vr_app::on_input(const app_input_event & event) 
 {
     cameraController.handle_input(event);
     if (igm) igm->update_input(event);
 }
 
-void VirtualRealityApp::on_update(const app_update_event & e) 
+void sample_vr_app::on_update(const app_update_event & e) 
 {
     cameraController.update(e.timestep_ms);
 
@@ -128,7 +129,7 @@ void VirtualRealityApp::on_update(const app_update_event & e)
                 scene.params.position = pose.position;
                 scene.params.forward = -qzdir(pose.orientation);
 
-                Geometry pointerGeom;
+                geometry pointerGeom;
                 if (make_parabolic_pointer(scene.params, pointerGeom, scene.teleportLocation))
                 {
                     scene.needsTeleport = true;
@@ -141,13 +142,13 @@ void VirtualRealityApp::on_update(const app_update_event & e)
                 scene.needsTeleport = false;
 
                 scene.teleportLocation.y = hmd->get_hmd_pose().position.y;
-                Pose teleportPose(hmd->get_hmd_pose().orientation, scene.teleportLocation);
+                transform teleportPose(hmd->get_hmd_pose().orientation, scene.teleportLocation);
 
                 hmd->set_world_pose({}); // reset world pose
                 auto hmd_pose = hmd->get_hmd_pose(); // pose is now in the HMD's own coordinate system
                 hmd->set_world_pose(teleportPose * hmd_pose.inverse());
 
-                Geometry emptyGeom;
+                geometry emptyGeom;
                 //scene.teleportationArc.set_static_mesh(emptyGeom, GL_DYNAMIC_DRAW);
             }
         }
@@ -164,7 +165,7 @@ void VirtualRealityApp::on_update(const app_update_event & e)
 
 }
 
-void VirtualRealityApp::on_draw()
+void sample_vr_app::on_draw()
 {
     glfwMakeContextCurrent(window);
 
@@ -179,8 +180,8 @@ void VirtualRealityApp::on_draw()
     /*
     aabb_2d rect{ { 0.f, 0.f },{ (float)width,(float)height } };
     const float mid = (rect.min().x + rect.max().x) / 2.f;
-    ScreenViewport leftviewport = { rect.min(),{ mid - 2.f, rect.max().y }, renderer->get_eye_texture(Eye::LeftEye) };
-    ScreenViewport rightViewport = { { mid + 2.f, rect.min().y }, rect.max(), renderer->get_eye_texture(Eye::RightEye) };
+    viewport_t leftviewport = { rect.min(),{ mid - 2.f, rect.max().y }, renderer->get_eye_texture(Eye::LeftEye) };
+    viewport_t rightViewport = { { mid + 2.f, rect.min().y }, rect.max(), renderer->get_eye_texture(Eye::RightEye) };
     viewports.clear();
     viewports.push_back(leftviewport);
     viewports.push_back(rightViewport);
@@ -229,7 +230,7 @@ void VirtualRealityApp::on_draw()
 
 int main(int argc, char * argv[])
 {
-    VirtualRealityApp app;
+    sample_vr_app app;
     app.main_loop();
     return EXIT_SUCCESS;
 }

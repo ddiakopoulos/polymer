@@ -25,10 +25,9 @@ namespace polymer
             spdlog::set_async_mode(qSize);
             sinks.push_back(std::make_shared<spdlog::sinks::simple_file_sink_mt>("polymer-engine-log.txt"));
             assetLog = std::make_shared<spdlog::logger>("polymer-engine-log", std::begin(sinks), std::end(sinks));
-            //sinks.push_back(std::make_shared<spdlog::sinks::stdout_sink_mt>());
         }
 
-        void add_sink(spdlog::sink_ptr sink)
+        void replace_sink(spdlog::sink_ptr sink)
         {
             sinks.push_back(sink);
             assetLog = std::make_shared<spdlog::logger>("polymer-engine-log", std::begin(sinks), std::end(sinks));

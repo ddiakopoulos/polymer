@@ -16,14 +16,12 @@
 
 #include "../../../lib-engine/asset-handle-utils.hpp"
 
-
-
 namespace polymer
 {
     struct shader_variant
     {
         std::vector<std::string> defines; // eventually capture/store in material
-        GlShader shader;
+        gl_shader shader;
         bool enabled(const std::string & define) { for (auto & d : defines) if (d == define) return true; return false; }
     };
 
@@ -40,9 +38,9 @@ namespace polymer
     public:
 
         gl_shader_asset(const std::string & n, const std::string & v, const std::string & f, const std::string & g = "", const std::string & inc = "");
-        GlShader compile_variant(const std::vector<std::string> defines);
+        gl_shader compile_variant(const std::vector<std::string> defines);
         std::shared_ptr<shader_variant> get_variant(const std::vector<std::string> defines = {});
-        GlShader & default(); // returns compiled shader, assumes no defines
+        gl_shader & default(); // returns compiled shader, assumes no defines
         void recompile_all();
     };
 }

@@ -99,27 +99,27 @@ std::shared_ptr<cached_controller_render_data> openvr_hmd::get_controller_render
     return controllerRenderData; 
 }
 
-void openvr_hmd::set_world_pose(const Pose & p) 
+void openvr_hmd::set_world_pose(const transform & p) 
 {
     worldPose = p; 
 }
 
-Pose openvr_hmd::get_world_pose() 
+transform openvr_hmd::get_world_pose() 
 { 
     return worldPose; 
 }
 
-Pose openvr_hmd::get_hmd_pose() const 
+transform openvr_hmd::get_hmd_pose() const 
 { 
     return worldPose * hmdPose; 
 }
 
-void openvr_hmd::set_hmd_pose(const Pose & p) 
+void openvr_hmd::set_hmd_pose(const transform & p) 
 { 
     hmdPose = p; 
 }
 
-Pose openvr_hmd::get_eye_pose(vr::Hmd_Eye eye) 
+transform openvr_hmd::get_eye_pose(vr::Hmd_Eye eye) 
 { 
     return get_hmd_pose() * make_pose(hmd->GetEyeToHeadTransform(eye)); 
 }

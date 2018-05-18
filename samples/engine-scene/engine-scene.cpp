@@ -146,7 +146,7 @@ sample_engine_scene::sample_engine_scene() : polymer_app(1280, 720, "sample-engi
         scene.collision_system->meshes[debug_sphere] = geom_component;
 
         // Create transform and name components
-        scene.xform_system->create(debug_sphere, Pose(), { 1.f, 1.f, 1.f });
+        scene.xform_system->create(debug_sphere, transform(), { 1.f, 1.f, 1.f });
         scene.name_system->create(debug_sphere, "debug object: sphere");
 
         payload.render_set.push_back(debug_sphere);

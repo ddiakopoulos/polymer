@@ -16,22 +16,22 @@
 
 namespace polymer
 {
-    //////////
-    // Pose //
-    //////////
+    ///////////////////
+    //   transform   //
+    ///////////////////
 
     // Rigid transformation value-type
-    struct Pose
+    struct transform
     {
         float4      orientation;    // Orientation of an object, expressed as a rotation quaternion from the base orientation
         float3      position;       // Position of an object, expressed as a translation vector from the base position
 
-        Pose() : Pose({ 0,0,0,1 }, { 0,0,0 }) {}
-        Pose(const float4 & orientation, const float3 & position) : orientation(orientation), position(position) {}
-        explicit    Pose(const float4 & orientation) : Pose(orientation, { 0,0,0 }) {}
-        explicit    Pose(const float3 & position) : Pose({ 0,0,0,1 }, position) {}
+        transform() : transform({ 0,0,0,1 }, { 0,0,0 }) {}
+        transform(const float4 & orientation, const float3 & position) : orientation(orientation), position(position) {}
+        explicit    transform(const float4 & orientation) : transform(orientation, { 0,0,0 }) {}
+        explicit    transform(const float3 & position) : transform({ 0,0,0,1 }, position) {}
 
-        Pose        inverse() const { auto invOri = qinv(orientation); return{ invOri, qrot(invOri, -position) }; }
+        transform   inverse() const { auto invOri = qinv(orientation); return{ invOri, qrot(invOri, -position) }; }
         float4x4    matrix() const { return { { qxdir(orientation),0 },{ qydir(orientation),0 },{ qzdir(orientation),0 },{ position,1 } }; }
         float4x4    view_matrix() const { return inverse().matrix(); }
         float3      xdir() const { return qxdir(orientation); } // Equivalent to transform_vector({1,0,0})
@@ -43,12 +43,12 @@ namespace polymer
         float3      detransform_coord(const float3 & coord) const { return detransform_vector(coord - position); }    // Equivalent to inverse().transform_coord(coord), but faster
         float3      detransform_vector(const float3 & vec) const { return qrot(qinv(orientation), vec); }             // Equivalent to inverse().transform_vector(vec), but faster
 
-        Pose        operator * (const Pose & pose) const { return{ qmul(orientation,pose.orientation), transform_coord(pose.position) }; }
+        transform   operator * (const transform & pose) const { return{ qmul(orientation,pose.orientation), transform_coord(pose.position) }; }
     };
 
-    inline bool operator == (const Pose & a, const Pose & b) { return (a.position == b.position) && (a.orientation == b.orientation); }
-    inline bool operator != (const Pose & a, const Pose & b) { return (a.position != b.position) || (a.orientation != b.orientation); }
-    inline std::ostream & operator << (std::ostream & o, const Pose & r) { return o << "{" << r.position << ", " << r.orientation << "}"; }
+    inline bool operator == (const transform & a, const transform & b) { return (a.position == b.position) && (a.orientation == b.orientation); }
+    inline bool operator != (const transform & a, const transform & b) { return (a.position != b.position) || (a.orientation != b.orientation); }
+    inline std::ostream & operator << (std::ostream & o, const transform & r) { return o << "{" << r.position << ", " << r.orientation << "}"; }
 
     ////////////////////////////////////
     // Construct rotation quaternions //
@@ -372,23 +372,23 @@ namespace polymer
         v = householder_mat[2].xyz();
     }
 
-    /////////////////////
-    // Construct Poses //
-    /////////////////////
+    //////////////////////////
+    // Construct Transforms //
+    //////////////////////////
 
     // The long form of (a.inverse() * b) 
-    inline Pose make_pose_from_to(const Pose & a, const Pose & b)
+    inline transform make_transform_from_to(const transform & a, const transform & b)
     {
-        Pose ret;
+        transform ret;
         const auto inv = qinv(a.orientation);
         ret.orientation = qmul(inv, b.orientation);
         ret.position = qrot(inv, b.position - a.position);
         return ret;
     }
 
-    inline Pose look_at_pose_rh(float3 eyePoint, float3 target, float3 worldUp = { 0,1,0 })
+    inline transform lookat_rh(float3 eyePoint, float3 target, float3 worldUp = { 0,1,0 })
     {
-        Pose p;
+        transform p;
         float3 zDir = normalize(eyePoint - target);
         float3 xDir = normalize(cross(worldUp, zDir));
         float3 yDir = cross(zDir, xDir);
@@ -397,9 +397,9 @@ namespace polymer
         return p;
     }
 
-    inline Pose look_at_pose_lh(float3 eyePoint, float3 target, float3 worldUp = { 0,1,0 })
+    inline transform lookat_lh(float3 eyePoint, float3 target, float3 worldUp = { 0,1,0 })
     {
-        Pose p;
+        transform p;
         float3 zDir = normalize(target - eyePoint);
         float3 xDir = normalize(cross(worldUp, zDir));
         float3 yDir = cross(zDir, xDir);
@@ -409,11 +409,11 @@ namespace polymer
     }
 
     // tofix - this is not correct for parallel transport frames
-    inline Pose make_pose_from_transform_matrix(const float4x4 & transform)
+    inline transform make_transform_from_matrix(const float4x4 & xform)
     {
-        Pose p;
-        p.position = transform[3].xyz();
-        p.orientation = make_rotation_quat_from_rotation_matrix(get_rotation_submatrix(transform));
+        transform p;
+        p.position = xform[3].xyz();
+        p.orientation = make_rotation_quat_from_rotation_matrix(get_rotation_submatrix(xform));
         return p;
     }
 

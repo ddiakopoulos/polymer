@@ -82,15 +82,15 @@ TEST_CASE("poses, matrices, and transformations")
 {
     const float4x4 matrix_xform = make_translation_matrix({ -8, 0, 8 });
 
-    const Pose pose_a = make_pose_from_transform_matrix(matrix_xform);
-    const Pose pose_b = { float4(0, 0, 0, 1), float3(-8, 0, 8) };
+    const transform pose_a = make_transform_from_matrix(matrix_xform);
+    const transform pose_b = { float4(0, 0, 0, 1), float3(-8, 0, 8) };
 
     REQUIRE(pose_a.matrix() == matrix_xform);
     REQUIRE(pose_a == pose_b);
 
-    const Pose pose_c = { make_rotation_quat_axis_angle({ 1, 0, 0 }, POLYMER_TAU / 2),{ 5, 5, 5 } };
-    const Pose pose_d = {};
-    const Pose pose_e = make_pose_from_to(pose_c, pose_d);
+    const transform pose_c = { make_rotation_quat_axis_angle({ 1, 0, 0 }, POLYMER_TAU / 2),{ 5, 5, 5 } };
+    const transform pose_d = {};
+    const transform pose_e = make_transform_from_to(pose_c, pose_d);
 
     REQUIRE((pose_c.inverse() * pose_d) == pose_e);
 }

@@ -7,6 +7,7 @@
 
 namespace polymer
 {
+
     // Forward declarations
     struct material_interface;
     struct polymer_default_material;

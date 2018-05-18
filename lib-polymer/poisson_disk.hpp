@@ -1,4 +1,4 @@
-// See COPYING file for attribution information - based on https://github.com/simongeilfus/PoissonDiskDistribution (Simon Geilfus, MIT License)
+// Based on https://github.com/simongeilfus/PoissonDiskDistribution (MIT License)
 
 #pragma once
 

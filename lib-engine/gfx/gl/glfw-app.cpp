@@ -2,8 +2,8 @@
 #include "util.hpp"
 #include "math-spatial.hpp"
 #include "gl-api.hpp"
-#include "stb/stb_image_write.h"
 #include "human_time.hpp"
+#include "stb/stb_image_write.h"
 
 using namespace polymer;
 
@@ -46,17 +46,17 @@ gl_context::gl_context()
     if (!hidden_window) throw std::runtime_error("glfwCreateWindow(...) failed");
     glfwMakeContextCurrent(hidden_window);
 
-    POLYMER_INFO("GL_VERSION =  " << (char *)glGetString(GL_VERSION));
-    POLYMER_INFO("GL_SHADING_LANGUAGE_VERSION =  " << (char *)glGetString(GL_SHADING_LANGUAGE_VERSION));
-    POLYMER_INFO("GL_VENDOR =   " << (char *)glGetString(GL_VENDOR));
-    POLYMER_INFO("GL_RENDERER = " << (char *)glGetString(GL_RENDERER));
-    POLYMER_INFO("GLFW_VERSION = " << glfwGetVersionString());
+    POLYMER_INFO("GL_VERSION     = " << (char *)glGetString(GL_VERSION));
+    POLYMER_INFO("GL_SHADING_VER = " << (char *)glGetString(GL_SHADING_LANGUAGE_VERSION));
+    POLYMER_INFO("GL_VENDOR      = " << (char *)glGetString(GL_VENDOR));
+    POLYMER_INFO("GL_RENDERER    = " << (char *)glGetString(GL_RENDERER));
+    POLYMER_INFO("GLFW_VERSION   = " << glfwGetVersionString());
 
 #if defined(POLYMER_PLATFORM_WINDOWS)
     glewExperimental = GL_TRUE;
     if (GLenum err = glewInit())
         throw std::runtime_error(std::string("glewInit() failed - ") + (const char *)glewGetErrorString(err));
-    POLYMER_INFO("GLEW_VERSION = " << (char *)glewGetString(GLEW_VERSION));
+    POLYMER_INFO("GLEW_VERSION   = " << (char *)glewGetString(GLEW_VERSION));
 #endif
 
     std::vector<std::pair<std::string, bool>> extensions{

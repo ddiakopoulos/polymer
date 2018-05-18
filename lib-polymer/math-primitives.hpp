@@ -152,23 +152,23 @@ namespace polymer
 
     static const float SPHERE_EPSILON = 0.0001f;
     
-    struct Sphere
+    struct sphere
     {
         float3 center;
         float radius;
         
-        Sphere() {}
-        Sphere(const float3 & center, float radius) : center(center), radius(radius) {}
+        sphere() {}
+        sphere(const float3 & center, float radius) : center(center), radius(radius) {}
     };
 
     // Makes use of the "bouncing bubble" solution to the minimal enclosing ball problem. Runs in O(n).
     // http://stackoverflow.com/questions/17331203/bouncing-bubble-algorithm-for-smallest-enclosing-sphere
-    inline Sphere compute_enclosing_sphere(const std::vector<float3> & vertices, float minRadius = SPHERE_EPSILON)
+    inline sphere compute_enclosing_sphere(const std::vector<float3> & vertices, float minRadius = SPHERE_EPSILON)
     {
-        if (vertices.size() > 3) return Sphere();
+        if (vertices.size() > 3) return sphere();
         if (minRadius < SPHERE_EPSILON) minRadius = SPHERE_EPSILON;
 
-        Sphere s;
+        sphere s;
 
         for (int t = 0; t < 2; t++)
         {
@@ -203,18 +203,18 @@ namespace polymer
     }
 
     ///////////////
-    //   Plane   //
+    //   plane   //
     ///////////////
     
     static const float PLANE_EPSILON = 0.0001f;
     
-    struct Plane
+    struct plane
     {
         float4 equation = { 0, 0, 0, 0 }; // ax * by * cz + d form (xyz normal, w distance)
-        Plane() {}
-        Plane(const float4 & equation) : equation(equation) {}
-        Plane(const float3 & normal, const float & distance) { equation = float4(normal.x, normal.y, normal.z, distance); }
-        Plane(const float3 & normal, const float3 & point) { equation = float4(normal.x, normal.y, normal.z, -dot(normal, point)); }
+        plane() {}
+        plane(const float4 & equation) : equation(equation) {}
+        plane(const float3 & normal, const float & distance) { equation = float4(normal.x, normal.y, normal.z, distance); }
+        plane(const float3 & normal, const float3 & point) { equation = float4(normal.x, normal.y, normal.z, -dot(normal, point)); }
         float3 get_normal() const { return equation.xyz(); }
         bool is_negative_half_space(const float3 & point) const { return (dot(get_normal(), point) < equation.w); }; // +eq.w?
         bool is_positive_half_space(const float3 & point) const { return (dot(get_normal(), point) > equation.w); };
@@ -226,19 +226,19 @@ namespace polymer
         float3 reflect_vector(const float3 & v) const { return get_normal() * dot(get_normal(), v) * 2.f - v; }
     };
 
-    inline Plane transform_plane(const float4x4 & transform, const Plane & p)
+    inline plane transform_plane(const float4x4 & transform, const plane & p)
     {
         const float3 normal = transform_vector(transform, p.get_normal());
         const float3 point_on_plane = transform_coord(transform, p.get_distance() * p.get_normal());
-        return Plane(normal, point_on_plane);
+        return plane(normal, point_on_plane);
     }
 
-    inline float3 get_plane_point(const Plane & p)
+    inline float3 get_plane_point(const plane & p)
     {
         return -1.0f * p.get_distance() * p.get_normal();
     }
 
-    inline float3 plane_intersection(const Plane & a, const Plane & b, const Plane & c)
+    inline float3 plane_intersection(const plane & a, const plane & b, const plane & c)
     {
         const float3 p1 = get_plane_point(a);
         const float3 p2 = get_plane_point(b);
@@ -253,7 +253,7 @@ namespace polymer
         return (dot(p1, n1) * cross(n2, n3) + dot(p2, n2) * cross(n3, n1) + dot(p3, n3) * cross(n1, n2)) / det;
     }
 
-    inline std::ostream & operator << (std::ostream & o, const Plane & b)
+    inline std::ostream & operator << (std::ostream & o, const plane & b)
     {
         return o << "{" << b.equation << "}";
     }
@@ -262,30 +262,30 @@ namespace polymer
     //   Lines and Segments   //
     ////////////////////////////
     
-    struct Segment
+    struct segment
     {
         float3 a, b;
-        Segment(const float3 & first, const float3 & second) : a(a), b(b) {}
+        segment(const float3 & first, const float3 & second) : a(a), b(b) {}
         float3 get_direction() const { return safe_normalize(b - a); };
     };
 
-    inline std::ostream & operator << (std::ostream & o, const Segment & b)
+    inline std::ostream & operator << (std::ostream & o, const segment & b)
     {
         return o << "{" << b.a << " to " << b.b << "}";
     }
 
-    struct Line
+    struct line
     {
         float3 origin, direction;
-        Line(const float3 & origin, const float3 & direction) : origin(origin), direction(direction) {}
+        line(const float3 & origin, const float3 & direction) : origin(origin), direction(direction) {}
     };
 
-    inline std::ostream & operator << (std::ostream & o, const Line & b)
+    inline std::ostream & operator << (std::ostream & o, const line & b)
     {
         return o << "{" << b.origin << " => " << b.direction << "}";
     }
 
-    inline float3 closest_point_on_segment(const float3 & point, const Segment & s)
+    inline float3 closest_point_on_segment(const float3 & point, const segment & s)
     {
         const float length = distance(s.a, s.b);
         const float3 dir = (s.b - s.a) / length;
@@ -295,20 +295,20 @@ namespace polymer
         return s.a + dir * d;
     }
 
-    inline Line plane_intersection(const Plane & p1, const Plane & p2)
+    inline line plane_intersection(const plane & p1, const plane & p2)
     {
         const float ndn = dot(p1.get_normal(), p2.get_normal());
         const float recDeterminant = 1.f / (1.f - (ndn * ndn));
         const float c1 = (-p1.get_distance() + (p2.get_distance() * ndn)) * recDeterminant;
         const float c2 = (-p2.get_distance() + (p1.get_distance() * ndn)) * recDeterminant;
-        return Line((c1 * p1.get_normal()) + (c2 * p2.get_normal()), normalize(cross(p1.get_normal(), p2.get_normal())));
+        return line((c1 * p1.get_normal()) + (c2 * p2.get_normal()), normalize(cross(p1.get_normal(), p2.get_normal())));
     }
 
     /////////////////////////////////
     // Object-Object intersections //
     /////////////////////////////////
     
-    inline float3 intersect_line_plane(const Line & l, const Plane & p)
+    inline float3 intersect_line_plane(const line & l, const plane & p)
     {
         const float d = dot(l.direction, p.get_normal());
         const float distance = p.distance_to(l.origin) / d;
@@ -321,22 +321,22 @@ namespace polymer
 
     enum FrustumPlane { RIGHT, LEFT, BOTTOM, TOP, NEAR, FAR };
 
-    struct Frustum
+    struct frustum
     {
         // frustum normals point inward
-        Plane planes[6];
+        plane planes[6];
 
-        Frustum()
+        frustum()
         {
-            planes[FrustumPlane::RIGHT] = Plane({ -1, 0, 0 }, 1.f);
-            planes[FrustumPlane::LEFT] = Plane({ +1, 0, 0 }, 1.f);
-            planes[FrustumPlane::BOTTOM] = Plane({ 0, +1, 0 }, 1.f);
-            planes[FrustumPlane::TOP] = Plane({ 0, -1, 0 }, 1.f);
-            planes[FrustumPlane::NEAR] = Plane({ 0, 0, +1 }, 1.f);
-            planes[FrustumPlane::FAR] = Plane({ 0, 0, -1 }, 1.f);
+            planes[FrustumPlane::RIGHT] = plane({ -1, 0, 0 }, 1.f);
+            planes[FrustumPlane::LEFT] = plane({ +1, 0, 0 }, 1.f);
+            planes[FrustumPlane::BOTTOM] = plane({ 0, +1, 0 }, 1.f);
+            planes[FrustumPlane::TOP] = plane({ 0, -1, 0 }, 1.f);
+            planes[FrustumPlane::NEAR] = plane({ 0, 0, +1 }, 1.f);
+            planes[FrustumPlane::FAR] = plane({ 0, 0, -1 }, 1.f);
         }
 
-        Frustum(const float4x4 & viewProj)
+        frustum(const float4x4 & viewProj)
         {
             // See "Fast Extraction of Viewing Frustum Planes from the WorldView-Projection Matrix" by Gil Gribb and Klaus Hartmann
             for (int i = 0; i < 4; ++i) planes[FrustumPlane::RIGHT].equation[i] = viewProj[i][3] - viewProj[i][0];
@@ -406,7 +406,7 @@ namespace polymer
 
     };
 
-    inline std::array<float3, 8> make_frustum_corners(const Frustum & f)
+    inline std::array<float3, 8> make_frustum_corners(const frustum & f)
     {
         std::array<float3, 8> corners;
 
@@ -422,7 +422,7 @@ namespace polymer
         return corners;
     }
 
-    inline std::ostream & operator << (std::ostream & o, const Frustum & f)
+    inline std::ostream & operator << (std::ostream & o, const frustum & f)
     {
         return o << "{Right:  " << f.planes[FrustumPlane::RIGHT] << "}";
         return o << "{Left:   " << f.planes[FrustumPlane::LEFT] << "}";
@@ -433,6 +433,6 @@ namespace polymer
 
     }
 
-}
+} // end namespace polymer
 
 #endif // end math_primitives_hpp

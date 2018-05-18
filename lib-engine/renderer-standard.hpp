@@ -31,8 +31,8 @@ namespace polymer
 
     class stable_cascaded_shadows
     {
-        GlTexture3D shadowArrayDepth;
-        GlFramebuffer shadowArrayFramebuffer;
+        gl_texture_3d shadowArrayDepth;
+        gl_framebuffer shadowArrayFramebuffer;
         shader_handle program = { "cascaded-shadows" };
 
     public:
@@ -82,14 +82,14 @@ namespace polymer
     struct view_data
     {
         uint32_t index;
-        Pose pose;
+        transform pose;
         float4x4 viewMatrix;
         float4x4 projectionMatrix;
         float4x4 viewProjMatrix;
         float nearClip;
         float farClip;
 
-        view_data(const uint32_t idx, const Pose & p, const float4x4 & projMat)
+        view_data(const uint32_t idx, const transform & p, const float4x4 & projMat)
         {
             index = idx;
             pose = p;
@@ -120,26 +120,26 @@ namespace polymer
 
         simple_cpu_timer timer;
 
-        GlBuffer perScene;
-        GlBuffer perView;
-        GlBuffer perObject;
+        gl_buffer perScene;
+        gl_buffer perView;
+        gl_buffer perObject;
 
         // MSAA Targets
-        GlRenderbuffer multisampleRenderbuffers[2]; 
-        GlFramebuffer multisampleFramebuffer;
+        gl_renderbuffer multisampleRenderbuffers[2]; 
+        gl_framebuffer multisampleFramebuffer;
 
         // Non-MSAA Targets
-        std::vector<GlFramebuffer> eyeFramebuffers;
-        std::vector<GlTexture2D> eyeTextures;
-        std::vector<GlTexture2D> eyeDepthTextures;
+        std::vector<gl_framebuffer> eyeFramebuffers;
+        std::vector<gl_texture_2d> eyeTextures;
+        std::vector<gl_texture_2d> eyeDepthTextures;
 
         std::unique_ptr<stable_cascaded_shadows> shadow;
-        GlMesh post_quad;
+        gl_mesh post_quad;
 
         shader_handle renderPassEarlyZ = { "depth-prepass" };
         shader_handle renderPassTonemap = { "post-tonemap" };
 
-        void update_per_object_uniform_buffer(const Pose & p, const float3 & scale, const bool receiveShadow, const view_data & d);
+        void update_per_object_uniform_buffer(const transform & p, const float3 & scale, const bool receiveShadow, const view_data & d);
         void run_depth_prepass(const view_data & view, const render_payload & scene);
         void run_skybox_pass(const view_data & view, const render_payload & scene);
         void run_shadow_pass(const view_data & view, const render_payload & scene);
@@ -152,8 +152,8 @@ namespace polymer
         std::unordered_map<entity, material_component> materials;
         std::unordered_map<entity, point_light_component> point_lights;
         std::unordered_map<entity, directional_light_component> directional_lights;
-        std::vector<GlFramebuffer> postFramebuffers;
-        std::vector<GlTexture2D> postTextures;
+        std::vector<gl_framebuffer> postFramebuffers;
+        std::vector<gl_texture_2d> postTextures;
 
         renderer_settings settings;
         profiler<simple_cpu_timer> cpuProfiler;

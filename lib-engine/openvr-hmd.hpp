@@ -10,7 +10,7 @@
 
 using namespace polymer;
 
-inline Pose make_pose(const vr::HmdMatrix34_t & m)
+inline transform make_pose(const vr::HmdMatrix34_t & m)
 {
     return {
         make_rotation_quat_from_rotation_matrix({ { m.m[0][0], m.m[1][0], m.m[2][0] },{ m.m[0][1], m.m[1][1], m.m[2][1] },{ m.m[0][2], m.m[1][2], m.m[2][2] } }),
@@ -20,14 +20,14 @@ inline Pose make_pose(const vr::HmdMatrix34_t & m)
 
 struct cached_controller_render_data
 {
-    Geometry mesh;
-    GlTexture2D tex;
+    geometry mesh;
+    gl_texture_2d tex;
     bool loaded = false;
 };
 
 class openvr_controller
 {
-    Pose p;
+    transform p;
 
 public:
 
@@ -52,9 +52,9 @@ public:
 
     float2 touchpad = float2(0.0f, 0.0f);
 
-    void set_pose(const Pose & newPose) { p = newPose; }
-    const Pose get_pose(const Pose & worldPose) const { return worldPose * p; }
-    Ray forward_ray() const { return Ray(p.position, p.transform_vector(float3(0.0f, 0.0f, -1.0f))); }
+    void set_pose(const transform & newPose) { p = newPose; }
+    const transform get_pose(const transform & worldPose) const { return worldPose * p; }
+    ray forward_ray() const { return ray(p.position, p.transform_vector(float3(0.0f, 0.0f, -1.0f))); }
 };
 
 class openvr_hmd 
@@ -63,7 +63,7 @@ class openvr_hmd
     vr::IVRRenderModels * renderModels { nullptr };
 
     uint2 renderTargetSize;
-    Pose hmdPose, worldPose;
+    transform hmdPose, worldPose;
 
     std::shared_ptr<cached_controller_render_data> controllerRenderData;
     openvr_controller controllers[2];
@@ -75,20 +75,20 @@ public:
 
     // The world pose represents an offset that is applied to `get_hmd_pose()`
     // It is most useful for teleportation functionality. 
-    void set_world_pose(const Pose & p);
-    Pose get_world_pose();
+    void set_world_pose(const transform & p);
+    transform get_world_pose();
 
     // The pose of the headset, relative to the current world pose.
     // If no world pose is set, then it is relative to the center of the OpenVR
     // tracking volume. The view matrix is derived from this data. 
-    Pose get_hmd_pose() const;
-    void set_hmd_pose(const Pose & p);
+    transform get_hmd_pose() const;
+    void set_hmd_pose(const transform & p);
 
     // Returns the per-eye flavor of the view matrix. The eye pose and
     // hmd pose must be multiplied together to derive the per-eye
     // view matrix with correct stereo disparity that must be submitted to the
     // renderer. 
-    Pose get_eye_pose(vr::Hmd_Eye eye);
+    transform get_eye_pose(vr::Hmd_Eye eye);
 
     // OpenVR provides a recommended render target size, in pixels.  
     uint2 get_recommended_render_target_size();

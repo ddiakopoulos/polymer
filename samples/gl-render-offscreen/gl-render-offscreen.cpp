@@ -3,7 +3,7 @@
  * This sample demonstrates how to setup and render to a framebuffer. This framebuffer
  * is then drawn as a full-screen quad using the `simple_texture_view` utility class. 
  * The rendered meshes are all generated procedurally using Polymer's built-in mesh
- * classes. For illustrative reasons, the CPU geometry is not attached to a GlMesh (GPU)
+ * classes. For illustrative reasons, the CPU geometry is not attached to a gl_mesh (GPU)
  * but instead rendered through the use of Polymer's `renderer_debug` found in lib-engine.
  * Lastly, the user can click a mesh to highlight it, showing how to raycast against CPU-side
  * geometry. 
@@ -22,9 +22,9 @@ struct sample_gl_render_offscreen final : public polymer_app
 
     std::unique_ptr<simple_texture_view> view;
 
-    GlTexture2D renderTextureRGBA;
-    GlTexture2D renderTextureDepth;
-    GlFramebuffer renderFramebuffer;
+    gl_texture_2d renderTextureRGBA;
+    gl_texture_2d renderTextureDepth;
+    gl_framebuffer renderFramebuffer;
 
     sample_gl_render_offscreen();
     ~sample_gl_render_offscreen();

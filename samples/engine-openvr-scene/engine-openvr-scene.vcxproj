@@ -14,7 +14,7 @@
     <ProjectGuid>{8935AE6A-79E7-421D-B215-C1DEEB35EBA3}</ProjectGuid>
     <RootNamespace>LightTransport</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
-    <ProjectName>vr-environment</ProjectName>
+    <ProjectName>engine-openvr-scene</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -55,7 +55,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)third_party;$(SolutionDir)third_party\glew;$(SolutionDir)third_party\glfw3\include;$(SolutionDir)lib-engine\gfx\gl;$(SolutionDir)lib-polymer;$(SolutionDir)third_party\bullet3\src\;$(SolutionDir)third_party\bullet3\src\LinearMath;$(SolutionDir)third_party\bullet3\src\Bullet3Collision;$(SolutionDir)third_party\bullet3\src\Bullet3Common;$(SolutionDir)third_party\bullet3\src\Bullet3Dynamics;$(SolutionDir)third_party\bullet3\src\Bullet3Geometry;$(SolutionDir)third_party\bullet3\src\BulletCollision;$(SolutionDir)third_party\bullet3\src\BulletDynamics;$(SolutionDir)third_party\bullet3\src\BulletInverseDynamics;$(SolutionDir)third_party\bullet3\src\BulletSoftBody</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)third_party;$(SolutionDir)third_party\glew;$(SolutionDir)third_party\glfw3\include;$(SolutionDir)lib-engine;$(SolutionDir)lib-engine\gfx\gl;$(SolutionDir)lib-polymer;$(SolutionDir)third_party\bullet3\src\;$(SolutionDir)third_party\bullet3\src\LinearMath;$(SolutionDir)third_party\bullet3\src\Bullet3Collision;$(SolutionDir)third_party\bullet3\src\Bullet3Common;$(SolutionDir)third_party\bullet3\src\Bullet3Dynamics;$(SolutionDir)third_party\bullet3\src\Bullet3Geometry;$(SolutionDir)third_party\bullet3\src\BulletCollision;$(SolutionDir)third_party\bullet3\src\BulletDynamics;$(SolutionDir)third_party\bullet3\src\BulletInverseDynamics;$(SolutionDir)third_party\bullet3\src\BulletSoftBody</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;__WINDOWS_DS__;NOMINMAX;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DisableSpecificWarnings>4703</DisableSpecificWarnings>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -75,7 +75,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)third_party;$(SolutionDir)third_party\glew;$(SolutionDir)third_party\glfw3\include;$(SolutionDir)lib-engine\gfx\gl;$(SolutionDir)lib-polymer;$(SolutionDir)third_party\bullet3\src\;$(SolutionDir)third_party\bullet3\src\LinearMath;$(SolutionDir)third_party\bullet3\src\Bullet3Collision;$(SolutionDir)third_party\bullet3\src\Bullet3Common;$(SolutionDir)third_party\bullet3\src\Bullet3Dynamics;$(SolutionDir)third_party\bullet3\src\Bullet3Geometry;$(SolutionDir)third_party\bullet3\src\BulletCollision;$(SolutionDir)third_party\bullet3\src\BulletDynamics;$(SolutionDir)third_party\bullet3\src\BulletInverseDynamics;$(SolutionDir)third_party\bullet3\src\BulletSoftBody</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)third_party;$(SolutionDir)third_party\glew;$(SolutionDir)third_party\glfw3\include;$(SolutionDir)lib-engine;$(SolutionDir)lib-engine\gfx\gl;$(SolutionDir)lib-polymer;$(SolutionDir)third_party\bullet3\src\;$(SolutionDir)third_party\bullet3\src\LinearMath;$(SolutionDir)third_party\bullet3\src\Bullet3Collision;$(SolutionDir)third_party\bullet3\src\Bullet3Common;$(SolutionDir)third_party\bullet3\src\Bullet3Dynamics;$(SolutionDir)third_party\bullet3\src\Bullet3Geometry;$(SolutionDir)third_party\bullet3\src\BulletCollision;$(SolutionDir)third_party\bullet3\src\BulletDynamics;$(SolutionDir)third_party\bullet3\src\BulletInverseDynamics;$(SolutionDir)third_party\bullet3\src\BulletSoftBody</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;__WINDOWS_DS__;NOMINMAX;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DisableSpecificWarnings>4703</DisableSpecificWarnings>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -91,21 +91,24 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="vr_app.cpp" />
+    <ClCompile Include="engine-openvr-scene.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\lib-engine\lib-engine.vcxproj">
+    <ClInclude Include="engine-openvr-scene.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\lib-engine\lib-engine.vcxproj">
       <Project>{71f00a1a-c67d-4cb9-9f37-98d4975fa5c7}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\lib-polymer\lib-polymer.vcxproj">
+    <ProjectReference Include="..\..\lib-model-io\lib-model-io.vcxproj">
+      <Project>{bddb4be8-092b-4c42-b39e-7ef79011403c}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\lib-polymer\lib-polymer.vcxproj">
       <Project>{992e85a7-b590-477b-a1b2-8a04aaad0e10}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\third_party\glfw3\glfw3.vcxproj">
+    <ProjectReference Include="..\..\third_party\glfw3\glfw3.vcxproj">
       <Project>{be423e72-28c2-4fb7-9fe1-42aa2f393bbc}</Project>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="vr_app.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -16,9 +16,9 @@
 namespace polymer
 {
     
-    inline Geometry make_cube()
+    inline geometry make_cube()
     {
-        Geometry cube;
+        geometry cube;
         
         const struct CubeVertex { float3 position, normal; float2 texCoord; } verts[] =
         {
@@ -52,9 +52,10 @@ namespace polymer
         return cube;
     }
     
-    inline Geometry make_sphere(float radius)
+    // todo - texcoords
+    inline geometry make_sphere(float radius)
     {
-        Geometry sphereGeom;
+        geometry sphereGeom;
         
         uint32_t U = 32, V = 32;
         
@@ -86,9 +87,9 @@ namespace polymer
         return sphereGeom;
     }
 
-    inline Geometry make_cylinder(float radiusTop, float radiusBottom, float height, int radialSegments, int heightSegments, bool openEnded = false)
+    inline geometry make_cylinder(float radiusTop, float radiusBottom, float height, int radialSegments, int heightSegments, bool openEnded = false)
     {
-        Geometry cylinderGeom;
+        geometry cylinderGeom;
         
         float heightHalf = height / 2.f;
         
@@ -218,9 +219,9 @@ namespace polymer
         return cylinderGeom;
     }
     
-    inline Geometry make_ring(float innerRadius = 2.0f, float outerRadius = 2.5f)
+    inline geometry make_ring(float innerRadius = 2.0f, float outerRadius = 2.5f)
     {
-        Geometry ringGeom;
+        geometry ringGeom;
         
         uint32_t thetaSegments = 8;
         uint32_t phiSegments = 2;
@@ -275,7 +276,6 @@ namespace polymer
                 
                 ringGeom.faces.emplace_back(v1, v2, v3);
                 //ringGeom.texCoords.push_back(uvs[v1], uvs[v2], uvs[v3]);
-                
             }
             
         }
@@ -286,9 +286,9 @@ namespace polymer
         return ringGeom;
     }
     
-    inline Geometry make_3d_ring(float innerRadius = 1.0f, float outerRadius = 2.0f, float length = 1.0f)
+    inline geometry make_3d_ring(float innerRadius = 1.0f, float outerRadius = 2.0f, float length = 1.0f)
     {
-        Geometry ringGeom;
+        geometry ringGeom;
         
         uint32_t rs = 24; // radial segments
         uint32_t rs2 = rs * 2;
@@ -345,9 +345,9 @@ namespace polymer
         return ringGeom;
     }
     
-    inline Geometry make_frustum(float aspectRatio = 1.33333f)
+    inline geometry make_frustum(float aspectRatio = 1.33333f)
     {
-        Geometry frustum;
+        geometry frustum;
         
         float h = 1 / aspectRatio;
         
@@ -364,9 +364,9 @@ namespace polymer
         return frustum;
     }
     
-    inline Geometry make_torus(uint32_t radial_segments = 24)
+    inline geometry make_torus(uint32_t radial_segments = 24)
     {
-        Geometry torus;
+        geometry torus;
         
         for (uint32_t i = 0; i <= radial_segments; ++i)
         {
@@ -396,9 +396,9 @@ namespace polymer
         return torus;
     }
 
-    inline Geometry make_capsule(int segments, float radius, float length)
+    inline geometry make_capsule(int segments, float radius, float length)
     {
-        Geometry capsule;
+        geometry capsule;
         
         // Ensure odd
         segments = (segments + 1) &~1;
@@ -485,9 +485,9 @@ namespace polymer
     }
     
     // A renderable quad with a configurable subvision. Constructed on the XY axis with normals facing -Z for front-faces.
-    inline Geometry make_plane(float width, float height, uint32_t widthVertices, uint32_t heightVertices, bool doubleSided = false)
+    inline geometry make_plane(float width, float height, uint32_t widthVertices, uint32_t heightVertices, bool doubleSided = false)
     {
-        Geometry plane;
+        geometry plane;
         uint32_t indexOffset = 0;
         
         float rw = 1.f / width;
@@ -567,9 +567,9 @@ namespace polymer
         return plane;
     }
     
-    inline Geometry make_curved_plane()
+    inline geometry make_curved_plane()
     {
-        Geometry plane;
+        geometry plane;
         
         auto curve = bezier_spline(float3(0.0f, 0.0f, 0.0f), float3(0.667f, 0.25f, 0.0f), float3(1.33f, 0.25f, 0.0f), float3(2.0f, 0.0f, 0.0f));
         
@@ -619,9 +619,9 @@ namespace polymer
         return plane;
     }
     
-    inline Geometry make_axis()
+    inline geometry make_axis()
     {
-        Geometry axis;
+        geometry axis;
         
         axis.vertices.emplace_back(0.f, 0.f, 0.f);
         axis.vertices.emplace_back(1.f, 0.f, 0.f);
@@ -640,9 +640,9 @@ namespace polymer
         return axis;
     }
 
-    inline Geometry make_axis(const float3 & xAxis, const float3 & yAxis, const float3 & zAxis)
+    inline geometry make_axis(const float3 & xAxis, const float3 & yAxis, const float3 & zAxis)
     {
-        Geometry axis;
+        geometry axis;
 
         axis.vertices.emplace_back(0.f, 0.f, 0.f);
         axis.vertices.emplace_back(xAxis);
@@ -661,9 +661,9 @@ namespace polymer
         return axis;
     }
 
-    inline Geometry make_spiral(float resolution = 512.0f, float freq = 128.f)
+    inline geometry make_spiral(float resolution = 512.0f, float freq = 128.f)
     {
-        Geometry spiral;
+        geometry spiral;
         float off = 1.0 / resolution;
         for (float i = 0.0; i < 1.0 + off; i += off)
         {
@@ -673,9 +673,9 @@ namespace polymer
         return spiral;
     }
 
-    inline Geometry make_icosahedron()
+    inline geometry make_icosahedron()
     {
-        Geometry icosahedron;
+        geometry icosahedron;
         const float t = (1.0f + sqrtf(5.0f)) / 2.0f;
         
         icosahedron.vertices = {
@@ -696,9 +696,9 @@ namespace polymer
         return icosahedron;
     }
     
-    inline Geometry make_octohedron()
+    inline geometry make_octohedron()
     {
-        Geometry octohedron;
+        geometry octohedron;
 
         octohedron.vertices = {
             {1.0, 0.0, 0.0}, {-1.0, 0.0, 0.0},
@@ -713,9 +713,9 @@ namespace polymer
         return octohedron;
     }
     
-    inline Geometry make_tetrahedron()
+    inline geometry make_tetrahedron()
     {
-        Geometry tetrahedron;
+        geometry tetrahedron;
 
         tetrahedron.vertices = {
             {1.0, 1.0, 1.0}, {-1.0, -1.0, 1.0},
@@ -729,9 +729,9 @@ namespace polymer
         return tetrahedron;
     }
 
-    inline Geometry make_supershape_3d(const int segments, const float m, const float n1, const float n2, const float n3, const float a = 1.0, const float b = 1.0)
+    inline geometry make_supershape_3d(const int segments, const float m, const float n1, const float n2, const float n3, const float a = 1.0, const float b = 1.0)
     {
-        Geometry shape;
+        geometry shape;
 
         super_formula f1(m, n1, n2, n3, a, b);
         super_formula f2(m, n1, n2, n3, a, b);
@@ -788,9 +788,9 @@ namespace polymer
         return shape;
     }
 
-    inline Geometry make_icosasphere(uint32_t subdivisions = 1)
+    inline geometry make_icosasphere(uint32_t subdivisions = 1)
     {
-        Geometry ico = make_icosahedron();
+        geometry ico = make_icosahedron();
 
         for (uint32_t j = 0; j < subdivisions; ++j)
         {
@@ -870,7 +870,7 @@ namespace polymer
         return ico;
     }
     
-}
+} // end namespace polymer
 
 #pragma warning(pop)
 

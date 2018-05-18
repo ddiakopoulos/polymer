@@ -169,8 +169,8 @@ namespace polymer
     POLYMER_SETUP_TYPEID(float4x4);
     POLYMER_SETUP_TYPEID(aabb_2d);
     POLYMER_SETUP_TYPEID(aabb_3d);
-    POLYMER_SETUP_TYPEID(Frustum);
-    POLYMER_SETUP_TYPEID(Pose);
+    POLYMER_SETUP_TYPEID(frustum);
+    POLYMER_SETUP_TYPEID(transform);
 
 } // end namespace polymer
 

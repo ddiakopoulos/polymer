@@ -9,7 +9,7 @@ using namespace polymer;
 
 polymer_default_material::polymer_default_material()
 {
-    shader = { "default-shader" };
+    shader = shader_handle("default-shader");
 }
 
 void polymer_default_material::use()
@@ -38,7 +38,7 @@ uint32_t polymer_default_material::id() const
 
 polymer_blinn_phong_standard::polymer_blinn_phong_standard()
 {
-    shader = { "blinn-phong" };
+    shader = shader_handle("blinn-phong");
 }
 
 void polymer_blinn_phong_standard::resolve_variants() const
@@ -58,14 +58,14 @@ uint32_t polymer_blinn_phong_standard::id() const
 void polymer_blinn_phong_standard::use()
 {
     resolve_variants();
-    GlShader & program = compiled_shader->shader;
+    gl_shader & program = compiled_shader->shader;
     program.bind();
 }
 
 void polymer_blinn_phong_standard::update_uniforms()
 {
     resolve_variants();
-    GlShader & program = compiled_shader->shader;
+    gl_shader & program = compiled_shader->shader;
     program.bind();
 
     program.uniform("u_diffuseColor", diffuseColor);
@@ -89,7 +89,7 @@ void polymer_blinn_phong_standard::update_uniforms()
 
 polymer_pbr_standard::polymer_pbr_standard()
 {
-    shader = { "pbr-forward-lighting" };
+    shader = shader_handle("pbr-forward-lighting");
 }
 
 void polymer_pbr_standard::resolve_variants() const
@@ -109,7 +109,7 @@ uint32_t polymer_pbr_standard::id() const
 void polymer_pbr_standard::update_uniforms()
 {
     resolve_variants();
-    GlShader & program = compiled_shader->shader;
+    gl_shader & program = compiled_shader->shader;
     program.bind();
 
     program.uniform("u_roughness", roughnessFactor);
@@ -140,7 +140,7 @@ void polymer_pbr_standard::update_uniforms()
 void polymer_pbr_standard::update_uniforms_ibl(GLuint irradiance, GLuint radiance)
 {
     resolve_variants();
-    GlShader & program = compiled_shader->shader;
+    gl_shader & program = compiled_shader->shader;
     if (!compiled_shader->enabled("USE_IMAGE_BASED_LIGHTING")) throw std::runtime_error("should not be called unless USE_IMAGE_BASED_LIGHTING is defined.");
 
     program.bind();
@@ -152,7 +152,7 @@ void polymer_pbr_standard::update_uniforms_ibl(GLuint irradiance, GLuint radianc
 void polymer_pbr_standard::update_uniforms_shadow(GLuint handle)
 {
     resolve_variants();
-    GlShader & program = compiled_shader->shader;
+    gl_shader & program = compiled_shader->shader;
     if (!compiled_shader->enabled("ENABLE_SHADOWS")) throw std::runtime_error("should not be called unless ENABLE_SHADOWS is defined.");
 
     program.bind();

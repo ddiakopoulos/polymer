@@ -1,5 +1,10 @@
 #pragma once
 
+#include "model-io.hpp"
+#include "model-io-util.hpp"
+#include <vector>
+#include <memory>
+
 #ifdef SYSTEM_HAS_FBX_SDK
     #define USING_FBX 1
 #else
@@ -17,11 +22,6 @@
     #pragma comment(lib, "Release/libfbxsdk.lib")
 #endif
 
-#include "model-io.hpp"
-#include "model-io-util.hpp"
-#include <vector>
-#include <memory>
-
 #include <fbxsdk/fbxsdk_nsbegin.h>
 class FbxLayerElementNormal;
 class FbxLayerElementVertexColor;
@@ -33,15 +33,18 @@ class FbxScene;
 class FbxAnimEvaluator;
 #include <fbxsdk/fbxsdk_nsend.h>
 
-struct fbx_container
+namespace polymer
 {
-    std::map<std::string, runtime_skinned_mesh> meshes;
-    std::map<std::string, skeletal_animation> animations;
-};
+    struct fbx_container
+    {
+        std::map<std::string, runtime_skinned_mesh> meshes;
+        std::map<std::string, skeletal_animation> animations;
+    };
 
-void gather_meshes(fbx_container & file, fbxsdk::FbxNode * node);
+    void gather_meshes(fbx_container & file, fbxsdk::FbxNode * node);
 
-fbx_container import_fbx_file(const std::string & file);
+    fbx_container import_fbx_file(const std::string & file);
+}
 
 #endif // end fbx_importer_hpp
 

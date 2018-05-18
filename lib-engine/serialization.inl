@@ -121,13 +121,13 @@ namespace cereal
     // Polymer Types
     template<class Archive> void serialize(Archive & archive, aabb_2d & m) { archive(cereal::make_nvp("min", m._min), cereal::make_nvp("max", m._max)); }
     template<class Archive> void serialize(Archive & archive, aabb_3d & m) { archive(cereal::make_nvp("min", m._min), cereal::make_nvp("max", m._max)); }
-    template<class Archive> void serialize(Archive & archive, Pose & m) { archive(cereal::make_nvp("position", m.position), cereal::make_nvp("orientation", m.orientation)); }
-    template<class Archive> void serialize(Archive & archive, Frustum & m) { archive(cereal::make_size_tag(6)); for (auto const & p : m.planes) archive(p); }
-    template<class Archive> void serialize(Archive & archive, Ray & m) { archive(cereal::make_nvp("origin", m.origin), cereal::make_nvp("direction", m.direction)); }
-    template<class Archive> void serialize(Archive & archive, Plane & m) { archive(cereal::make_nvp("equation", m.equation)); }
-    template<class Archive> void serialize(Archive & archive, Line & m) { archive(cereal::make_nvp("origin", m.origin), cereal::make_nvp("direction", m.direction)); }
-    template<class Archive> void serialize(Archive & archive, Segment & m) { archive(cereal::make_nvp("a", m.a), cereal::make_nvp("b", m.b)); }
-    template<class Archive> void serialize(Archive & archive, Sphere & m) { archive(cereal::make_nvp("center", m.center), cereal::make_nvp("radius", m.radius)); }
+    template<class Archive> void serialize(Archive & archive, transform & m) { archive(cereal::make_nvp("position", m.position), cereal::make_nvp("orientation", m.orientation)); }
+    template<class Archive> void serialize(Archive & archive, frustum & m) { archive(cereal::make_size_tag(6)); for (auto const & p : m.planes) archive(p); }
+    template<class Archive> void serialize(Archive & archive, ray & m) { archive(cereal::make_nvp("origin", m.origin), cereal::make_nvp("direction", m.direction)); }
+    template<class Archive> void serialize(Archive & archive, plane & m) { archive(cereal::make_nvp("equation", m.equation)); }
+    template<class Archive> void serialize(Archive & archive, line & m) { archive(cereal::make_nvp("origin", m.origin), cereal::make_nvp("direction", m.direction)); }
+    template<class Archive> void serialize(Archive & archive, segment & m) { archive(cereal::make_nvp("a", m.a), cereal::make_nvp("b", m.b)); }
+    template<class Archive> void serialize(Archive & archive, sphere & m) { archive(cereal::make_nvp("center", m.center), cereal::make_nvp("radius", m.radius)); }
 }
 
 namespace cereal
