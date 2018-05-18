@@ -234,15 +234,7 @@ void scene_editor_app::on_input(const app_input_event & event)
 
             if (event.value[0] == GLFW_KEY_SPACE && event.action == GLFW_RELEASE)
             {
-                if (!material_editor)
-                {
-                    material_editor.reset(new material_editor_window(get_shared_gl_context(), 500, 1200, "", 1, scene, gizmo_selector, orchestrator));
-                }
-                else if (!material_editor->get_window())
-                {
-                    // Workaround since there's no convenient way to reset the material_editor when it's been closed
-                    material_editor.reset(new material_editor_window(get_shared_gl_context(), 500, 1200, "", 1, scene, gizmo_selector, orchestrator));
-                }
+                // ... 
             }
         }
 
@@ -304,6 +296,21 @@ void scene_editor_app::on_input(const app_input_event & event)
 void scene_editor_app::reset_renderer(int2 size, const renderer_settings & settings)
 {
     scene.render_system = orchestrator.create_system<pbr_render_system>(&orchestrator, settings);
+}
+
+void scene_editor_app::open_material_editor()
+{
+    if (!material_editor)
+    {
+       material_editor.reset(new material_editor_window(get_shared_gl_context(), 500, 1200, "", 1, scene, gizmo_selector, orchestrator));
+    }
+    else if (!material_editor->get_window())
+    {
+        // Workaround since there's no convenient way to reset the material_editor when it's been closed
+        material_editor.reset(new material_editor_window(get_shared_gl_context(), 500, 1200, "", 1, scene, gizmo_selector, orchestrator));
+    }
+
+    glfwMakeContextCurrent(window);
 }
 
 void scene_editor_app::on_update(const app_update_event & e)
@@ -484,7 +491,7 @@ void scene_editor_app::on_draw()
         menu.end();
 
         menu.begin("Create");
-        if (menu.item("entity", GLFW_MOD_CONTROL, GLFW_KEY_P)) 
+        if (menu.item("entity")) 
         {
             // Newly spawned objects are selected by default
             std::vector<entity> list = { scene.track_entity(orchestrator.create_entity()) };
@@ -493,9 +500,17 @@ void scene_editor_app::on_draw()
             gizmo_selector->set_selection(list);
         }
         menu.end();
+
+        menu.begin("Windows");
+        if (menu.item("Material Editor"))
+        {
+            should_open_material_window = true;
+        }
+        menu.end();
     }
 
     menu.app_menu_end();
+
     editorProfiler.end("imgui-menu");
 
     editorProfiler.begin("imgui-editor");
@@ -614,6 +629,15 @@ void scene_editor_app::on_draw()
     gl_check_error(__FILE__, __LINE__);
 
     glFlush();
+
+    // |should_open_material_window| flag required because opening a new window directly 
+    // from an ImGui instance trashessome piece of state somewhere
+    if (should_open_material_window)
+    {
+        should_open_material_window = false;
+        open_material_editor();
+    }
+
     if (material_editor && material_editor->get_window()) material_editor->run();
     glfwSwapBuffers(window);
 }

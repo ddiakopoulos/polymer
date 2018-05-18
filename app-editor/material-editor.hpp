@@ -47,7 +47,7 @@ struct material_editor_window final : public glfw_window
     std::unique_ptr<gui::imgui_instance> auxImgui;
     std::unique_ptr<arcball_controller> arcball;
     std::unique_ptr<pbr_render_system> preview_renderer;
-    std::unique_ptr<transform_system> transform_system;
+    std::unique_ptr<transform_system> xform_system;
 
     perspective_camera previewCam;
     render_payload preview_payload;
@@ -75,21 +75,15 @@ struct material_editor_window final : public glfw_window
 
         fullscreen_surface.reset(new simple_texture_view());
 
+        // Create debug sphere asset and assign to a handle
         // These are created on the this gl context and cached as global variables in the asset table. It will be re-assigned
-        // every time this window is opened so we don't need to worry about cleaning it up.
-
-        // Create a debug entity
-        debug_sphere = orch.create_entity();
-
-        // Create assets and assign them to handles
+        // every time this window is opened so we don't need to worry about cleaning up the handle asset.
         create_handle_for_asset("debug-sphere", make_mesh_from_geometry(make_icosasphere(3)));
 
-        // Create mesh component for the gpu mesh
-        polymer::mesh_component mesh_component(debug_sphere);
-        mesh_component.mesh = gpu_mesh_handle("debug-sphere");
-        preview_renderer->meshes[debug_sphere] = mesh_component;
-
-        // preview_renderer->materials[debug_sphere]->
+        // This is not an idiomatic way of constructing a system (it should be created using a method
+        // on the entity_orchestator itself) but for temporary systems that does not require
+        // book-keeping it's fine. 
+        xform_system.reset(new transform_system(&orch));
 
         renderer_settings previewSettings;
         previewSettings.renderSize = int2(w, previewHeight);
@@ -101,7 +95,16 @@ struct material_editor_window final : public glfw_window
 
         preview_renderer.reset(new pbr_render_system(&orch, previewSettings));
 
-        transform_system->create(debug_sphere, {}, { 1.f, 1.f, 1.f });
+        // Create a debug entity
+        debug_sphere = orch.create_entity();
+
+        // Create mesh component for the gpu mesh
+        polymer::mesh_component mesh_component(debug_sphere);
+        mesh_component.mesh = gpu_mesh_handle("debug-sphere");
+        preview_renderer->meshes[debug_sphere] = mesh_component;
+        preview_renderer->materials[debug_sphere].material = material_handle(material_library::kDefaultMaterialId);
+
+        xform_system->create(debug_sphere, {}, { 1.f, 1.f, 1.f });
 
         preview_payload.render_set.push_back(debug_sphere);
 
@@ -128,9 +131,9 @@ struct material_editor_window final : public glfw_window
         else if (e.type == app_input_event::CURSOR && e.drag)
         {
             arcball->mouse_drag(e.cursor);
-            auto p = transform_system->get_world_transform(debug_sphere)->world_pose;
+            auto p = xform_system->get_world_transform(debug_sphere)->world_pose;
             p.orientation = safe_normalize(qmul(arcball->currentQuat, p.orientation));
-            transform_system->update_local_transform(debug_sphere, p);
+            xform_system->update_local_transform(debug_sphere, p);
         }
     }
 

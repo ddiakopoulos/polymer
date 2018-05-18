@@ -29,6 +29,7 @@ struct scene_editor_app final : public polymer_app
     gl_shader_monitor shaderMonitor { "../assets/" };
     ImGui::editor_app_log log;
     bool show_imgui = true;
+    bool should_open_material_window = false;
 
     shader_handle wireframeHandle{ "wireframe" };
     shader_handle iblHandle{ "ibl" };
@@ -47,6 +48,7 @@ struct scene_editor_app final : public polymer_app
     ~scene_editor_app();
 
     void reset_renderer(int2 size, const renderer_settings & settings);
+    void open_material_editor();
 
     void on_window_resize(int2 size) override;
     void on_input(const app_input_event & event) override;
