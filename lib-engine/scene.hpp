@@ -171,6 +171,12 @@ namespace polymer
         virtual void destroy(entity e) override final {}
     };
     POLYMER_SETUP_TYPEID(collision_system);
+
+    template<class F> void visit_component_fields(entity e, collision_system * system, F f)
+    {
+        auto iter = system->meshes.find(e);
+        if (iter != system->meshes.end()) f("geometry_component", iter->second);
+    }
 }
 
 namespace polymer

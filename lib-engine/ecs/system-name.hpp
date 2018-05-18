@@ -20,6 +20,8 @@ namespace polymer
         std::unordered_map<entity, poly_hash_value> entity_to_hash_;
         std::unordered_map<poly_hash_value, entity> hash_to_entity_;
 
+        //friend template<class F> void visit_component_fields(entity e, name_system * system, F f);
+
     public:
 
         name_system(entity_orchestrator * orch) : base_system(orch)
@@ -94,6 +96,12 @@ namespace polymer
     };
 
     POLYMER_SETUP_TYPEID(name_system);
+
+    template<class F> void visit_component_fields(entity e, name_system * system, F f)
+    {
+        // auto iter = system->entity_to_name_.find(e);
+        // if (iter != system->entity_to_name_.end()) f("geometry_component", iter->second);
+    }
 
 } // end namespace polymer
 
