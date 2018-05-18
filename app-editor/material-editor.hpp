@@ -238,7 +238,7 @@ struct material_editor_window final : public glfw_window
                 gui::InputText("Name", &stringBuffer);
                 ImGui::Dummy({ 0, 6 });
 
-                // Make a list of all the material types. (i.e. PBR, etc)
+                // Make a list of the material types (i.e. pbr, blinn-phong, etc)
                 std::vector<std::string> materialTypes;
                 visit_subclasses((material_interface*)nullptr, [&materialTypes](const char * name, auto * p)
                 {
@@ -252,6 +252,21 @@ struct material_editor_window final : public glfw_window
 
                 if (ImGui::Button("OK", ImVec2(120, 0)))
                 {
+                    if (stringBuffer.empty())
+                    {
+                        if (materialTypeSelection == 0) // pbr
+                        {
+                            auto new_material = std::make_shared<polymer_pbr_standard>();
+                            scene.mat_library->create_material(stringBuffer, new_material);
+                        }
+
+                        if (materialTypeSelection == 1) // blinn-phong
+                        {
+                            auto new_material = std::make_shared<polymer_blinn_phong_standard>();
+                            scene.mat_library->create_material(stringBuffer, new_material);
+                        }
+                    }
+
                     ImGui::CloseCurrentPopup();
                 }
 

@@ -630,8 +630,8 @@ void scene_editor_app::on_draw()
 
     glFlush();
 
-    // |should_open_material_window| flag required because opening a new window directly 
-    // from an ImGui instance trashessome piece of state somewhere
+    // `should_open_material_window` flag required because opening a new window directly 
+    // from an ImGui instance trashes some piece of state somewhere
     if (should_open_material_window)
     {
         should_open_material_window = false;
