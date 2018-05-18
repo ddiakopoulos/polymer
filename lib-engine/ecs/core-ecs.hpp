@@ -39,9 +39,9 @@ namespace polymer
     //   Base System   //
     /////////////////////
 
-    // Systems are responsible for storing the component data instances associated with Entities.
+    // Systems are responsible for storing the component data instances associated with entities.
     // They also perform all the logic for manipulating and processing their Components.
-    // This base class provides an API for an entity_manager to associate Components with Entities in a data-driven manner.
+    // This base class provides an API for an entity_manager to associate components with entities in a data-driven manner.
 
     class entity_orchestrator;
     struct base_system : public non_copyable

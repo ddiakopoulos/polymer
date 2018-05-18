@@ -190,8 +190,8 @@ void pbr_render_system::run_depth_prepass(const view_data & view, const render_p
 
     for (entity e : scene.render_set)
     {
-        const transform & p = xform_system->get_world_transform(e)->world_pose;
-        const float3 & scale = xform_system->get_local_transform(e)->local_scale;
+        const transform & p = scene.xform_system->get_world_transform(e)->world_pose;
+        const float3 & scale = scene.xform_system->get_local_transform(e)->local_scale;
         const bool receiveShadow = materials[e].receive_shadow;
         update_per_object_uniform_buffer(p, scale, receiveShadow, view);
         meshes[e].draw();
@@ -232,8 +232,8 @@ void pbr_render_system::run_shadow_pass(const view_data & view, const render_pay
     {
         if (materials[e].cast_shadow)
         {
-            const transform & p = xform_system->get_world_transform(e)->world_pose;
-            const float3 & scale = xform_system->get_local_transform(e)->local_scale;
+            const transform & p = scene.xform_system->get_world_transform(e)->world_pose;
+            const float3 & scale = scene.xform_system->get_local_transform(e)->local_scale;
             const float4x4 modelMatrix = mul(p.matrix(), make_scaling_matrix(scale));
             shadow->update_shadow_matrix(modelMatrix);
             meshes[e].draw();
@@ -256,12 +256,14 @@ void pbr_render_system::run_forward_pass(std::vector<entity> & renderQueueMateri
 
     for (entity e : renderQueueMaterial)
     {
-        const transform & p = xform_system->get_world_transform(e)->world_pose;
-        const float3 & scale = xform_system->get_local_transform(e)->local_scale;
+        const transform & p = scene.xform_system->get_world_transform(e)->world_pose;
+        const float3 & scale = scene.xform_system->get_local_transform(e)->local_scale;
         const bool receiveShadow = materials[e].receive_shadow;
 
         update_per_object_uniform_buffer(p, scale, receiveShadow, view);
 
+        // Lookup the material component (materials[e]), .get() the asset_handle, and then .get() since 
+        // materials instances are stored as shared pointers. 
         material_interface * mat = materials[e].material.get().get();
         mat->update_uniforms();
 
@@ -335,7 +337,6 @@ pbr_render_system::pbr_render_system(entity_orchestrator * orch, const renderer_
     // Generate textures and framebuffers for |settings.cameraCount|
     for (uint32_t camIdx = 0; camIdx < settings.cameraCount; ++camIdx)
     {
-        //GL_RGBA8
         eyeTextures[camIdx].setup(settings.renderSize.x, settings.renderSize.y, GL_RGBA, GL_RGBA, GL_FLOAT, nullptr, false);
         glTextureParameteriEXT(eyeTextures[camIdx], GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTextureParameteriEXT(eyeTextures[camIdx], GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -389,14 +390,6 @@ pbr_render_system::~pbr_render_system()
 void pbr_render_system::render_frame(const render_payload & scene)
 {
     assert(settings.cameraCount == scene.views.size());
-    //assert(directional_lights.size() == 1);
-
-    if (!xform_system)
-    {
-        base_system * xform_base = orchestrator->get_system(get_typeid<transform_system>());
-        xform_system = dynamic_cast<transform_system *>(xform_base);
-        assert(xform_system != nullptr);
-    }
 
     cpuProfiler.begin("renderloop");
 
@@ -483,10 +476,10 @@ void pbr_render_system::render_frame(const render_payload & scene)
     perScene.set_buffer_data(sizeof(b), &b, GL_STREAM_DRAW);
 
     // We follow the sorting strategy outlined here: http://realtimecollisiondetection.net/blog/?p=86
-    auto materialSortFunc = [this, shadowAndCullingView](entity lhs, entity rhs)
+    auto materialSortFunc = [this, scene, shadowAndCullingView](entity lhs, entity rhs)
     {
-        const float lDist = distance(shadowAndCullingView.pose.position, xform_system->get_world_transform(lhs)->world_pose.position);
-        const float rDist = distance(shadowAndCullingView.pose.position, xform_system->get_world_transform(rhs)->world_pose.position);
+        const float lDist = distance(shadowAndCullingView.pose.position, scene.xform_system->get_world_transform(lhs)->world_pose.position);
+        const float rDist = distance(shadowAndCullingView.pose.position, scene.xform_system->get_world_transform(rhs)->world_pose.position);
 
         // Sort by material (expensive shader state change)
         auto lid = materials[lhs].material.get()->id();
@@ -497,10 +490,10 @@ void pbr_render_system::render_frame(const render_payload & scene)
         return lDist < rDist;
     };
 
-    auto distanceSortFunc = [this, shadowAndCullingView](entity lhs, entity rhs)
+    auto distanceSortFunc = [this, scene, shadowAndCullingView](entity lhs, entity rhs)
     {
-        const float lDist = distance(shadowAndCullingView.pose.position, xform_system->get_world_transform(lhs)->world_pose.position);
-        const float rDist = distance(shadowAndCullingView.pose.position, xform_system->get_world_transform(rhs)->world_pose.position);
+        const float lDist = distance(shadowAndCullingView.pose.position, scene.xform_system->get_world_transform(lhs)->world_pose.position);
+        const float rDist = distance(shadowAndCullingView.pose.position, scene.xform_system->get_world_transform(rhs)->world_pose.position);
         return lDist < rDist;
     };
 

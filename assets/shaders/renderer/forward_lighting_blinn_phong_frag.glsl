@@ -60,7 +60,7 @@ void main()
     vec3 Lo = vec3(0, 0, 0);
 
     // Compute directional light
-    if (sunlightActive)
+    if (sunlightActive > 0)
     {
         vec3 L = normalize(u_directionalLight.direction); //incident light direction
         vec3 H = normalize(L + V);  

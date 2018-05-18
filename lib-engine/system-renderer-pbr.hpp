@@ -108,6 +108,7 @@ namespace polymer
         texture_handle ibl_radianceCubemap;
         texture_handle ibl_irradianceCubemap;
         gl_procedural_sky * skybox{ nullptr };
+        transform_system * xform_system{ nullptr };
     };
 
     ///////////////////////////
@@ -116,8 +117,6 @@ namespace polymer
 
     class pbr_render_system : public base_system
     {
-        transform_system * xform_system{ nullptr }; // dependency
-
         simple_cpu_timer timer;
 
         gl_buffer perScene;

@@ -1,14 +1,6 @@
 // This implementation is heavily based on the reference available for the gLTF File format: 
 // https://github.com/KhronosGroup/glTF-WebGL-PBR/blob/master/shaders/pbr-frag.glsl (MIT Licensed)
 
-// http://gamedev.stackexchange.com/questions/63832/normals-vs-normal-maps/63833
-// http://blog.selfshadow.com/publications/blending-in-detail/
-// http://www.trentreed.net/blog/physically-based-shading-and-image-based-lighting/
-// http://graphicrants.blogspot.com/2013/08/specular-brdf-reference.html
-// https://seblagarde.wordpress.com/2012/01/08/pi-or-not-to-pi-in-game-lighting-equation/
-// http://www.frostbite.com/wp-content/uploads/2014/11/course_notes_moving_frostbite_to_pbr_v2.pdf
-// http://www.thetenthplanet.de/archives/1180
-
 // [1] http://blog.selfshadow.com/publications/s2013-shading-course/karis/s2013_pbs_epic_notes_v2.pdf
 // [2] http://blog.selfshadow.com/publications/s2012-shading-course/burley/s2012_pbs_disney_brdf_notes_v3.pdf
 // [3] https://github.com/KhronosGroup/glTF-WebGL-PBR/#environment-maps
@@ -183,7 +175,7 @@ void main()
     float shadowVisibility = 1;
 
     // Compute directional light
-    if (sunlightActive)
+    if (sunlightActive > 0)
     {
         vec3 L = normalize(u_directionalLight.direction); 
         vec3 H = normalize(L + V);  

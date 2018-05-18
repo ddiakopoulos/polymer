@@ -62,10 +62,10 @@ struct material_editor_window final : public glfw_window
     entity inspected_entity{ kInvalidEntity };
     entity debug_sphere{ kInvalidEntity };
 
-    material_editor_window(gl_context * context, 
-        int w, int h, 
-        const std::string & title, 
-        int samples, 
+    material_editor_window(gl_context * context,
+        int w, int h,
+        const std::string & title,
+        int samples,
         poly_scene & scene,
         std::shared_ptr<selection_controller> selector,
         entity_orchestrator & orch)
@@ -104,9 +104,7 @@ struct material_editor_window final : public glfw_window
         preview_renderer->meshes[debug_sphere] = mesh_component;
         preview_renderer->materials[debug_sphere].material = material_handle(material_library::kDefaultMaterialId);
 
-        xform_system->create(debug_sphere, {}, { 1.f, 1.f, 1.f });
-
-        preview_payload.render_set.push_back(debug_sphere);
+        xform_system->create(debug_sphere, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
 
         previewCam.pose = lookat_rh(float3(0, 0.25f, 2), float3(0, 0.001f, 0));
         auxImgui.reset(new gui::imgui_instance(window, true));
@@ -212,10 +210,12 @@ struct material_editor_window final : public glfw_window
             {
                 // Single-viewport camera
                 preview_payload = {};
-                preview_payload.clear_color = float4(0, 0, 0, 0);
+                preview_payload.xform_system = xform_system.get();
+                preview_payload.clear_color = float4(0.25f, 0.25f, 0.25f, 1.f);
                 preview_payload.ibl_irradianceCubemap = texture_handle("wells-irradiance-cubemap"); // tofix - these handles could be cached
                 preview_payload.ibl_radianceCubemap = texture_handle("wells-radiance-cubemap");
                 preview_payload.views.push_back(view_data(0, previewCam.pose, previewCam.get_projection_matrix(width / float(previewHeight))));
+                preview_payload.render_set.push_back(debug_sphere);
                 preview_renderer->render_frame(preview_payload);
             }
 
