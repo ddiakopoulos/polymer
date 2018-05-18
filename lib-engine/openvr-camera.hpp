@@ -24,7 +24,7 @@ namespace polymer
     struct tracked_camera_frame
     {
         transform render_pose;
-        GlTexture2D texture;
+        gl_texture_2d texture;
         image_buffer<uint8_t, 3> rawBytes;
     };
 

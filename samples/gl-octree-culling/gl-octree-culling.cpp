@@ -50,10 +50,10 @@ struct sample_gl_octree_culling final : public polymer_app
 
     uniform_random_gen gen;
     bool show_debug = false;
-    std::unique_ptr<GlShader> shader;
+    std::unique_ptr<gl_shader> shader;
     std::vector<debug_sphere> spheres;
-    GlMesh sphereMesh;
-    GlMesh boxMesh;
+    gl_mesh sphereMesh;
+    gl_mesh boxMesh;
 
     octree<debug_sphere> octree{ 8,{ { -24, -24, -24 },{ +24, +24, +24 } } };
     std::vector<node_container<debug_sphere>> nodes;
@@ -85,7 +85,7 @@ sample_gl_octree_culling::sample_gl_octree_culling() : polymer_app(1280, 720, "s
     gizmo.reset(new gl_gizmo());
     xform.position = { 0.1f, 0.1f, 0.1f };
 
-    shader.reset(new GlShader(simple_colored_vert, simple_colored_frag));
+    shader.reset(new gl_shader(simple_colored_vert, simple_colored_frag));
 
     sphereMesh = make_sphere_mesh(1.f);
     boxMesh = make_cube_mesh();

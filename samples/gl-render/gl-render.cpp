@@ -20,9 +20,9 @@ struct sample_gl_render final : public polymer_app
     bool deltaMotion{ false };
 
     transform modelPose;
-    GlMesh model;
-    GlShader matcapShader;
-    GlTexture2D matcapTexture;
+    gl_mesh model;
+    gl_shader matcapShader;
+    gl_texture_2d matcapTexture;
 
     sample_gl_render();
     ~sample_gl_render();
@@ -33,7 +33,7 @@ struct sample_gl_render final : public polymer_app
     void on_draw() override;
 };
 
-void upload_mesh(const runtime_mesh & cpu, GlMesh & gpu, bool indexed = true)
+void upload_mesh(const runtime_mesh & cpu, gl_mesh & gpu, bool indexed = true)
 {
     const uint32_t components = 6;
     
@@ -57,7 +57,7 @@ void upload_mesh(const runtime_mesh & cpu, GlMesh & gpu, bool indexed = true)
     else gpu.set_non_indexed(GL_LINES);
 }
 
-void draw_mesh_matcap(GlShader & shader, GlMesh & mesh, const GlTexture2D & tex, 
+void draw_mesh_matcap(gl_shader & shader, gl_mesh & mesh, const gl_texture_2d & tex, 
     const float4x4 & model, const float4x4 & view, const float4x4 & proj)
 {
     shader.bind();
@@ -81,7 +81,7 @@ sample_gl_render::sample_gl_render() : polymer_app(1280, 720, "sample-gl-render"
 
     matcapTexture = load_image("../../assets/textures/matcap/chemical_carpaint_blue.png");
 
-    matcapShader = GlShader(
+    matcapShader = gl_shader(
         read_file_text("../../assets/shaders/prototype/matcap_vert.glsl"),
         read_file_text("../..//assets/shaders/prototype/matcap_frag.glsl"));
 

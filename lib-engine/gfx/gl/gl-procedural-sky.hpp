@@ -172,7 +172,7 @@ namespace polymer
 
     protected:
 
-        GlMesh skyMesh;
+        gl_mesh skyMesh;
         virtual void render_internal(float4x4 viewProj, float3 sunDir, float4x4 world) = 0;
 
     public:
@@ -239,7 +239,7 @@ namespace polymer
     
         virtual void render_internal(float4x4 viewProj, float3 sunDir, float4x4 world) override
         {
-            GlShader & shader = sky.get()->default();
+            gl_shader & shader = sky.get()->default();
 
             shader.bind();
             shader.uniform("ViewProjection", viewProj);
@@ -281,7 +281,7 @@ namespace polymer
     
         virtual void render_internal(float4x4 viewProj, float3 sunDir, float4x4 world) override
         {
-            GlShader & shader = sky.get()->default();
+            gl_shader & shader = sky.get()->default();
 
             shader.bind();
             shader.uniform("ViewProjection", viewProj);

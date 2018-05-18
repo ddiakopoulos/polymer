@@ -394,7 +394,7 @@ void scene_editor_app::on_draw()
     {
         glDisable(GL_DEPTH_TEST);
 
-        GlShader & program = wireframeHandle.get()->get_variant()->shader;
+        gl_shader & program = wireframeHandle.get()->get_variant()->shader;
 
         program.bind();
         program.uniform("u_eyePos", cam.get_eye_point());

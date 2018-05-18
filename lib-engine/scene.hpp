@@ -49,7 +49,7 @@ namespace polymer
 {
     struct material_library;
 
-    // Mesh Component (GPU-side GlMesh and associated material)
+    // Mesh Component (GPU-side gl_mesh and associated material)
     struct mesh_component : public base_component
     {
         gpu_mesh_handle mesh;

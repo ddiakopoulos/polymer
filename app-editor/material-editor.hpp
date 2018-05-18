@@ -138,7 +138,7 @@ struct material_editor_window final : public glfw_window
     {
         glfwMakeContextCurrent(window);
 
-        // Why do we do all these resets? Well, the way the GlObject handle system works, the
+        // Why do we do all these resets? Well, the way the gl_handle handle system works, the
         // destructor is called on the context of the destroyer. In the case of a secondary window,
         // that would be the main thread. Instead, we need to manually clean up everything here before
         // the destructor is called. 

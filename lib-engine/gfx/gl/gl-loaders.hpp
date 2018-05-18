@@ -38,7 +38,7 @@ namespace polymer
 
     // fixme - these functions belong in a gl-xyz.hpp file
 
-    inline GlTexture2D load_image(const std::string & path, bool flip = false)
+    inline gl_texture_2d load_image(const std::string & path, bool flip = false)
     {
         auto binaryFile = polymer::read_file_binary(path);
 
@@ -48,7 +48,7 @@ namespace polymer
         int width, height, nBytes;
         auto data = stbi_load_from_memory(binaryFile.data(), (int)binaryFile.size(), &width, &height, &nBytes, 0);
 
-        GlTexture2D tex;
+        gl_texture_2d tex;
         switch (nBytes)
         {
         case 1: tex.setup(width, height, GL_RED, GL_RED, GL_UNSIGNED_BYTE, data, true); break;
@@ -61,14 +61,13 @@ namespace polymer
         glTextureParameteriEXT(tex, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTextureParameteriEXT(tex, GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 
-        tex.set_name(path);
         stbi_image_free(data);
         return tex;
     }
 
-    inline GlTexture2D load_cubemap(const gli::texture_cube & tex)
+    inline gl_texture_2d load_cubemap(const gli::texture_cube & tex)
     {
-        GlTexture2D t;
+        gl_texture_2d t;
 
         for (gli::texture_cube::size_type Face = 0; Face < 6; ++Face)
         {

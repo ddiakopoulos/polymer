@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef gl_api_hpp
-#define gl_api_hpp
+#ifndef polymer_gl_api_hpp
+#define polymer_gl_api_hpp
 
 #include "glfw-app.hpp"
 #include <map>
@@ -135,90 +135,80 @@ namespace
 }
 
 template<typename factory_t>
-class GlObject
+class gl_handle
 {
     mutable GLuint handle = 0;
     std::string n;
 public:
-    GlObject() {}
-    GlObject(GLuint h) : handle(h) {}
-    ~GlObject() { if (handle) factory_t::destroy(handle); }
-    GlObject(const GlObject & r) = delete;
-    GlObject & operator = (GlObject && r) { std::swap(handle, r.handle); std::swap(n, r.n); return *this; }
-    GlObject(GlObject && r) { *this = std::move(r); }
+    gl_handle() {}
+    gl_handle(GLuint h) : handle(h) {}
+    ~gl_handle() { if (handle) factory_t::destroy(handle); }
+    gl_handle(const gl_handle & r) = delete;
+    gl_handle & operator = (gl_handle && r) { std::swap(handle, r.handle); std::swap(n, r.n); return *this; }
+    gl_handle(gl_handle && r) { *this = std::move(r); }
     operator GLuint () const { if (!handle)  factory_t::create(handle); return handle; }
-    GlObject & operator = (GLuint & other) { handle = other; return *this; }
-    void set_name(const std::string & newName) { n = newName; }
-    std::string name() const { return n; }
+    gl_handle & operator = (GLuint & other) { handle = other; return *this; } // assumes ownership
     GLuint id() const { if (!handle) factory_t::create(handle); return handle; };
 };
 
-struct GlBufferFactory { static void create(GLuint & x) { glCreateBuffers(1, &x); }; static void destroy(GLuint x) { glDeleteBuffers(1, &x); }; };
-struct GlTextureFactory { static void create(GLuint & x) { glGenTextures(1, &x); }; static void destroy(GLuint x) { glDeleteTextures(1, &x); }; };
-struct GlVertexArrayFactory { static void create(GLuint & x) { glGenVertexArrays(1, &x); }; static void destroy(GLuint x) { glDeleteVertexArrays(1, &x); }; };
-struct GlRenderbufferFactory { static void create(GLuint & x) { glGenRenderbuffers(1, &x); }; static void destroy(GLuint x) { glDeleteRenderbuffers(1, &x); }; };
-struct GlFramebufferFactory { static void create(GLuint & x) { glGenFramebuffers(1, &x); }; static void destroy(GLuint x) { glDeleteFramebuffers(1, &x); }; };
-struct GlQueryFactory { static void create(GLuint & x) { glGenQueries(1, &x); }; static void destroy(GLuint x) { glDeleteQueries(1, &x); }; };
-struct GlSamplerFactory { static void create(GLuint & x) { glGenSamplers(1, &x); }; static void destroy(GLuint x) { glDeleteSamplers(1, &x); }; };
-struct GlTransformFeedbacksFactory { static void create(GLuint & x) { glGenTransformFeedbacks(1, &x); }; static void destroy(GLuint x) { glDeleteTransformFeedbacks(1, &x); }; };
+struct gl_buffer_factory { static void create(GLuint & x) { glCreateBuffers(1, &x); }; static void destroy(GLuint x) { glDeleteBuffers(1, &x); }; };
+struct gl_texture_factory { static void create(GLuint & x) { glGenTextures(1, &x); }; static void destroy(GLuint x) { glDeleteTextures(1, &x); }; };
+struct gl_vertex_array_factory { static void create(GLuint & x) { glGenVertexArrays(1, &x); }; static void destroy(GLuint x) { glDeleteVertexArrays(1, &x); }; };
+struct gl_renderbuffer_factory { static void create(GLuint & x) { glGenRenderbuffers(1, &x); }; static void destroy(GLuint x) { glDeleteRenderbuffers(1, &x); }; };
+struct gl_framebuffer_factory { static void create(GLuint & x) { glGenFramebuffers(1, &x); }; static void destroy(GLuint x) { glDeleteFramebuffers(1, &x); }; };
+struct gl_query_factory { static void create(GLuint & x) { glGenQueries(1, &x); }; static void destroy(GLuint x) { glDeleteQueries(1, &x); }; };
+struct gl_sampler_factory { static void create(GLuint & x) { glGenSamplers(1, &x); }; static void destroy(GLuint x) { glDeleteSamplers(1, &x); }; };
+struct gl_transform_feedback_factory { static void create(GLuint & x) { glGenTransformFeedbacks(1, &x); }; static void destroy(GLuint x) { glDeleteTransformFeedbacks(1, &x); }; };
 
-typedef GlObject<GlBufferFactory> GlBufferObject;
-typedef GlObject<GlTextureFactory> GlTextureObject;
-typedef GlObject<GlVertexArrayFactory> GlVertexArrayObject;
-typedef GlObject<GlRenderbufferFactory> GlRenderbufferObject;
-typedef GlObject<GlFramebufferFactory> GlFramebufferObject;
-typedef GlObject<GlQueryFactory> GlQueryObject;
-typedef GlObject<GlSamplerFactory> GlSamplerObject;
-typedef GlObject<GlTransformFeedbacksFactory> GlTransformFeedbacksObject;
+typedef gl_handle<gl_buffer_factory> gl_buffer_object;
+typedef gl_handle<gl_texture_factory> gl_texture_object;
+typedef gl_handle<gl_vertex_array_factory> gl_vertex_array_object;
+typedef gl_handle<gl_renderbuffer_factory> gl_renderbuffer_object;
+typedef gl_handle<gl_framebuffer_factory> gl_framebuffer_object;
+typedef gl_handle<gl_query_factory> gl_query_object;
+typedef gl_handle<gl_sampler_factory> gl_sampler_object;
+typedef gl_handle<gl_transform_feedback_factory> gl_transform_feedback_object;
 
-//////////////////
-//   GlBuffer   //
-//////////////////
+//////////////////////
+//   buffer types   //
+//////////////////////
 
-struct GlBuffer : public GlBufferObject
+struct gl_buffer : public gl_buffer_object
 {
     GLsizeiptr size;
-    GlBuffer() {}
+    gl_buffer() {}
     void set_buffer_data(const GLsizeiptr s, const GLvoid * data, const GLenum usage) { this->size = s; glNamedBufferDataEXT(*this, size, data, usage);  }
     void set_buffer_data(const std::vector<GLubyte> & bytes, const GLenum usage) { set_buffer_data(bytes.size(), bytes.data(), usage); }
     void set_buffer_sub_data(const GLsizeiptr s, const GLintptr offset, const GLvoid * data) { glNamedBufferSubDataEXT(*this, offset, s, data);  }
     void set_buffer_sub_data(const std::vector<GLubyte> & bytes, const GLintptr offset, const GLenum usage) { set_buffer_sub_data(bytes.size(), offset, bytes.data()); }
 };
 
-////////////////////////
-//   GlRenderbuffer   //
-////////////////////////
-
-struct GlRenderbuffer : public GlRenderbufferObject
+struct gl_renderbuffer : public gl_renderbuffer_object
 {
     float width{ 0 }, height{ 0 };
-    GlRenderbuffer() {}
-    GlRenderbuffer(float width, float height) : width(width), height(height) {}
+    gl_renderbuffer() {}
+    gl_renderbuffer(float width, float height) : width(width), height(height) {}
 };
 
-///////////////////////
-//   GlFramebuffer   //
-///////////////////////
-
-struct GlFramebuffer : public GlFramebufferObject
+struct gl_framebuffer : public gl_framebuffer_object
 {
     float width{ 0 }, height{ 0 }, depth{ 0 };
-    GlFramebuffer() {}
-    GlFramebuffer(float width, float height) : width(width), height(height) {}
-    GlFramebuffer(float width, float height, float depth) : width(width), height(height), depth(depth) {}
+    gl_framebuffer() {}
+    gl_framebuffer(float width, float height) : width(width), height(height) {}
+    gl_framebuffer(float width, float height, float depth) : width(width), height(height), depth(depth) {}
     void check_complete() { if (glCheckNamedFramebufferStatusEXT(*this, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) throw std::runtime_error("fbo incomplete"); }
 };
 
-///////////////////
-//   GlTexture   //
-///////////////////
+///////////////////////
+//   texture types   //
+///////////////////////
 
-struct GlTexture2D : public GlTextureObject
+struct gl_texture_2d : public gl_texture_object
 {
     float width{ 0 }, height{ 0 };
-    GlTexture2D() { }
-    GlTexture2D(GLuint id) : GlTextureObject(id) { }
-    GlTexture2D(float width, float height) : width(width), height(height) {}
+    gl_texture_2d() { }
+    gl_texture_2d(GLuint id) : gl_texture_object(id) { }
+    gl_texture_2d(float width, float height) : width(width), height(height) {}
 
     void setup(GLsizei width, GLsizei height, GLenum internal_fmt, GLenum format, GLenum type, const GLvoid * pixels, bool createMipmap = false)
     {
@@ -249,16 +239,12 @@ struct GlTexture2D : public GlTextureObject
     }
 };
 
-/////////////////////
-//   GlTexture3D   //
-/////////////////////
-
-// As either a 3D texture or 2D array
-struct GlTexture3D : public GlTextureObject
+// Either a 3D texture or 2D array
+struct gl_texture_3d : public gl_texture_object
 {
     float width{ 0 }, height{ 0 }, depth{ 0 };
-    GlTexture3D() {}
-    GlTexture3D(float width, float height, float depth) : width(width), height(height), depth(depth) {}
+    gl_texture_3d() {}
+    gl_texture_3d(float width, float height, float depth) : width(width), height(height), depth(depth) {}
 
     void setup(GLenum target, GLsizei width, GLsizei height, GLsizei depth, GLenum internal_fmt, GLenum format, GLenum type, const GLvoid * pixels)
     {
@@ -274,24 +260,25 @@ struct GlTexture3D : public GlTextureObject
     }
 };
 
-//////////////////
-//   GlShader   //
-//////////////////
+///////////////////
+//   gl_shader   //
+///////////////////
 
-class GlShader
+class gl_shader
 {
-    GLuint program;
-    bool enabled = false;
+    GLuint program{ 0 };
+    bool enabled{ false };
 
 protected:
-    GlShader(const GlShader & r) = delete;
-    GlShader & operator = (const GlShader & r) = delete;
+
+    gl_shader(const gl_shader & r) = delete;
+    gl_shader & operator = (const gl_shader & r) = delete;
 
 public:
 
-    GlShader() : program() {}
+    gl_shader() = default;
 
-    GlShader(const GLuint type, const std::string & src)
+    gl_shader(const GLuint type, const std::string & src)
     {
         program = glCreateProgram();
 
@@ -313,7 +300,7 @@ public:
         }
     }
 
-    GlShader(const std::string & vert, const std::string & frag, const std::string & geom = "")
+    gl_shader(const std::string & vert, const std::string & frag, const std::string & geom = "")
     {
         program = glCreateProgram();
 
@@ -339,14 +326,14 @@ public:
         }
     }
 
-    ~GlShader() { if (program) glDeleteProgram(program); }
+    ~gl_shader() { if (program) glDeleteProgram(program); }
 
-    GlShader(GlShader && r) : GlShader()
+    gl_shader(gl_shader && r) : gl_shader()
     { 
         *this = std::move(r); 
     }
 
-    GlShader & operator = (GlShader && r)
+    gl_shader & operator = (gl_shader && r)
     {
         std::swap(program, r.program);
         std::swap(enabled, r.enabled);
@@ -401,20 +388,20 @@ public:
 };
 
 
-class GlComputeProgram
+class gl_shader_compute
 {
-    GLuint program;
+    GLuint program{ 0 };
 
 protected:
 
-    GlComputeProgram(const GlComputeProgram & r) = delete;
-    GlComputeProgram & operator = (const GlComputeProgram & r) = delete;
+    gl_shader_compute(const gl_shader_compute & r) = delete;
+    gl_shader_compute & operator = (const gl_shader_compute & r) = delete;
 
 public:
 
-    GlComputeProgram() : program() {}
+    gl_shader_compute() = default;
 
-    GlComputeProgram(const std::string & compute)
+    gl_shader_compute(const std::string & compute)
     {
         program = glCreateProgram();
 
@@ -454,19 +441,18 @@ public:
         return locations;
     }
 
-    ~GlComputeProgram() { if (program) glDeleteProgram(program); }
+    ~gl_shader_compute() { if (program) glDeleteProgram(program); }
 
-    GlComputeProgram(GlComputeProgram && r) : GlComputeProgram()
+    gl_shader_compute(gl_shader_compute && r) : gl_shader_compute()
     {
         *this = std::move(r);
     }
 
-    GlComputeProgram & operator = (GlComputeProgram && r)
+    gl_shader_compute & operator = (gl_shader_compute && r)
     {
         std::swap(program, r.program);
         return *this;
     }
-
 
     GLuint handle() const { return program; }
     GLint get_uniform_location(const std::string & name) const { return glGetUniformLocation(program, name.c_str()); }
@@ -527,17 +513,16 @@ public:
     { 
         texture(get_uniform_location(name), target, unit, tex);
     }
-
 };
 
 ////////////////
-//   GlMesh   //
+//   gl_mesh   //
 ////////////////
 
-class GlMesh
+class gl_mesh
 {
-    GlVertexArrayObject vao;
-    GlBuffer vertexBuffer, instanceBuffer, indexBuffer;
+    gl_vertex_array_object vao;
+    gl_buffer vertexBuffer, instanceBuffer, indexBuffer;
 
     GLenum drawMode = GL_TRIANGLES;
     GLenum indexType = 0;
@@ -545,19 +530,19 @@ class GlMesh
 
 public:
      
-    GlMesh() {}
-    GlMesh(GlMesh && r) { *this = std::move(r); }
-    GlMesh(const GlMesh & r) = delete;
-    GlMesh & operator = (GlMesh && r)
+    gl_mesh() {}
+    gl_mesh(gl_mesh && r) { *this = std::move(r); }
+    gl_mesh(const gl_mesh & r) = delete;
+    gl_mesh & operator = (gl_mesh && r)
     {
-        char buffer[sizeof(GlMesh)];
+        char buffer[sizeof(gl_mesh)];
         memcpy(buffer, this, sizeof(buffer));
         memcpy(this, &r, sizeof(buffer));
         memcpy(&r, buffer, sizeof(buffer));
         return *this;
     }
-    GlMesh & operator = (const GlMesh & r) = delete;
-    ~GlMesh() {};
+    gl_mesh & operator = (const gl_mesh & r) = delete;
+    ~gl_mesh() {};
 
     void set_non_indexed(GLenum newMode)
     {
@@ -588,7 +573,7 @@ public:
     }
 
     void set_vertex_data(GLsizeiptr size, const GLvoid * data, GLenum usage) { vertexBuffer.set_buffer_data(size, data, usage); }
-    GlBuffer & get_vertex_data_buffer() { return vertexBuffer; };
+    gl_buffer & get_vertex_data_buffer() { return vertexBuffer; };
 
     void set_instance_data(GLsizeiptr size, const GLvoid * data, GLenum usage) { instanceBuffer.set_buffer_data(size, data, usage); }
 
@@ -600,7 +585,7 @@ public:
         indexType = type;
         indexCount = count;
     }
-    GlBuffer & get_index_data_buffer() { return indexBuffer; };
+    gl_buffer & get_index_data_buffer() { return indexBuffer; };
 
     void set_attribute(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid * offset)
     {
@@ -631,19 +616,9 @@ public:
     template<class T> void set_elements(GLsizei count, const linalg::vec<T, 2> * elements, GLenum usage) { set_indices(GL_LINES, count * 2, &elements->x, GL_STATIC_DRAW); }
     template<class T> void set_elements(GLsizei count, const linalg::vec<T, 3> * elements, GLenum usage) { set_indices(GL_TRIANGLES, count * 3, &elements->x, GL_STATIC_DRAW); }
     template<class T> void set_elements(GLsizei count, const linalg::vec<T, 4> * elements, GLenum usage) { set_indices(GL_QUADS, count * 4, &elements->x, GL_STATIC_DRAW); }
-
     template<class T> void set_elements(const std::vector<T> & elements, GLenum usage) { set_elements((GLsizei)elements.size(), elements.data(), usage); }
 
     template<class T, int N> void set_elements(const T(&elements)[N], GLenum usage) { set_elements(N, elements, usage); }
 };
 
-#endif // end gl_api_hpp
-
-// Todo: supported extensions
-// Todo: glMultiDrawElementsIndirect
-// Todo: occlusionQuery
-// Todo: timerQuery
-// Todo: blit/multisample?
-// Todo: mapped buffers
-// Todo: transform feedback
-// Todo: pixel buffers / sync
+#endif // end polymer_gl_api_hpp

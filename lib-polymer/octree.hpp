@@ -257,9 +257,9 @@ struct octree
 template<typename T>
 inline void octree_debug_draw(
     const octree<T> & octree,
-    GlShader * shader,
-    GlMesh * boxMesh,
-    GlMesh * sphereMesh,
+    gl_shader * shader,
+    gl_mesh * boxMesh,
+    gl_mesh * sphereMesh,
     const float4x4 & viewProj,
     typename octant<T> * node, // rumble rumble something about dependent types
     float3 octantColor)

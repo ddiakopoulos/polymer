@@ -149,9 +149,9 @@ namespace polymer
 
     class gl_cubemap_capture
     {
-        GlFramebuffer framebuffer;
-        GlTexture2D cubeMapColor;
-        GlTexture2D cubeMapDepth;
+        gl_framebuffer framebuffer;
+        gl_texture_2d cubeMapColor;
+        gl_texture_2d cubeMapDepth;
 
         float resolution;
         bool shouldCapture = false;

@@ -32,7 +32,7 @@ struct ui_rect
     bool contains(const int2 & p) const { return all(gequal(p, min)) && all(less(p, max)); }
 };
 
-struct GlTexture2D;
+struct gl_texture_2d;
 namespace polymer
 {
     class polymer_app;

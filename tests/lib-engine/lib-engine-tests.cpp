@@ -143,6 +143,7 @@ namespace polymer
     //   Transform System   //
     //////////////////////////
 
+    /*
     template<class F> void visit_fields(scene_graph_component & o, F f)
     {
         f("local_pose", o.local_pose);
@@ -150,6 +151,7 @@ namespace polymer
         f("parent", o.parent);
         f("children", o.children);
     }
+    */
 
     template<class Archive> void serialize(Archive & archive, entity & e)
     {

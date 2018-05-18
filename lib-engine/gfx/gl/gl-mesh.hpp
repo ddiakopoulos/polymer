@@ -22,11 +22,11 @@
 
 namespace polymer
 {
-    inline GlMesh make_mesh_from_geometry(const Geometry & geometry, const GLenum usage = GL_STATIC_DRAW)
+    inline gl_mesh make_mesh_from_geometry(const Geometry & geometry, const GLenum usage = GL_STATIC_DRAW)
     {
         assert(geometry.vertices.size() > 0);
 
-        GlMesh m;
+        gl_mesh m;
 
         int vertexOffset = 0;
         int normalOffset = 0;

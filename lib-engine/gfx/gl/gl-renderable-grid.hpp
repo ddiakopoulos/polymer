@@ -31,8 +31,8 @@ namespace polymer
 
 class gl_renderable_grid
 {
-    GlShader gridShader;
-    GlMesh gridMesh;
+    gl_shader gridShader;
+    gl_mesh gridMesh;
     float3 origin = { 0.f, 0.f, 0.f };
     int gridSz = 0;
     int qx, qy;
@@ -41,7 +41,7 @@ public:
 
     gl_renderable_grid(float density = 1.0f, int qx = 32, int qy = 32) : qx(qx), qy(qy)
     {
-        gridShader = GlShader(gridVertexShader, gridFragmentShader);
+        gridShader = gl_shader(gridVertexShader, gridFragmentShader);
 
         const int gridSize = gridSz = (qx + qy + 2) * 2;
         float width = density * qx / 2;

@@ -12,8 +12,8 @@ namespace polymer
 
 class gl_meshline
 {
-    GlShader shader;
-    GlMesh mesh;
+    gl_shader shader;
+    gl_mesh mesh;
     
     std::vector<float3> previous;
     std::vector<float3> next;
@@ -22,9 +22,9 @@ class gl_meshline
     std::vector<float2> uvs;
     std::vector<uint3> indices;
     
-    GlMesh make_line_mesh(const std::vector<float3> & curve)
+    gl_mesh make_line_mesh(const std::vector<float3> & curve)
     {
-        GlMesh m;
+        gl_mesh m;
         
         int components = 3 + 3 + 3 + 1 + 1 + 2;
         std::vector<float> buffer;
@@ -61,7 +61,7 @@ public:
 
     gl_meshline()
     {
-        shader = GlShader(read_file_text("../assets/shaders/prototype/meshline_vert.glsl"), read_file_text("../assets/shaders/prototype/meshline_frag.glsl"));
+        shader = gl_shader(read_file_text("../assets/shaders/prototype/meshline_vert.glsl"), read_file_text("../assets/shaders/prototype/meshline_frag.glsl"));
     }
     
     void set_vertices(const std::vector<float3> & vertices)

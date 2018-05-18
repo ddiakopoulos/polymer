@@ -14,8 +14,8 @@ namespace polymer
         struct Vertex { float3 position; float3 color; };
         std::vector<Vertex> vertices;
 
-        GlMesh payload;
-        GlShader shader;
+        gl_mesh payload;
+        gl_shader shader;
 
         constexpr static const char debugVertexShader[] = R"(#version 330 
             layout(location = 0) in vec3 v; 
@@ -33,7 +33,7 @@ namespace polymer
 
     public:
 
-        renderer_debug() { shader = GlShader(debugVertexShader, debugFragmentShader); }
+        renderer_debug() { shader = gl_shader(debugVertexShader, debugFragmentShader); }
 
         void clear() { vertices.clear(); }
 

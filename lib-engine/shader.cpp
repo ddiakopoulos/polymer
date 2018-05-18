@@ -80,7 +80,7 @@ std::string preprocess_version(const std::string & source)
     return result.str();
 }
 
-GlShader preprocess(const std::string & vertexShader,
+gl_shader preprocess(const std::string & vertexShader,
     const std::string & fragmentShader,
     const std::string & geomShader,
     const std::string & includeSearchPath,
@@ -104,14 +104,14 @@ GlShader preprocess(const std::string & vertexShader,
 
     if (geomShader.size())
     {
-        return GlShader(
+        return gl_shader(
             preprocess_version(process_includes_recursive(vertex.str(), includeSearchPath, includes, 0)),
             preprocess_version(process_includes_recursive(fragment.str(), includeSearchPath, includes, 0)),
             preprocess_version(process_includes_recursive(geom.str(), includeSearchPath, includes, 0)));
     }
     else
     {
-        return GlShader(
+        return gl_shader(
             preprocess_version(process_includes_recursive(vertex.str(), includeSearchPath, includes, 0)),
             preprocess_version(process_includes_recursive(fragment.str(), includeSearchPath, includes, 0)));
     }
@@ -145,7 +145,7 @@ std::shared_ptr<shader_variant> gl_shader_asset::get_variant(const std::vector<s
     return newVariant;
 }
 
-GlShader & gl_shader_asset::default()
+gl_shader & gl_shader_asset::default()
 {
     std::shared_ptr<shader_variant> theDefault;
     if (shaders.size() == 0) theDefault = get_variant();
@@ -169,9 +169,9 @@ void gl_shader_asset::recompile_all()
     }
 }
 
-GlShader gl_shader_asset::compile_variant(const std::vector<std::string> defines)
+gl_shader gl_shader_asset::compile_variant(const std::vector<std::string> defines)
 {
-    GlShader variant;
+    gl_shader variant;
 
     try
     {
@@ -181,7 +181,7 @@ GlShader gl_shader_asset::compile_variant(const std::vector<std::string> defines
         }
         else
         {
-            variant = GlShader(read_file_text(vertexPath), read_file_text(fragmentPath), read_file_text(geomPath));
+            variant = gl_shader(read_file_text(vertexPath), read_file_text(fragmentPath), read_file_text(geomPath));
         }
     }
     catch (const std::exception & e)

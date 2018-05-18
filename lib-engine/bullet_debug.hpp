@@ -38,8 +38,8 @@ class PhysicsDebugRenderer : public btIDebugDraw
     std::vector<std::pair<float3, std::string>> text;
     struct Vertex { float3 position; float3 color; };
     std::vector<Vertex> vertices;
-    GlMesh debugMesh;
-    GlShader debugShader;
+    gl_mesh debugMesh;
+    gl_shader debugShader;
 
     int debugMode = 0;
     bool hasNewInfo{ false };
@@ -48,7 +48,7 @@ public:
 
     PhysicsDebugRenderer()
     {
-        debugShader = GlShader(debugVertexShader, debugFragmentShader);
+        debugShader = gl_shader(debugVertexShader, debugFragmentShader);
     }
 
     void draw(const float4x4 & viewProj) 

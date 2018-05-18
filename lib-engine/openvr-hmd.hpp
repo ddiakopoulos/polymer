@@ -21,7 +21,7 @@ inline transform make_pose(const vr::HmdMatrix34_t & m)
 struct cached_controller_render_data
 {
     Geometry mesh;
-    GlTexture2D tex;
+    gl_texture_2d tex;
     bool loaded = false;
 };
 

@@ -38,14 +38,14 @@ namespace polymer
         tinygizmo::gizmo_application_state gizmo_state;
         tinygizmo::gizmo_context gizmo_ctx;
 
-        GlShader program;
-        GlMesh mesh;
+        gl_shader program;
+        gl_mesh mesh;
 
         float4x4 viewProjectionMatrix;
 
         gl_gizmo()
         {
-            program = GlShader(gl_gizmo_vert, gl_gizmo_frag);
+            program = gl_shader(gl_gizmo_vert, gl_gizmo_frag);
 
             gizmo_ctx.render = [&](const  tinygizmo::geometry_mesh & r)
             {
