@@ -183,6 +183,7 @@ void main()
     float shadowVisibility = 1;
 
     // Compute directional light
+    if (sunlightActive)
     {
         vec3 L = normalize(u_directionalLight.direction); 
         vec3 H = normalize(L + V);  

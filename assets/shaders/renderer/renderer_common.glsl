@@ -30,6 +30,7 @@ layout(binding = 0, std140) uniform PerScene
     PointLight u_pointLights[MAX_POINT_LIGHTS];
     float u_time;
     int u_activePointLights;
+    int sunlightActive;
     vec2 resolution;
     vec2 invResolution;
     vec4 u_cascadesPlane[NUM_CASCADES];

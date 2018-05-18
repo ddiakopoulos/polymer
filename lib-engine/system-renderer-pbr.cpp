@@ -389,7 +389,7 @@ pbr_render_system::~pbr_render_system()
 void pbr_render_system::render_frame(const render_payload & scene)
 {
     assert(settings.cameraCount == scene.views.size());
-    assert(directional_lights.size() == 1);
+    //assert(directional_lights.size() == 1);
 
     if (!xform_system)
     {
@@ -415,15 +415,18 @@ void pbr_render_system::render_frame(const render_payload & scene)
     b.resolution = float2(settings.renderSize);
     b.invResolution = 1.f / b.resolution;
     b.activePointLights = static_cast<int>(point_lights.size());
+    b.sunlightActive = 0;
 
-    auto sunlight = directional_lights.begin()->second;
-
-    b.directional_light.color = sunlight.data.color;
-    b.directional_light.direction = sunlight.data.direction;
-    b.directional_light.amount = sunlight.data.amount;
+    if (!directional_lights.empty())
+    {
+        b.sunlightActive = 1;
+        auto sunlight = directional_lights.begin()->second;
+        b.directional_light.color = sunlight.data.color;
+        b.directional_light.direction = sunlight.data.direction;
+        b.directional_light.amount = sunlight.data.amount;
+    }
 
     assert(point_lights.size() <= uniforms::MAX_POINT_LIGHTS);
-
     uint32_t lightIdx = 0;
     for (auto & light : point_lights)
     {

@@ -43,6 +43,7 @@ namespace uniforms
         point_light           point_lights[MAX_POINT_LIGHTS];
         float                 time;
         int                   activePointLights;
+        int                   sunlightActive;
         ALIGNED(8)  float2    resolution;
         ALIGNED(8)  float2    invResolution;
         ALIGNED(16) float4    cascadesPlane[NUM_CASCADES];
