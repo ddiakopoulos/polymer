@@ -47,6 +47,7 @@
     <ClInclude Include="parallel_transport_frames.hpp" />
     <ClInclude Include="poisson_disk.hpp" />
     <ClInclude Include="procedural_mesh.hpp" />
+    <ClInclude Include="quick_hull.hpp" />
     <ClInclude Include="radix_sort.hpp" />
     <ClInclude Include="simplex_noise.hpp" />
     <ClInclude Include="solvers.hpp" />

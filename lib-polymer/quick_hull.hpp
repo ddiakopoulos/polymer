@@ -1,17 +1,17 @@
 /*
-* Implementation of the 3D QuickHull algorithm originally by Antti Kuukka
-* INPUT:  a list of points in 3D space (for example, vertices of a 3D mesh)
-* OUTPUT: a ConvexHull object which provides vertex and index buffers of the generated convex hull as a triangle mesh.
-* The implementation is thread-safe if each thread is using its own QuickHull object.
-* [1] http://box2d.org/files/GDC2014/DirkGregorius_ImplementingQuickHull.pdf
-* [2] http://thomasdiewald.com/blog/?p=1888
-* [3] https://fgiesen.wordpress.com/2012/02/21/half-edge-based-mesh-representations-theory/
-* License: This is free and unencumbered software released into the public domain.
-* Original source: https://github.com/akuukka/quickhull
-*/
+ * Implementation of the 3d QuickHull algorithm originally by Antti Kuukka
+ * Input: a list of points in 3d space (for example, vertices of a 3d mesh)
+ * Output: a ConvexHull object which provides vertex and index buffers of the generated convex hull as a triangle mesh.
+ * License: This is free and unencumbered software released into the public domain.
+ * Original source: https://github.com/akuukka/quickhull
+ * References: 
+ * [1] http://box2d.org/files/GDC2014/DirkGregorius_ImplementingQuickHull.pdf
+ * [2] http://thomasdiewald.com/blog/?p=1888
+ * [3] https://fgiesen.wordpress.com/2012/02/21/half-edge-based-mesh-representations-theory/
+ */
 
-#ifndef quick_hull_hpp
-#define quick_hull_hpp
+#ifndef polymer_quickhull_hpp
+#define polymer_quickhull_hpp
 
 #include "util.hpp"
 #include "math-core.hpp"
@@ -20,8 +20,6 @@
 #include <array>
 #include <assert.h>
 #include <deque>
-
-using namespace polymer;
 
 namespace quickhull 
 {
@@ -995,4 +993,4 @@ namespace quickhull
 
 } // namespace quickhull
 
-#endif // quick_hull_hpp
+#endif // polymer_quickhull_hpp

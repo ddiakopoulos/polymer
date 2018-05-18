@@ -1,5 +1,3 @@
-// See COPYING file for attribution information
-
 #pragma once
 
 #ifndef polymer_splines_hpp
@@ -113,7 +111,9 @@ namespace polymer
             
             size_t index = first - 1;
             if (arcLengths[index] == targetLength)
+            {
                 return index / float(arcLengths.size() - 1); // No need to interpolate
+            }
             
             // Begin interpolation
             float start = arcLengths[index];
