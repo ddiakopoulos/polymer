@@ -8,7 +8,7 @@
 #include "asset-handle-utils.hpp"
 #include "selection.hpp"
 #include "scene.hpp"
-#include "editor-ui.hpp"
+#include "editor-inspector-ui.hpp"
 #include "arcball.hpp"
 #include "gl-texture-view.hpp"
 

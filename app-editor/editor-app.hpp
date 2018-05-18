@@ -15,7 +15,6 @@
 #include "uniforms.hpp"
 #include "asset-handle-utils.hpp"
 #include "scene.hpp"
-#include "editor-ui.hpp"
 #include "arcball.hpp"
 #include "selection.hpp"
 #include "asset-resolver.hpp"
