@@ -396,7 +396,7 @@
     <ClInclude Include="asset-handle-utils.hpp" />
     <ClInclude Include="asset-handle.hpp" />
     <ClInclude Include="asset-resolver.hpp" />
-    <ClInclude Include="bullet_debug.hpp" />
+    <ClInclude Include="bullet_visualizer.hpp" />
     <ClInclude Include="bullet_engine.hpp" />
     <ClInclude Include="bullet_object.hpp" />
     <ClInclude Include="bullet_utils.hpp" />

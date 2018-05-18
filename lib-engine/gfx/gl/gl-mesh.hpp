@@ -22,7 +22,7 @@
 
 namespace polymer
 {
-    inline gl_mesh make_mesh_from_geometry(const Geometry & geometry, const GLenum usage = GL_STATIC_DRAW)
+    inline gl_mesh make_mesh_from_geometry(const geometry & geometry, const GLenum usage = GL_STATIC_DRAW)
     {
         assert(geometry.vertices.size() > 0);
 

@@ -11,10 +11,10 @@ template<class T> inline asset_handle<T> create_handle_for_asset(const char * as
     return { asset_handle<T>(asset_id, std::move(asset)) };
 }
 
-template<> inline asset_handle<Geometry> create_handle_for_asset(const char * asset_id, Geometry && asset)
+template<> inline asset_handle<geometry> create_handle_for_asset(const char * asset_id, geometry && asset)
 {
     assert(asset.vertices.size() > 0); // verify that this the geometry is not empty
-    return { asset_handle<Geometry>(asset_id, std::move(asset)) };
+    return { asset_handle<geometry>(asset_id, std::move(asset)) };
 }
 
 template<> inline asset_handle<gl_mesh> create_handle_for_asset(const char * asset_id, gl_mesh && asset)
@@ -35,7 +35,7 @@ namespace polymer
 
 typedef asset_handle<gl_texture_2d>                        			texture_handle;
 typedef asset_handle<gl_mesh>                             			gpu_mesh_handle;
-typedef asset_handle<Geometry>                           			cpu_mesh_handle;
+typedef asset_handle<geometry>                           			cpu_mesh_handle;
 typedef asset_handle<std::shared_ptr<polymer::material_interface>>  material_handle;
 typedef asset_handle<std::shared_ptr<polymer::gl_shader_asset>>    	shader_handle;
 

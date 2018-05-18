@@ -83,7 +83,7 @@ namespace polymer
         f("cast_shadow", o.cast_shadow);
     }
 
-    // Geometry (CPU-side runtime_mesh)
+    // geometry (CPU-side runtime_mesh)
     struct geometry_component : public base_component
     {
         cpu_mesh_handle geom;

@@ -100,7 +100,7 @@ namespace polymer
 
     inline gl_mesh make_fullscreen_quad_ndc()
     {
-        Geometry g;
+        geometry g;
         g.vertices = { { -1.0f, -1.0f, 0.0f },{ 1.0f, -1.0f, 0.0f },{ -1.0f, 1.0f, 0.0f },{ -1.0f, 1.0f, 0.0f },{ 1.0f, -1.0f, 0.0f },{ 1.0f, 1.0f, 0.0f } };
         g.texcoord0 = { { 0, 0 },{ 1, 0 },{ 0, 1 },{ 0, 1 },{ 1, 0 },{ 1, 1 } };
         g.faces = { { 0, 1, 2 },{ 3, 4, 5 } };
@@ -114,7 +114,7 @@ namespace polymer
 
     inline gl_mesh make_fullscreen_quad_screenspace()
     {
-        Geometry g;
+        geometry g;
         g.vertices = { { 0.0f, 0.0f, 0.0f },{ 1.0f, 0.0f, 0.0f },{ 0.0f, 1.0f, 0.0f },{ 0.0f, 1.0f, 0.0f },{ 1.0f, 0.0f, 0.0f },{ 1.0f, 1.0f, 0.0f } };
         g.texcoord0 = { { 0, 0 },{ 1, 0 },{ 0, 1 },{ 0, 1 },{ 1, 0 },{ 1, 1 } };
         g.faces = { { 0, 1, 2 },{ 3, 4, 5 }, { 5, 4, 3 },{ 2, 1, 0 } }; // with backfaces

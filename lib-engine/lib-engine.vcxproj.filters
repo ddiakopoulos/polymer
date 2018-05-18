@@ -1556,9 +1556,6 @@
     <ClInclude Include="..\third_party\bullet3\src\LinearMath\btVector3.h">
       <Filter>third-party\bullet3</Filter>
     </ClInclude>
-    <ClInclude Include="bullet_debug.hpp">
-      <Filter>physics</Filter>
-    </ClInclude>
     <ClInclude Include="bullet_engine.hpp">
       <Filter>physics</Filter>
     </ClInclude>
@@ -1572,6 +1569,9 @@
     <ClInclude Include="renderer-debug.hpp" />
     <ClInclude Include="openvr-camera.hpp" />
     <ClInclude Include="engine.hpp" />
+    <ClInclude Include="bullet_visualizer.hpp">
+      <Filter>physics</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="gfx">
