@@ -23,12 +23,12 @@
 
 namespace cereal
 {
-    void prologue(cereal::JSONOutputArchive & archive, scene_graph_component const & o) {}
-    void epilogue(cereal::JSONOutputArchive & archive, scene_graph_component const & o) {}
-    template<class Archive> void serialize(Archive & archive, float2 & m) { archive(cereal::make_nvp("x", m.x), cereal::make_nvp("y", m.y)); }
-    template<class Archive> void serialize(Archive & archive, float3 & m) { archive(cereal::make_nvp("x", m.x), cereal::make_nvp("y", m.y), cereal::make_nvp("z", m.z)); }
-    template<class Archive> void serialize(Archive & archive, float4 & m) { archive(cereal::make_nvp("x", m.x), cereal::make_nvp("y", m.y), cereal::make_nvp("z", m.z), cereal::make_nvp("w", m.w)); }
-    template<class Archive> void serialize(Archive & archive, transform & m) { archive(cereal::make_nvp("position", m.position), cereal::make_nvp("orientation", m.orientation)); }
+    void prologue(cereal::JSONOutputArchive & archive, polymer::scene_graph_component const & o) {}
+    void epilogue(cereal::JSONOutputArchive & archive, polymer::scene_graph_component const & o) {}
+    template<class Archive> void serialize(Archive & archive, polymer::float2 & m) { archive(cereal::make_nvp("x", m.x), cereal::make_nvp("y", m.y)); }
+    template<class Archive> void serialize(Archive & archive, polymer::float3 & m) { archive(cereal::make_nvp("x", m.x), cereal::make_nvp("y", m.y), cereal::make_nvp("z", m.z)); }
+    template<class Archive> void serialize(Archive & archive, polymer::float4 & m) { archive(cereal::make_nvp("x", m.x), cereal::make_nvp("y", m.y), cereal::make_nvp("z", m.z), cereal::make_nvp("w", m.w)); }
+    template<class Archive> void serialize(Archive & archive, polymer::transform & m) { archive(cereal::make_nvp("position", m.position), cereal::make_nvp("orientation", m.orientation)); }
 }
 
 namespace polymer

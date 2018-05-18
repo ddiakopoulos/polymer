@@ -179,7 +179,7 @@ void sample_gl_octree_culling::on_draw()
         octree.update(n);
     }
 
-    const Frustum cullingFrustum(viewProjectionMatrix);
+    const frustum cullingFrustum(viewProjectionMatrix);
 
     shader->bind();
 

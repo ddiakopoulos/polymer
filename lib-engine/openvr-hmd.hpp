@@ -54,7 +54,7 @@ public:
 
     void set_pose(const transform & newPose) { p = newPose; }
     const transform get_pose(const transform & worldPose) const { return worldPose * p; }
-    Ray forward_ray() const { return Ray(p.position, p.transform_vector(float3(0.0f, 0.0f, -1.0f))); }
+    ray forward_ray() const { return ray(p.position, p.transform_vector(float3(0.0f, 0.0f, -1.0f))); }
 };
 
 class openvr_hmd 

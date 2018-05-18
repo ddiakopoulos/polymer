@@ -37,7 +37,7 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
     glfwGetWindowSize(window, &width, &height);
     glViewport(0, 0, width, height);
 
-    log::get()->add_sink(std::make_shared<ImGui::spdlog_editor_sink>(log));
+    log::get()->replace_sink(std::make_shared<ImGui::spdlog_editor_sink>(log));
 
     auto droidSansTTFBytes = read_file_binary("../assets/fonts/droid_sans.ttf");
 
@@ -252,7 +252,7 @@ void scene_editor_app::on_input(const app_input_event & event)
             int width, height;
             glfwGetWindowSize(window, &width, &height);
 
-            const Ray r = cam.get_world_ray(event.cursor, float2(width, height));
+            const ray r = cam.get_world_ray(event.cursor, float2(width, height));
 
             if (length(r.direction) > 0 && !gizmo_selector->active())
             {

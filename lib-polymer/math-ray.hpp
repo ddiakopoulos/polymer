@@ -20,33 +20,33 @@ namespace polymer
     //   Ray   //
     /////////////
 
-    struct Ray
+    struct ray
     {
         float3 origin, direction;
-        Ray() {}
-        Ray(const float3 & ori, const float3 & dir) : origin(ori), direction(dir) {}
+        ray() = default;
+        ray(const float3 & ori, const float3 & dir) : origin(ori), direction(dir) {}
         float3 inverse_direction() const { return{ 1.f / direction.x, 1.f / direction.y, 1.f / direction.z }; }
         float3 calculate_position(float t) const { return origin + direction * t; }
     };
 
-    inline std::ostream & operator << (std::ostream & o, const Ray & r)
+    inline std::ostream & operator << (std::ostream & o, const ray & r)
     {
         return o << "{" << r.origin << " => " << r.direction << "}";
     }
 
-    inline Ray between(const float3 & start, const float3 & end)
+    inline ray between(const float3 & start, const float3 & end)
     {
         return{ start, safe_normalize(end - start) };
     }
 
-    inline Ray ray_from_viewport_pixel(const float2 & pixelCoord, const float2 & viewportSize, const float4x4 & projectionMatrix)
+    inline ray ray_from_viewport_pixel(const float2 & pixelCoord, const float2 & viewportSize, const float4x4 & projectionMatrix)
     {
         float vx = pixelCoord.x * 2 / viewportSize.x - 1, vy = 1 - pixelCoord.y * 2 / viewportSize.y;
         auto invProj = inverse(projectionMatrix);
         return{ { 0,0,0 }, safe_normalize(transform_coord(invProj,{ vx, vy, +1 }) - transform_coord(invProj,{ vx, vy, -1 })) };
     }
 
-    inline Ray operator * (const transform & pose, const Ray & ray)
+    inline ray operator * (const transform & pose, const ray & ray)
     {
         return{ pose.transform_coord(ray.origin), pose.transform_vector(ray.direction) };
     }
@@ -55,7 +55,7 @@ namespace polymer
     // Ray-object intersections //
     //////////////////////////////
 
-    inline bool intersect_ray_plane(const Ray & ray, const Plane & p, float3 * intersection = nullptr, float * outT = nullptr)
+    inline bool intersect_ray_plane(const ray & ray, const plane & p, float3 * intersection = nullptr, float * outT = nullptr)
     {
         const float d = dot(ray.direction, p.get_normal());
 
@@ -76,7 +76,7 @@ namespace polymer
     }
 
     // Real-Time Collision Detection pg. 180
-    inline bool intersect_ray_box(const Ray & ray, const float3 & min, const float3 & max, float * outTmin = nullptr, float * outTmax = nullptr, float3 * outNormal = nullptr)
+    inline bool intersect_ray_box(const ray & ray, const float3 & min, const float3 & max, float * outTmin = nullptr, float * outTmax = nullptr, float3 * outNormal = nullptr)
     {
         float tmin = 0.f; // set to -FLT_MAX to get first hit on line
         float tmax = std::numeric_limits<float>::max(); // set to max distance ray can travel (for segment)
@@ -130,7 +130,7 @@ namespace polymer
     }
 
     // Returns the closest point on the ray to the Sphere. If ray intersects then returns the point of nearest intersection.
-    inline float3 intersect_ray_sphere(const Ray & ray, const Sphere & s)
+    inline float3 intersect_ray_sphere(const ray & ray, const sphere & s)
     {
         float t;
         float3 diff = ray.origin - s.center;
@@ -157,7 +157,7 @@ namespace polymer
         return s.center + safe_normalize(onRay - s.center) * s.radius;
     }
 
-    inline bool intersect_ray_sphere(const Ray & ray, const Sphere & sphere, float * outT = nullptr, float3 * outNormal = nullptr)
+    inline bool intersect_ray_sphere(const ray & ray, const sphere & sphere, float * outT = nullptr, float3 * outNormal = nullptr)
     {
         float t;
         const float3 diff = ray.origin - sphere.center;
@@ -197,7 +197,7 @@ namespace polymer
     }
 
     // Implementation adapted from: http://www.lighthouse3d.com/tutorials/maths/ray-triangle-intersection/
-    inline bool intersect_ray_triangle(const Ray & ray, const float3 & v0, const float3 & v1, const float3 & v2, float * outT = nullptr, float2 * outUV = nullptr)
+    inline bool intersect_ray_triangle(const ray & ray, const float3 & v0, const float3 & v1, const float3 & v2, float * outT = nullptr, float2 * outUV = nullptr)
     {
         float3 e1 = v1 - v0, e2 = v2 - v0, h = cross(ray.direction, e2);
 

@@ -7,9 +7,9 @@
 
 namespace polymer
 {
-    ////////////////////////////////////////////////
-    //   Basic Retained-Mode Perspective Camera   //
-    ////////////////////////////////////////////////
+    ////////////////////////////
+    //   perspective_camera   //
+    ////////////////////////////
 
     struct perspective_camera
     {
@@ -29,10 +29,10 @@ namespace polymer
         void look_at(const float3 & eyePoint, const float3 target) { pose = lookat_rh(eyePoint, target); }
         void look_at(const float3 & eyePoint, float3 const & target, float3 const & worldup) { pose = lookat_rh(eyePoint, target, worldup); }
 
-        Ray get_world_ray(const float2 cursor, const float2 viewport) const
+        ray get_world_ray(const float2 cursor, const float2 viewport) const
         {
             const float aspect = viewport.x / viewport.y;
-            const Ray r = ray_from_viewport_pixel(cursor, viewport, get_projection_matrix(aspect));
+            const ray r = ray_from_viewport_pixel(cursor, viewport, get_projection_matrix(aspect));
             return pose * r;
         }
     };

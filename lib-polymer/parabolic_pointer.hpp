@@ -9,7 +9,6 @@
 #include "util.hpp"
 #include "math-core.hpp"
 #include "solvers.hpp"
-#include "gl-api.hpp"
 
 namespace polymer
 {
@@ -40,7 +39,7 @@ namespace polymer
 
     inline bool linecast(const aabb_3d & b, const float3 & p1, const float3 & p2, float3 & hitPoint)
     {
-        Ray r = between(p1, p2);
+        ray r = between(p1, p2);
 
         float outT = 0.0f;
         float3 outNormal = { 0, 0, 0 };

@@ -204,7 +204,7 @@ namespace polymer
         return s;
     }
 
-    inline bool intersect_ray_mesh(const Ray & ray, const geometry & mesh, float * outRayT = nullptr, float3 * outFaceNormal = nullptr, aabb_3d * bounds = nullptr)
+    inline bool intersect_ray_mesh(const ray & ray, const geometry & mesh, float * outRayT = nullptr, float3 * outFaceNormal = nullptr, aabb_3d * bounds = nullptr)
     {
         float bestT = std::numeric_limits<float>::infinity(), t;
         uint3 bestFace = { 0, 0, 0 };

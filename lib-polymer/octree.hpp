@@ -212,7 +212,7 @@ namespace polymer
             sceneNode.octant = nullptr;
         }
 
-        void cull(const Frustum & camera, std::vector<octant<T> *> & visibleNodeList, octant<T> * node, bool alreadyVisible)
+        void cull(const frustum & camera, std::vector<octant<T> *> & visibleNodeList, octant<T> * node, bool alreadyVisible)
         {
             if (!node) node = root.get();
             if (node->occupancy == 0) return;

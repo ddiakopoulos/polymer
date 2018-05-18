@@ -52,6 +52,7 @@ namespace polymer
         return cube;
     }
     
+    // todo - texcoords
     inline geometry make_sphere(float radius)
     {
         geometry sphereGeom;
@@ -275,7 +276,6 @@ namespace polymer
                 
                 ringGeom.faces.emplace_back(v1, v2, v3);
                 //ringGeom.texCoords.push_back(uvs[v1], uvs[v2], uvs[v3]);
-                
             }
             
         }
@@ -870,7 +870,7 @@ namespace polymer
         return ico;
     }
     
-}
+} // end namespace polymer
 
 #pragma warning(pop)
 

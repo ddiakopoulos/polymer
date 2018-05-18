@@ -29,7 +29,7 @@ namespace polymer
     {
         perspective_camera & cam; float2 viewport;
         screen_raycaster(perspective_camera & camera, const float2 viewport) : cam(camera), viewport(viewport) {}
-        Ray from(const float2 & cursor) const { return cam.get_world_ray(cursor, viewport); };
+        ray from(const float2 & cursor) const { return cam.get_world_ray(cursor, viewport); };
     };
 
     struct raycast_result
@@ -145,7 +145,7 @@ namespace polymer
             register_system_for_type(this, hash(get_typename<geometry_component>()));
         }
 
-        raycast_result raycast(const entity e, const Ray & worldRay)
+        raycast_result raycast(const entity e, const ray & worldRay)
         {
             if (!xform_system)
             {
@@ -158,7 +158,7 @@ namespace polymer
             const float3 meshScale = xform_system->get_local_transform(e)->local_scale;
             const runtime_mesh & geometry = meshes[e].geom.get();
 
-            Ray localRay = meshPose.inverse() * worldRay;
+            ray localRay = meshPose.inverse() * worldRay;
             localRay.origin /= meshScale;
             localRay.direction /= meshScale;
             float outT = 0.0f;

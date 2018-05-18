@@ -27,14 +27,14 @@ namespace quickhull
     //   Math Utilities   //
     ////////////////////////
 
-    inline float getSquaredDistanceBetweenPointAndRay(const float3 & p, const Ray & r) 
+    inline float getSquaredDistanceBetweenPointAndRay(const float3 & p, const ray & r) 
     {
         const float3 s = p - r.origin;
         float t = dot(s, r.direction);
         return length2(s) - t * t * (1.f / length2(r.direction));
     }
 
-    inline float getSignedDistanceToPlane(const float3 & v, const Plane & p) { return dot(p.get_normal(),v) + p.get_distance(); }
+    inline float getSignedDistanceToPlane(const float3 & v, const plane & p) { return dot(p.get_normal(),v) + p.get_distance(); }
     inline float3 getTriangleNormal(const float3 & a, const float3 & b, const float3 & c) { return safe_normalize(cross(b - a, c - a)); }
 
     //////////////////
@@ -79,7 +79,7 @@ namespace quickhull
         struct Face 
         {
             size_t m_he;
-            Plane m_P;
+            plane m_P;
             float m_mostDistantPointDist{ 0 };
             size_t m_mostDistantPoint{ 0 };
             size_t m_visibilityCheckedOnIteration{ 0 };
@@ -418,7 +418,7 @@ namespace quickhull
 
                 const float3 N = getTriangleNormal(m_vertexData[v[0]],m_vertexData[v[1]],m_vertexData[v[2]]);
 
-                const Plane trianglePlane(N,m_vertexData[v[0]]);
+                const plane trianglePlane(N,m_vertexData[v[0]]);
 
                 if (trianglePlane.is_positive_half_space(m_vertexData[v[3]])) 
                 {
@@ -452,7 +452,7 @@ namespace quickhull
             assert(selectedPoints.first != selectedPoints.second);
             
             // Find the most distant point to the line between the two chosen extreme points.
-            const Ray r(m_vertexData[selectedPoints.first], (m_vertexData[selectedPoints.second] - m_vertexData[selectedPoints.first]));
+            const ray r(m_vertexData[selectedPoints.first], (m_vertexData[selectedPoints.second] - m_vertexData[selectedPoints.first]));
             maxD = m_epsilonSquared;
             size_t maxI = std::numeric_limits<size_t>::max();
             const size_t vCount = m_vertexData.size();
@@ -498,7 +498,7 @@ namespace quickhull
             maxD=m_epsilon;
             maxI=0;
             const float3 N = getTriangleNormal(baseTriangleVertices[0],baseTriangleVertices[1],baseTriangleVertices[2]);
-            Plane trianglePlane(N,baseTriangleVertices[0]);
+            plane trianglePlane(N,baseTriangleVertices[0]);
 
             for (size_t i = 0; i < vCount; i++) 
             {
@@ -528,7 +528,7 @@ namespace quickhull
             }
 
             // Enforce CCW orientation (if user prefers clockwise orientation, swap two vertices in each triangle when final mesh is created)
-            const Plane triPlane(N,baseTriangleVertices[0]);
+            const plane triPlane(N,baseTriangleVertices[0]);
             if (triPlane.is_positive_half_space(m_vertexData[maxI])) 
             {
                 std::swap(baseTriangle[0],baseTriangle[1]);
@@ -543,7 +543,7 @@ namespace quickhull
                 const float3 & vb = m_vertexData[v[1]];
                 const float3 & vc = m_vertexData[v[2]];
                 const float3 N = getTriangleNormal(va, vb, vc);
-                const Plane trianglePlane(N,va);
+                const plane trianglePlane(N,va);
                 f.m_P = trianglePlane;
             }
 
@@ -758,7 +758,7 @@ namespace quickhull
                     }
                     else 
                     {
-                        const Plane & P = pvf.m_P;
+                        const plane & P = pvf.m_P;
                         pvf.m_visibilityCheckedOnIteration = iter;
                         const float d = dot(P.get_normal(), activePoint) + P.get_distance();
 
@@ -891,7 +891,7 @@ namespace quickhull
                     auto & newFace = m_mesh.m_faces[newFaceIndex];
 
                     const float3 planeNormal = getTriangleNormal(m_vertexData[A],m_vertexData[B],activePoint);
-                    newFace.m_P = Plane(planeNormal, activePoint);
+                    newFace.m_P = plane(planeNormal, activePoint);
                     newFace.m_he = AB;
 
                     m_mesh.m_halfEdges[CA].m_opp = m_newHalfEdgeIndices[i>0 ? i*2-1 : 2*horizonEdgeCount-1];

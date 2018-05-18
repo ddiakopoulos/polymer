@@ -16,7 +16,7 @@
 
 namespace polymer
 {
-    struct FieldOfView
+    struct fov_tanspace
     {
         float left, right, bottom, top, near, far;
     };
@@ -49,7 +49,7 @@ namespace polymer
         projection[3][2] = c.w - projection[3][3];
     }
 
-    inline void get_tanspace_fov(const float4x4 & projection, FieldOfView & fov)
+    inline void get_tanspace_fov(const float4x4 & projection, fov_tanspace & fov)
     {
         fov.near = projection[3][2] / (projection[2][2] - 1.0f);
         fov.far = projection[3][2] / (1.0f + projection[2][2]);
@@ -115,8 +115,8 @@ namespace polymer
     // https://computergraphics.stackexchange.com/questions/1736/vr-and-frustum-culling
     inline void compute_center_view(const float4x4 & leftProjection, const float4x4 & rightProjection, const float interCameraDistance, float4x4 & outProjection, float3 & outTranslation)
     {
-        FieldOfView leftFov = {};
-        FieldOfView rightFov = {};
+        fov_tanspace leftFov = {};
+        fov_tanspace rightFov = {};
         get_tanspace_fov(leftProjection, leftFov);
         get_tanspace_fov(rightProjection, rightFov);
 

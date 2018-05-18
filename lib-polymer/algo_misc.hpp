@@ -3,6 +3,8 @@
 
 #include "util.hpp"
 #include "math-core.hpp"
+#include "math-primitives.hpp"
+
 #include <functional>
 #include <memory>
 #include <algorithm>
@@ -43,16 +45,16 @@ namespace polymer
     // Cantor set on the xz plane
     struct cantor_set
     {
-        std::vector<Line> lines{ {float3(-1, 0, 0), float3(1, 0, 0)} }; // initial
+        std::vector<line> lines{ {float3(-1, 0, 0), float3(1, 0, 0)} }; // initial
 
-        std::vector<Line> next(const Line & line) const
+        std::vector<line> next(const line & l) const
         {
-            const float3 p0 = line.origin;
-            const float3 pn = line.direction;
+            const float3 p0 = l.origin;
+            const float3 pn = l.direction;
             float3 p1 = (pn - p0) / 3.0f + p0;
             float3 p2 = ((pn - p0) * 2.f) / 3.f + p0;
 
-            std::vector<Line> next;
+            std::vector<line> next;
             next.push_back({ p0, p1 });
             next.push_back({ p2, pn });
 
@@ -61,10 +63,10 @@ namespace polymer
 
         void step()
         {
-            std::vector<Line> recomputedSet;
-            for (auto & line : lines)
+            std::vector<line> recomputedSet;
+            for (auto & l : lines)
             {
-                std::vector<Line> nextLines = next(line); // split
+                std::vector<line> nextLines = next(l); // split
                 std::copy(nextLines.begin(), nextLines.end(), std::back_inserter(recomputedSet));
             }
             recomputedSet.swap(lines);
