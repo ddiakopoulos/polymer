@@ -127,7 +127,7 @@ public:
             {
                 const entity object = selected_entities[i];
                 const transform updated_pose = to_linalg(gizmo_selection) * relative_transforms[i];
-                xform_system->update_local_transform(object, updated_pose);
+                xform_system->set_local_transform(object, updated_pose);
             }
         }
 

@@ -131,7 +131,7 @@ struct material_editor_window final : public glfw_window
             arcball->mouse_drag(e.cursor);
             auto p = xform_system->get_world_transform(debug_sphere)->world_pose;
             p.orientation = safe_normalize(qmul(arcball->currentQuat, p.orientation));
-            xform_system->update_local_transform(debug_sphere, p);
+            xform_system->set_local_transform(debug_sphere, p);
         }
     }
 

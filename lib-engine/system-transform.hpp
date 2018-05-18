@@ -145,12 +145,12 @@ namespace polymer
             return world_transforms.get(e);
         }
 
-        bool update_local_transform(entity e, const transform new_pose)
+        bool update_local_transform(entity e, const transform new_transform)
         {
             if (e == kInvalidEntity) return kInvalidEntity;
             if (auto * node = scene_graph_transforms.get(e))
             {
-                node->local_pose = new_pose;
+                node->local_pose = new_transform;
                 recalculate_world_transform(e);
                 return true;
             }
@@ -184,6 +184,11 @@ namespace polymer
             destroy_recursive(e);
         }
     };
+
+    template<class F> void visit_component_fields(entity e, transform_system * system, F f)
+    {
+
+    }
 
     POLYMER_SETUP_TYPEID(transform_system);
 

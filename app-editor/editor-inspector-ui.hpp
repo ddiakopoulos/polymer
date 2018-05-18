@@ -180,10 +180,6 @@ bool inspect_scene_entity(const char * label, entity e, poly_scene & scene)
             {
                 r |= build_imgui(name, field);
             });
-
-            // visit_component_fields
-            // visit entity in system (visit_entity?)
-            //r |= build_imgui(name, *material_pointer);
         }
     });
 

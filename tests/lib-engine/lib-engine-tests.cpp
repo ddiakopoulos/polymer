@@ -470,9 +470,9 @@ namespace polymer
         // todo - test move_child
     }
 
-    TEST_CASE("transform system update local transform")
+    TEST_CASE("transform system set local transform")
     {
-        // todo - test update_local_transform
+        // todo - test set_local_transform
     }
 
     TEST_CASE("transform system performance testing")
