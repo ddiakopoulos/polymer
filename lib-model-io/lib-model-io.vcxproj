@@ -101,18 +101,24 @@
     <ClInclude Include="fbx-importer.hpp" />
     <ClInclude Include="model-io-util.hpp" />
     <ClInclude Include="model-io.hpp" />
-    <ClInclude Include="third-party\meshoptimizer\meshoptimizer.hpp" />
+    <ClInclude Include="third-party\meshoptimizer\meshoptimizer.h" />
     <ClInclude Include="third-party\tinyobj\tiny_obj_loader.h" />
     <ClInclude Include="third-party\tinyply\tinyply.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="fbx-importer.cpp" />
     <ClCompile Include="model-io.cpp" />
+    <ClCompile Include="third-party\meshoptimizer\indexcodec.cpp" />
     <ClCompile Include="third-party\meshoptimizer\indexgenerator.cpp" />
+    <ClCompile Include="third-party\meshoptimizer\overdrawanalyzer.cpp" />
     <ClCompile Include="third-party\meshoptimizer\overdrawoptimizer.cpp" />
-    <ClCompile Include="third-party\meshoptimizer\posttransformoptimizer.cpp" />
-    <ClCompile Include="third-party\meshoptimizer\pretransformoptimizer.cpp" />
+    <ClCompile Include="third-party\meshoptimizer\simplifier.cpp" />
+    <ClCompile Include="third-party\meshoptimizer\stripifier.cpp" />
     <ClCompile Include="third-party\meshoptimizer\vcacheanalyzer.cpp" />
+    <ClCompile Include="third-party\meshoptimizer\vcacheoptimizer.cpp" />
+    <ClCompile Include="third-party\meshoptimizer\vertexcodec.cpp" />
+    <ClCompile Include="third-party\meshoptimizer\vfetchanalyzer.cpp" />
+    <ClCompile Include="third-party\meshoptimizer\vfetchoptimizer.cpp" />
     <ClCompile Include="third-party\tinyobj\tiny_obj_loader.cc" />
     <ClCompile Include="third-party\tinyply\tinyply.cpp" />
   </ItemGroup>

@@ -1,13 +1,13 @@
 #include "model-io.hpp"
-
-#include <assert.h>
-#include <fstream>
+#include "fbx-importer.hpp"
+#include "model-io-util.hpp"
 
 #include "third-party/tinyobj/tiny_obj_loader.h"
 #include "third-party/tinyply/tinyply.h"
-#include "third-party/meshoptimizer/meshoptimizer.hpp"
-#include "fbx-importer.hpp"
-#include "model-io-util.hpp"
+#include "third-party/meshoptimizer/meshoptimizer.h"
+
+#include <assert.h>
+#include <fstream>
 
 std::map<std::string, runtime_mesh> import_model(const std::string & path)
 {
@@ -35,7 +35,7 @@ std::map<std::string, runtime_mesh> import_model(const std::string & path)
 
 std::map<std::string, runtime_mesh> import_fbx_model(const std::string & path)
 {
-#   if (USING_FBX == 1)
+# if (USING_FBX == 1)
     
     std::map<std::string, runtime_mesh> results;
 
@@ -52,9 +52,10 @@ std::map<std::string, runtime_mesh> import_fbx_model(const std::string & path)
 
     return {};
 
-    #else
-        #pragma message ("fbxsdk is not enabled with the SYSTEM_HAS_FBX_SDK flag")
-    #endif
+#else
+    #pragma message ("fbxsdk is not enabled with the SYSTEM_HAS_FBX_SDK flag")
+#endif
+
     return {};
 }
 
@@ -150,41 +151,7 @@ std::map<std::string, runtime_mesh> import_obj_model(const std::string & path)
 
 void optimize_model(runtime_mesh & input)
 {
-    constexpr size_t cacheSize = 32;
-
-    PostTransformCacheStatistics inputStats = analyzePostTransform(&input.faces[0].x, input.faces.size() * 3, input.vertices.size(), cacheSize);
-    std::cout << "input acmr: " << inputStats.acmr << ", cache hit %: " << inputStats.hit_percent << std::endl;
-
-    std::vector<uint32_t> inputIndices;
-    std::vector<uint32_t> reorderedIndices(input.faces.size() * 3);
-
-    for (auto f : input.faces)
-    {
-        inputIndices.push_back(f.x);
-        inputIndices.push_back(f.y);
-        inputIndices.push_back(f.z);
-    }
-
-    {
-        optimizePostTransform(reorderedIndices.data(), inputIndices.data(), inputIndices.size(), input.vertices.size(), cacheSize);
-    }
-
-    std::vector<float3> reorderedVertexBuffer(input.vertices.size());
-
-    {
-        optimizePreTransform(reorderedVertexBuffer.data(), input.vertices.data(), reorderedIndices.data(), reorderedIndices.size(), input.vertices.size(), sizeof(float3));
-    }
-
-    input.faces.clear();
-    for (int i = 0; i < reorderedIndices.size(); i += 3)
-    {
-        input.faces.push_back(uint3(reorderedIndices[i], reorderedIndices[i + 1], reorderedIndices[i + 2]));
-    }
-
-    input.vertices.swap(reorderedVertexBuffer);
-
-    PostTransformCacheStatistics outStats = analyzePostTransform(&input.faces[0].x, input.faces.size() * 3, input.vertices.size(), cacheSize);
-    std::cout << "output acmr: " << outStats.acmr << ", cache hit %: " << outStats.hit_percent << std::endl;
+    // todo 
 }
 
 runtime_mesh import_mesh_binary(const std::string & path)

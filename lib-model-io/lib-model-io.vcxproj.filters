@@ -9,20 +9,38 @@
     <ClCompile Include="third-party\tinyply\tinyply.cpp">
       <Filter>third-party</Filter>
     </ClCompile>
-    <ClCompile Include="third-party\meshoptimizer\pretransformoptimizer.cpp">
-      <Filter>third-party</Filter>
+    <ClCompile Include="third-party\meshoptimizer\stripifier.cpp">
+      <Filter>third-party\mesh-optimizer</Filter>
     </ClCompile>
     <ClCompile Include="third-party\meshoptimizer\vcacheanalyzer.cpp">
-      <Filter>third-party</Filter>
+      <Filter>third-party\mesh-optimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="third-party\meshoptimizer\vcacheoptimizer.cpp">
+      <Filter>third-party\mesh-optimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="third-party\meshoptimizer\vertexcodec.cpp">
+      <Filter>third-party\mesh-optimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="third-party\meshoptimizer\vfetchanalyzer.cpp">
+      <Filter>third-party\mesh-optimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="third-party\meshoptimizer\vfetchoptimizer.cpp">
+      <Filter>third-party\mesh-optimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="third-party\meshoptimizer\indexcodec.cpp">
+      <Filter>third-party\mesh-optimizer</Filter>
     </ClCompile>
     <ClCompile Include="third-party\meshoptimizer\indexgenerator.cpp">
-      <Filter>third-party</Filter>
+      <Filter>third-party\mesh-optimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="third-party\meshoptimizer\overdrawanalyzer.cpp">
+      <Filter>third-party\mesh-optimizer</Filter>
     </ClCompile>
     <ClCompile Include="third-party\meshoptimizer\overdrawoptimizer.cpp">
-      <Filter>third-party</Filter>
+      <Filter>third-party\mesh-optimizer</Filter>
     </ClCompile>
-    <ClCompile Include="third-party\meshoptimizer\posttransformoptimizer.cpp">
-      <Filter>third-party</Filter>
+    <ClCompile Include="third-party\meshoptimizer\simplifier.cpp">
+      <Filter>third-party\mesh-optimizer</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -35,13 +53,16 @@
     <ClInclude Include="third-party\tinyply\tinyply.h">
       <Filter>third-party</Filter>
     </ClInclude>
-    <ClInclude Include="third-party\meshoptimizer\meshoptimizer.hpp">
-      <Filter>third-party</Filter>
+    <ClInclude Include="third-party\meshoptimizer\meshoptimizer.h">
+      <Filter>third-party\mesh-optimizer</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="third-party">
       <UniqueIdentifier>{c7ac32ae-d8c1-43b7-8ab5-362016cdf095}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third-party\mesh-optimizer">
+      <UniqueIdentifier>{359fee2f-af72-4354-957e-bdc9ddb5626d}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
