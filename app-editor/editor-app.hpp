@@ -11,7 +11,7 @@
 #include "ecs/typeid.hpp"
 
 #include "material.hpp"
-#include "renderer-standard.hpp"
+#include "system-renderer-pbr.hpp"
 #include "uniforms.hpp"
 #include "asset-handle-utils.hpp"
 #include "scene.hpp"

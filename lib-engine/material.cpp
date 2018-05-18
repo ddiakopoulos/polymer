@@ -1,5 +1,5 @@
 #include "material.hpp"
-#include "renderer-standard.hpp"
+#include "system-renderer-pbr.hpp"
 
 using namespace polymer;
 

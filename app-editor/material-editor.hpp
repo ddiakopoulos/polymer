@@ -4,7 +4,7 @@
 #define material_editor_hpp
 
 #include "material.hpp"
-#include "renderer-standard.hpp"
+#include "system-renderer-pbr.hpp"
 #include "asset-handle-utils.hpp"
 #include "selection.hpp"
 #include "scene.hpp"

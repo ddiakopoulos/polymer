@@ -403,14 +403,10 @@
     <ClInclude Include="ecs\component-pool.hpp" />
     <ClInclude Include="ecs\core-ecs.hpp" />
     <ClInclude Include="ecs\core-events.hpp" />
-    <ClInclude Include="ecs\system-name.hpp" />
-    <ClInclude Include="ecs\system-transform.hpp" />
     <ClInclude Include="ecs\typeid.hpp" />
     <ClInclude Include="engine.hpp" />
     <ClInclude Include="openvr-camera.hpp" />
     <ClInclude Include="openvr-hmd.hpp" />
-    <ClInclude Include="renderer-debug.hpp" />
-    <ClInclude Include="renderer-standard.hpp" />
     <ClInclude Include="gfx\gl\gl-api.hpp" />
     <ClInclude Include="gfx\gl\gl-async-gpu-timer.hpp" />
     <ClInclude Include="gfx\gl\gl-camera.hpp" />
@@ -433,6 +429,10 @@
     <ClInclude Include="serialization.inl" />
     <ClInclude Include="shader.hpp" />
     <ClInclude Include="shader-library.hpp" />
+    <ClInclude Include="system-name.hpp" />
+    <ClInclude Include="system-renderer-debug.hpp" />
+    <ClInclude Include="system-renderer-pbr.hpp" />
+    <ClInclude Include="system-transform.hpp" />
     <ClInclude Include="uniforms.hpp" />
   </ItemGroup>
   <ItemGroup>
@@ -608,7 +608,6 @@
     <ClCompile Include="ecs\core-events.cpp" />
     <ClCompile Include="openvr-camera.cpp" />
     <ClCompile Include="openvr-hmd.cpp" />
-    <ClCompile Include="renderer-standard.cpp" />
     <ClCompile Include="gfx\gl\gl-imgui.cpp" />
     <ClCompile Include="gfx\gl\gl-nvg.cpp" />
     <ClCompile Include="gfx\gl\glfw-app.cpp" />
@@ -616,6 +615,7 @@
     <ClCompile Include="material-library.cpp" />
     <ClCompile Include="shader-library.cpp" />
     <ClCompile Include="shader.cpp" />
+    <ClCompile Include="system-renderer-pbr.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\lib-polymer\lib-polymer.vcxproj">

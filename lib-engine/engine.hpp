@@ -13,17 +13,18 @@
 #include "shader.hpp"
 #include "shader-library.hpp"
 
-#include "renderer-standard.hpp"
-#include "renderer-debug.hpp"
 #include "openvr-hmd.hpp"
 #include "openvr-camera.hpp"
 
-#include "ecs/component-pool.hpp"
 #include "ecs/core-ecs.hpp"
 #include "ecs/core-events.hpp"
-#include "ecs/system-name.hpp"
-#include "ecs/system-transform.hpp"
+#include "ecs/component-pool.hpp"
 #include "ecs/typeid.hpp"
+
+#include "system-name.hpp"
+#include "system-transform.hpp"
+#include "system-renderer-pbr.hpp"
+#include "system-renderer-debug.hpp"
 
 #include "gl-api.hpp"
 #include "gl-async-gpu-timer.hpp"
