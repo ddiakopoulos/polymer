@@ -18,7 +18,7 @@ namespace polymer
     {
         scene_graph_component() {};
         scene_graph_component(entity e) : base_component(e) {}
-        polymer::Pose local_pose;
+        polymer::transform local_pose;
         polymer::float3 local_scale;
         entity parent{ kInvalidEntity };
         std::vector<entity> children;
@@ -37,7 +37,7 @@ namespace polymer
     {
         world_transform_component() {};
         world_transform_component(entity e) : base_component(e) {}
-        polymer::Pose world_pose;
+        polymer::transform world_pose;
     };
     POLYMER_SETUP_TYPEID(world_transform_component);
 
@@ -95,7 +95,7 @@ namespace polymer
 
         bool create(entity e, poly_typeid hash, void * data) override final { return true; }
 
-        bool create(entity e, const Pose local_pose, const float3 local_scale)
+        bool create(entity e, const transform local_pose, const float3 local_scale)
         {
             const auto check_node = scene_graph_transforms.get(e);
             const auto check_world = world_transforms.get(e);
@@ -145,7 +145,7 @@ namespace polymer
             return world_transforms.get(e);
         }
 
-        bool update_local_transform(entity e, const Pose new_pose)
+        bool update_local_transform(entity e, const transform new_pose)
         {
             if (e == kInvalidEntity) return kInvalidEntity;
             if (auto * node = scene_graph_transforms.get(e))

@@ -73,7 +73,7 @@ void stable_cascaded_shadows::update_cascades(const float4x4 & view, const float
         const float3 maxExtents = float3(sphereRadius, sphereRadius, sphereRadius);
         const float3 minExtents = -maxExtents;
 
-        const Pose cascadePose = look_at_pose_rh(frustumCentroid + lightDir * -minExtents.z, frustumCentroid);
+        const transform cascadePose = lookat_rh(frustumCentroid + lightDir * -minExtents.z, frustumCentroid);
         const float4x4 splitViewMatrix = cascadePose.view_matrix();
 
         const float3 cascadeExtents = maxExtents - minExtents;
@@ -143,7 +143,7 @@ GLuint stable_cascaded_shadows::get_output_texture() const
 //   pbr_render_system implementation   //
 //////////////////////////////////////////
 
-void pbr_render_system::update_per_object_uniform_buffer(const Pose & p, const float3 & scale, const bool recieveShadow, const view_data & d)
+void pbr_render_system::update_per_object_uniform_buffer(const transform & p, const float3 & scale, const bool recieveShadow, const view_data & d)
 {
     uniforms::per_object object = {};
     object.modelMatrix = mul(p.matrix(), make_scaling_matrix(scale));
@@ -190,7 +190,7 @@ void pbr_render_system::run_depth_prepass(const view_data & view, const render_p
 
     for (entity e : scene.render_set)
     {
-        const Pose & p = xform_system->get_world_transform(e)->world_pose;
+        const transform & p = xform_system->get_world_transform(e)->world_pose;
         const float3 & scale = xform_system->get_local_transform(e)->local_scale;
         const bool receiveShadow = materials[e].receive_shadow;
         update_per_object_uniform_buffer(p, scale, receiveShadow, view);
@@ -232,7 +232,7 @@ void pbr_render_system::run_shadow_pass(const view_data & view, const render_pay
     {
         if (materials[e].cast_shadow)
         {
-            const Pose & p = xform_system->get_world_transform(e)->world_pose;
+            const transform & p = xform_system->get_world_transform(e)->world_pose;
             const float3 & scale = xform_system->get_local_transform(e)->local_scale;
             const float4x4 modelMatrix = mul(p.matrix(), make_scaling_matrix(scale));
             shadow->update_shadow_matrix(modelMatrix);
@@ -256,7 +256,7 @@ void pbr_render_system::run_forward_pass(std::vector<entity> & renderQueueMateri
 
     for (entity e : renderQueueMaterial)
     {
-        const Pose & p = xform_system->get_world_transform(e)->world_pose;
+        const transform & p = xform_system->get_world_transform(e)->world_pose;
         const float3 & scale = xform_system->get_local_transform(e)->local_scale;
         const bool receiveShadow = materials[e].receive_shadow;
 
@@ -442,7 +442,7 @@ void pbr_render_system::render_frame(const render_payload & scene)
         cpuProfiler.begin("center-view");
 
         // Take the mid-point between the eyes
-        shadowAndCullingView.pose = Pose(scene.views[0].pose.orientation, (scene.views[0].pose.position + scene.views[1].pose.position) * 0.5f);
+        shadowAndCullingView.pose = transform(scene.views[0].pose.orientation, (scene.views[0].pose.position + scene.views[1].pose.position) * 0.5f);
 
         // Compute the interocular distance
         const float3 interocularDistance = scene.views[1].pose.position - scene.views[0].pose.position;

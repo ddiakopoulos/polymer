@@ -141,7 +141,7 @@ void VirtualRealityApp::on_update(const app_update_event & e)
                 scene.needsTeleport = false;
 
                 scene.teleportLocation.y = hmd->get_hmd_pose().position.y;
-                Pose teleportPose(hmd->get_hmd_pose().orientation, scene.teleportLocation);
+                transform teleportPose(hmd->get_hmd_pose().orientation, scene.teleportLocation);
 
                 hmd->set_world_pose({}); // reset world pose
                 auto hmd_pose = hmd->get_hmd_pose(); // pose is now in the HMD's own coordinate system

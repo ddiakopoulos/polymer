@@ -13,7 +13,7 @@ namespace polymer
 
     struct perspective_camera
     {
-        Pose pose;
+        transform pose;
 
         float vfov{ 1.3f };
         float nearclip{ 0.01f };
@@ -25,9 +25,9 @@ namespace polymer
         float3 get_view_direction() const { return -pose.zdir(); }
         float3 get_eye_point() const { return pose.position; }
 
-        void look_at(const float3 & target) { pose = look_at_pose_rh(pose.position, target); }
-        void look_at(const float3 & eyePoint, const float3 target) { pose = look_at_pose_rh(eyePoint, target); }
-        void look_at(const float3 & eyePoint, float3 const & target, float3 const & worldup) { pose = look_at_pose_rh(eyePoint, target, worldup); }
+        void look_at(const float3 & target) { pose = lookat_rh(pose.position, target); }
+        void look_at(const float3 & eyePoint, const float3 target) { pose = lookat_rh(eyePoint, target); }
+        void look_at(const float3 & eyePoint, float3 const & target, float3 const & worldup) { pose = lookat_rh(eyePoint, target, worldup); }
 
         Ray get_world_ray(const float2 cursor, const float2 viewport) const
         {

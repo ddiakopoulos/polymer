@@ -105,7 +105,7 @@ struct material_editor_window final : public glfw_window
 
         preview_payload.render_set.push_back(debug_sphere);
 
-        previewCam.pose = look_at_pose_rh(float3(0, 0.25f, 2), float3(0, 0.001f, 0));
+        previewCam.pose = lookat_rh(float3(0, 0.25f, 2), float3(0, 0.001f, 0));
         auxImgui.reset(new gui::imgui_instance(window, true));
 
         auto fontAwesomeBytes = read_file_binary("../assets/fonts/font_awesome_4.ttf");

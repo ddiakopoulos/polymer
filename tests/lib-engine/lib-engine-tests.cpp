@@ -28,7 +28,7 @@ namespace cereal
     template<class Archive> void serialize(Archive & archive, float2 & m) { archive(cereal::make_nvp("x", m.x), cereal::make_nvp("y", m.y)); }
     template<class Archive> void serialize(Archive & archive, float3 & m) { archive(cereal::make_nvp("x", m.x), cereal::make_nvp("y", m.y), cereal::make_nvp("z", m.z)); }
     template<class Archive> void serialize(Archive & archive, float4 & m) { archive(cereal::make_nvp("x", m.x), cereal::make_nvp("y", m.y), cereal::make_nvp("z", m.z), cereal::make_nvp("w", m.w)); }
-    template<class Archive> void serialize(Archive & archive, Pose & m) { archive(cereal::make_nvp("position", m.position), cereal::make_nvp("orientation", m.orientation)); }
+    template<class Archive> void serialize(Archive & archive, transform & m) { archive(cereal::make_nvp("position", m.position), cereal::make_nvp("orientation", m.orientation)); }
 }
 
 namespace polymer
@@ -350,7 +350,7 @@ namespace polymer
         entity root = orchestrator.create_entity();
         REQUIRE_FALSE(system->has_transform(root));
 
-        system->create(root, Pose(), float3(1));
+        system->create(root, transform(), float3(1));
         REQUIRE(system->has_transform(root));
     }
 
@@ -360,8 +360,8 @@ namespace polymer
         transform_system * system = orchestrator.create_system<transform_system>(&orchestrator);
 
         entity root = orchestrator.create_entity();
-        REQUIRE(system->create(root, Pose(), float3(1)));
-        REQUIRE_FALSE(system->create(root, Pose(), float3(1)));
+        REQUIRE(system->create(root, transform(), float3(1)));
+        REQUIRE_FALSE(system->create(root, transform(), float3(1)));
     }
 
     TEST_CASE("transform system destruction")
@@ -373,7 +373,7 @@ namespace polymer
         for (int i = 0; i < 32; ++i)
         {
             entity e = orchestrator.create_entity();
-            system->create(e, Pose(), float3(1));
+            system->create(e, transform(), float3(1));
             entities.push_back(e);
             REQUIRE(system->has_transform(e));
         }
@@ -389,9 +389,9 @@ namespace polymer
 
     TEST_CASE("transform system add/remove parent & children")
     {
-        Pose p1(make_rotation_quat_axis_angle({ 0, 1, 0 }, POLYMER_PI / 2.0), float3(0, 5.f, 0));
-        Pose p2(make_rotation_quat_axis_angle({ 1, 1, 0 }, POLYMER_PI / 0.5), float3(3.f, 0, 0));
-        Pose p3(make_rotation_quat_axis_angle({ 0, 1, -1 }, POLYMER_PI), float3(0, 1.f, 4.f));
+        transform p1(make_rotation_quat_axis_angle({ 0, 1, 0 }, POLYMER_PI / 2.0), float3(0, 5.f, 0));
+        transform p2(make_rotation_quat_axis_angle({ 1, 1, 0 }, POLYMER_PI / 0.5), float3(3.f, 0, 0));
+        transform p3(make_rotation_quat_axis_angle({ 0, 1, -1 }, POLYMER_PI), float3(0, 1.f, 4.f));
 
         entity_orchestrator orchestrator;
         transform_system * system = orchestrator.create_system<transform_system>(&orchestrator);
@@ -400,9 +400,9 @@ namespace polymer
         entity child1 = orchestrator.create_entity();
         entity child2 = orchestrator.create_entity();
 
-        system->create(root, Pose(), float3(1));
-        system->create(child1, Pose(), float3(1));
-        system->create(child2, Pose(), float3(1));
+        system->create(root, transform(), float3(1));
+        system->create(child1, transform(), float3(1));
+        system->create(child2, transform(), float3(1));
 
         REQUIRE(system->has_transform(root));
         REQUIRE(system->has_transform(child1));
@@ -427,9 +427,9 @@ namespace polymer
 
     TEST_CASE("transform system scene graph math correctness")
     {
-        const Pose p1(make_rotation_quat_axis_angle({ 0, 1, 0 }, POLYMER_PI / 2.0), float3(0, 5.f, 0));
-        const Pose p2(make_rotation_quat_axis_angle({ 1, 1, 0 }, POLYMER_PI / 0.5), float3(3.f, 0, 0));
-        const Pose p3(make_rotation_quat_axis_angle({ 0, 1, -1 }, POLYMER_PI), float3(0, 1.f, 4.f));
+        const transform p1(make_rotation_quat_axis_angle({ 0, 1, 0 }, POLYMER_PI / 2.0), float3(0, 5.f, 0));
+        const transform p2(make_rotation_quat_axis_angle({ 1, 1, 0 }, POLYMER_PI / 0.5), float3(3.f, 0, 0));
+        const transform p3(make_rotation_quat_axis_angle({ 0, 1, -1 }, POLYMER_PI), float3(0, 1.f, 4.f));
 
         entity_orchestrator orchestrator;
         transform_system * system = orchestrator.create_system<transform_system>(&orchestrator);
@@ -449,9 +449,9 @@ namespace polymer
         system->add_child(root, child1);
         system->add_child(root, child2);
 
-        const Pose check_p1 = p1;
-        const Pose check_p2 = p2 * p1;
-        const Pose check_p3 = p3 * p1;
+        const transform check_p1 = p1;
+        const transform check_p2 = p2 * p1;
+        const transform check_p3 = p3 * p1;
 
         REQUIRE(system->get_world_transform(root)->world_pose == check_p1); // root (already in worldspace)
         REQUIRE(system->get_world_transform(child1)->world_pose == check_p2);
@@ -481,10 +481,10 @@ namespace polymer
 
         float timer = 0.f;
         manual_timer t;
-        auto random_pose = [&]() -> Pose
+        auto random_pose = [&]() -> transform
         {
             t.start();
-            auto p = Pose(make_rotation_quat_axis_angle({ gen.random_float(), gen.random_float(), gen.random_float() }, gen.random_float() * POLYMER_TAU),
+            auto p = transform(make_rotation_quat_axis_angle({ gen.random_float(), gen.random_float(), gen.random_float() }, gen.random_float() * POLYMER_TAU),
                 float3(gen.random_float() * 100, gen.random_float() * 100, gen.random_float() * 100));
             t.stop();
             timer += t.get();
@@ -518,7 +518,7 @@ namespace polymer
         for (int i = 0; i < 65536; ++i)
         {
             auto rootEntity = orchestrator.create_entity();
-            system->create(rootEntity, Pose(), float3(1));
+            system->create(rootEntity, transform(), float3(1));
         }
 
         {
@@ -548,9 +548,9 @@ namespace polymer
         entity child1 = orchestrator.create_entity();
         entity child2 = orchestrator.create_entity();
 
-        system->create(root, Pose(), float3(1));
-        system->create(child1, Pose(), float3(1));
-        system->create(child2, Pose(), float3(1));
+        system->create(root, transform(), float3(1));
+        system->create(child1, transform(), float3(1));
+        system->create(child2, transform(), float3(1));
 
         system->add_child(root, child1);
         system->add_child(root, child2);

@@ -82,14 +82,14 @@ namespace polymer
     struct view_data
     {
         uint32_t index;
-        Pose pose;
+        transform pose;
         float4x4 viewMatrix;
         float4x4 projectionMatrix;
         float4x4 viewProjMatrix;
         float nearClip;
         float farClip;
 
-        view_data(const uint32_t idx, const Pose & p, const float4x4 & projMat)
+        view_data(const uint32_t idx, const transform & p, const float4x4 & projMat)
         {
             index = idx;
             pose = p;
@@ -139,7 +139,7 @@ namespace polymer
         shader_handle renderPassEarlyZ = { "depth-prepass" };
         shader_handle renderPassTonemap = { "post-tonemap" };
 
-        void update_per_object_uniform_buffer(const Pose & p, const float3 & scale, const bool receiveShadow, const view_data & d);
+        void update_per_object_uniform_buffer(const transform & p, const float3 & scale, const bool receiveShadow, const view_data & d);
         void run_depth_prepass(const view_data & view, const render_payload & scene);
         void run_skybox_pass(const view_data & view, const render_payload & scene);
         void run_shadow_pass(const view_data & view, const render_payload & scene);

@@ -9,12 +9,12 @@
 #include "ecs/core-ecs.hpp"
 #include "ecs/system-transform.hpp"
 
-static inline Pose to_linalg(tinygizmo::rigid_transform & t)
+static inline transform to_linalg(tinygizmo::rigid_transform & t)
 {
     return{ reinterpret_cast<float4 &>(t.orientation), reinterpret_cast<float3 &>(t.position) };
 }
 
-static inline tinygizmo::rigid_transform from_linalg(Pose & p)
+static inline tinygizmo::rigid_transform from_linalg(transform & p)
 {
     return{ reinterpret_cast<minalg::float4 &>(p.orientation), reinterpret_cast<minalg::float3 &>(p.position) };
 }
@@ -25,9 +25,9 @@ class selection_controller
     tinygizmo::rigid_transform gizmo_selection; // Center of mass of multiple objects or the pose of a single object
     tinygizmo::rigid_transform last_gizmo_selection;
 
-    Pose selection;
+    transform selection;
     std::vector<entity> selected_entities;       // Array of selected objects
-    std::vector<Pose> relative_transforms;      // Pose of the objects relative to the selection
+    std::vector<transform> relative_transforms;      // Pose of the objects relative to the selection
 
     bool gizmo_active{ false };
     transform_system * xform_system{ nullptr };
@@ -71,7 +71,7 @@ class selection_controller
 
         for (entity e : selected_entities)
         {
-            const Pose x = xform_system->get_world_transform(e)->world_pose;
+            const transform x = xform_system->get_world_transform(e)->world_pose;
             relative_transforms.push_back(selection.inverse() * x);
         }
     }
@@ -136,7 +136,7 @@ public:
             for (int i = 0; i < selected_entities.size(); ++i)
             {
                 const entity object = selected_entities[i];
-                const Pose updated_pose = to_linalg(gizmo_selection) * relative_transforms[i];
+                const transform updated_pose = to_linalg(gizmo_selection) * relative_transforms[i];
                 xform_system->update_local_transform(object, updated_pose);
             }
         }

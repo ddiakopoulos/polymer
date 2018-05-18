@@ -20,7 +20,7 @@
 //
 //   See Game Programming Gems 2, Section 2.5
 
-inline std::vector<float4x4> make_parallel_transport_frame_bezier(const std::array<Pose, 4> controlPoints, const int segments)
+inline std::vector<float4x4> make_parallel_transport_frame_bezier(const std::array<transform, 4> controlPoints, const int segments)
 {
     bezier_spline curve(controlPoints[0].position, controlPoints[1].position, controlPoints[2].position, controlPoints[3].position);
 

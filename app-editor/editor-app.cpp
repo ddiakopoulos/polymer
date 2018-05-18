@@ -97,7 +97,7 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
     gizmo_selector.reset(new selection_controller(scene.xform_system));
 
     const entity sunlight = scene.track_entity(orchestrator.create_entity());
-    scene.xform_system->create(sunlight, Pose(), {});
+    scene.xform_system->create(sunlight, transform(), {});
     scene.name_system->create(sunlight, "sunlight");
 
     // Setup the skybox; link internal parameters to a directional light entity owned by the render system. 
@@ -219,7 +219,7 @@ void scene_editor_app::on_input(const app_input_event & event)
                 if (gizmo_selector->get_selection().size() == 0) return;
                 if (entity theSelection = gizmo_selector->get_selection()[0])
                 {
-                    const Pose selectedObjectPose = scene.xform_system->get_world_transform(theSelection)->world_pose;
+                    const transform selectedObjectPose = scene.xform_system->get_world_transform(theSelection)->world_pose;
                     const float3 focusOffset = selectedObjectPose.position + float3(0.f, 0.5f, 4.f);
                     cam.look_at(focusOffset, selectedObjectPose.position);
                     flycam.update_yaw_pitch();
@@ -401,7 +401,7 @@ void scene_editor_app::on_draw()
         program.uniform("u_viewProjMatrix", viewProjectionMatrix);
         for (const entity e : gizmo_selector->get_selection())
         {
-            const Pose p = scene.xform_system->get_world_transform(e)->world_pose;
+            const transform p = scene.xform_system->get_world_transform(e)->world_pose;
             const float3 scale = scene.xform_system->get_local_transform(e)->local_scale;
             const float4x4 modelMatrix = mul(p.matrix(), make_scaling_matrix(scale));
             program.uniform("u_modelMatrix", modelMatrix);
@@ -488,7 +488,7 @@ void scene_editor_app::on_draw()
         {
             // Newly spawned objects are selected by default
             std::vector<entity> list = { scene.track_entity(orchestrator.create_entity()) };
-            scene.xform_system->create(list[0], Pose(), {});
+            scene.xform_system->create(list[0], transform(), {});
             scene.name_system->create(list[0], "new entity");
             gizmo_selector->set_selection(list);
         }

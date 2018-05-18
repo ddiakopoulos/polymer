@@ -30,7 +30,7 @@ struct ScreenViewport
 // object, and keeping the physics engine aware of the latest user-controlled pose.
 class MotionControllerVR
 {
-    Pose latestPose;
+    transform latestPose;
 
     void update_physics(const float dt, BulletEngineVR * engine)
     {
@@ -75,7 +75,7 @@ public:
         delete physicsObject;
     }
 
-    void update(const Pose & latestControllerPose)
+    void update(const transform & latestControllerPose)
     {
         latestPose = latestControllerPose;
 

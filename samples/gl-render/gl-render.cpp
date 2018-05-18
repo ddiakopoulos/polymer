@@ -19,7 +19,7 @@ struct sample_gl_render final : public polymer_app
     app_input_event lastEvent;
     bool deltaMotion{ false };
 
-    Pose modelPose;
+    transform modelPose;
     GlMesh model;
     GlShader matcapShader;
     GlTexture2D matcapTexture;
@@ -138,7 +138,7 @@ void sample_gl_render::on_draw()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    const Pose cameraPose = cam.pose;
+    const transform cameraPose = cam.pose;
     const float4x4 projectionMatrix = cam.get_projection_matrix(float(width) / float(height));
     const float4x4 viewMatrix = cam.get_view_matrix();
     const float4x4 viewProjectionMatrix = mul(projectionMatrix, viewMatrix);

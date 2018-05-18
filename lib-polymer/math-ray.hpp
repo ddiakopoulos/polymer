@@ -46,7 +46,7 @@ namespace polymer
         return{ { 0,0,0 }, safe_normalize(transform_coord(invProj,{ vx, vy, +1 }) - transform_coord(invProj,{ vx, vy, -1 })) };
     }
 
-    inline Ray operator * (const Pose & pose, const Ray & ray)
+    inline Ray operator * (const transform & pose, const Ray & ray)
     {
         return{ pose.transform_coord(ray.origin), pose.transform_vector(ray.direction) };
     }

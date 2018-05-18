@@ -186,7 +186,7 @@ inline void recenter_geometry(runtime_mesh & m)
 
     average_position /= float(m.vertices.size());
 
-   auto average_relative_pose = Pose({ 0, 0, 0, 1 }, average_position);
+   auto average_relative_pose = transform({ 0, 0, 0, 1 }, average_position);
    
    for (auto & v : m.vertices)
    {

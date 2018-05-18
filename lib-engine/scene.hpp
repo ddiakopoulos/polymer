@@ -154,7 +154,7 @@ namespace polymer
                 assert(xform_system != nullptr);
             }
 
-            const Pose meshPose = xform_system->get_world_transform(e)->world_pose;
+            const transform meshPose = xform_system->get_world_transform(e)->world_pose;
             const float3 meshScale = xform_system->get_local_transform(e)->local_scale;
             const runtime_mesh & geometry = meshes[e].geom.get();
 

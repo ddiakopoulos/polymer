@@ -44,13 +44,13 @@ namespace polymer
             vertices.push_back({ to, color });
         }
 
-        void draw_line(const Pose & pose, const float3 & from, const float3 & to, const float3 color = float3(1, 1, 1))
+        void draw_line(const transform & pose, const float3 & from, const float3 & to, const float3 color = float3(1, 1, 1))
         {
             vertices.push_back({ pose.transform_coord(from), color });
             vertices.push_back({ pose.transform_coord(to), color });
         }
 
-        void draw_box(const Pose & pose, const aabb_3d & local_bounds, const float3 color = float3(1, 1, 1))
+        void draw_box(const transform & pose, const aabb_3d & local_bounds, const float3 color = float3(1, 1, 1))
         {
             auto unit_cube = make_cube();
 
@@ -62,7 +62,7 @@ namespace polymer
             }
         }
 
-        void draw_sphere(const Pose & pose, const float radius = 1.f, const float3 color = float3(1, 1, 1))
+        void draw_sphere(const transform & pose, const float radius = 1.f, const float3 color = float3(1, 1, 1))
         {
             auto unit_sphere = make_sphere(1.f);
 
@@ -74,7 +74,7 @@ namespace polymer
             }
         }
 
-        void draw_axis(const Pose & pose, const float3 color = float3(1, 1, 1))
+        void draw_axis(const transform & pose, const float3 color = float3(1, 1, 1))
         {
             auto axis = make_axis();
 

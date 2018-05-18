@@ -34,7 +34,7 @@ constexpr const char simple_colored_frag[] = R"(#version 330
 
 struct debug_sphere
 {
-    Pose p;
+    transform p;
     float radius;
     aabb_3d get_bounds() const
     {
@@ -97,7 +97,7 @@ sample_gl_octree_culling::sample_gl_octree_culling() : polymer_app(1280, 720, "s
         const float radius = gen.random_float(0.125f);
 
         debug_sphere s;
-        s.p = Pose(float4(0, 0, 0, 1), position);
+        s.p = transform(float4(0, 0, 0, 1), position);
         s.radius = radius;
 
         spheres.push_back(std::move(s));
