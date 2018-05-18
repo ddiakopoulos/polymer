@@ -102,7 +102,7 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
 
     // Setup the skybox; link internal parameters to a directional light entity owned by the render system. 
     scene.skybox.reset(new gl_hosek_sky());
-    scene.skybox->onParametersChanged = [&]
+    scene.skybox->onParametersChanged = [this, sunlight]
     {
         scene.render_system->directional_lights[sunlight].data.direction = scene.skybox->get_sun_direction();
         scene.render_system->directional_lights[sunlight].data.color = float3(1.f, 1.0f, 1.0f);
@@ -187,6 +187,7 @@ void scene_editor_app::on_window_resize(int2 size)
         renderer_settings settings;
         settings.renderSize = size;
         reset_renderer(size, settings);
+        scene.skybox->onParametersChanged(); // reconfigure directional light
     }
 }
 

@@ -457,16 +457,20 @@ void pbr_render_system::render_frame(const render_payload & scene)
 
     if (settings.shadowsEnabled)
     {
-        gpuProfiler.begin("shadowpass");
-        run_shadow_pass(shadowAndCullingView, scene);
-        gpuProfiler.end("shadowpass");
-
-        for (int c = 0; c < uniforms::NUM_CASCADES; c++)
+        // Shadow pass can only run if we've configured a directional sunlight
+        if (!directional_lights.empty())
         {
-            b.cascadesPlane[c] = float4(shadow->splitPlanes[c].x, shadow->splitPlanes[c].y, 0, 0);
-            b.cascadesMatrix[c] = shadow->shadowMatrices[c];
-            b.cascadesNear[c] = shadow->nearPlanes[c];
-            b.cascadesFar[c] = shadow->farPlanes[c];
+            gpuProfiler.begin("shadowpass");
+            run_shadow_pass(shadowAndCullingView, scene);
+            gpuProfiler.end("shadowpass");
+
+            for (int c = 0; c < uniforms::NUM_CASCADES; c++)
+            {
+                b.cascadesPlane[c] = float4(shadow->splitPlanes[c].x, shadow->splitPlanes[c].y, 0, 0);
+                b.cascadesMatrix[c] = shadow->shadowMatrices[c];
+                b.cascadesNear[c] = shadow->nearPlanes[c];
+                b.cascadesFar[c] = shadow->farPlanes[c];
+            }
         }
 
         gl_check_error(__FILE__, __LINE__);
