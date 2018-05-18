@@ -99,8 +99,8 @@ namespace polymer
 
     template<class F> void visit_component_fields(entity e, name_system * system, F f)
     {
-        // auto iter = system->entity_to_name_.find(e);
-        // if (iter != system->entity_to_name_.end()) f("geometry_component", iter->second);
+        //auto iter = system->entity_to_name_.find(e);
+        //if (iter != system->entity_to_name_.end()) f("geometry_component", iter->second);
     }
 
 } // end namespace polymer

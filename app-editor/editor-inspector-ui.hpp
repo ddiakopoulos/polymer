@@ -172,10 +172,15 @@ bool inspect_scene_entity(const char * label, entity e, poly_scene & scene)
 {
     bool r = false;
     
-    visit_systems(&scene, [e](const char * name, auto * system_pointer)
+    visit_systems(&scene, [e, &r](const char * name, auto * system_pointer)
     {
         if (system_pointer)
         {
+            visit_component_fields(e, system_pointer, [&r](const char * name, auto & field)
+            {
+                r |= build_imgui(name, field);
+            });
+
             // visit_component_fields
             // visit entity in system (visit_entity?)
             //r |= build_imgui(name, *material_pointer);

@@ -185,6 +185,11 @@ namespace polymer
         }
     };
 
+    template<class F> void visit_component_fields(entity e, transform_system * system, F f)
+    {
+
+    }
+
     POLYMER_SETUP_TYPEID(transform_system);
 
 } // end namespace polymer
