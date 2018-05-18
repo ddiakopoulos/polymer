@@ -11,10 +11,23 @@ const std::string material_library::kDefaultMaterialId = "default-material";
 
 material_library::material_library(const std::string & library_path) : library_path(library_path)
 {
-    // Create a default material
+    // Create a default material and create an asset handle for it (also add to local instances)
     std::shared_ptr<polymer_default_material> default = std::make_shared<polymer_default_material>();
     create_handle_for_asset(kDefaultMaterialId.c_str(), static_cast<std::shared_ptr<material_interface>>(default));
-    cereal::deserialize_from_json(library_path, instances);
+    instances[kDefaultMaterialId] = default; 
+
+    // Check if the library already exists and load if possible
+    std::ifstream library(library_path);
+    if (library.good())
+    {
+        cereal::deserialize_from_json(library_path, instances);
+    }
+    else
+    {
+        // Create new library with default material
+        const std::string & json_out = cereal::serialize_to_json(instances);
+        polymer::write_file_text(library_path, json_out);
+    }
 
     // Register all material instances with the asset system. Since everything is handle-based,
     // we can do this wherever, so long as it's before the first rendered frame

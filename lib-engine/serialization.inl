@@ -42,8 +42,10 @@ struct editor_hidden { };
 struct input_field { };
 
 CEREAL_REGISTER_TYPE_WITH_NAME(material_interface, "material_interface");
+CEREAL_REGISTER_TYPE_WITH_NAME(polymer_default_material, "polymer_default_material");
 CEREAL_REGISTER_TYPE_WITH_NAME(polymer_pbr_standard, "polymer_pbr_standard");
 CEREAL_REGISTER_TYPE_WITH_NAME(polymer_blinn_phong_standard, "polymer_blinn_phong_standard");
+CEREAL_REGISTER_POLYMORPHIC_RELATION(material_interface, polymer_default_material);
 CEREAL_REGISTER_POLYMORPHIC_RELATION(material_interface, polymer_pbr_standard);
 CEREAL_REGISTER_POLYMORPHIC_RELATION(material_interface, polymer_blinn_phong_standard);
 
