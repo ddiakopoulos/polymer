@@ -138,16 +138,15 @@ namespace
 template<typename factory_t>
 class gl_handle
 {
-    mutable GLuint handle = 0;
-    std::string n;
+    mutable GLuint handle{ 0 };
 public:
     gl_handle() {}
     gl_handle(GLuint h) : handle(h) {}
     ~gl_handle() { if (handle) factory_t::destroy(handle); }
     gl_handle(const gl_handle & r) = delete;
-    gl_handle & operator = (gl_handle && r) { std::swap(handle, r.handle); std::swap(n, r.n); return *this; }
+    gl_handle & operator = (gl_handle && r) { std::swap(handle, r.handle); return *this; }
     gl_handle(gl_handle && r) { *this = std::move(r); }
-    operator GLuint () const { if (!handle)  factory_t::create(handle); return handle; }
+    operator GLuint () const { if (!handle) factory_t::create(handle); return handle; }
     gl_handle & operator = (GLuint & other) { handle = other; return *this; } // assumes ownership
     GLuint id() const { if (!handle) factory_t::create(handle); return handle; };
 };
@@ -176,8 +175,8 @@ typedef gl_handle<gl_transform_feedback_factory> gl_transform_feedback_object;
 
 struct gl_buffer : public gl_buffer_object
 {
-    GLsizeiptr size;
-    gl_buffer() {}
+    GLsizeiptr size{ 0 };
+    gl_buffer() = default;
     void set_buffer_data(const GLsizeiptr s, const GLvoid * data, const GLenum usage) { this->size = s; glNamedBufferDataEXT(*this, size, data, usage);  }
     void set_buffer_data(const std::vector<GLubyte> & bytes, const GLenum usage) { set_buffer_data(bytes.size(), bytes.data(), usage); }
     void set_buffer_sub_data(const GLsizeiptr s, const GLintptr offset, const GLvoid * data) { glNamedBufferSubDataEXT(*this, offset, s, data);  }
@@ -207,7 +206,7 @@ struct gl_framebuffer : public gl_framebuffer_object
 struct gl_texture_2d : public gl_texture_object
 {
     float width{ 0 }, height{ 0 };
-    gl_texture_2d() { }
+    gl_texture_2d() = default;
     gl_texture_2d(GLuint id) : gl_texture_object(id) { }
     gl_texture_2d(float width, float height) : width(width), height(height) {}
 
@@ -244,7 +243,7 @@ struct gl_texture_2d : public gl_texture_object
 struct gl_texture_3d : public gl_texture_object
 {
     float width{ 0 }, height{ 0 }, depth{ 0 };
-    gl_texture_3d() {}
+    gl_texture_3d() = default;
     gl_texture_3d(float width, float height, float depth) : width(width), height(height), depth(depth) {}
 
     void setup(GLenum target, GLsizei width, GLsizei height, GLsizei depth, GLenum internal_fmt, GLenum format, GLenum type, const GLvoid * pixels)
@@ -530,10 +529,10 @@ class gl_mesh
     struct submesh
     {
         gl_buffer indexBuffer;
-        GLsizei count;
+        GLsizei count{ 0 };
     };
 
-    mutable std::unordered_map<int, submesh> indexBuffers;
+    std::unordered_map<int, submesh> indexBuffers;
 
     GLenum drawMode = GL_TRIANGLES;
     GLenum indexType = 0;
@@ -546,14 +545,7 @@ public:
 
     gl_mesh(gl_mesh && r) { *this = std::move(r); }
     gl_mesh(const gl_mesh & r) = delete;
-    gl_mesh & operator = (gl_mesh && r)
-    {
-        char buffer[sizeof(gl_mesh)];
-        memcpy(buffer, this, sizeof(buffer));
-        memcpy(this, &r, sizeof(buffer));
-        memcpy(&r, buffer, sizeof(buffer));
-        return *this;
-    }
+    gl_mesh & operator = (gl_mesh && r) = default;
     gl_mesh & operator = (const gl_mesh & r) = delete;
 
     void set_non_indexed(GLenum newMode)
@@ -563,13 +555,13 @@ public:
         indexBuffers.clear();
     }
     
-    void draw_elements(int instances = 0, int submesh_index = 0) const
+    void draw_elements(int instances = 0, int submesh_index = 0)
     {
         if (vertexBuffer.size)
         {
             glBindVertexArray(vao);
 
-            const submesh & idx = indexBuffers[submesh_index]; // note: will default construct
+            submesh & idx = indexBuffers[submesh_index]; // note: will default construct
 
             if (idx.count)
             {

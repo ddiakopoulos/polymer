@@ -177,33 +177,31 @@ namespace polymer
         auto iter = system->meshes.find(e);
         if (iter != system->meshes.end()) f("geometry_component", iter->second);
     }
-}
 
-namespace polymer
-{
     class pbr_render_system;
-}
 
-class poly_scene
-{
-    std::vector<entity> active_entities;
-public:
-    std::shared_ptr<polymer::material_library> mat_library;
-    std::unique_ptr<polymer::gl_procedural_sky> skybox;
-    polymer::pbr_render_system * render_system;
-    polymer::collision_system * collision_system;
-    polymer::transform_system * xform_system;
-    polymer::name_system * name_system;
-    entity track_entity(entity e) { active_entities.push_back(e); return e; }
-    std::vector<entity> & entity_list() { return active_entities; }
-    void clear_tracked_entities() { active_entities.clear(); }
-    void destroy(entity e)
+    class poly_scene
     {
-       //visit_systems(this, [e](const char * name, auto * system_pointer)
-       //{
-       //    if (system_pointer) system_pointer->destroy(e);
-       //});
-    }
-};
+        std::vector<entity> active_entities;
+    public:
+        std::shared_ptr<polymer::material_library> mat_library;
+        std::unique_ptr<polymer::gl_procedural_sky> skybox;
+        polymer::pbr_render_system * render_system;
+        polymer::collision_system * collision_system;
+        polymer::transform_system * xform_system;
+        polymer::name_system * name_system;
+        entity track_entity(entity e) { active_entities.push_back(e); return e; }
+        std::vector<entity> & entity_list() { return active_entities; }
+        void clear_tracked_entities() { active_entities.clear(); }
+        void destroy(entity e)
+        {
+            //visit_systems(this, [e](const char * name, auto * system_pointer)
+            //{
+            //    if (system_pointer) system_pointer->destroy(e);
+            //});
+        }
+    };
+
+} // end namespace polymer
 
 #endif // end core_scene_hpp
