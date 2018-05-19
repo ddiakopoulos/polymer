@@ -492,24 +492,13 @@ void scene_editor_app::on_draw()
         if (menu.item("Clone", GLFW_MOD_CONTROL, GLFW_KEY_D)) {}
         if (menu.item("Delete", 0, GLFW_KEY_DELETE)) 
         {
-            // todo - destroy on all systems
-
-            //auto it = std::remove_if(std::begin(scene.objects), std::end(scene.objects), [this](std::shared_ptr<GameObject> obj) 
-            //{ 
-            //    return gizmo_selector->selected(obj.get());
-            //});
-            //scene.objects.erase(it, std::end(scene.objects));
-
+            const auto selection_list = gizmo_selector->get_selection();
+            if (!selection_list.empty() && selection_list[0] != kInvalidEntity) scene.destroy(selection_list[0]);
             gizmo_selector->clear();
         }
         if (menu.item("Select All", GLFW_MOD_CONTROL, GLFW_KEY_A)) 
         {
-            std::vector<entity> all_entities;
-            for (auto mesh : scene.render_system->meshes)
-            {
-                all_entities.push_back(mesh.first);
-            }
-            gizmo_selector->set_selection(all_entities);
+            gizmo_selector->set_selection(scene.entity_list());
         }
         menu.end();
 

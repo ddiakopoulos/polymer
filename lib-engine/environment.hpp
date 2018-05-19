@@ -44,9 +44,11 @@ namespace polymer
 
 namespace polymer
 {
-    struct material_library;
+    ////////////////////////
+    //   mesh_component   //
+    ////////////////////////
 
-    // Mesh Component (GPU-side gl_mesh and associated material)
+    // GPU-side gl_mesh
     struct mesh_component : public base_component
     {
         gpu_mesh_handle mesh;
@@ -62,7 +64,10 @@ namespace polymer
         f("gpu_mesh_handle", o.mesh);
     }
 
-    // Material
+    ////////////////////////////
+    //   material_component   //
+    ////////////////////////////
+
     struct material_component : public base_component
     {
         material_handle material;
@@ -80,7 +85,11 @@ namespace polymer
         f("cast_shadow", o.cast_shadow);
     }
 
-    // geometry (CPU-side runtime_mesh)
+    ////////////////////////////
+    //   geometry_component   //
+    ////////////////////////////
+
+    // CPU-side runtime_mesh
     struct geometry_component : public base_component
     {
         cpu_mesh_handle geom;
@@ -94,7 +103,10 @@ namespace polymer
         f("cpu_mesh_handle", o.geom);
     }
 
-    // Point Light
+    ///////////////////////////////
+    //   point_light_component   //
+    ///////////////////////////////
+
     struct point_light_component : public base_component
     {
         bool enabled = true;
@@ -112,7 +124,10 @@ namespace polymer
         f("radius", o.data.radius);
     }
 
-    // Directional Light
+    /////////////////////////////////////
+    //   directional_light_component   //
+    /////////////////////////////////////
+
     struct directional_light_component : public base_component
     {
         bool enabled = true;
@@ -130,10 +145,15 @@ namespace polymer
         f("amount", o.data.amount);
     }
 
+    /////////////////////
+    //   environment   //
+    /////////////////////
+
     class pbr_render_system;
     class collision_system;
     class transform_system;
     class identifier_system;
+    struct material_library;
 
     class environment
     {
@@ -147,7 +167,6 @@ namespace polymer
         polymer::identifier_system * identifier_system;
         entity track_entity(entity e);
         std::vector<entity> & entity_list();
-        void clear_tracked_entities();
         void destroy(entity e);
     };
 

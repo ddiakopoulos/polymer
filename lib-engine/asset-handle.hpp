@@ -86,7 +86,6 @@ namespace polymer
                     a->timestamp = system_time_ns();
                     a->assigned = false;
                     log::get()->assetLog->info("asset type {} ({}) was default constructed", typeid(T).name(), name);
-                    std::cout << "Default constructing " << name << std::endl;
                 }
                 handle = a;
                 return handle->asset;
