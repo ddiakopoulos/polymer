@@ -425,7 +425,7 @@
     <ClInclude Include="material.hpp" />
     <ClInclude Include="material-library.hpp" />
     <ClInclude Include="profiling.hpp" />
-    <ClInclude Include="scene.hpp" />
+    <ClInclude Include="environment.hpp" />
     <ClInclude Include="serialization.inl" />
     <ClInclude Include="shader.hpp" />
     <ClInclude Include="shader-library.hpp" />
@@ -606,6 +606,7 @@
     <ClCompile Include="..\third_party\bullet3\src\LinearMath\btThreads.cpp" />
     <ClCompile Include="..\third_party\bullet3\src\LinearMath\btVector3.cpp" />
     <ClCompile Include="ecs\core-events.cpp" />
+    <ClCompile Include="environment.cpp" />
     <ClCompile Include="openvr-camera.cpp" />
     <ClCompile Include="openvr-hmd.cpp" />
     <ClCompile Include="gfx\gl\gl-imgui.cpp" />

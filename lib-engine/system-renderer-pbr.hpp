@@ -19,7 +19,7 @@
 
 #include "system-name.hpp"
 #include "system-transform.hpp"
-#include "scene.hpp"
+#include "environment.hpp"
 
 #undef near
 #undef far

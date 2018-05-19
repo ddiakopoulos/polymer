@@ -15,7 +15,7 @@
 #include "material.hpp"
 #include "uniforms.hpp"
 #include "asset-handle-utils.hpp"
-#include "scene.hpp"
+#include "environment.hpp"
 #include "arcball.hpp"
 #include "selection.hpp"
 #include "asset-resolver.hpp"
@@ -42,7 +42,7 @@ struct scene_editor_app final : public polymer_app
 
     render_payload the_render_payload;
     entity_orchestrator orchestrator;
-    poly_scene scene;
+    environment scene;
 
     scene_editor_app();
     ~scene_editor_app();

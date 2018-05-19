@@ -2,7 +2,7 @@
  * File: lib-engine/asset-resolver.hpp
  * This file provies a resolution mechanism for asset handles to be associated and loaded with their
  * underlying resource, from either memory or disk. Handles are serialized by a variety of containers,
- * including `poly_scene`, `material_library`, and `shader_library`. During deserialization, these
+ * including `environment`, `material_library`, and `shader_library`. During deserialization, these
  * handles are not assocated with any actual resource. This class compares handles in the containers
  * to assigned assets in the `asset_handle<T>` table. If an unassigned resource is found, the asset
  * handle identifier is used as a key to recursively search an asset folder for a matching filename
@@ -24,7 +24,7 @@
 #include "asset-handle-utils.hpp"
 #include "string_utils.hpp"
 #include "system-renderer-pbr.hpp"
-#include "scene.hpp"
+#include "environment.hpp"
 
 namespace polymer
 {
@@ -83,7 +83,7 @@ namespace polymer
 
     public:
 
-        void resolve(const std::string & asset_dir, poly_scene * scene, material_library * library)
+        void resolve(const std::string & asset_dir, environment * scene, material_library * library)
         {
             assert(scene != nullptr && library != nullptr && asset_dir.size() > 1);
 

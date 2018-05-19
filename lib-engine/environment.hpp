@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef core_scene_hpp
-#define core_scene_hpp
+#ifndef polymer_environment_hpp
+#define polymer_environment_hpp
 
 #include "geometry.hpp"
 
@@ -179,7 +179,7 @@ namespace polymer
 
     class pbr_render_system;
 
-    class poly_scene
+    class environment
     {
         std::vector<entity> active_entities;
     public:
@@ -203,4 +203,4 @@ namespace polymer
 
 } // end namespace polymer
 
-#endif // end core_scene_hpp
+#endif // end polymer_environment_hpp

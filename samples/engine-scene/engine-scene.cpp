@@ -20,7 +20,7 @@ struct sample_engine_scene final : public polymer_app
     std::unique_ptr<simple_texture_view> fullscreen_surface;
 
     render_payload payload;
-    poly_scene scene;
+    environment scene;
 
     sample_engine_scene();
     ~sample_engine_scene();

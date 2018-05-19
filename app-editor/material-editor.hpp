@@ -7,7 +7,7 @@
 #include "system-renderer-pbr.hpp"
 #include "asset-handle-utils.hpp"
 #include "selection.hpp"
-#include "scene.hpp"
+#include "environment.hpp"
 #include "editor-inspector-ui.hpp"
 #include "arcball.hpp"
 #include "gl-texture-view.hpp"
@@ -56,7 +56,7 @@ struct material_editor_window final : public glfw_window
     int assetSelection = -1;
     const uint32_t previewHeight = 420;
 
-    poly_scene & scene;
+    environment & scene;
     std::shared_ptr<selection_controller> selector;
 
     entity inspected_entity{ kInvalidEntity };
@@ -66,7 +66,7 @@ struct material_editor_window final : public glfw_window
         int w, int h,
         const std::string & title,
         int samples,
-        poly_scene & scene,
+        environment & scene,
         std::shared_ptr<selection_controller> selector,
         entity_orchestrator & orch)
         : glfw_window(context, w, h, title, samples), scene(scene), selector(selector)

@@ -3,7 +3,7 @@
 #ifndef imgui_utils_hpp
 #define imgui_utils_hpp
 
-#include "scene.hpp"
+#include "environment.hpp"
 #include "gl-api.hpp"
 #include "gl-imgui.hpp"
 #include "material.hpp"

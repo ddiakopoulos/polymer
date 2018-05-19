@@ -535,6 +535,7 @@
     <ClCompile Include="openvr-hmd.cpp" />
     <ClCompile Include="openvr-camera.cpp" />
     <ClCompile Include="system-renderer-pbr.cpp" />
+    <ClCompile Include="environment.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="gfx\gl\gl-api.hpp">
@@ -599,7 +600,6 @@
     </ClInclude>
     <ClInclude Include="logging.hpp" />
     <ClInclude Include="profiling.hpp" />
-    <ClInclude Include="scene.hpp" />
     <ClInclude Include="uniforms.hpp" />
     <ClInclude Include="asset-resolver.hpp">
       <Filter>assets</Filter>
@@ -1568,6 +1568,7 @@
     <ClInclude Include="system-renderer-debug.hpp" />
     <ClInclude Include="system-renderer-pbr.hpp" />
     <ClInclude Include="system-transform.hpp" />
+    <ClInclude Include="environment.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="gfx">

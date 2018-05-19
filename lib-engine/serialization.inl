@@ -6,7 +6,7 @@
 #include "uniforms.hpp"
 #include "asset-handle-utils.hpp"
 #include "material.hpp"
-#include "scene.hpp"
+#include "environment.hpp"
 #include "gl-procedural-sky.hpp"
 
 #include "cereal/cereal.hpp"
@@ -92,7 +92,7 @@ template<class F> void visit_fields(polymer_blinn_phong_standard & o, F f)
     f("program_handle", o.shader, editor_hidden{}); // hidden because shaders are tied to materials
 }
 
-template<class F> void visit_systems(poly_scene * p, F f)
+template<class F> void visit_systems(environment * p, F f)
 {
     f("name_system", p->name_system);
     f("transform_system", p->xform_system);

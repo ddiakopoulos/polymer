@@ -5,7 +5,7 @@
 
 #include "gl-gizmo.hpp"
 #include "gl-imgui.hpp"
-#include "scene.hpp"
+#include "environment.hpp"
 #include "ecs/core-ecs.hpp"
 #include "system-transform.hpp"
 
