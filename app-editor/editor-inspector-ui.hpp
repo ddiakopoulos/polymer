@@ -137,7 +137,7 @@ bool build_imgui(const char * label, asset_handle<T> & h, const A & ... metadata
     int index{ -1 };
     std::vector<std::string> items;
 
-    // List all handles
+    // List all handles for this type
     for (auto & handle : asset_handle<T>::list())
     {
         // Pre-select index from list if handle matches name
@@ -148,22 +148,16 @@ bool build_imgui(const char * label, asset_handle<T> & h, const A & ... metadata
         items.push_back(handle.name);
     }
 
-    // Debugging
-    //items.push_back("none");
-    // No matching named handle then select "none"
-    //if (index == -1) { index = items.size(); }
-
     if (ImGui::Combo(label, &index, items))
     {
         // if we've selected none
         if (index == items.size())
         {
-            h = {}; // zero assign
+            h = {}; // clear / zero assign the asset handle
         }
         else
         {
-            // Selected a real asset handle
-            h = items[index];
+            h = items[index]; // Selected an existing asset handle
         }
 
         return true;
@@ -183,7 +177,7 @@ build_imgui(const char * label, T & object)
 }
 
 // todo - we should be using component pools to make this logic easer
-bool inspect_scene_entity(const char * label, entity e, environment & env)
+bool inspect_entity(const char * label, entity e, environment & env)
 {
     bool r = false;
     

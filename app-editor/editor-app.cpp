@@ -548,7 +548,7 @@ void scene_editor_app::on_draw()
         gui::imgui_fixed_window_begin("Inspector", topRightPane);
         if (gizmo_selector->get_selection().size() >= 1)
         {
-            inspect_scene_entity(nullptr, gizmo_selector->get_selection()[0], scene);
+            inspect_entity(nullptr, gizmo_selector->get_selection()[0], scene);
         }
         gui::imgui_fixed_window_end();
 

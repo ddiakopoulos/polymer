@@ -41,7 +41,7 @@ namespace polymer
 
     // Systems are responsible for storing the component data instances associated with entities.
     // They also perform all the logic for manipulating and processing their Components.
-    // This base class provides an API for an entity_manager to associate components with entities in a data-driven manner.
+    // This base class provides an API for an entity_orchestrator to associate components with entities in a data-driven manner.
 
     class entity_orchestrator;
     struct base_system : public non_copyable
@@ -72,7 +72,7 @@ namespace polymer
     {
         std::mutex createMutex;
         std::unordered_map<poly_typeid, poly_typeid> system_type_map;
-        std::unordered_map<poly_typeid, base_system *> systems;
+        std::unordered_map<poly_typeid, std::unique_ptr<base_system>> systems;
         entity entity_counter{ 0 }; // Autoincrementing value to generate unique ids.
 
     public:
@@ -80,14 +80,15 @@ namespace polymer
         template <typename T, typename... Args>
         T * create_system(Args &&... args)
         {
-            T * ptr = new T(std::forward<Args>(args)...);
-            add_system(get_typeid<T>(), ptr);
-            return ptr;
+            std::unique_ptr<T> ptr(new T(std::forward<Args>(args)...));
+            T * return_ptr = ptr.get();
+            add_system(get_typeid<T>(), std::move(ptr));
+            return return_ptr;
         }
 
-        void register_system_for_type(const poly_typeid system_type, poly_hash_value def_type)
+        void register_system_for_type(const poly_typeid system_type, poly_typeid component_type)
         {
-            system_type_map[def_type] = system_type;
+            system_type_map[component_type] = system_type;
         }
 
         entity create_entity()
@@ -97,18 +98,18 @@ namespace polymer
             return e;
         }
 
-        void add_system(const poly_typeid system_type, base_system * system)
+        void add_system(const poly_typeid system_type, std::unique_ptr<base_system> system)
         {
             if (!system) return;
             auto itr = systems.find(system_type);
-            if (itr == systems.end()) systems.emplace(system_type, system); // new
-            else itr->second = system; // replace
+            if (itr == systems.end()) systems.emplace(system_type, std::move(system)); // new
+            else itr->second = std::move(system); // replace
         }
 
         base_system * get_system(const poly_typeid system_type)
         {
             auto itr = systems.find(system_type);
-            if (itr != systems.end()) return itr->second;
+            if (itr != systems.end()) return itr->second.get();
             else return nullptr;
         }
     };

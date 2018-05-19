@@ -21,7 +21,7 @@ namespace polymer
 
         collision_system(entity_orchestrator * orch) : base_system(orch)
         {
-            register_system_for_type(this, hash(get_typename<geometry_component>()));
+            register_system_for_type(this, get_typeid<geometry_component>());
         }
 
         raycast_result raycast(const entity e, const ray & worldRay)
