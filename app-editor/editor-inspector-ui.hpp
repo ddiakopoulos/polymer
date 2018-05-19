@@ -148,8 +148,8 @@ bool build_imgui(const char * label, asset_handle<T> & h, const A & ... metadata
         items.push_back(handle.name);
     }
 
+    // Debugging
     //items.push_back("none");
-
     // No matching named handle then select "none"
     //if (index == -1) { index = items.size(); }
 
@@ -183,11 +183,11 @@ build_imgui(const char * label, T & object)
 }
 
 // todo - we should be using component pools to make this logic easer
-bool inspect_scene_entity(const char * label, entity e, poly_scene & scene)
+bool inspect_scene_entity(const char * label, entity e, environment & env)
 {
     bool r = false;
     
-    visit_systems(&scene, [e, &r](const char * name, auto * system_pointer)
+    visit_systems(&env, [e, &r](const char * name, auto * system_pointer)
     {
         if (system_pointer)
         {

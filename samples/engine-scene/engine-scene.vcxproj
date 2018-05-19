@@ -54,7 +54,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)third_party;$(SolutionDir)third_party\glew;$(SolutionDir)third_party\glfw3\include;$(SolutionDir)lib-engine\gfx\gl;$(SolutionDir)lib-polymer;$(SolutionDir)lib-engine;$(ProjectDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)third_party;$(SolutionDir)third_party\glew;$(SolutionDir)third_party\cereal\include;$(SolutionDir)third_party\glfw3\include;$(SolutionDir)lib-engine\gfx\gl;$(SolutionDir)lib-polymer;$(SolutionDir)lib-engine;$(ProjectDir)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;__WINDOWS_DS__;NOMINMAX;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -72,7 +72,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)third_party;$(SolutionDir)third_party\glew;$(SolutionDir)third_party\glfw3\include;$(SolutionDir)lib-engine\gfx\gl;$(SolutionDir)lib-polymer;$(SolutionDir)lib-engine;$(ProjectDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)third_party;$(SolutionDir)third_party\glew;$(SolutionDir)third_party\cereal\include;$(SolutionDir)third_party\glfw3\include;$(SolutionDir)lib-engine\gfx\gl;$(SolutionDir)lib-polymer;$(SolutionDir)lib-engine;$(ProjectDir)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;__WINDOWS_DS__;NOMINMAX;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>

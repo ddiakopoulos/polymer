@@ -1569,6 +1569,7 @@
     <ClInclude Include="system-transform.hpp" />
     <ClInclude Include="environment.hpp" />
     <ClInclude Include="system-identifier.hpp" />
+    <ClInclude Include="system-collision.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="gfx">

@@ -23,6 +23,7 @@
 
 #include "system-identifier.hpp"
 #include "system-transform.hpp"
+#include "system-collision.hpp"
 #include "system-renderer-pbr.hpp"
 #include "system-renderer-debug.hpp"
 

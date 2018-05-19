@@ -17,9 +17,6 @@
 
 #include "ecs/typeid.hpp"
 #include "ecs/core-ecs.hpp"
-#include "system-identifier.hpp"
-#include "system-transform.hpp"
-
 using namespace polymer;
 
 namespace polymer
@@ -134,7 +131,9 @@ namespace polymer
 
     class pbr_render_system;
     class collision_system;
-    
+    class transform_system;
+    class identifier_system;
+
     class environment
     {
         std::vector<entity> active_entities;

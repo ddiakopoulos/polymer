@@ -25,6 +25,7 @@ namespace
 
 namespace detail
 {
+    using namespace polymer;
 
     inline double evaluate_spline(const double * spline, size_t stride, double value)
     {
