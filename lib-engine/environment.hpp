@@ -132,53 +132,9 @@ namespace polymer
         f("amount", o.data.amount);
     }
 
-    // Collision System
-    class collision_system final : public base_system
-    {
-    public:
-        std::unordered_map<entity, geometry_component> meshes;
-        transform_system * xform_system{ nullptr };
-
-        collision_system(entity_orchestrator * orch) : base_system(orch)
-        {
-            register_system_for_type(this, hash(get_typename<geometry_component>()));
-        }
-
-        raycast_result raycast(const entity e, const ray & worldRay)
-        {
-            if (!xform_system)
-            {
-                base_system * xform_base = orchestrator->get_system(get_typeid<transform_system>());
-                xform_system = dynamic_cast<transform_system *>(xform_base);
-                assert(xform_system != nullptr);
-            }
-
-            const transform meshPose = xform_system->get_world_transform(e)->world_pose;
-            const float3 meshScale = xform_system->get_local_transform(e)->local_scale;
-            const runtime_mesh & geometry = meshes[e].geom.get();
-
-            ray localRay = meshPose.inverse() * worldRay;
-            localRay.origin /= meshScale;
-            localRay.direction /= meshScale;
-            float outT = 0.0f;
-            float3 outNormal = { 0, 0, 0 };
-            const bool hit = intersect_ray_mesh(localRay, geometry, &outT, &outNormal);
-            return{ hit, outT, outNormal };
-        }
-
-        virtual bool create(entity e, poly_typeid hash, void * data) override final { return true; }
-        virtual void destroy(entity e) override final {}
-    };
-    POLYMER_SETUP_TYPEID(collision_system);
-
-    template<class F> void visit_component_fields(entity e, collision_system * system, F f)
-    {
-        auto iter = system->meshes.find(e);
-        if (iter != system->meshes.end()) f("geometry_component", iter->second);
-    }
-
     class pbr_render_system;
-
+    class collision_system;
+    
     class environment
     {
         std::vector<entity> active_entities;
@@ -189,16 +145,10 @@ namespace polymer
         polymer::collision_system * collision_system;
         polymer::transform_system * xform_system;
         polymer::identifier_system * identifier_system;
-        entity track_entity(entity e) { active_entities.push_back(e); return e; }
-        std::vector<entity> & entity_list() { return active_entities; }
-        void clear_tracked_entities() { active_entities.clear(); }
-        void destroy(entity e)
-        {
-            //visit_systems(this, [e](const char * name, auto * system_pointer)
-            //{
-            //    if (system_pointer) system_pointer->destroy(e);
-            //});
-        }
+        entity track_entity(entity e);
+        std::vector<entity> & entity_list();
+        void clear_tracked_entities();
+        void destroy(entity e);
     };
 
 } // end namespace polymer
