@@ -15,7 +15,6 @@ namespace polymer
 
     class identifier_system final : public base_system
     {
-
         std::unordered_map<entity, std::string> entity_to_name_;
         std::unordered_map<entity, poly_hash_value> entity_to_hash_;
         std::unordered_map<poly_hash_value, entity> hash_to_entity_;
@@ -97,9 +96,13 @@ namespace polymer
 
     POLYMER_SETUP_TYPEID(identifier_system);
 
+    // pass-through visit_fields for a string since the id system has no component type
+    template<class F> void visit_fields(std::string & str, F f) { f("id", str); }
+
     template<class F> void visit_components(entity e, identifier_system * system, F f)
     {
-        //if ()
+        auto iter = system->entity_to_name_.find(e);
+        if (iter != system->entity_to_name_.end()) f("identifier component", iter->second);
     }
 
 } // end namespace polymer

@@ -192,17 +192,8 @@ namespace polymer
     {
         scene_graph_component * component = system->scene_graph_transforms.get(e);
         if (component != nullptr) f("transform component", *component);
-
-        /*
-        if (component != nullptr)
-        {
-            visit_fields(*component, [&](const char * name, auto & field, auto... metadata)
-            {
-                f(name, field, metadata...); // f at this point is build_imgui
-            });
-            system->recalculate_world_transform(e);
-        }
-        */
+        // while inspecting, we need to continuously recalculate based on potentially changed properties
+        system->recalculate_world_transform(e);
     }
 
     POLYMER_SETUP_TYPEID(transform_system);
