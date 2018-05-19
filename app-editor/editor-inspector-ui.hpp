@@ -185,9 +185,19 @@ bool inspect_entity(const char * label, entity e, environment & env)
     {
         if (system_pointer)
         {
-            visit_component_fields(e, system_pointer, [&r](const char * name, auto & field, auto... metadata)
+            visit_components(e, system_pointer, [&r](const char * component_name, auto & component_ref, auto... component_metadata)
             {
-                r |= build_imgui(name, field, metadata...);
+                if (auto * hidden = unpack<editor_hidden>(component_metadata...)) return;
+
+                if (ImGui::TreeNode(component_name))
+                {
+                    visit_fields(component_ref, [&](const char * field_name, auto & field, auto... field_metadata)
+                    {
+                        r |= build_imgui(field_name, field, field_metadata...);
+                    });
+
+                    ImGui::TreePop();
+                }
             });
         }
     });

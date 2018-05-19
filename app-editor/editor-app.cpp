@@ -138,7 +138,8 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
 
     // Debugging: 
     {
-        create_handle_for_asset("debug-icosahedron", make_mesh_from_geometry(make_icosasphere(3)));
+        create_handle_for_asset("debug-icosahedron", make_mesh_from_geometry(make_icosasphere(3))); // gpu mesh
+        create_handle_for_asset("debug-icosahedron", make_icosasphere(3)); // cpu mesh
 
         // Create a debug entity
         const entity debug_icosa = scene.track_entity(orchestrator.create_entity());
@@ -148,8 +149,11 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
         mesh_component.mesh = gpu_mesh_handle("debug-icosahedron");
         scene.render_system->meshes[debug_icosa] = mesh_component;
         scene.render_system->materials[debug_icosa].material = material_handle(material_library::kDefaultMaterialId);
+
         scene.xform_system->create(debug_icosa, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
         scene.identifier_system->create(debug_icosa, "debug-icosahedron");
+        scene.collision_system->meshes[debug_icosa].geom = cpu_mesh_handle("debug-icosahedron");
+
         the_render_payload.render_set.push_back(debug_icosa);
     }
 }

@@ -1570,6 +1570,7 @@
     <ClInclude Include="environment.hpp" />
     <ClInclude Include="system-identifier.hpp" />
     <ClInclude Include="system-collision.hpp" />
+    <ClInclude Include="system-util.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="gfx">

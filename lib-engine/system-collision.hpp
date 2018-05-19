@@ -51,10 +51,10 @@ namespace polymer
     };
     POLYMER_SETUP_TYPEID(collision_system);
 
-    template<class F> void visit_component_fields(entity e, collision_system * system, F f)
+    template<class F> void visit_components(entity e, collision_system * system, F f)
     {
         auto iter = system->meshes.find(e);
-        if (iter != system->meshes.end()) f("geometry_component", iter->second);
+        if (iter != system->meshes.end()) f("collision geometry component", iter->second);
     }
 
 } // end namespace polymer

@@ -81,7 +81,7 @@ namespace polymer
             scene_graph_transforms.destroy(child);
         }
 
-        template<class F> friend void visit_component_fields(entity e, transform_system * system, F f);
+        template<class F> friend void visit_components(entity e, transform_system * system, F f);
 
     public:
 
@@ -188,9 +188,12 @@ namespace polymer
         }
     };
 
-    template<class F> void visit_component_fields(entity e, transform_system * system, F f)
+    template<class F> void visit_components(entity e, transform_system * system, F f)
     {
         scene_graph_component * component = system->scene_graph_transforms.get(e);
+        if (component != nullptr) f("transform component", *component);
+
+        /*
         if (component != nullptr)
         {
             visit_fields(*component, [&](const char * name, auto & field, auto... metadata)
@@ -199,6 +202,7 @@ namespace polymer
             });
             system->recalculate_world_transform(e);
         }
+        */
     }
 
     POLYMER_SETUP_TYPEID(transform_system);

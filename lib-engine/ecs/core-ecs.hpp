@@ -71,9 +71,9 @@ namespace polymer
     class entity_orchestrator
     {
         std::mutex createMutex;
-        std::unordered_map<poly_typeid, poly_typeid> system_type_map;
+        std::unordered_map<poly_typeid, poly_typeid> system_type_map; // system-to-component-type
         std::unordered_map<poly_typeid, std::unique_ptr<base_system>> systems;
-        entity entity_counter{ 0 }; // Autoincrementing value to generate unique ids.
+        entity entity_counter{ 0 }; // an autoincrementing value to generate unique ids
 
     public:
 
@@ -114,9 +114,9 @@ namespace polymer
         }
     };
 
-    inline void base_system::register_system_for_type(poly_typeid system_type, poly_typeid entity_type) 
+    inline void base_system::register_system_for_type(poly_typeid system_type, poly_typeid component_type) 
     { 
-        orchestrator->register_system_for_type(system_type, entity_type); 
+        orchestrator->register_system_for_type(system_type, component_type);
     }
 
 } // end namespace polymer

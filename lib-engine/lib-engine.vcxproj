@@ -434,6 +434,7 @@
     <ClInclude Include="system-renderer-debug.hpp" />
     <ClInclude Include="system-renderer-pbr.hpp" />
     <ClInclude Include="system-transform.hpp" />
+    <ClInclude Include="system-util.hpp" />
     <ClInclude Include="uniforms.hpp" />
   </ItemGroup>
   <ItemGroup>

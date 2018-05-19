@@ -17,6 +17,7 @@
 
 #include "ecs/typeid.hpp"
 #include "ecs/core-ecs.hpp"
+
 using namespace polymer;
 
 namespace polymer

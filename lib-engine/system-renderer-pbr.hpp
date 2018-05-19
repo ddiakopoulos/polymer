@@ -185,7 +185,7 @@ namespace polymer
         f("shadow_pass", o.settings.shadowsEnabled);
     }
 
-    template<class F> void visit_component_fields(entity e, pbr_render_system * system, F f)
+    template<class F> void visit_components(entity e, pbr_render_system * system, F f)
     {
         // ... 
     }
