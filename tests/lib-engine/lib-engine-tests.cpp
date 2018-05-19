@@ -11,10 +11,10 @@
 
 #include "ecs/typeid.hpp"
 #include "ecs/core-ecs.hpp"
-#include "ecs/system-transform.hpp"
-#include "ecs/system-name.hpp"
 #include "ecs/component-pool.hpp"
 #include "ecs/core-events.hpp"
+#include "system-transform.hpp"
+#include "system-identifier.hpp"
 
 /// Quick reference for doctest macros
 /// REQUIRE, REQUIRE_FALSE, CHECK, WARN, CHECK_THROWS_AS(func(), std::exception)
@@ -669,10 +669,10 @@ namespace polymer
     //   Name System Tests   //
     ///////////////////////////
 
-    TEST_CASE("name_system unified tests")
+    TEST_CASE("identifier_system unified tests")
     {
         entity_orchestrator orchestrator;
-        name_system * system = orchestrator.create_system<name_system>(&orchestrator);
+        identifier_system * system = orchestrator.create_system<identifier_system>(&orchestrator);
 
         const entity e1 = orchestrator.create_entity();
         const entity e2 = orchestrator.create_entity();

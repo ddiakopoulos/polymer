@@ -87,7 +87,7 @@ sample_engine_scene::sample_engine_scene() : polymer_app(1280, 720, "sample-engi
     scene.render_system = orchestrator->create_system<pbr_render_system>(orchestrator.get(), settings);
     scene.collision_system = orchestrator->create_system<collision_system>(orchestrator.get());
     scene.xform_system = orchestrator->create_system<transform_system>(orchestrator.get());
-    scene.name_system = orchestrator->create_system<name_system>(orchestrator.get());
+    scene.identifier_system = orchestrator->create_system<identifier_system>(orchestrator.get());
 
     auto radianceBinary = read_file_binary("../../assets/textures/envmaps/wells_radiance.dds");
     auto irradianceBinary = read_file_binary("../../assets/textures/envmaps/wells_irradiance.dds");
@@ -147,7 +147,7 @@ sample_engine_scene::sample_engine_scene() : polymer_app(1280, 720, "sample-engi
 
         // Create transform and name components
         scene.xform_system->create(debug_sphere, transform(), { 1.f, 1.f, 1.f });
-        scene.name_system->create(debug_sphere, "debug object: sphere");
+        scene.identifier_system->create(debug_sphere, "debug object: sphere");
 
         payload.render_set.push_back(debug_sphere);
     }

@@ -429,7 +429,7 @@
     <ClInclude Include="serialization.inl" />
     <ClInclude Include="shader.hpp" />
     <ClInclude Include="shader-library.hpp" />
-    <ClInclude Include="system-name.hpp" />
+    <ClInclude Include="system-identifier.hpp" />
     <ClInclude Include="system-renderer-debug.hpp" />
     <ClInclude Include="system-renderer-pbr.hpp" />
     <ClInclude Include="system-transform.hpp" />

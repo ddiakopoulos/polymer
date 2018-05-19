@@ -94,7 +94,7 @@ template<class F> void visit_fields(polymer_blinn_phong_standard & o, F f)
 
 template<class F> void visit_systems(environment * p, F f)
 {
-    f("name_system", p->name_system);
+    f("identifier_system", p->identifier_system);
     f("transform_system", p->xform_system);
     f("render_system", p->render_system);
     f("collision_system", p->collision_system);

@@ -17,7 +17,7 @@
 #include "ecs/typeid.hpp"
 #include "ecs/core-ecs.hpp"
 
-#include "system-name.hpp"
+#include "system-identifier.hpp"
 #include "system-transform.hpp"
 #include "environment.hpp"
 

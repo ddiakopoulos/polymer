@@ -1564,11 +1564,11 @@
     <ClInclude Include="gfx\gl\gl-mesh-util.hpp">
       <Filter>gfx\gl</Filter>
     </ClInclude>
-    <ClInclude Include="system-name.hpp" />
     <ClInclude Include="system-renderer-debug.hpp" />
     <ClInclude Include="system-renderer-pbr.hpp" />
     <ClInclude Include="system-transform.hpp" />
     <ClInclude Include="environment.hpp" />
+    <ClInclude Include="system-identifier.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="gfx">

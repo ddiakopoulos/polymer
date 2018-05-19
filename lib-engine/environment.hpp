@@ -17,7 +17,7 @@
 
 #include "ecs/typeid.hpp"
 #include "ecs/core-ecs.hpp"
-#include "system-name.hpp"
+#include "system-identifier.hpp"
 #include "system-transform.hpp"
 
 using namespace polymer;
@@ -188,7 +188,7 @@ namespace polymer
         polymer::pbr_render_system * render_system;
         polymer::collision_system * collision_system;
         polymer::transform_system * xform_system;
-        polymer::name_system * name_system;
+        polymer::identifier_system * identifier_system;
         entity track_entity(entity e) { active_entities.push_back(e); return e; }
         std::vector<entity> & entity_list() { return active_entities; }
         void clear_tracked_entities() { active_entities.clear(); }

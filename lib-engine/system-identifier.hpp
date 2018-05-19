@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef polymer_system_name_hpp
-#define polymer_system_name_hpp
+#ifndef polymer_system_identifier_hpp
+#define polymer_system_identifier_hpp
 
 #include "ecs/typeid.hpp"
 #include "ecs/core-ecs.hpp"
@@ -13,23 +13,23 @@
 namespace polymer
 {
 
-    class name_system final : public base_system
+    class identifier_system final : public base_system
     {
 
         std::unordered_map<entity, std::string> entity_to_name_;
         std::unordered_map<entity, poly_hash_value> entity_to_hash_;
         std::unordered_map<poly_hash_value, entity> hash_to_entity_;
 
-        template<class F> friend void visit_component_fields(entity e, name_system * system, F f);
+        template<class F> friend void visit_component_fields(entity e, identifier_system * system, F f);
 
     public:
 
-        name_system(entity_orchestrator * orch) : base_system(orch)
+        identifier_system(entity_orchestrator * orch) : base_system(orch)
         {
             register_system_for_type(this, hash("std::string"));
         }
 
-        ~name_system() override { }
+        ~identifier_system() override { }
 
         virtual bool create(entity e, poly_typeid hash_of_data, void * data) override final
         {
@@ -95,13 +95,13 @@ namespace polymer
         }
     };
 
-    POLYMER_SETUP_TYPEID(name_system);
+    POLYMER_SETUP_TYPEID(identifier_system);
 
-    template<class F> void visit_component_fields(entity e, name_system * system, F f)
+    template<class F> void visit_component_fields(entity e, identifier_system * system, F f)
     {
         //if ()
     }
 
 } // end namespace polymer
 
-#endif // end polymer_system_name_hpp
+#endif // end polymer_system_identifier_hpp

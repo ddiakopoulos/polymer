@@ -21,7 +21,7 @@
 #include "ecs/component-pool.hpp"
 #include "ecs/typeid.hpp"
 
-#include "system-name.hpp"
+#include "system-identifier.hpp"
 #include "system-transform.hpp"
 #include "system-renderer-pbr.hpp"
 #include "system-renderer-debug.hpp"

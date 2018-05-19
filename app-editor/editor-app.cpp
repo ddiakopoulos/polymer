@@ -92,13 +92,13 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
     scene.render_system = orchestrator.create_system<pbr_render_system>(&orchestrator, initialSettings);
     scene.collision_system = orchestrator.create_system<collision_system>(&orchestrator);
     scene.xform_system = orchestrator.create_system<transform_system>(&orchestrator);
-    scene.name_system = orchestrator.create_system<name_system>(&orchestrator);
+    scene.identifier_system = orchestrator.create_system<identifier_system>(&orchestrator);
 
     gizmo_selector.reset(new selection_controller(scene.xform_system));
 
     const entity sunlight = scene.track_entity(orchestrator.create_entity());
     scene.xform_system->create(sunlight, transform(), {});
-    scene.name_system->create(sunlight, "sunlight");
+    scene.identifier_system->create(sunlight, "sunlight");
 
     // Setup the skybox; link internal parameters to a directional light entity owned by the render system. 
     scene.skybox.reset(new gl_hosek_sky());
@@ -149,7 +149,7 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
         scene.render_system->meshes[debug_icosa] = mesh_component;
         scene.render_system->materials[debug_icosa].material = material_handle(material_library::kDefaultMaterialId);
         scene.xform_system->create(debug_icosa, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
-        scene.name_system->create(debug_icosa, "debug-icosahedron");
+        scene.identifier_system->create(debug_icosa, "debug-icosahedron");
         the_render_payload.render_set.push_back(debug_icosa);
     }
 }
@@ -515,7 +515,7 @@ void scene_editor_app::on_draw()
             // Newly spawned objects are selected by default
             std::vector<entity> list = { scene.track_entity(orchestrator.create_entity()) };
             scene.xform_system->create(list[0], transform(), {});
-            scene.name_system->create(list[0], "new entity");
+            scene.identifier_system->create(list[0], "new entity");
             gizmo_selector->set_selection(list);
         }
         menu.end();
@@ -558,7 +558,7 @@ void scene_editor_app::on_draw()
             ImGui::PushID(static_cast<int>(entity));
 
             const bool selected = gizmo_selector->selected(entity);
-            std::string name = scene.name_system->get_name(entity);
+            std::string name = scene.identifier_system->get_name(entity);
             name = name.empty() ? "entity" : name;
 
             if (ImGui::Selectable(name.c_str(), &selected))
