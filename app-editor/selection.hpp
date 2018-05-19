@@ -50,9 +50,7 @@ class selection_controller
         }
 
         compute_relative_transforms();
-
         gizmo_selection = from_linalg(selection);
-
     }
 
     void compute_relative_transforms()
@@ -97,6 +95,11 @@ public:
     void clear()
     {
         selected_entities.clear();
+        compute_selection();
+    }
+
+    void refresh()
+    {
         compute_selection();
     }
 

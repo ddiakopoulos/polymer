@@ -525,7 +525,7 @@ void scene_editor_app::on_draw()
         menu.end();
 
         menu.begin("Windows");
-        if (menu.item("Material Editor"))
+        if (menu.item("Material Editor", GLFW_MOD_CONTROL, GLFW_KEY_M))
         {
             should_open_material_window = true;
         }
@@ -552,6 +552,7 @@ void scene_editor_app::on_draw()
         gui::imgui_fixed_window_begin("Inspector", topRightPane);
         if (gizmo_selector->get_selection().size() >= 1)
         {
+            gizmo_selector->refresh(); // selector only stores data, not pointers, so we need to recalc new xform.
             inspect_entity(nullptr, gizmo_selector->get_selection()[0], scene);
         }
         gui::imgui_fixed_window_end();
@@ -561,7 +562,7 @@ void scene_editor_app::on_draw()
         {
             ImGui::PushID(static_cast<int>(entity));
 
-            const bool selected = gizmo_selector->selected(entity);
+            bool selected = gizmo_selector->selected(entity);
             std::string name = scene.identifier_system->get_name(entity);
             name = name.empty() ? "entity" : name;
 
