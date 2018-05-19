@@ -3,6 +3,8 @@
 #include "system-collision.hpp"
 #include "system-transform.hpp"
 #include "system-identifier.hpp"
+#include "file_io.hpp"
+#include "serialization.inl"
 
 using namespace polymer;
 
@@ -58,4 +60,14 @@ void environment::destroy(entity e)
         });
         
     }
+}
+
+void environment::import_environment(const std::string & import_path)
+{
+}
+
+void environment::export_environment(const std::string & export_path) 
+{
+    auto json_str = cereal::serialize_to_json(*this);
+    write_file_text(export_path, json_str);
 }

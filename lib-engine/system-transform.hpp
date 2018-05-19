@@ -7,41 +7,10 @@
 #include "ecs/core-ecs.hpp"
 #include "ecs/component-pool.hpp"
 #include "serialization.inl"
+#include "environment.hpp"
 
 namespace polymer
 {
-
-    //////////////////////////////
-    //   Transform Components   //
-    //////////////////////////////
-
-    struct scene_graph_component : public base_component
-    {
-        scene_graph_component() {};
-        scene_graph_component(entity e) : base_component(e) {}
-        polymer::transform local_pose;
-        polymer::float3 local_scale;
-        entity parent{ kInvalidEntity };
-        std::vector<entity> children;
-    };
-    POLYMER_SETUP_TYPEID(scene_graph_component);
-
-    template<class F> void visit_fields(scene_graph_component & o, F f)
-    {
-        f("local_pose", o.local_pose);
-        f("local_scale", o.local_scale);
-        f("parent", o.parent);
-        f("children", o.children, editor_hidden{});
-    }
-
-    struct world_transform_component : public base_component
-    {
-        world_transform_component() {};
-        world_transform_component(entity e) : base_component(e) {}
-        polymer::transform world_pose;
-    };
-    POLYMER_SETUP_TYPEID(world_transform_component);
-
     //////////////////////////
     //   Transform System   //
     //////////////////////////

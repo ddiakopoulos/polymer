@@ -127,7 +127,6 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
     the_render_payload.ibl_irradianceCubemap = texture_handle("wells-irradiance-cubemap");
     the_render_payload.ibl_radianceCubemap = texture_handle("wells-radiance-cubemap");
 
-    //scene.objects.clear();
     //cereal::deserialize_from_json("../assets/scene.json", scene.objects);
 
     scene.mat_library.reset(new polymer::material_library("../assets/materials.json"));
@@ -257,7 +256,7 @@ void scene_editor_app::on_input(const app_input_event & event)
 
             if (event.value[0] == GLFW_KEY_SPACE && event.action == GLFW_RELEASE)
             {
-                // ... 
+                scene.export_environment("polymer-environment-export.json");
             }
         }
 

@@ -147,20 +147,8 @@ namespace cereal
     }
 
     template <typename T>
-    std::string serialize_to_json(T e)
+    std::string serialize_to_json(T & e)
     {
-        std::ostringstream oss;
-        {
-            cereal::JSONOutputArchive json(oss);
-            json(e);
-        }
-        return oss.str();
-    }
-
-    template <typename T>
-    std::string serialize_to_json(std::shared_ptr<T> e)
-    {
-        assert(e != nullptr);
         std::ostringstream oss;
         {
             cereal::JSONOutputArchive json(oss);
