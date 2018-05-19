@@ -12,7 +12,7 @@ entity environment::track_entity(entity e)
     active_entities.push_back(e); return e;
 }
 
-std::vector<entity> & environment::entity_list() 
+const std::vector<entity> & environment::entity_list() 
 { 
     return active_entities; 
 }
@@ -31,13 +31,17 @@ void environment::destroy(entity e)
                 if (system_pointer) system_pointer->destroy(active);
             });
         }
+        active_entities.clear();
     }
     else
     {
+        active_entities.erase(std::find(active_entities.begin(), active_entities.end(), e));
+
         // Destroy a single entity
         visit_systems(this, [e](const char * name, auto * system_pointer)
         {
             if (system_pointer) system_pointer->destroy(e);
         });
+        
     }
 }

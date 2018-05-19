@@ -166,7 +166,7 @@ namespace polymer
         polymer::transform_system * xform_system;
         polymer::identifier_system * identifier_system;
         entity track_entity(entity e);
-        std::vector<entity> & entity_list();
+        const std::vector<entity> & entity_list();
         void destroy(entity e);
     };
 
