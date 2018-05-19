@@ -169,7 +169,6 @@ namespace polymer
         void copy(entity src, entity dest);
         const std::vector<entity> & entity_list();
         void destroy(entity e);
-
     };
 
 } // end namespace polymer

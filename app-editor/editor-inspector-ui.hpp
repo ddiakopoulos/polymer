@@ -121,7 +121,6 @@ inline bool build_imgui(const char * label, entity & e, const A & ... metadata)
     return ImGui::InputInt(label, (int *) &e);
 }
 
-
 template<class... A>
 inline bool build_imgui(const char * label, std::vector<entity> & e, const A & ... metadata)
 {

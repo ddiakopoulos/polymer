@@ -349,7 +349,6 @@ struct material_editor_window final : public glfw_window
                     if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
                     ImGui::EndPopup();
                 }
-
             }
 
             ImGui::Dummy({ 0, 12 });
