@@ -17,6 +17,20 @@ const std::vector<entity> & environment::entity_list()
     return active_entities; 
 }
 
+void environment::copy(entity src, entity dest)
+{
+    visit_systems(this, [src](const char * name, auto * system_pointer)
+    {
+        if (system_pointer)
+        {
+            visit_components(src, system_pointer, [&](const char * component_name, auto & component_ref, auto... component_metadata)
+            {
+                // system_pointer->create(...)
+            });
+        }
+    });
+
+}
 void environment::destroy(entity e)
 {
     if (e == kInvalidEntity) return;

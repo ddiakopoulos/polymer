@@ -489,7 +489,17 @@ void scene_editor_app::on_draw()
         menu.end();
 
         menu.begin("Edit");
-        if (menu.item("Clone", GLFW_MOD_CONTROL, GLFW_KEY_D)) {}
+        if (menu.item("Clone", GLFW_MOD_CONTROL, GLFW_KEY_D)) 
+        {
+            const auto selection_list = gizmo_selector->get_selection();
+            if (!selection_list.empty() && selection_list[0] != kInvalidEntity)
+            {
+                const entity the_copy = scene.track_entity(orchestrator.create_entity());
+                scene.copy(selection_list[0], the_copy);
+                std::vector<entity> new_selection_list = { the_copy };
+                gizmo_selector->set_selection(new_selection_list);
+            }
+        }
         if (menu.item("Delete", 0, GLFW_KEY_DELETE)) 
         {
             const auto selection_list = gizmo_selector->get_selection();
@@ -505,11 +515,10 @@ void scene_editor_app::on_draw()
         menu.begin("Create");
         if (menu.item("entity")) 
         {
-            // Newly spawned objects are selected by default
             std::vector<entity> list = { scene.track_entity(orchestrator.create_entity()) };
             scene.xform_system->create(list[0], transform(), {});
             scene.identifier_system->create(list[0], "new entity");
-            gizmo_selector->set_selection(list);
+            gizmo_selector->set_selection(list); // Newly spawned objects are selected by default
         }
         menu.end();
 

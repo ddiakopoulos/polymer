@@ -165,9 +165,11 @@ namespace polymer
         polymer::collision_system * collision_system;
         polymer::transform_system * xform_system;
         polymer::identifier_system * identifier_system;
-        entity track_entity(entity e);
+        entity track_entity(entity e);        
+        void copy(entity src, entity dest);
         const std::vector<entity> & entity_list();
         void destroy(entity e);
+
     };
 
 } // end namespace polymer
