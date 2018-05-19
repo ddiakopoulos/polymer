@@ -3,8 +3,8 @@
 #ifndef polymer_system_name_hpp
 #define polymer_system_name_hpp
 
-#include "typeid.hpp"
-#include "core-ecs.hpp"
+#include "ecs/typeid.hpp"
+#include "ecs/core-ecs.hpp"
 
 ////////////////////////
 //   name/id system   // 
@@ -99,7 +99,7 @@ namespace polymer
 
     template<class F> void visit_component_fields(entity e, name_system * system, F f)
     {
-        if ()
+        //if ()
     }
 
 } // end namespace polymer

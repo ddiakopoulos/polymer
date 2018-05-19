@@ -114,6 +114,21 @@ inline bool build_imgui(const char * label, float4 & v, const A & ... metadata)
     return ImGui::InputFloat4(label, &v.x); 
 }
 
+template<class... A>
+inline bool build_imgui(const char * label, entity & e, const A & ... metadata)
+{
+    if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
+    return ImGui::InputInt(label, (int *) &e);
+}
+
+
+template<class... A>
+inline bool build_imgui(const char * label, std::vector<entity> & e, const A & ... metadata)
+{
+    if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
+    return false;
+}
+
 template<class T, class ... A> 
 bool build_imgui(const char * label, asset_handle<T> & h, const A & ... metadata)
 {
@@ -176,9 +191,9 @@ bool inspect_scene_entity(const char * label, entity e, poly_scene & scene)
     {
         if (system_pointer)
         {
-            visit_component_fields(e, system_pointer, [&r](const char * name, auto & field)
+            visit_component_fields(e, system_pointer, [&r](const char * name, auto & field, auto... metadata)
             {
-                r |= build_imgui(name, field);
+                r |= build_imgui(name, field, metadata...);
             });
         }
     });

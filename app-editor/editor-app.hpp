@@ -6,12 +6,13 @@
 #include "ecs/component-pool.hpp"
 #include "ecs/core-ecs.hpp"
 #include "ecs/core-events.hpp"
-#include "ecs/system-name.hpp"
-#include "ecs/system-transform.hpp"
 #include "ecs/typeid.hpp"
 
-#include "material.hpp"
+#include "system-name.hpp"
+#include "system-transform.hpp"
 #include "system-renderer-pbr.hpp"
+
+#include "material.hpp"
 #include "uniforms.hpp"
 #include "asset-handle-utils.hpp"
 #include "scene.hpp"

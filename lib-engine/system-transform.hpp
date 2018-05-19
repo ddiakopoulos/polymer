@@ -3,9 +3,9 @@
 #ifndef polymer_system_transform_hpp
 #define polymer_system_transform_hpp
 
-#include "typeid.hpp"
-#include "core-ecs.hpp"
-#include "component-pool.hpp"
+#include "ecs/typeid.hpp"
+#include "ecs/core-ecs.hpp"
+#include "ecs/component-pool.hpp"
 
 namespace polymer
 {
@@ -30,7 +30,7 @@ namespace polymer
         f("local_pose", o.local_pose);
         f("local_scale", o.local_scale);
         f("parent", o.parent);
-        f("children", o.children);
+        f("children", o.children, editor_hidden{});
     }
 
     struct world_transform_component : public base_component
@@ -79,6 +79,8 @@ namespace polymer
             // Erase itself after all children are gone
             scene_graph_transforms.destroy(child);
         }
+
+        template<class F> friend void visit_component_fields(entity e, transform_system * system, F f);
 
     public:
 
@@ -145,7 +147,7 @@ namespace polymer
             return world_transforms.get(e);
         }
 
-        bool update_local_transform(entity e, const transform new_transform)
+        bool set_local_transform(entity e, const transform new_transform)
         {
             if (e == kInvalidEntity) return kInvalidEntity;
             if (auto * node = scene_graph_transforms.get(e))
@@ -187,7 +189,15 @@ namespace polymer
 
     template<class F> void visit_component_fields(entity e, transform_system * system, F f)
     {
-
+        scene_graph_component * component = system->scene_graph_transforms.get(e);
+        if (component != nullptr)
+        {
+            visit_fields(*component, [&](const char * name, auto & field, auto... metadata)
+            {
+                f(name, field, metadata...); // f at this point is build_imgui
+            });
+            system->recalculate_world_transform(e);
+        }
     }
 
     POLYMER_SETUP_TYPEID(transform_system);

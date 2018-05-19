@@ -41,6 +41,8 @@ template<class T> struct range_metadata { T min, max; };
 struct editor_hidden { };
 struct input_field { };
 
+template<class F> void visit_fields(transform & o, F f) { f("position", o.position); f("orientation", o.orientation); }
+
 CEREAL_REGISTER_TYPE_WITH_NAME(material_interface, "material_interface");
 CEREAL_REGISTER_TYPE_WITH_NAME(polymer_default_material, "polymer_default_material");
 CEREAL_REGISTER_TYPE_WITH_NAME(polymer_pbr_standard, "polymer_pbr_standard");

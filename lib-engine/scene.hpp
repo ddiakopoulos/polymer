@@ -17,8 +17,8 @@
 
 #include "ecs/typeid.hpp"
 #include "ecs/core-ecs.hpp"
-#include "ecs/system-name.hpp"
-#include "ecs/system-transform.hpp"
+#include "system-name.hpp"
+#include "system-transform.hpp"
 
 using namespace polymer;
 

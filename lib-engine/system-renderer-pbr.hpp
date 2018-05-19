@@ -8,16 +8,17 @@
 #include "uniforms.hpp"
 #include "queue-circular.hpp"
 #include "human_time.hpp"
+#include "profiling.hpp"
 
 #include "gl-camera.hpp"
 #include "gl-async-gpu-timer.hpp"
 #include "gl-procedural-sky.hpp"
-#include "profiling.hpp"
 
 #include "ecs/typeid.hpp"
 #include "ecs/core-ecs.hpp"
-#include "ecs/system-name.hpp"
-#include "ecs/system-transform.hpp"
+
+#include "system-name.hpp"
+#include "system-transform.hpp"
 #include "scene.hpp"
 
 #undef near

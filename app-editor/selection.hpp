@@ -7,7 +7,7 @@
 #include "gl-imgui.hpp"
 #include "scene.hpp"
 #include "ecs/core-ecs.hpp"
-#include "ecs/system-transform.hpp"
+#include "system-transform.hpp"
 
 class selection_controller
 {
@@ -17,7 +17,7 @@ class selection_controller
 
     transform selection;
     std::vector<entity> selected_entities;       // Array of selected objects
-    std::vector<transform> relative_transforms;      // Pose of the objects relative to the selection
+    std::vector<transform> relative_transforms;  // Pose of the objects relative to the selection
 
     bool gizmo_active{ false };
     transform_system * xform_system{ nullptr };
