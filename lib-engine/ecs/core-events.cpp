@@ -131,18 +131,11 @@ namespace polymer
     };
 
     ///////////////////////////////////////////
-    //   event_manager_sync Implementation   //
+    //   event_manager_sync implementation   //
     ///////////////////////////////////////////
 
-    event_manager_sync::event_manager_sync() : handlers(std::make_shared<event_handler_map>())
-    {
-
-    }
-
-    event_manager_sync::~event_manager_sync()
-    {
-
-    }
+    event_manager_sync::event_manager_sync() : handlers(std::make_shared<event_handler_map>()) {}
+    event_manager_sync::~event_manager_sync() {}
 
     event_manager_sync::connection event_manager_sync::connect_impl(poly_typeid type, const void * owner, event_handler handler)
     {
@@ -151,7 +144,7 @@ namespace polymer
         return connection(handlers, type, new_id);
     }
 
-    void event_manager_sync::disconnect_impl(poly_typeid type, const void * owner) { }
+    void event_manager_sync::disconnect_impl(poly_typeid type, const void * owner) { /* todo */ }
 
     bool event_manager_sync::send_internal(const event_wrapper & event_w)
     {
@@ -167,13 +160,13 @@ namespace polymer
         }
     }
 
-    event_manager_sync::scoped_connection event_manager_sync::connect(poly_typeid type, event_handler handler) { return {{}}; }
+    event_manager_sync::scoped_connection event_manager_sync::connect(poly_typeid type, event_handler handler) { /* todo */  return {{}}; }
 
-    event_manager_sync::scoped_connection event_manager_sync::connect_all(event_handler handler) { return {{}}; }
+    event_manager_sync::scoped_connection event_manager_sync::connect_all(event_handler handler) { /* todo */ return {{}}; }
 
-    void event_manager_sync::disconnect(poly_typeid type, const void * owner) { }
+    void event_manager_sync::disconnect(poly_typeid type, const void * owner) { /* todo */ }
 
-    void event_manager_sync::disconnect_all(const void * owner) { }
+    void event_manager_sync::disconnect_all(const void * owner) { /* todo */ }
 
     size_t event_manager_sync::num_handlers() const { return handlers->size(); }
 
