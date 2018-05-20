@@ -73,7 +73,7 @@ void environment::export_environment(const std::string & export_path)
     // foreach entity
     for (const auto & e : entity_list())
     {
-        json entity = json::array();
+        json entity; // list of components
 
         // foreach system
         visit_systems(this, [&](const char * system_name, auto * system_pointer)
@@ -91,15 +91,15 @@ void environment::export_environment(const std::string & export_path)
                     // foreach field
                     visit_fields(component_ref, [&](const char * name, auto & field, auto... metadata)
                     { 
-                        component[component_id][name] = field;
+                        component[name] = field;
                     });
 
-                    entity.push_back(component);
+                    entity[component_id] = component;
                 });
             }
         });
 
-        environment.push_back(entity);
+        environment[std::to_string(e)] = entity;
     }
 
     std::cout << environment.dump(4) << std::endl;

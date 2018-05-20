@@ -51,9 +51,9 @@ namespace linalg
     using json = nlohmann::json;
 
     // Linalg Types
-    inline void to_json(json & archive, const int2 & m) { archive = json{ { "x", m.x },{ "y", m.y } }; }
-    inline void to_json(json & archive, const int3 & m) { archive = json{ { "x", m.x },{ "y", m.y },{ "z", m.z } }; }
-    inline void to_json(json & archive, const int4 & m) { archive = json{ { "x", m.x },{ "y", m.y },{ "z", m.z },{ "w", m.w } }; }
+    inline void to_json(json & archive, const int2 & m)   { archive = json{ { "x", m.x },{ "y", m.y } }; }
+    inline void to_json(json & archive, const int3 & m)   { archive = json{ { "x", m.x },{ "y", m.y },{ "z", m.z } }; }
+    inline void to_json(json & archive, const int4 & m)   { archive = json{ { "x", m.x },{ "y", m.y },{ "z", m.z },{ "w", m.w } }; }
 
     inline void to_json(json & archive, const float2 & m) { archive = json{ { "x", m.x },{ "y", m.y } }; }
     inline void to_json(json & archive, const float3 & m) { archive = json{ { "x", m.x },{ "y", m.y },{ "z", m.z } }; }
@@ -65,15 +65,15 @@ namespace polymer
     using json = nlohmann::json;
 
     // Polymer Asset Handles
-    inline void to_json(json & archive, const texture_handle & m) { archive = json{ "id", m.name }; }
-    inline void to_json(json & archive, const gpu_mesh_handle & m) { archive = json{ "id", m.name }; }
-    inline void to_json(json & archive, const cpu_mesh_handle & m) { archive = json{ "id", m.name }; }
-    inline void to_json(json & archive, const material_handle & m) { archive = json{ "id", m.name }; }
-    inline void to_json(json & archive, const shader_handle & m) { archive = json{ "id", m.name }; }
+    inline void to_json(json & archive, const texture_handle & m)  { archive = m.name; }
+    inline void to_json(json & archive, const gpu_mesh_handle & m) { archive = m.name; }
+    inline void to_json(json & archive, const cpu_mesh_handle & m) { archive = m.name; }
+    inline void to_json(json & archive, const material_handle & m) { archive = m.name; }
+    inline void to_json(json & archive, const shader_handle & m)   { archive = m.name; }
 
     // Polymer Primitive Types
-    inline void to_json(json & archive, const aabb_2d & m) { archive = json{ { "min", m._min },{ "max", m._max } }; }
-    inline void to_json(json & archive, const aabb_3d & m) { archive = json{ { "min", m._min },{ "max", m._max } }; }
+    inline void to_json(json & archive, const aabb_2d & m)   { archive = json{ { "min", m._min },{ "max", m._max } }; }
+    inline void to_json(json & archive, const aabb_3d & m)   { archive = json{ { "min", m._min },{ "max", m._max } }; }
     inline void to_json(json & archive, const transform & m) { archive = json{ { "position", m.position },{ "orientation", m.orientation } }; }
 
     //////////////////////////////
