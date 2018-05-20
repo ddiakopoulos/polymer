@@ -35,4 +35,6 @@ struct input_field { };
 
 using json = nlohmann::json;
 
+template<class F> void visit_fields(transform & o, F f) { f("position", o.position); f("orientation", o.orientation); }
+
 #endif // end serialization_hpp

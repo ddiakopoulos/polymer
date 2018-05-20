@@ -25,7 +25,6 @@ using namespace polymer;
 
 namespace polymer
 {
-
     struct screen_raycaster
     {
         perspective_camera & cam; float2 viewport;

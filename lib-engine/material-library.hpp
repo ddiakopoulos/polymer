@@ -26,8 +26,8 @@ namespace polymer
         ~material_library();
         template<typename T> void create_material(const std::string & name, std::shared_ptr<T> mat);
         void remove_material(const std::string & name);
-        void import(const std::string & path);
-        void export(const std::string & path);
+        void import_library();
+        void export_library();
     };
 
     template<typename T>
@@ -41,8 +41,7 @@ namespace polymer
         }
         create_handle_for_asset(name.c_str(), std::dynamic_pointer_cast<material_interface>(mat));
         instances[name] = mat;
-        auto jsonString = cereal::serialize_to_json(instances);
-        polymer::write_file_text(library_path, jsonString);
+        export_library();
     }
 }
 
