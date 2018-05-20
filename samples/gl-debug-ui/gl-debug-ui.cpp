@@ -1,5 +1,12 @@
 /*
  * File: samples/gl-debug-ui.cpp
+ * This sample demonstrates a variety of rendering utilities. First, it makes
+ * use of a `gl_gizmo`, helpful for grabbing and orienting scene objects. Secondly,
+ * it shows how to configure and render a Dear ImGui instance as a debug user interface.
+ * Thirdly, NanoVG is used to render an offscreen surface (`gl_nvg_surface`) with some
+ * basic text. This surface is then drawn on a small quad, but also used as a cookie
+ * texture such that it can be projected on any arbitrary geometry using projective texturing. 
+ * The gizmo uses hotkeys (ctrl-w, ctrl-e, ctrl-r) to control position, orientation, and scaling. 
  */
 
 #include "index.hpp"
@@ -38,31 +45,13 @@ constexpr const char textured_frag[] = R"(#version 330
     }
 )";
 
-constexpr const char basic_vert[] = R"(#version 330
-    layout(location = 0) in vec3 vertex;
-    uniform mat4 u_mvp;
-    void main()
-    {
-        gl_Position = u_mvp * vec4(vertex.xyz, 1);
-    }
-)";
-
-constexpr const char basic_frag[] = R"(#version 330
-    uniform vec4 u_color;
-    out vec4 f_color;
-    void main()
-    {
-        f_color = u_color;
-    }
-)";
-
-class gl_material_projector
+class gl_projective_texture
 {
     gl_shader shader;
 
 public:
 
-    gl_material_projector() = default;
+    gl_projective_texture() = default;
 
     void set_shader(gl_shader && s) { shader = std::move(s); }
     gl_shader & get_shader() { return shader; }
@@ -110,7 +99,7 @@ struct sample_gl_debug_ui final : public polymer_app
     gl_shader projector_shader;
     gl_texture_2d cookie;
 
-    gl_material_projector projector;
+    gl_projective_texture projector;
 
     std::unique_ptr<imgui_instance> imgui;
     std::unique_ptr<gl_gizmo> gizmo;
@@ -151,7 +140,6 @@ sample_gl_debug_ui::sample_gl_debug_ui() : polymer_app(1280, 720, "sample-gl-deb
     nvg_surface_shader = gl_shader(textured_vert, textured_frag);
 
     box_mesh = make_cube_mesh();
-    surface_shader = gl_shader(basic_vert, basic_frag);
 
     projector_shader = gl_shader(
         read_file_text("../../assets/shaders/prototype/projector_multiply_vert.glsl"), 
@@ -238,15 +226,7 @@ void sample_gl_debug_ui::on_draw()
 
     const float4x4 boxModel = mul(make_translation_matrix({ 0, 6, -10 }), make_scaling_matrix(float3(8.f, 4.f, 0.1f)));
 
-    {
-        surface_shader.bind();
-        surface_shader.uniform("u_mvp", mul(viewProjectionMatrix, boxModel));
-        surface_shader.uniform("u_color", float4(0.88f, 0.88f, 0.88f, 1.0f));
-        box_mesh.draw_elements();
-        surface_shader.unbind();
-    }
-
-    // Render the offscreen nvg surface in the world
+    // Render the offscreen nvg surface in the world as a small quad to the left
     {
         const float4x4 nvgSurfaceModel = mul(make_translation_matrix({ -4, 2, 0 }), make_rotation_matrix({ 0, 1, 0 }, POLYMER_PI / 2));
         nvg_surface_shader.bind();
@@ -256,10 +236,14 @@ void sample_gl_debug_ui::on_draw()
         nvg_surface_shader.unbind();
     }
 
+    // The gizmo controls the location and orientation of the projected texture
     tinygizmo::transform_gizmo("projector-gizmo", gizmo->gizmo_ctx, gizmo_selection);
     const transform gizmo_pose = to_linalg(gizmo_selection);
 
+    // Now render a large billboard in the scene, projected with the cookie texture.
     {
+        const uint32_t cookie_tex = (which_cookie == 0) ? surface->surface_texture(0) : cookie;
+
         auto & shader = projector.get_shader();
 
         glEnable(GL_POLYGON_OFFSET_FILL);
@@ -267,8 +251,6 @@ void sample_gl_debug_ui::on_draw()
 
         const float4x4 projectorModelViewMatrix = mul(inverse(gizmo_pose.matrix()), boxModel);
         const float4x4 projectorMatrix = projector.get_projector_matrix(projectorModelViewMatrix, false);
-
-        uint32_t cookie_tex = (which_cookie == 0) ? surface->surface_texture(0) : cookie;
 
         shader.bind();
         shader.uniform("u_viewProj", viewProjectionMatrix);
@@ -287,6 +269,7 @@ void sample_gl_debug_ui::on_draw()
 
     imgui->begin_frame();
 
+    // Add some widgets to ImGui
     gui::imgui_fixed_window_begin("sample-debug-ui", { { 0, 0 },{ 320, height } });
     ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
     ImGui::Text("Projector Position {%.3f, %.3f, %.3f}", gizmo_pose.position.x, gizmo_pose.position.y, gizmo_pose.position.z);
@@ -294,7 +277,7 @@ void sample_gl_debug_ui::on_draw()
     {
         gizmo_selection = {};
     }
-    ImGui::SliderInt("Projected Texture", &which_cookie, 0, 1);
+    ImGui::SliderInt("Texture", &which_cookie, 0, 1);
 
     gui::imgui_fixed_window_end();
 
