@@ -60,7 +60,6 @@ namespace polymer
         transform_system(entity_orchestrator * f) : base_system(f)
         {
             register_system_for_type(this, get_typeid<scene_graph_component>());
-            register_system_for_type(this, get_typeid<world_transform_component>());
         }
 
         ~transform_system() override { }

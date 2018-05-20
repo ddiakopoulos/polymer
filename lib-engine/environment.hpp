@@ -334,7 +334,7 @@ namespace polymer
         polymer::collision_system * collision_system;
         polymer::transform_system * xform_system;
         polymer::identifier_system * identifier_system;
-        void import_environment(const std::string & path);
+        void import_environment(const std::string & path, entity_orchestrator & o);
         void export_environment(const std::string & path);
         entity track_entity(entity e);        
         const std::vector<entity> & entity_list();

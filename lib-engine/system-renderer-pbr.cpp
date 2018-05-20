@@ -591,14 +591,6 @@ void pbr_render_system::render_frame(const render_payload & scene)
 
 bool pbr_render_system::create(entity e, poly_typeid type, void * data)
 {
-    /*
-    if (type == get_typeid<polymer::directional_light_component>())
-    {
-        polymer::directional_light_component sunlight;
-        std::memcpy(&sunlight, data, sizeof(polymer::directional_light_component));
-        directional_lights[e] = sunlight;
-    }
-    */
     return true;
 }
 

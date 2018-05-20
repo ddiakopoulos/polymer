@@ -76,29 +76,6 @@ namespace polymer
     //   Transform System   //
     //////////////////////////
 
-    /*
-    template<class F> void visit_fields(scene_graph_component & o, F f)
-    {
-        f("local_pose", o.local_pose);
-        f("local_scale", o.local_scale);
-        f("parent", o.parent);
-        f("children", o.children);
-    }
-    */
-
-    template<class Archive> void serialize(Archive & archive, entity & e)
-    {
-        archive(cereal::make_nvp("child", (uint64_t)e));
-    }
-
-    template<class Archive> void serialize(Archive & archive, scene_graph_component & m)
-    {
-        visit_fields(m, [&archive](const char * name, auto & field, auto... metadata)
-        {
-            archive(cereal::make_nvp(name, field));
-        });
-    }
-
     struct example_event { uint32_t value; };
     POLYMER_SETUP_TYPEID(example_event);
 

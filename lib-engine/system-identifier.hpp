@@ -26,7 +26,7 @@ namespace polymer
 
         identifier_system(entity_orchestrator * orch) : base_system(orch)
         {
-            register_system_for_type(this, get_typeid<std::string>());
+            register_system_for_type(this, get_typeid<identifier_component>());
         }
 
         ~identifier_system() override { }

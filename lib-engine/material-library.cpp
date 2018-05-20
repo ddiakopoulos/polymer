@@ -49,13 +49,12 @@ material_library::~material_library()
 
 void material_library::import_library()
 {
-    auto json_str = read_file_text(library_path);
-    json library_doc = json::parse(json_str);
+    const json library_doc = json::parse(read_file_text(library_path));
 
     // Iterate over material instances
     for (auto it = library_doc.begin(); it != library_doc.end(); ++it)
     {
-        json & instance = it.value();
+        const json & instance = it.value();
         for (auto inst = instance.begin(); inst != instance.end(); ++inst)
         {
             if (starts_with(inst.key(), "@"))
@@ -76,6 +75,7 @@ void material_library::import_library()
                     instances[it.key()] = new_instance;
                 }
             }
+            else throw std::runtime_error("type key mismatch!");
         }
     }
 }
