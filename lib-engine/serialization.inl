@@ -37,4 +37,9 @@ using json = nlohmann::json;
 
 template<class F> void visit_fields(transform & o, F f) { f("position", o.position); f("orientation", o.orientation); }
 
+inline bool starts_with(const std::string & str, const std::string & search) 
+{
+    return search.length() <= str.length() && std::equal(search.begin(), search.end(), str.begin());
+}
+
 #endif // end serialization_hpp

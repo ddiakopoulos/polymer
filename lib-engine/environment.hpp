@@ -74,19 +74,19 @@ namespace polymer
     using json = nlohmann::json;
 
     // Polymer Asset Handles
-    inline void to_json(json & archive, const texture_handle & m)  { archive = m.name; }
+    inline void to_json(json & archive, const texture_handle & m)  { archive = m.name == "empty" ? "" : m.name; }
     inline void from_json(const json & archive, texture_handle & m) { m = texture_handle(archive.get<std::string>()); }
 
-    inline void to_json(json & archive, const gpu_mesh_handle & m) { archive = m.name; }
+    inline void to_json(json & archive, const gpu_mesh_handle & m) { archive = m.name == "empty" ? "" : m.name; }
     inline void from_json(const json & archive, gpu_mesh_handle & m) { m = gpu_mesh_handle(archive.get<std::string>()); }
 
-    inline void to_json(json & archive, const cpu_mesh_handle & m) { archive = m.name; }
+    inline void to_json(json & archive, const cpu_mesh_handle & m) { archive = m.name == "empty" ? "" : m.name; }
     inline void from_json(const json & archive, cpu_mesh_handle & m) { m = cpu_mesh_handle(archive.get<std::string>()); }
 
-    inline void to_json(json & archive, const material_handle & m) { archive = m.name; }
+    inline void to_json(json & archive, const material_handle & m) { archive = m.name == "empty" ? "" : m.name; }
     inline void from_json(const json & archive, material_handle & m) { m = material_handle(archive.get<std::string>()); }
 
-    inline void to_json(json & archive, const shader_handle & m)   { archive = m.name; }
+    inline void to_json(json & archive, const shader_handle & m)   { archive = m.name == "empty" ? "" : m.name; }
     inline void from_json(const json & archive, shader_handle & m) { m = shader_handle(archive.get<std::string>()); }
 
     // Polymer Primitive Types

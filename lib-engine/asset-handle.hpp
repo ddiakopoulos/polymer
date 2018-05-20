@@ -49,10 +49,7 @@ namespace polymer
         asset_handle(const char * asset_id)
         {
             name = asset_id;
-            if (name.empty())
-            {
-                name = "empty";
-            }
+            if (name.empty()) { name = "empty"; }
         }
 
         asset_handle(const asset_handle & r)

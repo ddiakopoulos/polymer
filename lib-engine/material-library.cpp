@@ -19,12 +19,12 @@ material_library::material_library(const std::string & library_path) : library_p
     instances[kDefaultMaterialId] = default; 
 
     // Check if the library already exists and load if possible
-    //std::ifstream library(library_path);
-    //if (library.good())
-    //{
-    //    //cereal::deserialize_from_json(library_path, instances);
-    //}
-    //else
+    std::ifstream library(library_path);
+    if (library.good())
+    {
+        import_library();
+    }
+    else
     {
         // Create new library with default material
         export_library();
@@ -49,39 +49,58 @@ material_library::~material_library()
 
 void material_library::import_library()
 {
+    auto json_str = read_file_text(library_path);
+    json library_doc = json::parse(json_str);
 
+    // Iterate over material instances
+    for (auto it = library_doc.begin(); it != library_doc.end(); ++it)
+    {
+        //std::cout << it.key() << " | " << it.value() << "\n";
+        json & instance = it.value();
+        for (auto inst = instance.begin(); inst != instance.end(); ++inst)
+        {
+            if (starts_with(inst.key(), "@"))
+            {
+                std::string key_name = inst.key();
+                auto type_name = key_name.substr(1);
+
+                if (type_name == get_typename<polymer_pbr_standard>())
+                {
+                    std::shared_ptr<polymer_pbr_standard> new_instance(new polymer_pbr_standard());
+
+                    //instances[inst.key] = inst.value();
+                }
+                if (type_name == get_typename<polymer_blinn_phong_standard>())
+                {
+                    std::shared_ptr<polymer_blinn_phong_standard> new_instance(new polymer_blinn_phong_standard());
+                    //instances[inst.key] = inst.value();
+                }
+            }
+
+            //std::cout << "Instance: " << inst.key() << " | " << inst.value() << "\n";
+        }
+    }
 }
 
 void material_library::export_library()
 {
-    json instance_out;
+    json library;
 
-    for (auto & material : instances)
+    for (auto & material_instance : instances)
     {
-        const auto material_name = material.first;
-        json mat_instance;
-
-        visit_subclasses(material.second.get(), [&](const char * name, auto * p)
+        visit_subclasses(material_instance.second.get(), [&](const char * name, auto * material_ptr)
         {
-            if (p)
+            if (material_ptr)
             {
-                std::string type_name = get_typename<std::remove_pointer<decltype(p)>::type>();
+                std::string type_name = get_typename<std::remove_pointer<decltype(material_ptr)>::type>();
                 std::string material_type_id = "@" + type_name;
-                json mat;
-
-                visit_fields(*p, [&](const char * field_name, auto & field_value, auto... metadata)
-                {
-                    mat[field_name] = field_value;
-                });
-
-                mat_instance[material_name] = mat;
+                library[material_instance.first][material_type_id] = *material_ptr;
             }
         });
     }
 
-    std::cout << instance_out.dump(4) << std::endl;
-
-    //polymer::write_file_text(library_path, json_out);
+    std::cout << library.dump(4) << std::endl;
+    polymer::write_file_text(library_path, library.dump(4) );
 }
 
 

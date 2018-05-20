@@ -254,15 +254,15 @@ struct material_editor_window final : public glfw_window
 
                 if (ImGui::Button("OK", ImVec2(120, 0)))
                 {
-                    if (stringBuffer.empty())
+                    if (!stringBuffer.empty())
                     {
-                        if (materialTypeSelection == 0) // pbr
+                        if (materialTypeSelection == 1) // pbr
                         {
                             auto new_material = std::make_shared<polymer_pbr_standard>();
                             scene.mat_library->create_material(stringBuffer, new_material);
                         }
 
-                        if (materialTypeSelection == 1) // blinn-phong
+                        if (materialTypeSelection == 2) // blinn-phong
                         {
                             auto new_material = std::make_shared<polymer_blinn_phong_standard>();
                             scene.mat_library->create_material(stringBuffer, new_material);

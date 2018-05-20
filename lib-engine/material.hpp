@@ -8,9 +8,12 @@
 #include "asset-handle-utils.hpp"
 #include "shader-library.hpp"
 #include "ecs/typeid.hpp"
+#include "json.hpp"
 
 namespace polymer
 {
+    using json = nlohmann::json;
+
     typedef std::shared_ptr<polymer::shader_variant> cached_variant;
 
     struct material_interface
@@ -31,6 +34,10 @@ namespace polymer
         virtual uint32_t id() const override final;
     };
     POLYMER_SETUP_TYPEID(polymer_default_material);
+
+    template<class F> void visit_fields(polymer_default_material & o, F f) {}
+    inline void to_json(json & j, const polymer_default_material & p) {}
+    inline void from_json(const json & archive, polymer_default_material & m) {}
 
     class polymer_blinn_phong_standard final : public material_interface
     {
@@ -66,6 +73,20 @@ namespace polymer
         f("diffuse_handle", o.diffuse);
         f("normal_handle", o.normal);
         f("program_handle", o.shader, editor_hidden{}); // hidden because shaders are tied to materials
+    }
+
+    inline void to_json(json & j, const polymer_blinn_phong_standard & p) {
+        visit_fields(const_cast<polymer_blinn_phong_standard&>(p), [&j](const char * name, auto & field, auto... metadata)
+        {
+            j[name] = field;
+        });
+    }
+
+    inline void from_json(const json & archive, polymer_blinn_phong_standard & m) {
+        visit_fields(const_cast<polymer_blinn_phong_standard&>(m), [&m, &archive](const char * name, auto & field, auto... metadata)
+        {
+            field = archive.at(name).get<std::remove_reference_t<decltype(field)>>();
+        });
     }
 
     class polymer_pbr_standard final : public material_interface
@@ -137,8 +158,23 @@ namespace polymer
         f("program_handle", o.shader, editor_hidden{}); // hidden because shaders are tied to materials
     }
 
+    inline void to_json(json & j, const polymer_pbr_standard & p) {
+        visit_fields(const_cast<polymer_pbr_standard&>(p), [&j](const char * name, auto & field, auto... metadata) 
+        { 
+            j[name] = field;
+        });
+    }
+
+    inline void from_json(const json & archive, polymer_pbr_standard & m) {
+        visit_fields(const_cast<polymer_pbr_standard&>(m), [&m, &archive](const char * name, auto & field, auto... metadata)
+        {
+            field = archive.at(name).get<std::remove_reference_t<decltype(field)>>();
+        });
+    }
+
     template<class F> void visit_subclasses(material_interface * p, F f)
     {
+        f("polymer_default_material", dynamic_cast<polymer_default_material *>(p));
         f("polymer_pbr_standard", dynamic_cast<polymer_pbr_standard *>(p));
         f("polymer_blinn_phong_standard", dynamic_cast<polymer_blinn_phong_standard *>(p));
     }
