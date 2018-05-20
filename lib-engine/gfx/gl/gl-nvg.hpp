@@ -3,14 +3,14 @@
 #ifndef nvg_util_h
 #define nvg_util_h
 
-#include "gl-api.hpp"
-#include "nanovg/nanovg.h"
-
 #include <stdint.h>
 #include <vector>
 #include <string>
 #include <stdlib.h>
-#include "file_io.hpp"
+
+#include "gl-api.hpp"
+
+#include "nanovg/nanovg.h"
 
 namespace polymer
 {
@@ -44,31 +44,93 @@ namespace polymer
 
         NVGcontext * nvg;
         std::shared_ptr<nvg_font> text_fontface, icon_fontface;
-        linalg::aliases::float2 lastCursor;
+        const float2 size;
+        const uint32_t num_surfaces;
+        
+        std::vector<gl_framebuffer> framebuffer;
+        std::vector<gl_texture_2d> texture;
 
     public:
 
-        gl_nvg_surface(float width, float height, const std::string & text_font, const std::string & icon_font)
+        struct font_data
+        {
+            // Required
+            std::string text_font_name;
+            std::vector<uint8_t> text_font_binary;
+
+            // Optional
+            std::string icon_font_name;
+            std::vector<uint8_t> icon_font_binary;
+        };
+
+        gl_nvg_surface(const uint32_t num_surfaces, float2 surface_size, const font_data & font_data) 
+            : num_surfaces(num_surfaces), size(surface_size)
         {
             nvg = make_nanovg_context(CTX_ANTIALIAS | CTX_STENCIL_STROKES);
             if (!nvg) throw std::runtime_error("error initializing nanovg context");
-            text_fontface = std::make_shared<nvg_font>(nvg, text_font, polymer::read_file_binary("../assets/fonts/" + text_font + ".ttf"));
-            icon_fontface = std::make_shared<nvg_font>(nvg, icon_font, polymer::read_file_binary("../assets/fonts/" + icon_font + ".ttf"));
+
+            text_fontface = std::make_shared<nvg_font>(nvg, font_data.text_font_name, font_data.text_font_binary);
+
+            // icon font is optional
+            if (font_data.icon_font_binary.size())
+            {
+                icon_fontface = std::make_shared<nvg_font>(nvg, font_data.icon_font_name, font_data.icon_font_binary);
+            }
+
+            // Setup surfaces
+            framebuffer.resize(num_surfaces);
+            texture.resize(num_surfaces);
+
+            for (int i = 0; i < num_surfaces; ++i)
+            {
+                glTextureImage2DEXT(texture[i], GL_TEXTURE_2D, 0, GL_RGBA8, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+                glTextureParameteriEXT(texture[i], GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glTextureParameteriEXT(texture[i], GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTextureParameteriEXT(texture[i], GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTextureParameteriEXT(texture[i], GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                glTextureParameteriEXT(texture[i], GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
+                glNamedFramebufferTexture2DEXT(framebuffer[i], GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture[i], 0);
+                framebuffer[i].check_complete();
+            }
         }
 
         ~gl_nvg_surface() { release_nanovg_context(nvg); }
 
-        NVGcontext * pre_draw(GLFWwindow * window)
+        NVGcontext * pre_draw(GLFWwindow * window, const uint32_t surface_idx)
         {
-            int width, height;
-            glfwGetWindowSize(window, &width, &height);
-            nvgBeginFrame(nvg, width, height, 1.0);
+            glBindFramebuffer(GL_FRAMEBUFFER, framebuffer[surface_idx]);
+            glViewport(0, 0, size.x, size.y);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            nvgBeginFrame(nvg, size.x, size.y, 1.0);
             return nvg;
         }
 
         void post_draw()
         {
             nvgEndFrame(nvg);
+        }
+
+        gl_texture_2d & surface_texture(const uint32_t surface_idx)
+        {
+            return texture[surface_idx];
+        }
+
+        float2 surface_size() const { return size; }
+
+        float draw_text_quick(const std::string & txt, const float x, const float y, const NVGcolor color)
+        {
+            nvgFontFaceId(nvg, text_fontface->id);
+            nvgFontSize(nvg, 324);
+            float bounds[4];
+
+            const float w = nvgTextBounds(nvg, 0, 0, txt.c_str(), NULL, bounds); // xmin, ymin, xmax, ymax
+            const float width = (bounds[2] - bounds[0]) / 2.f;
+
+            const float textX = x - width, textY = y + 8;
+            nvgTextAlign(nvg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+            nvgBeginPath(nvg);
+            nvgFillColor(nvg, color);
+            return nvgText(nvg, textX, textY, txt.c_str(), nullptr);
         }
     };
 
