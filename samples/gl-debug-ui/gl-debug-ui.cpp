@@ -1,10 +1,5 @@
 /*
  * File: samples/gl-debug-ui.cpp
- * 
- * 
- * 
- * 
- * 
  */
 
 #include "index.hpp"
@@ -111,6 +106,10 @@ struct sample_gl_debug_ui final : public polymer_app
     gl_mesh quad_mesh;
     gl_shader nvg_surface_shader;
     gl_shader surface_shader;
+    gl_shader projector_shader;
+    gl_texture_2d cookie;
+
+    gl_material_projector projector;
 
     std::unique_ptr<imgui_instance> imgui;
     std::unique_ptr<gl_gizmo> gizmo;
@@ -153,6 +152,18 @@ sample_gl_debug_ui::sample_gl_debug_ui() : polymer_app(1280, 720, "sample-gl-deb
     box_mesh = make_cube_mesh();
     surface_shader = gl_shader(basic_vert, basic_frag);
 
+    projector_shader = gl_shader(
+        read_file_text("../../assets/shaders/prototype/projector_multiply_vert.glsl"), 
+        read_file_text("../../assets/shaders/prototype/projector_multiply_frag.glsl"));
+
+    cookie = load_image("../../assets/textures/projector/hexagon_select.png", false);
+    glTextureParameteriEXT(cookie, GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTextureParameteriEXT(cookie, GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+    projector.set_shader(std::move(projector_shader));
+
+    gizmo_selection.position = { 0, 6, -4 };
+
     cam.look_at({ 0, 5, 5 }, { 0, 0.1f, -0.1f });
     flycam.set_camera(&cam);
 }
@@ -192,8 +203,8 @@ void sample_gl_debug_ui::on_draw()
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
 
-    //glEnable(GL_BLEND);
-    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     const float4x4 projectionMatrix = cam.get_projection_matrix(float(width) / float(height));
     const float4x4 viewMatrix = cam.get_view_matrix();
@@ -222,11 +233,11 @@ void sample_gl_debug_ui::on_draw()
     
     // Reset state changed by nanovg
     glViewport(0, 0, width, height);
-    glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
 
+    const float4x4 boxModel = mul(make_translation_matrix({ 0, 6, -10 }), make_scaling_matrix(float3(8.f, 4.f, 0.1f)));
+
     {
-        const float4x4 boxModel = mul(make_translation_matrix({ 0, 6, -10 }), make_scaling_matrix(float3(8.f, 4.f, 0.1f)));
         surface_shader.bind();
         surface_shader.uniform("u_mvp", mul(viewProjectionMatrix, boxModel));
         surface_shader.uniform("u_color", float4(0.88f, 0.88f, 0.88f, 1.0f));
@@ -243,11 +254,33 @@ void sample_gl_debug_ui::on_draw()
         nvg_surface_shader.unbind();
     }
 
+    tinygizmo::transform_gizmo("projector-gizmo", gizmo->gizmo_ctx, gizmo_selection);
+    const transform gizmo_pose = to_linalg(gizmo_selection);
+
+    {
+        auto & shader = projector.get_shader();
+
+        glEnable(GL_POLYGON_OFFSET_FILL);
+        glPolygonOffset(-1.0, -1.0);
+        //glBlendFunc(blendModes[src_blendmode], blendModes[dst_blendmode]);
+
+        const float4x4 projectorModelViewMatrix = mul(inverse(gizmo_pose.matrix()), boxModel);
+        const float4x4 projectorMatrix = projector.get_projector_matrix(projectorModelViewMatrix, false);
+
+        shader.bind();
+        shader.uniform("u_viewProj", viewProjectionMatrix);
+        shader.uniform("u_projectorMatrix", projectorMatrix);
+        shader.uniform("u_modelMatrix", boxModel);
+        shader.uniform("u_modelMatrixIT", inverse(transpose(boxModel)));
+        shader.texture("s_cookieTex", 0, cookie, GL_TEXTURE_2D);
+        box_mesh.draw_elements();
+        shader.unbind();
+
+        glDisable(GL_POLYGON_OFFSET_FILL);
+    }
+
     // Draw the floor grid
     grid.draw(viewProjectionMatrix);
-
-    tinygizmo::transform_gizmo("debug-gizmo", gizmo->gizmo_ctx, gizmo_selection);
-    const transform gizmo_pose = to_linalg(gizmo_selection);
 
     imgui->begin_frame();
 

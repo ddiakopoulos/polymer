@@ -10,7 +10,6 @@ in vec3 v_eyeDir;
 in vec4 v_projector_coords;
 
 uniform sampler2D s_cookieTex;
-uniform sampler2D s_gradientTex; // unused
 
 out vec4 f_color;
 
