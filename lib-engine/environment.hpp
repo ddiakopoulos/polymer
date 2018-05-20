@@ -20,14 +20,11 @@
 #include <string>
 
 #include "json.hpp"
-using json = nlohmann::json;
 
 using namespace polymer;
 
-
 namespace polymer
 {
-    using json = nlohmann::json;
 
     struct screen_raycaster
     {
@@ -49,32 +46,56 @@ namespace polymer
 //   Scene Definition   //
 //////////////////////////
 
-namespace polymer
+namespace linalg
 {
-    // Asset Handles
-    //void to_json(json & archive, const texture_handle & m) { archive = json{ "id", m.name }; }
-    //void to_json(json & archive, const gpu_mesh_handle & m) { archive = json{ "id", m.name }; }
-    //void to_json(json & archive, const cpu_mesh_handle & m) { archive = json{ "id", m.name }; }
-    //void to_json(json & archive, const material_handle & m) { archive = json{ "id", m.name }; }
-    //void to_json(json & archive, const shader_handle & m) { archive = json{ "id", m.name }; }
+    using json = nlohmann::json;
 
     // Linalg Types
-    //void to_json(json & archive, const int2 & m) { archive = json{ { "x", m.x}, {"y", m.y} }; }
-    //void to_json(json & archive, const int3 & m) { archive = json{ { "x", m.x },{ "y", m.y },{ "z", m.z } }; }
-    //void to_json(json & archive, const int4 & m) { archive = json{ { "x", m.x },{ "y", m.y }, { "z", m.z },{ "w", m.w } }; }
+    inline void to_json(json & archive, const int2 & m) { archive = json{ { "x", m.x },{ "y", m.y } }; }
+    inline void to_json(json & archive, const int3 & m) { archive = json{ { "x", m.x },{ "y", m.y },{ "z", m.z } }; }
+    inline void to_json(json & archive, const int4 & m) { archive = json{ { "x", m.x },{ "y", m.y },{ "z", m.z },{ "w", m.w } }; }
 
-    //void to_json(json & archive, const float2 & m) { archive = json{ { "x", m.x },{ "y", m.y } }; }
-    //void to_json(json & archive, const float3 & m) { archive = json{ { "x", m.x },{ "y", m.y },{ "z", m.z } }; }
-    //void to_json(json & archive, const float4 & m) { archive = json{ { "x", m.x },{ "y", m.y },{ "z", m.z },{ "w", m.w } }; }
+    inline void to_json(json & archive, const float2 & m) { archive = json{ { "x", m.x },{ "y", m.y } }; }
+    inline void to_json(json & archive, const float3 & m) { archive = json{ { "x", m.x },{ "y", m.y },{ "z", m.z } }; }
+    inline void to_json(json & archive, const float4 & m) { archive = json{ { "x", m.x },{ "y", m.y },{ "z", m.z },{ "w", m.w } }; }
+}
 
-    //void to_json(json & archive, const float2x2 & m) { archive(cereal::make_size_tag(2), m[0], m[1]); }
-    //void to_json(json & archive, const float3x3 & m) { archive(cereal::make_size_tag(3), m[0], m[1], m[2]); }
-    //void to_json(json & archive, const float4x4 & m) { archive(cereal::make_size_tag(4), m[0], m[1], m[2], m[3]); }
+namespace polymer
+{
+    using json = nlohmann::json;
 
-    // Polymer Types
-    //void to_json(json & archive, const aabb_2d & m) { archive = json{ { "min", m._min },{ "max", m._max } }; }
-    //void to_json(json & archive, const aabb_3d & m) { archive = json{ { "min", m._min },{ "max", m._max } }; }
-    //void to_json(json & archive, const transform & m) { archive = json{ { "position", m.position },{ "orientation", m.orientation } }; }
+    // Polymer Asset Handles
+    inline void to_json(json & archive, const texture_handle & m) { archive = json{ "id", m.name }; }
+    inline void to_json(json & archive, const gpu_mesh_handle & m) { archive = json{ "id", m.name }; }
+    inline void to_json(json & archive, const cpu_mesh_handle & m) { archive = json{ "id", m.name }; }
+    inline void to_json(json & archive, const material_handle & m) { archive = json{ "id", m.name }; }
+    inline void to_json(json & archive, const shader_handle & m) { archive = json{ "id", m.name }; }
+
+    // Polymer Primitive Types
+    inline void to_json(json & archive, const aabb_2d & m) { archive = json{ { "min", m._min },{ "max", m._max } }; }
+    inline void to_json(json & archive, const aabb_3d & m) { archive = json{ { "min", m._min },{ "max", m._max } }; }
+    inline void to_json(json & archive, const transform & m) { archive = json{ { "position", m.position },{ "orientation", m.orientation } }; }
+
+    //////////////////////////////
+    //   identifier_component   //
+    //////////////////////////////
+
+    struct identifier_component : public base_component
+    {
+        std::string id;
+        identifier_component() {};
+        identifier_component(const std::string & id) : id(id) {};
+        identifier_component(entity e) : base_component(e) {}
+    };
+    POLYMER_SETUP_TYPEID(identifier_component);
+
+    template<class F> void visit_fields(identifier_component & o, F f) {
+        f("id", o.id);
+    }
+
+    inline void to_json(json & j, const identifier_component & p) {
+        visit_fields(const_cast<identifier_component&>(p), [&j](const char * name, auto & field, auto... metadata) { j.push_back({ name, field }); });
+    }
 
     ////////////////////////
     //   mesh_component   //
@@ -95,9 +116,9 @@ namespace polymer
         f("gpu_mesh_handle", o.mesh);
     }
 
-    //void to_json(json & j, const mesh_component & p) {
-    //    //visit_fields(const_cast<mesh_component&>(p), [&j](const char * name, auto & field, auto... metadata) { j.push_back({ name, field }); });
-    //}
+    inline void to_json(json & j, const mesh_component & p) {
+        visit_fields(const_cast<mesh_component&>(p), [&j](const char * name, auto & field, auto... metadata) { j.push_back({ name, field }); });
+    }
 
     ////////////////////////////
     //   material_component   //
@@ -119,9 +140,9 @@ namespace polymer
         f("cast_shadow", o.cast_shadow);
     }
 
-    //void to_json(json & j, const material_component & p) {
-    //    //visit_fields(const_cast<material_component&>(p), [&j](const char * name, auto & field, auto... metadata) { j.push_back({ name, field }); });
-    //}
+    inline void to_json(json & j, const material_component & p) {
+        visit_fields(const_cast<material_component&>(p), [&j](const char * name, auto & field, auto... metadata) { j.push_back({ name, field }); });
+    }
 
     ////////////////////////////
     //   geometry_component   //
@@ -140,9 +161,9 @@ namespace polymer
         f("cpu_mesh_handle", o.geom);
     }
 
-    //void to_json(json & j, const geometry_component & p) {
-    //    //visit_fields(const_cast<geometry_component&>(p), [&j](const char * name, auto & field, auto... metadata) { j.push_back({ name, field }); });
-    //}
+    inline void to_json(json & j, const geometry_component & p) {
+        visit_fields(const_cast<geometry_component&>(p), [&j](const char * name, auto & field, auto... metadata) { j.push_back({ name, field }); });
+    }
 
     ///////////////////////////////
     //   point_light_component   //
@@ -164,9 +185,9 @@ namespace polymer
         f("radius", o.data.radius);
     }
 
-    //void to_json(json & j, const point_light_component & p) {
-    //    //visit_fields(const_cast<point_light_component&>(p), [&j](const char * name, auto & field, auto... metadata) { j.push_back({ name, field }); });
-    //}
+    inline void to_json(json & j, const point_light_component & p) {
+        visit_fields(const_cast<point_light_component&>(p), [&j](const char * name, auto & field, auto... metadata) { j.push_back({ name, field }); });
+    }
 
     /////////////////////////////////////
     //   directional_light_component   //
@@ -189,9 +210,9 @@ namespace polymer
         f("amount", o.data.amount);
     }
 
-    //void to_json(json & j, const directional_light_component & p) {
-    //    //visit_fields(const_cast<directional_light_component&>(p), [&j](const char * name, auto & field, auto... metadata) { j.push_back({ name, field }); });
-    //}
+    inline void to_json(json & j, const directional_light_component & p) {
+        visit_fields(const_cast<directional_light_component&>(p), [&j](const char * name, auto & field, auto... metadata) { j.push_back({ name, field }); });
+    }
 
     ///////////////////////////////////////////////////////////
     //   scene_graph_component & world_transform_component   //
@@ -216,9 +237,9 @@ namespace polymer
         f("children", o.children, editor_hidden{});
     }
 
-    //void to_json(json & j, const scene_graph_component & p) {
-    //    //visit_fields(const_cast<scene_graph_component&>(p), [&j](const char * name, auto & field, auto... metadata) { j.push_back({ name, field }); });
-    //}
+    inline void to_json(json & j, const scene_graph_component & p) {
+        visit_fields(const_cast<scene_graph_component&>(p), [&j](const char * name, auto & field, auto... metadata) { j.push_back({ name, field }); });
+    }
 
     struct world_transform_component : public base_component
     {
@@ -262,38 +283,6 @@ namespace polymer
         f("transform_system", p->xform_system);
         f("render_system", p->render_system);
         f("collision_system", p->collision_system);
-    }
-
-    //inline void prologue(cereal::JSONOutputArchive & archive, polymer::environment const & o) {}
-    //inline void epilogue(cereal::JSONOutputArchive & archive, polymer::environment const & o) {}
-
-    template<class Archive> void serialize(Archive & archive, environment & env)
-    {
-        /*
-        // serialization with pretty printing
-        // pass in the amount of spaces to indent
-        //std::cout << j.dump(4) << std::endl;
-
-        // foreach entity
-        for (const auto & e : env.entity_list())
-        {
-            //archive(cereal::make_nvp("entity", e));
-
-            // foreach system
-            visit_systems(&env, [&](const char * system_name, auto * system_pointer)
-            {
-                if (system_pointer)
-                {
-                    // foreach component
-                    visit_components(e, system_pointer, [&](const char * component_name, auto & component_ref, auto... component_metadata)
-                    {
-                        auto n = get_typename<std::decay<decltype(component_ref)>::type>();
-                        //archive(cereal::make_nvp(, component_ref));
-                    });
-                }
-            });
-        }
-        */
     }
 
 } // end namespace polymer

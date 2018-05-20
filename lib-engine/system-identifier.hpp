@@ -5,6 +5,7 @@
 
 #include "ecs/typeid.hpp"
 #include "ecs/core-ecs.hpp"
+#include "environment.hpp"
 
 ////////////////////////
 //   name/id system   // 
@@ -15,7 +16,7 @@ namespace polymer
 
     class identifier_system final : public base_system
     {
-        std::unordered_map<entity, std::string> entity_to_name_;
+        std::unordered_map<entity, identifier_component> entity_to_name_;
         std::unordered_map<entity, poly_hash_value> entity_to_hash_;
         std::unordered_map<poly_hash_value, entity> hash_to_entity_;
 
@@ -60,7 +61,7 @@ namespace polymer
         std::string get_name(entity entity) const
         {
             const auto iter = entity_to_name_.find(entity);
-            return iter != entity_to_name_.end() ? iter->second : "";
+            return iter != entity_to_name_.end() ? iter->second.id : "";
         }
 
         bool set_name(entity entity, const std::string & name)

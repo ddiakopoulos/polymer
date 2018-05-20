@@ -86,12 +86,12 @@ void environment::export_environment(const std::string & export_path)
                     std::string type_name = get_typename<std::decay<decltype(component_ref)>::type>();
                     std::string component_id = "@" + type_name;
 
-                    json component(component_id);
+                    json component; 
 
                     // foreach field
                     visit_fields(component_ref, [&](const char * name, auto & field, auto... metadata)
                     { 
-                        //component[name] = field;
+                        component[component_id][name] = field;
                     });
 
                     entity.push_back(component);
