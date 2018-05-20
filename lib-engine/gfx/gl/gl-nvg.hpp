@@ -123,7 +123,7 @@ namespace polymer
             const float width = (bounds[2] - bounds[0]) / 2.f;
 
             const float textX = position.x - width, textY = position.y + 8;
-            nvgTextAlign(nvg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+            nvgTextAlign(nvg, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
             nvgBeginPath(nvg);
             nvgFillColor(nvg, color);
             return nvgText(nvg, textX, textY, txt.c_str(), nullptr);

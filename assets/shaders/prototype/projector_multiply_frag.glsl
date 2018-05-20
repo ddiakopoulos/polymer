@@ -1,8 +1,5 @@
 #version 330
 
-uniform float u_time;
-uniform vec3 u_eye;
-
 in vec3 v_world_position;
 in vec3 v_normal;
 in vec2 v_texcoord;
@@ -32,7 +29,7 @@ void main()
         // vec2 projected_texcoord = vec2(v_uv_shadow.xy / v_uv_shadow.w);
         // sample = texture(s_cookieTex, projected_texcoord);
 
-        sample.a = 1.0 - sample.a;
+        //sample.a = 1.0 - sample.a;
     }
 
     f_color = sample;

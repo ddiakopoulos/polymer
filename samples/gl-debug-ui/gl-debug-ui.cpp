@@ -101,6 +101,7 @@ struct sample_gl_debug_ui final : public polymer_app
     perspective_camera cam;
     fps_camera_controller flycam;
     gl_renderable_grid grid{ 1.f, 24, 24 };
+    int which_cookie = 0;
 
     gl_mesh box_mesh;
     gl_mesh quad_mesh;
@@ -146,7 +147,7 @@ sample_gl_debug_ui::sample_gl_debug_ui() : polymer_app(1280, 720, "sample-gl-deb
     imgui.reset(new gui::imgui_instance(window, true)); 
     gui::make_light_theme();
 
-    quad_mesh = make_plane_mesh(2.f, 1.f, 4, 4, true);
+    quad_mesh = make_plane_mesh(2.f, 2.f, 4, 4, true);
     nvg_surface_shader = gl_shader(textured_vert, textured_frag);
 
     box_mesh = make_cube_mesh();
@@ -162,7 +163,7 @@ sample_gl_debug_ui::sample_gl_debug_ui() : polymer_app(1280, 720, "sample-gl-deb
 
     projector.set_shader(std::move(projector_shader));
 
-    gizmo_selection.position = { 0, 6, -4 };
+    gizmo_selection.position = { 0, 6, -2 };
 
     cam.look_at({ 0, 5, 5 }, { 0, 0.1f, -0.1f });
     flycam.set_camera(&cam);
@@ -224,7 +225,7 @@ void sample_gl_debug_ui::on_draw()
         nvgFillColor(nvg, nvgRGBAf(0.2f, 0.2f, 0.2f, 1.f));
         nvgFill(nvg);
     
-        surface->draw_text_quick(text, 120, float2(size.x, size.y), nvgRGBAf(1, 1, 1, 1));
+        surface->draw_text_quick(text, 120, float2(size.x / 2, size.y / 2), nvgRGBAf(1, 1, 1, 1));
     
         nvgRestore(nvg);
     
@@ -247,8 +248,9 @@ void sample_gl_debug_ui::on_draw()
 
     // Render the offscreen nvg surface in the world
     {
+        const float4x4 nvgSurfaceModel = mul(make_translation_matrix({ -4, 2, 0 }), make_rotation_matrix({ 0, 1, 0 }, POLYMER_PI / 2));
         nvg_surface_shader.bind();
-        nvg_surface_shader.uniform("u_mvp", viewProjectionMatrix);
+        nvg_surface_shader.uniform("u_mvp", mul(viewProjectionMatrix, nvgSurfaceModel));
         nvg_surface_shader.texture("s_texture", 0, surface->surface_texture(0), GL_TEXTURE_2D);
         quad_mesh.draw_elements();
         nvg_surface_shader.unbind();
@@ -262,17 +264,18 @@ void sample_gl_debug_ui::on_draw()
 
         glEnable(GL_POLYGON_OFFSET_FILL);
         glPolygonOffset(-1.0, -1.0);
-        //glBlendFunc(blendModes[src_blendmode], blendModes[dst_blendmode]);
 
         const float4x4 projectorModelViewMatrix = mul(inverse(gizmo_pose.matrix()), boxModel);
         const float4x4 projectorMatrix = projector.get_projector_matrix(projectorModelViewMatrix, false);
+
+        uint32_t cookie_tex = (which_cookie == 0) ? surface->surface_texture(0) : cookie;
 
         shader.bind();
         shader.uniform("u_viewProj", viewProjectionMatrix);
         shader.uniform("u_projectorMatrix", projectorMatrix);
         shader.uniform("u_modelMatrix", boxModel);
         shader.uniform("u_modelMatrixIT", inverse(transpose(boxModel)));
-        shader.texture("s_cookieTex", 0, cookie, GL_TEXTURE_2D);
+        shader.texture("s_cookieTex", 0, cookie_tex, GL_TEXTURE_2D);
         box_mesh.draw_elements();
         shader.unbind();
 
@@ -286,11 +289,13 @@ void sample_gl_debug_ui::on_draw()
 
     gui::imgui_fixed_window_begin("sample-debug-ui", { { 0, 0 },{ 320, height } });
     ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-    ImGui::Text("Gizmo Position {%.3f, %.3f, %.3f}", gizmo_pose.position.x, gizmo_pose.position.y, gizmo_pose.position.z);
+    ImGui::Text("Projector Position {%.3f, %.3f, %.3f}", gizmo_pose.position.x, gizmo_pose.position.y, gizmo_pose.position.z);
     if (ImGui::Button("Reset Gizmo"))
     {
         gizmo_selection = {};
     }
+    ImGui::SliderInt("Projected Texture", &which_cookie, 0, 1);
+
     gui::imgui_fixed_window_end();
 
     // Render imgui
