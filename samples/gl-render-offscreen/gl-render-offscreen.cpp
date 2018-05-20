@@ -10,6 +10,8 @@
 #include "index.hpp"
 #include "gl-camera.hpp"
 #include "gl-texture-view.hpp"
+#include "gl-renderable-grid.hpp"
+
 #include "shader-library.hpp"
 #include "environment.hpp"
 
@@ -42,6 +44,7 @@ struct sample_gl_render_offscreen final : public polymer_app
     std::unique_ptr<simple_texture_view> view;
     gl_shader_monitor shader_mon{ "../../assets/" };
     shader_handle wireframe_handle{ "wireframe" };
+    gl_renderable_grid grid{ 0.5f, 24, 24 };
 
     std::vector<sample_object> objects;
     sample_object * selected_object{ nullptr };
@@ -87,13 +90,13 @@ sample_gl_render_offscreen::sample_gl_render_offscreen() : polymer_app(1280, 720
     const geometry procedural_cylinder = make_cylinder(0.5f, 0.5f, 2, 12, 24, false);
 
     sample_object capsule;
-    capsule.t = transform({ -2, 0, 0 });
+    capsule.t = transform({ -2, 1.5f, 0 });
     capsule.scale = float3(1, 1, 1);
     capsule.geometry = procedural_capsule;
     capsule.mesh = make_mesh_from_geometry(procedural_capsule);
 
     sample_object cylinder;
-    cylinder.t = transform({ +2, 0, 0 });
+    cylinder.t = transform({ +2, 1.5f, 0 });
     cylinder.scale = float3(1, 1, 1);
     cylinder.geometry = procedural_cylinder;
     cylinder.mesh = make_mesh_from_geometry(procedural_cylinder);
@@ -185,17 +188,19 @@ void sample_gl_render_offscreen::on_draw()
         auto default_wireframe_variant = wireframe_handle.get()->get_variant();
         auto & wireframe_prog = default_wireframe_variant->shader;
 
-        std::cout << "Selected: " << selected_object << std::endl;
         wireframe_prog.bind();
         for (auto & object : objects)
         {
             const float4x4 modelMatrix = mul(object.t.matrix(), make_scaling_matrix(object.scale));
+            wireframe_prog.uniform("u_color", selected_object == &object ? float4(1, 0, 0, 0.5f) : float4(1, 1, 1, 0.5));
             wireframe_prog.uniform("u_eyePos", cam.get_eye_point());
             wireframe_prog.uniform("u_viewProjMatrix", viewProjectionMatrix);
             wireframe_prog.uniform("u_modelMatrix", modelMatrix);
             object.mesh.draw_elements();
         }
         wireframe_prog.unbind();
+
+        grid.draw(viewProjectionMatrix);
     }
 
     // Render to default framebuffer (the screen)
