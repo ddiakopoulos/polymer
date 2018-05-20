@@ -31,12 +31,12 @@ namespace polymer
 
         ~identifier_system() override { }
 
-        virtual bool create(entity e, poly_typeid hash_of_data, void * data) override final
+        virtual bool create(entity e, poly_typeid type, void * data) override final
         {
-            if (hash("std::string") != hash_of_data) { return false; }
+            if (type != get_typeid<identifier_component>()) { return false; }
             if (!get_name(e).empty()) throw std::runtime_error("duplicate names are not permitted");
-            const std::string name = *static_cast<std::string *>(data);
-            return set_name(e, name);
+            identifier_component * c  = static_cast<identifier_component *>(data);
+            return set_name(e, c->id);
         }
 
         bool create(entity e, const std::string & name)

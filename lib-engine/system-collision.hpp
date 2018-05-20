@@ -46,8 +46,19 @@ namespace polymer
             return{ hit, outT, outNormal };
         }
 
-        virtual bool create(entity e, poly_typeid hash, void * data) override final { return true; }
-        virtual void destroy(entity e) override final {}
+        virtual bool create(entity e, poly_typeid hash, void * data) override final 
+        { 
+            if (hash != get_typeid<geometry_component>()) { return false; }
+            auto new_component = geometry_component(e);
+            new_component = *static_cast<geometry_component *>(data);
+            meshes[e] = new_component;
+        }
+
+        virtual void destroy(entity e) override final 
+        {
+            auto iter = meshes.find(e);
+            if (iter != meshes.end()) meshes.erase(e);
+        }
     };
     POLYMER_SETUP_TYPEID(collision_system);
 

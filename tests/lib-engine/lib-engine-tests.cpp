@@ -37,7 +37,7 @@ namespace polymer
         ~ex_system_one() override { }
         bool create(entity e, poly_typeid hash, void * data) override final
         {
-            if (hash != c1) { return false; }
+            if (hash != get_typeid<physics_component>()) { return false; }
             auto new_component = physics_component(e);
             new_component = *static_cast<physics_component *>(data);
             components[e] = std::move(new_component);

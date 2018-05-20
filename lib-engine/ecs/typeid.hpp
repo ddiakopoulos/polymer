@@ -100,6 +100,8 @@ namespace polymer
     template <typename T>
     poly_typeid get_typeid() { return T::TYPEID_NOT_SETUP; }
 
+    inline poly_typeid get_typeid(const char * name) { return polymer::hash(name); }
+
     template <typename T>
     struct typeid_traits { static constexpr bool kHasTypeId = false; };
 

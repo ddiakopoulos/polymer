@@ -65,9 +65,7 @@ void environment::destroy(entity e)
 void environment::import_environment(const std::string & import_path, entity_orchestrator & o)
 {
     destroy(kAllEntities);
-
     const json env_doc = json::parse(read_file_text(import_path));
-    
     std::unordered_map<entity, entity> remap_table;
 
     /// identifier_component
@@ -89,13 +87,26 @@ void environment::import_environment(const std::string & import_path, entity_orc
                 const std::string type_key = componentIterator.key();
                 const std::string type_name = type_key.substr(1);
 
-                const entity e = track_entity(o.create_entity());
-                remap_table[entity_value] = e; // remap old entity id to new id
+                const entity new_entity = track_entity(o.create_entity());
+                const poly_typeid id = get_typeid(type_name.c_str());
+                remap_table[entity_value] = new_entity; // remap old entity to new
 
-                if (type_name == get_typename<identifier_component>())
+                visit_systems(this, [&](const char * system_name, auto * system_pointer)
                 {
-                
-                }
+                    if (system_pointer)
+                    {
+                        if (type_name == get_typename<identifier_component>())
+                        {
+                            identifier_component c(new_entity);
+                            c = componentIterator.value();
+                            if (system_pointer->create(new_entity, id, &c))
+                            {
+                                std::cout << "Created " << type_name << " on " << system_name << std::endl;
+                            }
+                        }
+                    }
+                });
+
             }
             else throw std::runtime_error("type key mismatch!");
         }
