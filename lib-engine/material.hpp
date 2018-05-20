@@ -7,6 +7,7 @@
 #include "math-core.hpp"
 #include "asset-handle-utils.hpp"
 #include "shader-library.hpp"
+#include "ecs/typeid.hpp"
 
 namespace polymer
 {
@@ -29,6 +30,7 @@ namespace polymer
         virtual void resolve_variants() const override final;
         virtual uint32_t id() const override final;
     };
+    POLYMER_SETUP_TYPEID(polymer_default_material);
 
     class polymer_blinn_phong_standard final : public material_interface
     {
@@ -52,6 +54,19 @@ namespace polymer
         float specularShininess;
         float specularStrength;
     };
+    POLYMER_SETUP_TYPEID(polymer_blinn_phong_standard);
+
+    template<class F> void visit_fields(polymer_blinn_phong_standard & o, F f)
+    {
+        f("diffuse_color", o.diffuseColor);
+        f("specular_color", o.specularColor);
+        f("specular_shininess", o.specularShininess);
+        f("specular_strength", o.specularStrength);
+        f("texcoord_scale", o.texcoordScale, range_metadata<int>{ -32, 32 });
+        f("diffuse_handle", o.diffuse);
+        f("normal_handle", o.normal);
+        f("program_handle", o.shader, editor_hidden{}); // hidden because shaders are tied to materials
+    }
 
     class polymer_pbr_standard final : public material_interface
     {
@@ -96,6 +111,37 @@ namespace polymer
         texture_handle height;
         texture_handle occlusion;
     };
+
+    POLYMER_SETUP_TYPEID(polymer_pbr_standard);
+
+    template<class F> void visit_fields(polymer_pbr_standard & o, F f)
+    {
+        f("base_albedo", o.baseAlbedo);
+        f("opacity", o.opacity, range_metadata<float>{ 0.f, 1.f });
+        f("roughness_factor", o.roughnessFactor, range_metadata<float>{ 0.04f, 1.f });
+        f("metallic_factor", o.metallicFactor, range_metadata<float>{ 0.f, 1.f });
+        f("base_emissive", o.baseEmissive);
+        f("emissive_strength", o.emissiveStrength, range_metadata<float>{ 0.f, 1.f });
+        f("specularLevel", o.specularLevel, range_metadata<float>{ 0.f, 2.f });
+        f("occulusion_strength", o.occlusionStrength, range_metadata<float>{ 0.f, 1.f });
+        f("ambient_strength", o.ambientStrength, range_metadata<float>{ 0.f, 1.f });
+        f("shadow_opacity", o.shadowOpacity, range_metadata<float>{ 0.f, 1.f });
+        f("texcoord_scale", o.texcoordScale, range_metadata<int>{ -32, 32 });
+        f("albedo_handle", o.albedo);
+        f("normal_handle", o.normal);
+        f("metallic_handle", o.metallic);
+        f("roughness_handle", o.roughness);
+        f("emissive_handle", o.emissive);
+        f("height_handle", o.height);
+        f("occlusion_handle", o.occlusion);
+        f("program_handle", o.shader, editor_hidden{}); // hidden because shaders are tied to materials
+    }
+
+    template<class F> void visit_subclasses(material_interface * p, F f)
+    {
+        f("polymer_pbr_standard", dynamic_cast<polymer_pbr_standard *>(p));
+        f("polymer_blinn_phong_standard", dynamic_cast<polymer_blinn_phong_standard *>(p));
+    }
 
 }
 

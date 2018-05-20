@@ -20,12 +20,12 @@ material_library::material_library(const std::string & library_path) : library_p
     std::ifstream library(library_path);
     if (library.good())
     {
-        cereal::deserialize_from_json(library_path, instances);
+        //cereal::deserialize_from_json(library_path, instances);
     }
     else
     {
         // Create new library with default material
-        serialize();
+        export(library_path);
     }
 
     // Register all material instances with the asset system. Since everything is handle-based,
@@ -39,17 +39,23 @@ material_library::material_library(const std::string & library_path) : library_p
 material_library::~material_library()
 {
     // Save on exit
-    serialize();
+    export(library_path);
 
     // Should we also call material_handle::destroy(...) for all the material assets? 
     instances.clear();
 }
 
-void material_library::serialize()
+void material_library::import(const std::string & import_path)
 {
-    const std::string & json_out = cereal::serialize_to_json(instances);
+
+}
+
+void material_library::export(const std::string & export_path)
+{
+    //const std::string & json_out = cereal::serialize_to_json(instances);
     polymer::write_file_text(library_path, json_out);
 }
+
 
 void material_library::remove_material(const std::string & name)
 {
@@ -59,7 +65,7 @@ void material_library::remove_material(const std::string & name)
         instances.erase(itr);
         material_handle::destroy(name);
         log::get()->assetLog->info("removing {} from the material list", name);
-        serialize();
+        export(library_path);
     }
     else
     {
