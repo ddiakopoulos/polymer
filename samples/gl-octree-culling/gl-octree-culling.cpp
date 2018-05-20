@@ -1,5 +1,7 @@
 /*
  * File: samples/gl-octree-culling.cpp
+ * This sample shows how to use Polymer's octree class to perform
+ * basic frustum culling. 
  */
 
 #include "index.hpp"
@@ -10,7 +12,7 @@
 
 using namespace polymer;
 
-constexpr const char simple_colored_vert[] = R"(#version 330
+constexpr const char basic_vert[] = R"(#version 330
     layout(location = 0) in vec3 vertex;
     layout(location = 2) in vec3 inColor;
     uniform mat4 u_mvp;
@@ -22,7 +24,7 @@ constexpr const char simple_colored_vert[] = R"(#version 330
     }
 )";
 
-constexpr const char simple_colored_frag[] = R"(#version 330
+constexpr const char basic_frag[] = R"(#version 330
     in vec3 color;
     out vec4 f_color;
     uniform vec3 u_color;
@@ -47,9 +49,10 @@ struct sample_gl_octree_culling final : public polymer_app
 {
     perspective_camera cam;
     fps_camera_controller flycam;
-
     uniform_random_gen gen;
+
     bool show_debug = false;
+
     std::unique_ptr<gl_shader> shader;
     std::vector<debug_sphere> spheres;
     gl_mesh sphereMesh;
@@ -62,9 +65,9 @@ struct sample_gl_octree_culling final : public polymer_app
     tinygizmo::rigid_transform xform;
 
     sample_gl_octree_culling();
-    ~sample_gl_octree_culling();
+    ~sample_gl_octree_culling() {}
 
-    void on_window_resize(int2 size) override;
+    void on_window_resize(int2 size) override {}
     void on_input(const app_input_event & event) override;
     void on_update(const app_update_event & e) override;
     void on_draw() override;
@@ -85,7 +88,7 @@ sample_gl_octree_culling::sample_gl_octree_culling() : polymer_app(1280, 720, "s
     gizmo.reset(new gl_gizmo());
     xform.position = { 0.1f, 0.1f, 0.1f };
 
-    shader.reset(new gl_shader(simple_colored_vert, simple_colored_frag));
+    shader.reset(new gl_shader(basic_vert, basic_frag));
 
     sphereMesh = make_sphere_mesh(1.f);
     boxMesh = make_cube_mesh();
@@ -112,16 +115,6 @@ sample_gl_octree_culling::sample_gl_octree_culling() : polymer_app(1280, 720, "s
             nodes.push_back(std::move(container));
         }
     }
-}
-
-sample_gl_octree_culling::~sample_gl_octree_culling()
-{ 
-
-}
-
-void sample_gl_octree_culling::on_window_resize(int2 size)
-{ 
-
 }
 
 void sample_gl_octree_culling::on_input(const app_input_event & event)
@@ -184,6 +177,7 @@ void sample_gl_octree_culling::on_draw()
     shader->bind();
 
     /*
+    // Debugging only
     for (auto & s : spheres)
     {
         const auto sphereModel = mul(s.p.matrix(), make_scaling_matrix(s.radius));
@@ -195,7 +189,7 @@ void sample_gl_octree_culling::on_draw()
 
     std::vector<octant<debug_sphere> *> visibleNodes;
     {
-        //scoped_timer t("octree cull");
+        // scoped_timer t("octree cull"); 
         octree.cull(cullingFrustum, visibleNodes, nullptr, false);
     }
 
@@ -240,7 +234,7 @@ int main(int argc, char * argv[])
     }
     catch (const std::exception & e)
     {
-        std::cerr << "Application Fatal: " << e.what() << std::endl;
+        POLYMER_ERROR("[Fatal] Caught exception: \n" << e.what());
         return EXIT_FAILURE;
     }
     return EXIT_SUCCESS;
