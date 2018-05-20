@@ -97,7 +97,6 @@ void material_library::export_library()
         });
     }
 
-    std::cout << library.dump(4) << std::endl;
     polymer::write_file_text(library_path, library.dump(4) );
 }
 

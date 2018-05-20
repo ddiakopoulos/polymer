@@ -161,6 +161,15 @@ namespace polymer
             if (!has_transform(e)) throw std::invalid_argument("no component exists for this entity");
             destroy_recursive(e);
         }
+
+        void refresh()
+        {
+           scene_graph_transforms.for_each([&](scene_graph_component & t) 
+           { 
+               const auto entity = t.get_entity();
+               if (entity != kInvalidEntity) recalculate_world_transform(t.get_entity());
+           });
+        }
     };
 
     template<class F> void visit_components(entity e, transform_system * system, F f)

@@ -302,8 +302,6 @@ namespace polymer
 
     inline void from_json(const json & archive, scene_graph_component & m) {
         visit_fields(m, [&archive](const char * name, auto & field, auto... metadata) {
-            std::cout << name << std::endl;
-            std::cout << archive.at(name) << std::endl;
             field = archive.at(name).get<std::remove_reference_t<decltype(field)>>();
         });
     };

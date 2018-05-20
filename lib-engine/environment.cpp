@@ -64,6 +64,9 @@ void environment::destroy(entity e)
 
 void environment::import_environment(const std::string & import_path, entity_orchestrator & o)
 {
+    manual_timer t;
+    t.start();
+
     destroy(kAllEntities);
 
     const json env_doc = json::parse(read_file_text(import_path));
@@ -72,17 +75,18 @@ void environment::import_environment(const std::string & import_path, entity_orc
     for (auto entityIterator = env_doc.begin(); entityIterator != env_doc.end(); ++entityIterator)
     {
         const entity entity_value = std::atoi(entityIterator.key().c_str());
+        const entity new_entity = track_entity(o.create_entity());
+        remap_table[entity_value] = new_entity; // remap old entity to new
+
         const json & comp = entityIterator.value();
+
         for (auto componentIterator = comp.begin(); componentIterator != comp.end(); ++componentIterator)
         {
             if (starts_with(componentIterator.key(), "@"))
             {
                 const std::string type_key = componentIterator.key();
                 const std::string type_name = type_key.substr(1);
-
-                const entity new_entity = track_entity(o.create_entity());
                 const poly_typeid id = get_typeid(type_name.c_str());
-                remap_table[entity_value] = new_entity; // remap old entity to new
 
                 visit_systems(this, [&](const char * system_name, auto * system_pointer)
                 {
@@ -140,10 +144,19 @@ void environment::import_environment(const std::string & import_path, entity_orc
             else throw std::runtime_error("type key mismatch!");
         }
     }
+
+    // Finalize the transform system by refreshing the scene graph
+    xform_system->refresh();
+
+    t.stop();
+    log::get()->assetLog->info("importing {} took {}ms", import_path, t.get());
 }
 
 void environment::export_environment(const std::string & export_path) 
 {
+    manual_timer t;
+    t.start();
+
     json environment;
 
     // foreach entity
@@ -179,4 +192,7 @@ void environment::export_environment(const std::string & export_path)
     }
 
     write_file_text(export_path, environment.dump(4));
+
+    t.stop();
+    log::get()->assetLog->info("exporting {} took {}ms", export_path, t.get());
 }
