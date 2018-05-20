@@ -67,10 +67,8 @@ namespace polymer
         bool create(entity e, poly_typeid hash, void * data) override final 
         { 
             if (hash != get_typeid<scene_graph_component>()) { return false; }
-            auto new_component = scene_graph_component(e);
-            new_component = *static_cast<scene_graph_component *>(data);
-            scene_graph_transforms.emplace(new_component);
-            return true; 
+            auto new_component = static_cast<scene_graph_component *>(data);
+            return create(e, new_component->local_pose, new_component->local_scale);
         }
 
         bool create(entity e, const transform local_pose, const float3 local_scale)
@@ -167,7 +165,8 @@ namespace polymer
            scene_graph_transforms.for_each([&](scene_graph_component & t) 
            { 
                const auto entity = t.get_entity();
-               if (entity != kInvalidEntity) recalculate_world_transform(t.get_entity());
+               std::cout << "Refreshing: " << entity << std::endl;
+               if (entity != kInvalidEntity) recalculate_world_transform(entity);
            });
         }
     };
