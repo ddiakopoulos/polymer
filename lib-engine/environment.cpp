@@ -68,6 +68,42 @@ void environment::import_environment(const std::string & import_path)
 
 void environment::export_environment(const std::string & export_path) 
 {
-    auto json_str = cereal::serialize_to_json(*this);
-    write_file_text(export_path, json_str);
+    json environment;
+
+    // foreach entity
+    for (const auto & e : entity_list())
+    {
+        json entity = json::array();
+
+        // foreach system
+        visit_systems(this, [&](const char * system_name, auto * system_pointer)
+        {
+            if (system_pointer)
+            {
+                // foreach component
+                visit_components(e, system_pointer, [&](const char * component_name, auto & component_ref, auto... component_metadata)
+                {
+                    std::string type_name = get_typename<std::decay<decltype(component_ref)>::type>();
+                    std::string component_id = "@" + type_name;
+
+                    json component(component_id);
+
+                    // foreach field
+                    visit_fields(component_ref, [&](const char * name, auto & field, auto... metadata)
+                    { 
+                        //component[name] = field;
+                    });
+
+                    entity.push_back(component);
+                });
+            }
+        });
+
+        environment.push_back(entity);
+    }
+
+    std::cout << environment.dump(4) << std::endl;
+
+    //auto json_str = cereal::serialize_to_json(*this);
+    //write_file_text(export_path, json_str);
 }

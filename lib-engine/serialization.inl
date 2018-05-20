@@ -92,14 +92,6 @@ template<class F> void visit_fields(polymer_blinn_phong_standard & o, F f)
     f("program_handle", o.shader, editor_hidden{}); // hidden because shaders are tied to materials
 }
 
-template<class F> void visit_systems(environment * p, F f)
-{
-    f("identifier_system", p->identifier_system);
-    f("transform_system", p->xform_system);
-    f("render_system", p->render_system);
-    f("collision_system", p->collision_system);
-}
-
 namespace cereal
 {
     // Asset Handles
@@ -126,12 +118,6 @@ namespace cereal
     template<class Archive> void serialize(Archive & archive, aabb_2d & m) { archive(cereal::make_nvp("min", m._min), cereal::make_nvp("max", m._max)); }
     template<class Archive> void serialize(Archive & archive, aabb_3d & m) { archive(cereal::make_nvp("min", m._min), cereal::make_nvp("max", m._max)); }
     template<class Archive> void serialize(Archive & archive, transform & m) { archive(cereal::make_nvp("position", m.position), cereal::make_nvp("orientation", m.orientation)); }
-    template<class Archive> void serialize(Archive & archive, frustum & m) { archive(cereal::make_size_tag(6)); for (auto const & p : m.planes) archive(p); }
-    template<class Archive> void serialize(Archive & archive, ray & m) { archive(cereal::make_nvp("origin", m.origin), cereal::make_nvp("direction", m.direction)); }
-    template<class Archive> void serialize(Archive & archive, plane & m) { archive(cereal::make_nvp("equation", m.equation)); }
-    template<class Archive> void serialize(Archive & archive, line & m) { archive(cereal::make_nvp("origin", m.origin), cereal::make_nvp("direction", m.direction)); }
-    template<class Archive> void serialize(Archive & archive, segment & m) { archive(cereal::make_nvp("a", m.a), cereal::make_nvp("b", m.b)); }
-    template<class Archive> void serialize(Archive & archive, sphere & m) { archive(cereal::make_nvp("center", m.center), cereal::make_nvp("radius", m.radius)); }
 }
 
 namespace cereal

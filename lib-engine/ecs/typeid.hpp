@@ -118,7 +118,7 @@ namespace polymer
     }                                          
 
     //////////////////////////////
-    //   poly_typeid Registry   //
+    //   poly_typeid registry   //
     //////////////////////////////
 
     // Used for SFINAE on other types we haven't setup yet (todo - stl containers)
