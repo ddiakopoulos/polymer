@@ -213,7 +213,7 @@ int main(int argc, char * argv[])
     }
     catch (const std::exception & e)
     {
-        std::cerr << "Application Fatal: " << e.what() << std::endl;
+        POLYMER_ERROR("[Fatal] Caught exception: \n" << e.what());
         return EXIT_FAILURE;
     }
     return EXIT_SUCCESS;

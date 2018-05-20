@@ -4,7 +4,7 @@
  * is then drawn as a full-screen quad using the `simple_texture_view` utility class. 
  * The rendered meshes are all generated procedurally using Polymer's built-in mesh
  * classes. A user can then click a mesh to highlight it, showing how to raycast 
-  * against CPU-side geometry. 
+ * against CPU-side geometry. 
  */
 
 #include "index.hpp"
@@ -54,9 +54,9 @@ struct sample_gl_render_offscreen final : public polymer_app
     gl_framebuffer renderFramebuffer;
 
     sample_gl_render_offscreen();
-    ~sample_gl_render_offscreen();
+    ~sample_gl_render_offscreen() {}
 
-    void on_window_resize(int2 size) override;
+    void on_window_resize(int2 size) override {}
     void on_input(const app_input_event & event) override;
     void on_update(const app_update_event & e) override;
     void on_draw() override;
@@ -106,16 +106,6 @@ sample_gl_render_offscreen::sample_gl_render_offscreen() : polymer_app(1280, 720
 
     cam.look_at({ 0, 9.5f, -6.0f }, { 0, 0.1f, 0 });
     flycam.set_camera(&cam);
-}
-
-sample_gl_render_offscreen::~sample_gl_render_offscreen()
-{ 
-
-}
-
-void sample_gl_render_offscreen::on_window_resize(int2 size)
-{ 
-
 }
 
 void sample_gl_render_offscreen::on_input(const app_input_event & event)
@@ -225,7 +215,7 @@ int main(int argc, char * argv[])
     }
     catch (const std::exception & e)
     {
-        std::cerr << "Application Fatal: " << e.what() << std::endl;
+        POLYMER_ERROR("[Fatal] Caught exception: \n" << e.what());
         return EXIT_FAILURE;
     }
     return EXIT_SUCCESS;
