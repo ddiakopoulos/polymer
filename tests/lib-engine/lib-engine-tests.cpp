@@ -1,14 +1,5 @@
 #include "math-core.hpp"
 
-#include "cereal/cereal.hpp"
-#include "cereal/types/memory.hpp"
-#include "cereal/types/vector.hpp"
-#include "cereal/types/map.hpp"
-#include "cereal/types/polymorphic.hpp"
-#include "cereal/types/base_class.hpp"
-#include "cereal/archives/json.hpp"
-#include "cereal/access.hpp"
-
 #include "ecs/typeid.hpp"
 #include "ecs/core-ecs.hpp"
 #include "ecs/component-pool.hpp"
@@ -23,7 +14,6 @@
 
 namespace polymer
 {
-
     struct physics_component : public base_component
     {
         physics_component() {};
@@ -39,53 +29,6 @@ namespace polymer
         float value1, value2, value3;
     };
     POLYMER_SETUP_TYPEID(render_component);
-
-    ///////////////////
-    // Serialization //
-    ///////////////////
-
-    template <typename T>
-    std::string serialize_to_json(T e)
-    {
-        std::ostringstream oss;
-        {
-            cereal::JSONOutputArchive json_archiver(oss);
-            json_archiver(e);
-        }
-        return oss.str();
-    }
-
-    template <typename T>
-    void deserialize_from_json(const std::string & json_str, T & e)
-    {
-        std::istringstream iss(json_str);
-        cereal::JSONInputArchive json_archiver(iss);
-        json_archiver(e);
-    }
-
-    template<class F> void visit_fields(render_component & o, F f)
-    {
-        f("v1", o.value1);
-        f("v2", o.value2);
-        f("v3", o.value3);
-    }
-
-    template<class F> void visit_fields(physics_component & o, F f)
-    {
-        f("v1", o.value1);
-        f("v2", o.value2);
-        f("v3", o.value3);
-    }
-
-    template<class Archive> void serialize(Archive & archive, render_component & m)
-    {
-        visit_fields(m, [&archive](const char * name, auto & field, auto... metadata) { archive(cereal::make_nvp(name, field)); });
-    }
-
-    template<class Archive> void serialize(Archive & archive, physics_component & m)
-    {
-        visit_fields(m, [&archive](const char * name, auto & field, auto... metadata) { archive(cereal::make_nvp(name, field)); });
-    }
 
     struct ex_system_one final : public base_system
     {
@@ -517,50 +460,6 @@ namespace polymer
             scoped_timer t("iterate and add");
             system->world_transforms.for_each([&](world_transform_component & t) { t.world_pose.position += float3(0.001f); });
         }
-    }
-
-
-    TEST_CASE("transform system serialization test")
-    {
-        entity_orchestrator orchestrator;
-        transform_system * system = orchestrator.create_system<transform_system>(&orchestrator);
-
-        /*
-        render_component serialize(orchestrator.create_entity());
-        serialize.value1 = 1.f;
-        serialize.value2 = 2.f;
-        serialize.value3 = 3.f;
-        auto str = serialize_to_json(serialize);
-
-        render_component deserialize = (orchestrator.create_entity());
-        deserialize_from_json(str, deserialize);
-        */
-
-        entity root = orchestrator.create_entity();
-        entity child1 = orchestrator.create_entity();
-        entity child2 = orchestrator.create_entity();
-
-        system->create(root, transform(), float3(1));
-        system->create(child1, transform(), float3(1));
-        system->create(child2, transform(), float3(1));
-
-        system->add_child(root, child1);
-        system->add_child(root, child2);
-
-        // Ideally should serialize an entity
-        // Find all systems using entity
-        // Serialize those components as an entity block
-
-        auto str = serialize_to_json(*system->get_local_transform(root));
-        std::cout << str << std::endl;
-
-        system->scene_graph_transforms.for_each([&](scene_graph_component & t)
-        {
-            // std::cout << "e? " << t.get_entity() << std::endl;
-        });
-
-        std::cout << "Serialize Test" << std::endl;
-
     }
 
     //////////////////////////////
