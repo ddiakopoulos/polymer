@@ -591,7 +591,7 @@ void pbr_render_system::render_frame(const render_payload & scene)
 
 bool pbr_render_system::create(entity e, poly_typeid type, void * data)
 {
-    return true;
+    return false;
 }
 
 void pbr_render_system::destroy(entity e)

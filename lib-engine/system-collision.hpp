@@ -12,7 +12,11 @@
 
 namespace polymer
 {
-    // Collision System
+    
+    //////////////////////////
+    //   collision system   //
+    //////////////////////////
+
     class collision_system final : public base_system
     {
     public:
@@ -26,6 +30,7 @@ namespace polymer
 
         raycast_result raycast(const entity e, const ray & worldRay)
         {
+            // fixme
             if (!xform_system)
             {
                 base_system * xform_base = orchestrator->get_system(get_typeid<transform_system>());
@@ -60,6 +65,7 @@ namespace polymer
             if (iter != meshes.end()) meshes.erase(e);
         }
     };
+
     POLYMER_SETUP_TYPEID(collision_system);
 
     template<class F> void visit_components(entity e, collision_system * system, F f)

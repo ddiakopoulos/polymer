@@ -256,6 +256,7 @@ void scene_editor_app::on_input(const app_input_event & event)
             {
                 scene.export_environment("polymer-environment-export.json");
                 scene.import_environment("polymer-environment-export.json", orchestrator);
+                the_render_payload.render_set.clear();
             }
         }
 

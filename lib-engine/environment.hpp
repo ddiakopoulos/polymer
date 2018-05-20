@@ -97,7 +97,7 @@ namespace polymer
     inline void from_json(const json & archive, aabb_3d & p) { p._min = archive.at("min").get<float3>(); p._max = archive.at("max").get<float3>(); }
 
     inline void to_json(json & archive, const transform & m) { archive = json{ { "position", m.position },{ "orientation", m.orientation } }; }
-    inline void from_json(const json & archive, transform & p) { p.position = archive.at("position").get<float3>(); p.orientation = archive.at("y").get<float4>(); }
+    inline void from_json(const json & archive, transform & p) { p.position = archive.at("position").get<float3>(); p.orientation = archive.at("orientation").get<float4>(); }
 
     //////////////////////////////
     //   identifier_component   //
@@ -302,6 +302,8 @@ namespace polymer
 
     inline void from_json(const json & archive, scene_graph_component & m) {
         visit_fields(m, [&archive](const char * name, auto & field, auto... metadata) {
+            std::cout << name << std::endl;
+            std::cout << archive.at(name) << std::endl;
             field = archive.at(name).get<std::remove_reference_t<decltype(field)>>();
         });
     };

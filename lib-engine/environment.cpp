@@ -65,16 +65,9 @@ void environment::destroy(entity e)
 void environment::import_environment(const std::string & import_path, entity_orchestrator & o)
 {
     destroy(kAllEntities);
+
     const json env_doc = json::parse(read_file_text(import_path));
     std::unordered_map<entity, entity> remap_table;
-
-    /// identifier_component
-    /// mesh_component
-    /// material_component
-    /// geometry_component
-    /// point_light_component
-    /// directional_light_component
-    /// scene_graph_component
 
     for (auto entityIterator = env_doc.begin(); entityIterator != env_doc.end(); ++entityIterator)
     {
@@ -99,14 +92,50 @@ void environment::import_environment(const std::string & import_path, entity_orc
                         {
                             identifier_component c(new_entity);
                             c = componentIterator.value();
-                            if (system_pointer->create(new_entity, id, &c))
-                            {
-                                std::cout << "Created " << type_name << " on " << system_name << std::endl;
-                            }
+                            if (system_pointer->create(new_entity, id, &c)) std::cout << "Created " << type_name << " on " << system_name << std::endl;
+                        }
+                        else if (type_name == get_typename<mesh_component>())
+                        {
+                            mesh_component c(new_entity);
+                            c = componentIterator.value();
+                            if (system_pointer->create(new_entity, id, &c)) std::cout << "Created " << type_name << " on " << system_name << std::endl;
+                        }
+                        else if (type_name == get_typename<material_component>())
+                        {
+                            material_component c(new_entity);
+                            c = componentIterator.value();
+                            if (system_pointer->create(new_entity, id, &c)) std::cout << "Created " << type_name << " on " << system_name << std::endl;
+                        }
+                        else if (type_name == get_typename<geometry_component>())
+                        {
+                            geometry_component c(new_entity);
+                            c = componentIterator.value();
+                            if (system_pointer->create(new_entity, id, &c)) std::cout << "Created " << type_name << " on " << system_name << std::endl;
+                        }
+                        else if (type_name == get_typename<point_light_component>())
+                        {
+                            point_light_component c(new_entity);
+                            c = componentIterator.value();
+                            if (system_pointer->create(new_entity, id, &c)) std::cout << "Created " << type_name << " on " << system_name << std::endl;
+                        }
+                        else if (type_name == get_typename<directional_light_component>())
+                        {
+                            directional_light_component c(new_entity);
+                            c = componentIterator.value();
+                            if (system_pointer->create(new_entity, id, &c)) std::cout << "Created " << type_name << " on " << system_name << std::endl;
+                        }
+                        else if (type_name == get_typename<scene_graph_component>())
+                        {
+                            scene_graph_component c(new_entity);
+                            c = componentIterator.value();
+                            if (system_pointer->create(new_entity, id, &c)) std::cout << "Created " << type_name << " on " << system_name << std::endl;
+                        }
+                        else
+                        {
+                            throw std::runtime_error("component type name mismatch!");
                         }
                     }
                 });
-
             }
             else throw std::runtime_error("type key mismatch!");
         }
