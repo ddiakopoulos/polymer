@@ -5,7 +5,7 @@
 
 using namespace polymer;
 
-nvg_font::nvg_font(NVGcontext * nvg, const std::string & name, std::vector<uint8_t> & buffer)
+nvg_font::nvg_font(NVGcontext * nvg, const std::string & name, const std::vector<uint8_t> & buffer)
 {
     this->buffer = std::move(buffer);
     this->nvg = nvg;

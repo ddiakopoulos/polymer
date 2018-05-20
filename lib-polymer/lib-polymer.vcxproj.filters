@@ -159,8 +159,8 @@
     <ClInclude Include="image-buffer.hpp">
       <Filter>src\tools</Filter>
     </ClInclude>
-    <ClInclude Include="..\third_party\nanovg\fontstash.h">
-      <Filter>third_party\nanovg</Filter>
+    <ClInclude Include="quick_hull.hpp">
+      <Filter>src\math</Filter>
     </ClInclude>
     <ClInclude Include="..\third_party\nanovg\nanovg.h">
       <Filter>third_party\nanovg</Filter>
@@ -171,8 +171,8 @@
     <ClInclude Include="..\third_party\nanovg\nanovg_gl_utils.h">
       <Filter>third_party\nanovg</Filter>
     </ClInclude>
-    <ClInclude Include="quick_hull.hpp">
-      <Filter>src\math</Filter>
+    <ClInclude Include="..\third_party\nanovg\fontstash.h">
+      <Filter>third_party\nanovg</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -191,7 +191,7 @@
     <ClCompile Include="..\third_party\tinyexr\tinyexr.cc">
       <Filter>third_party\tinyexr</Filter>
     </ClCompile>
-    <ClCompile Include="..\third_party\nanovg\nanovg.cpp">
+    <ClCompile Include="..\third_party\nanovg\nanovg.c">
       <Filter>third_party\nanovg</Filter>
     </ClCompile>
   </ItemGroup>

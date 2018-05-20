@@ -62,7 +62,7 @@
   <ItemGroup>
     <ClCompile Include="..\third_party\imgui\imgui.cpp" />
     <ClCompile Include="..\third_party\imgui\imgui_draw.cpp" />
-    <ClCompile Include="..\third_party\nanovg\nanovg.cpp" />
+    <ClCompile Include="..\third_party\nanovg\nanovg.c" />
     <ClCompile Include="..\third_party\tiny-gizmo.cpp" />
     <ClCompile Include="..\third_party\tinyexr\tinyexr.cc" />
     <ClCompile Include="impl.cpp" />

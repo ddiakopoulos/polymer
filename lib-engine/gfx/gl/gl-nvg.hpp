@@ -24,14 +24,9 @@ namespace polymer
         NVGcontext * nvg;
     public:
         int id;
-        nvg_font(NVGcontext * nvg, const std::string & name, std::vector<uint8_t> & buffer);
+        nvg_font(NVGcontext * nvg, const std::string & name, const std::vector<uint8_t> & buffer);
         size_t get_cursor_location(const std::string & text, float fontSize, int xCoord) const;
     };
-
-   // A simple wrapper for an a NanoVG Context. Usage:
-   // > surface.reset(new gl_nvg_surface(width, height, "source_code_pro_regular", "source_code_pro_regular"));
-   // > auto nvg = surface->pre_draw(window);
-   // > surface->post_draw();
 
     class gl_nvg_surface
     {
@@ -66,7 +61,7 @@ namespace polymer
         gl_nvg_surface(const uint32_t num_surfaces, float2 surface_size, const font_data & font_data) 
             : num_surfaces(num_surfaces), size(surface_size)
         {
-            nvg = make_nanovg_context(CTX_ANTIALIAS | CTX_STENCIL_STROKES);
+            nvg = make_nanovg_context(CTX_ANTIALIAS);
             if (!nvg) throw std::runtime_error("error initializing nanovg context");
 
             text_fontface = std::make_shared<nvg_font>(nvg, font_data.text_font_name, font_data.text_font_binary);
@@ -81,7 +76,7 @@ namespace polymer
             framebuffer.resize(num_surfaces);
             texture.resize(num_surfaces);
 
-            for (int i = 0; i < num_surfaces; ++i)
+            for (uint32_t i = 0; i < num_surfaces; ++i)
             {
                 glTextureImage2DEXT(texture[i], GL_TEXTURE_2D, 0, GL_RGBA8, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
                 glTextureParameteriEXT(texture[i], GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -108,6 +103,8 @@ namespace polymer
         void post_draw()
         {
             nvgEndFrame(nvg);
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glUseProgram(0);
         }
 
         gl_texture_2d & surface_texture(const uint32_t surface_idx)
@@ -120,9 +117,8 @@ namespace polymer
         float draw_text_quick(const std::string & txt, const float x, const float y, const NVGcolor color)
         {
             nvgFontFaceId(nvg, text_fontface->id);
-            nvgFontSize(nvg, 324);
+            nvgFontSize(nvg, 180);
             float bounds[4];
-
             const float w = nvgTextBounds(nvg, 0, 0, txt.c_str(), NULL, bounds); // xmin, ymin, xmax, ymax
             const float width = (bounds[2] - bounds[0]) / 2.f;
 
