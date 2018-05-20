@@ -55,7 +55,6 @@ void material_library::import_library()
     // Iterate over material instances
     for (auto it = library_doc.begin(); it != library_doc.end(); ++it)
     {
-        //std::cout << it.key() << " | " << it.value() << "\n";
         json & instance = it.value();
         for (auto inst = instance.begin(); inst != instance.end(); ++inst)
         {
@@ -67,17 +66,16 @@ void material_library::import_library()
                 if (type_name == get_typename<polymer_pbr_standard>())
                 {
                     std::shared_ptr<polymer_pbr_standard> new_instance(new polymer_pbr_standard());
-
-                    //instances[inst.key] = inst.value();
+                    *new_instance = inst.value();
+                    instances[it.key()] = new_instance;
                 }
                 if (type_name == get_typename<polymer_blinn_phong_standard>())
                 {
                     std::shared_ptr<polymer_blinn_phong_standard> new_instance(new polymer_blinn_phong_standard());
-                    //instances[inst.key] = inst.value();
+                    *new_instance = inst.value();
+                    instances[it.key()] = new_instance;
                 }
             }
-
-            //std::cout << "Instance: " << inst.key() << " | " << inst.value() << "\n";
         }
     }
 }
