@@ -1,5 +1,9 @@
 #include "material.hpp"
 #include "system-renderer-pbr.hpp"
+#include "asset-handle.hpp"
+#include "asset-handle-utils.hpp"
+#include "shader.hpp"
+#include "shader-library.hpp"
 
 using namespace polymer;
 

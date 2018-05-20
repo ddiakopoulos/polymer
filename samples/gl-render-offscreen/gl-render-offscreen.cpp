@@ -3,17 +3,36 @@
  * This sample demonstrates how to setup and render to a framebuffer. This framebuffer
  * is then drawn as a full-screen quad using the `simple_texture_view` utility class. 
  * The rendered meshes are all generated procedurally using Polymer's built-in mesh
- * classes. For illustrative reasons, the CPU geometry is not attached to a gl_mesh (GPU)
- * but instead rendered through the use of Polymer's `renderer_debug` found in lib-engine.
- * Lastly, the user can click a mesh to highlight it, showing how to raycast against CPU-side
- * geometry. 
+ * classes. A user can then click a mesh to highlight it, showing how to raycast 
+  * against CPU-side geometry. 
  */
 
 #include "index.hpp"
 #include "gl-camera.hpp"
 #include "gl-texture-view.hpp"
+#include "shader-library.hpp"
+#include "environment.hpp"
 
 using namespace polymer;
+
+struct sample_object
+{
+    transform t;
+    float3 scale;
+    gl_mesh mesh;
+    geometry geometry;
+};
+
+raycast_result raycast(const sample_object & obj, const ray & worldRay)
+{
+    ray localRay = obj.t.inverse() * worldRay;
+    localRay.origin /= obj.scale;
+    localRay.direction /= obj.scale;
+    float outT = 0.0f;
+    float3 outNormal = { 0, 0, 0 };
+    const bool hit = intersect_ray_mesh(localRay, obj.geometry, &outT, &outNormal);
+    return{ hit, outT, outNormal };
+}
 
 struct sample_gl_render_offscreen final : public polymer_app
 {
@@ -21,6 +40,11 @@ struct sample_gl_render_offscreen final : public polymer_app
     fps_camera_controller flycam;
 
     std::unique_ptr<simple_texture_view> view;
+    gl_shader_monitor shader_mon{ "../../assets/" };
+    shader_handle wireframe_handle{ "wireframe" };
+
+    std::vector<sample_object> objects;
+    sample_object * selected_object{ nullptr };
 
     gl_texture_2d renderTextureRGBA;
     gl_texture_2d renderTextureDepth;
@@ -52,6 +76,31 @@ sample_gl_render_offscreen::sample_gl_render_offscreen() : polymer_app(1280, 720
     glNamedFramebufferTexture2DEXT(renderFramebuffer, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, renderTextureDepth, 0);
     renderFramebuffer.check_complete();
 
+    // Assign a new shader_handle with id "wireframe"
+    shader_mon.watch("wireframe",
+        "../../assets/shaders/wireframe_vert.glsl",
+        "../../assets/shaders/wireframe_frag.glsl",
+        "../../assets/shaders/wireframe_geom.glsl",
+        "../../assets/shaders/renderer");
+
+    const geometry procedural_capsule = make_capsule(12, 0.5f, 2);
+    const geometry procedural_cylinder = make_cylinder(0.5f, 0.5f, 2, 12, 24, false);
+
+    sample_object capsule;
+    capsule.t = transform({ -2, 0, 0 });
+    capsule.scale = float3(1, 1, 1);
+    capsule.geometry = procedural_capsule;
+    capsule.mesh = make_mesh_from_geometry(procedural_capsule);
+
+    sample_object cylinder;
+    cylinder.t = transform({ +2, 0, 0 });
+    cylinder.scale = float3(1, 1, 1);
+    cylinder.geometry = procedural_cylinder;
+    cylinder.mesh = make_mesh_from_geometry(procedural_cylinder);
+
+    objects.emplace_back(std::move(capsule));
+    objects.emplace_back(std::move(cylinder));
+
     cam.look_at({ 0, 9.5f, -6.0f }, { 0, 0.1f, 0 });
     flycam.set_camera(&cam);
 }
@@ -68,13 +117,46 @@ void sample_gl_render_offscreen::on_window_resize(int2 size)
 
 void sample_gl_render_offscreen::on_input(const app_input_event & event)
 {
+    int width, height;
+    glfwGetWindowSize(window, &width, &height);
+
     flycam.handle_input(event);
+
+    if (event.type == app_input_event::MOUSE && event.action == GLFW_RELEASE)
+    {
+        if (event.value[0] == GLFW_MOUSE_BUTTON_LEFT)
+        {
+            float best_t = std::numeric_limits<float>::max();
+            sample_object * hit{ nullptr };
+
+            const ray r = cam.get_world_ray(event.cursor, float2(static_cast<float>(width), static_cast<float>(height)));
+
+            if (length(r.direction) > 0)
+            {
+                for (auto & object : objects)
+                {
+                    raycast_result result = raycast(object, r);
+                    if (result.hit)
+                    {
+                        if (result.distance < best_t)
+                        {
+                            best_t = result.distance;
+                            hit = &object;
+                        }
+                    }
+                }
+                selected_object = hit;
+            }
+        }
+    }
 }
 
 void sample_gl_render_offscreen::on_update(const app_update_event & e)
 {
     int width, height;
-    glfwGetWindowSize(window, &width, &height);;
+    glfwGetWindowSize(window, &width, &height);
+    shader_mon.handle_recompile();
+    flycam.update(e.timestep_ms);
 }
 
 void sample_gl_render_offscreen::on_draw()
@@ -99,6 +181,21 @@ void sample_gl_render_offscreen::on_draw()
         const float4x4 projectionMatrix = cam.get_projection_matrix(float(width) / float(height));
         const float4x4 viewMatrix = cam.get_view_matrix();
         const float4x4 viewProjectionMatrix = mul(projectionMatrix, viewMatrix);
+
+        auto default_wireframe_variant = wireframe_handle.get()->get_variant();
+        auto & wireframe_prog = default_wireframe_variant->shader;
+
+        std::cout << "Selected: " << selected_object << std::endl;
+        wireframe_prog.bind();
+        for (auto & object : objects)
+        {
+            const float4x4 modelMatrix = mul(object.t.matrix(), make_scaling_matrix(object.scale));
+            wireframe_prog.uniform("u_eyePos", cam.get_eye_point());
+            wireframe_prog.uniform("u_viewProjMatrix", viewProjectionMatrix);
+            wireframe_prog.uniform("u_modelMatrix", modelMatrix);
+            object.mesh.draw_elements();
+        }
+        wireframe_prog.unbind();
     }
 
     // Render to default framebuffer (the screen)

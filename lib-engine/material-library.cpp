@@ -5,6 +5,7 @@
 #include "logging.hpp"
 #include "file_io.hpp"
 #include "json.hpp"
+#include "environment.hpp"
 
 using namespace polymer;
 using json = nlohmann::json;

@@ -73,6 +73,8 @@ namespace polymer
 {
     using json = nlohmann::json;
 
+    template<class F> void visit_fields(polymer::transform & o, F f) { f("position", o.position); f("orientation", o.orientation); }
+
     // Polymer Asset Handles
     inline void to_json(json & archive, const texture_handle & m)  { archive = m.name == "empty" ? "" : m.name; }
     inline void from_json(const json & archive, texture_handle & m) { m = texture_handle(archive.get<std::string>()); }

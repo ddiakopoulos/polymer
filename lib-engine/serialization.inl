@@ -3,11 +3,8 @@
 #ifndef serialization_hpp
 #define serialization_hpp
 
-#include "uniforms.hpp"
-#include "asset-handle-utils.hpp"
-#include "material.hpp"
-#include "environment.hpp"
-#include "gl-procedural-sky.hpp"
+#include <string>
+#include "math-core.hpp"
 #include "json.hpp"
 
 // Variadic unpacking of the metadata in the style of sgorsten. The tricky bit is the use of SFINAE with `enable_if_t.
@@ -35,11 +32,13 @@ struct input_field { };
 
 using json = nlohmann::json;
 
-template<class F> void visit_fields(transform & o, F f) { f("position", o.position); f("orientation", o.orientation); }
-
-inline bool starts_with(const std::string & str, const std::string & search) 
+namespace polymer
 {
-    return search.length() <= str.length() && std::equal(search.begin(), search.end(), str.begin());
-}
+    inline bool starts_with(const std::string & str, const std::string & search)
+    {
+        return search.length() <= str.length() && std::equal(search.begin(), search.end(), str.begin());
+    }
+
+} // end namespace polymer
 
 #endif // end serialization_hpp

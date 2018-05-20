@@ -33,6 +33,9 @@ struct sample_gl_render final : public polymer_app
     void on_draw() override;
 };
 
+// Polymer also contains a method `make_mesh_from_geometry` which is a canonical library version of this
+// function. That function handles all common vertex attribute types and assigns them to a layout we use
+// throughout other samples/applications. This is used purely for reference/englightenment. 
 void upload_mesh(const runtime_mesh & cpu, gl_mesh & gpu, bool indexed = true)
 {
     const uint32_t components = 6;
@@ -85,8 +88,8 @@ sample_gl_render::sample_gl_render() : polymer_app(1280, 720, "sample-gl-render"
         read_file_text("../../assets/shaders/prototype/matcap_vert.glsl"),
         read_file_text("../..//assets/shaders/prototype/matcap_frag.glsl"));
 
-    auto meshes = import_model("../../assets/models/geometry/TorusKnotUniform.obj");
-    runtime_mesh & m = meshes.begin()->second;
+    auto imported_mesh_table = import_model("../../assets/models/geometry/TorusKnotUniform.obj");
+    runtime_mesh & m = imported_mesh_table.begin()->second;
     rescale_geometry(m);
     upload_mesh(m, model);
 
