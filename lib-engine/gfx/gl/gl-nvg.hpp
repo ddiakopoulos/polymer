@@ -114,15 +114,15 @@ namespace polymer
 
         float2 surface_size() const { return size; }
 
-        float draw_text_quick(const std::string & txt, const float x, const float y, const NVGcolor color)
+        float draw_text_quick(const std::string & txt, const float text_size, const float2 position, const NVGcolor color)
         {
             nvgFontFaceId(nvg, text_fontface->id);
-            nvgFontSize(nvg, 180);
+            nvgFontSize(nvg, text_size);
             float bounds[4];
             const float w = nvgTextBounds(nvg, 0, 0, txt.c_str(), NULL, bounds); // xmin, ymin, xmax, ymax
             const float width = (bounds[2] - bounds[0]) / 2.f;
 
-            const float textX = x - width, textY = y + 8;
+            const float textX = position.x - width, textY = position.y + 8;
             nvgTextAlign(nvg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
             nvgBeginPath(nvg);
             nvgFillColor(nvg, color);

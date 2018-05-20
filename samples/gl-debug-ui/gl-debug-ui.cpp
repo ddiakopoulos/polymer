@@ -43,14 +43,74 @@ constexpr const char textured_frag[] = R"(#version 330
     }
 )";
 
+constexpr const char basic_vert[] = R"(#version 330
+    layout(location = 0) in vec3 vertex;
+    uniform mat4 u_mvp;
+    void main()
+    {
+        gl_Position = u_mvp * vec4(vertex.xyz, 1);
+    }
+)";
+
+constexpr const char basic_frag[] = R"(#version 330
+    uniform vec4 u_color;
+    out vec4 f_color;
+    void main()
+    {
+        f_color = u_color;
+    }
+)";
+
+class gl_material_projector
+{
+    gl_shader shader;
+
+public:
+
+    gl_material_projector() = default;
+
+    void set_shader(gl_shader && s) { shader = std::move(s); }
+    gl_shader & get_shader() { return shader; }
+
+    const float4x4 get_view_projection_matrix(const float4x4 & modelViewMatrix, bool isOrthographic = false)
+    {
+        if (isOrthographic)
+        {
+            constexpr float halfSize = 1.0 * 0.5f;
+            return mul(make_orthographic_matrix(-halfSize, halfSize, -halfSize, halfSize, -halfSize, halfSize), modelViewMatrix);
+        }
+        return mul(make_projection_matrix(to_radians(45.f), 1.0f, 0.1f, 16.f), modelViewMatrix);
+    }
+
+    // Transforms a position into projective texture space.
+    // This matrix combines the light view, projection and bias matrices.
+    const float4x4 get_projector_matrix(const float4x4 & modelViewMatrix, bool isOrthographic = false)
+    {
+        // Bias matrix is a constant.
+        // It performs a linear transformation to go from the [–1, 1]
+        // range to the [0, 1] range. Having the coordinates in the [0, 1]
+        // range is necessary for the values to be used as texture coordinates.
+        constexpr float4x4 biasMatrix = {
+            { 0.5f,  0.0f,  0.0f,  0.0f },
+            { 0.0f,  0.5f,  0.0f,  0.0f },
+            { 0.0f,  0.0f,  0.5f,  0.0f },
+            { 0.5f,  0.5f,  0.5f,  1.0f }
+        };
+
+        return mul(biasMatrix, get_view_projection_matrix(modelViewMatrix, isOrthographic));
+    }
+};
 
 struct sample_gl_debug_ui final : public polymer_app
 {
     perspective_camera cam;
     fps_camera_controller flycam;
     gl_renderable_grid grid{ 1.f, 24, 24 };
+
+    gl_mesh box_mesh;
     gl_mesh quad_mesh;
     gl_shader nvg_surface_shader;
+    gl_shader surface_shader;
 
     std::unique_ptr<imgui_instance> imgui;
     std::unique_ptr<gl_gizmo> gizmo;
@@ -90,6 +150,9 @@ sample_gl_debug_ui::sample_gl_debug_ui() : polymer_app(1280, 720, "sample-gl-deb
     quad_mesh = make_plane_mesh(2.f, 1.f, 4, 4, true);
     nvg_surface_shader = gl_shader(textured_vert, textured_frag);
 
+    box_mesh = make_cube_mesh();
+    surface_shader = gl_shader(basic_vert, basic_frag);
+
     cam.look_at({ 0, 5, 5 }, { 0, 0.1f, -0.1f });
     flycam.set_camera(&cam);
 }
@@ -128,8 +191,9 @@ void sample_gl_debug_ui::on_draw()
 
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    //glEnable(GL_BLEND);
+    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     const float4x4 projectionMatrix = cam.get_projection_matrix(float(width) / float(height));
     const float4x4 viewMatrix = cam.get_view_matrix();
@@ -137,7 +201,7 @@ void sample_gl_debug_ui::on_draw()
 
     // Render the offscreen nvg surface
     {
-        std::string text = "POLYMER";
+        std::string text = "Polymer Engine";
     
         NVGcontext * nvg = surface->pre_draw(window, 0);
         const float2 size = surface->surface_size();
@@ -146,10 +210,10 @@ void sample_gl_debug_ui::on_draw()
     
         nvgBeginPath(nvg);
         nvgRect(nvg, 0, 0, size.x, size.y);
-        nvgFillColor(nvg, nvgRGBAf(0.1f, 0.1f, 0.1f, 1.f));
+        nvgFillColor(nvg, nvgRGBAf(0.2f, 0.2f, 0.2f, 1.f));
         nvgFill(nvg);
     
-        surface->draw_text_quick(text, (size.x), (size.y), nvgRGBAf(1, 1, 1, 1));
+        surface->draw_text_quick(text, 120, float2(size.x, size.y), nvgRGBAf(1, 1, 1, 1));
     
         nvgRestore(nvg);
     
@@ -158,6 +222,17 @@ void sample_gl_debug_ui::on_draw()
     
     // Reset state changed by nanovg
     glViewport(0, 0, width, height);
+    glEnable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST);
+
+    {
+        const float4x4 boxModel = mul(make_translation_matrix({ 0, 6, -10 }), make_scaling_matrix(float3(8.f, 4.f, 0.1f)));
+        surface_shader.bind();
+        surface_shader.uniform("u_mvp", mul(viewProjectionMatrix, boxModel));
+        surface_shader.uniform("u_color", float4(0.88f, 0.88f, 0.88f, 1.0f));
+        box_mesh.draw_elements();
+        surface_shader.unbind();
+    }
 
     // Render the offscreen nvg surface in the world
     {
