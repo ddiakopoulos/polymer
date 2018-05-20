@@ -60,8 +60,8 @@ void material_library::import_library()
         {
             if (starts_with(inst.key(), "@"))
             {
-                std::string key_name = inst.key();
-                auto type_name = key_name.substr(1);
+                const std::string type_key = inst.key();
+                const std::string type_name = type_key.substr(1);
 
                 if (type_name == get_typename<polymer_pbr_standard>())
                 {
@@ -69,7 +69,7 @@ void material_library::import_library()
                     *new_instance = inst.value();
                     instances[it.key()] = new_instance;
                 }
-                if (type_name == get_typename<polymer_blinn_phong_standard>())
+                else if (type_name == get_typename<polymer_blinn_phong_standard>())
                 {
                     std::shared_ptr<polymer_blinn_phong_standard> new_instance(new polymer_blinn_phong_standard());
                     *new_instance = inst.value();

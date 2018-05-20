@@ -102,8 +102,5 @@ void environment::export_environment(const std::string & export_path)
         environment[std::to_string(e)] = entity;
     }
 
-    std::cout << environment.dump(4) << std::endl;
-
-    //auto json_str = cereal::serialize_to_json(*this);
-    //write_file_text(export_path, json_str);
+    write_file_text(export_path, environment.dump(4));
 }

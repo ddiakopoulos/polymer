@@ -76,15 +76,13 @@ namespace polymer
     }
 
     inline void to_json(json & j, const polymer_blinn_phong_standard & p) {
-        visit_fields(const_cast<polymer_blinn_phong_standard&>(p), [&j](const char * name, auto & field, auto... metadata)
-        {
+        visit_fields(const_cast<polymer_blinn_phong_standard&>(p), [&j](const char * name, auto & field, auto... metadata) {
             j[name] = field;
         });
     }
 
     inline void from_json(const json & archive, polymer_blinn_phong_standard & m) {
-        visit_fields(const_cast<polymer_blinn_phong_standard&>(m), [&m, &archive](const char * name, auto & field, auto... metadata)
-        {
+        visit_fields(m, [&archive](const char * name, auto & field, auto... metadata) {
             field = archive.at(name).get<std::remove_reference_t<decltype(field)>>();
         });
     }
@@ -159,15 +157,13 @@ namespace polymer
     }
 
     inline void to_json(json & j, const polymer_pbr_standard & p) {
-        visit_fields(const_cast<polymer_pbr_standard&>(p), [&j](const char * name, auto & field, auto... metadata) 
-        { 
+        visit_fields(const_cast<polymer_pbr_standard&>(p), [&j](const char * name, auto & field, auto... metadata) { 
             j[name] = field;
         });
     }
 
     inline void from_json(const json & archive, polymer_pbr_standard & m) {
-        visit_fields(const_cast<polymer_pbr_standard&>(m), [&m, &archive](const char * name, auto & field, auto... metadata)
-        {
+        visit_fields(m, [&archive](const char * name, auto & field, auto... metadata) {
             field = archive.at(name).get<std::remove_reference_t<decltype(field)>>();
         });
     }

@@ -120,6 +120,12 @@ namespace polymer
         visit_fields(const_cast<identifier_component&>(p), [&j](const char * name, auto & field, auto... metadata) { j.push_back({ name, field }); });
     }
 
+    inline void from_json(const json & archive, identifier_component & m) {
+        visit_fields(m, [&archive](const char * name, auto & field, auto... metadata) {
+            field = archive.at(name).get<std::remove_reference_t<decltype(field)>>();
+        });
+    };
+
     ////////////////////////
     //   mesh_component   //
     ////////////////////////
@@ -142,6 +148,12 @@ namespace polymer
     inline void to_json(json & j, const mesh_component & p) {
         visit_fields(const_cast<mesh_component&>(p), [&j](const char * name, auto & field, auto... metadata) { j.push_back({ name, field }); });
     }
+
+    inline void from_json(const json & archive, mesh_component & m) {
+        visit_fields(m, [&archive](const char * name, auto & field, auto... metadata) {
+            field = archive.at(name).get<std::remove_reference_t<decltype(field)>>();
+        });
+    };
 
     ////////////////////////////
     //   material_component   //
@@ -167,6 +179,12 @@ namespace polymer
         visit_fields(const_cast<material_component&>(p), [&j](const char * name, auto & field, auto... metadata) { j.push_back({ name, field }); });
     }
 
+    inline void from_json(const json & archive, material_component & m) {
+        visit_fields(m, [&archive](const char * name, auto & field, auto... metadata) {
+            field = archive.at(name).get<std::remove_reference_t<decltype(field)>>();
+        });
+    };
+
     ////////////////////////////
     //   geometry_component   //
     ////////////////////////////
@@ -187,6 +205,12 @@ namespace polymer
     inline void to_json(json & j, const geometry_component & p) {
         visit_fields(const_cast<geometry_component&>(p), [&j](const char * name, auto & field, auto... metadata) { j.push_back({ name, field }); });
     }
+
+    inline void from_json(const json & archive, geometry_component & m) {
+        visit_fields(m, [&archive](const char * name, auto & field, auto... metadata) {
+            field = archive.at(name).get<std::remove_reference_t<decltype(field)>>();
+        });
+    };
 
     ///////////////////////////////
     //   point_light_component   //
@@ -212,6 +236,12 @@ namespace polymer
         visit_fields(const_cast<point_light_component&>(p), [&j](const char * name, auto & field, auto... metadata) { j.push_back({ name, field }); });
     }
 
+    inline void from_json(const json & archive, point_light_component & m) {
+        visit_fields(m, [&archive](const char * name, auto & field, auto... metadata) {
+            field = archive.at(name).get<std::remove_reference_t<decltype(field)>>();
+        });
+    };
+
     /////////////////////////////////////
     //   directional_light_component   //
     /////////////////////////////////////
@@ -236,6 +266,12 @@ namespace polymer
     inline void to_json(json & j, const directional_light_component & p) {
         visit_fields(const_cast<directional_light_component&>(p), [&j](const char * name, auto & field, auto... metadata) { j.push_back({ name, field }); });
     }
+
+    inline void from_json(const json & archive, directional_light_component & m) {
+        visit_fields(m, [&archive](const char * name, auto & field, auto... metadata) {
+            field = archive.at(name).get<std::remove_reference_t<decltype(field)>>();
+        });
+    };
 
     ///////////////////////////////////////////////////////////
     //   scene_graph_component & world_transform_component   //
@@ -263,6 +299,12 @@ namespace polymer
     inline void to_json(json & j, const scene_graph_component & p) {
         visit_fields(const_cast<scene_graph_component&>(p), [&j](const char * name, auto & field, auto... metadata) { j.push_back({ name, field }); });
     }
+
+    inline void from_json(const json & archive, scene_graph_component & m) {
+        visit_fields(m, [&archive](const char * name, auto & field, auto... metadata) {
+            field = archive.at(name).get<std::remove_reference_t<decltype(field)>>();
+        });
+    };
 
     struct world_transform_component : public base_component
     {
