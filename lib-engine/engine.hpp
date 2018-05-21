@@ -5,13 +5,15 @@
 
 #include "profiling.hpp"
 #include "logging.hpp"
+
 #include "asset-handle.hpp"
 #include "asset-handle-utils.hpp"
 #include "asset-resolver.hpp"
-#include "material.hpp"
-#include "material-library.hpp"
+
 #include "shader.hpp"
+#include "material.hpp"
 #include "shader-library.hpp"
+#include "material-library.hpp"
 
 #include "openvr-hmd.hpp"
 #include "openvr-camera.hpp"
@@ -24,6 +26,8 @@
 #include "system-identifier.hpp"
 #include "system-transform.hpp"
 #include "system-collision.hpp"
+#include "system-render.hpp"
+
 #include "renderer-pbr.hpp"
 #include "renderer-debug.hpp"
 
