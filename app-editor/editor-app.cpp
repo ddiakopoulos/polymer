@@ -441,7 +441,10 @@ void scene_editor_app::on_draw()
             const float3 scale = scene.xform_system->get_local_transform(e)->local_scale;
             const float4x4 modelMatrix = mul(p.matrix(), make_scaling_matrix(scale));
             program.uniform("u_modelMatrix", modelMatrix);
-            scene.render_system->get_mesh_component(e)->draw();
+            if (auto mesh = scene.render_system->get_mesh_component(e))
+            {
+                mesh->draw();
+            }
         }
         program.unbind();
 

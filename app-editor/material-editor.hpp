@@ -255,6 +255,8 @@ struct material_editor_window final : public glfw_window
                 {
                     if (!stringBuffer.empty())
                     {
+                        // 0 is the default material -- skip
+
                         if (materialTypeSelection == 1) // pbr
                         {
                             auto new_material = std::make_shared<polymer_pbr_standard>();
@@ -305,9 +307,11 @@ struct material_editor_window final : public glfw_window
                     return {};
                 };
 
+                // Set the material on the preview mesh
                 // This is by index. Future: might be easier if materials were entities too.
                 std::shared_ptr<material_interface> mat = material_handle::list()[assetSelection].get();
                 const std::string material_handle_name = index_to_handle_name(assetSelection);
+                std::cout << material_handle_name << std::endl;
                 material_comp->material = material_handle(material_handle_name);
                 assert(!material_handle_name.empty());
 
@@ -337,9 +341,17 @@ struct material_editor_window final : public glfw_window
                     {
                         if (inspected_entity)
                         {
+                            // Set the inspected entity to the default material
                             auto mc = scene.render_system->get_material_component(inspected_entity);
                             mc->material = material_handle(material_library::kDefaultMaterialId);
                         }
+
+                        // Set the preview entity to the default material
+                        material_comp->material = material_handle(material_library::kDefaultMaterialId);
+
+                        // This item must have been selected, so we must force unselect it
+                        assetSelection = -1;
+
                         scene.mat_library->remove_material(material_handle_name);
                         ImGui::CloseCurrentPopup();
                     }
