@@ -28,9 +28,10 @@ namespace polymer
             if (node->parent != kInvalidEntity)
             {
                 auto parent_node = scene_graph_transforms.get(node->parent);
+
                 if (parent_node)
                 {
-                    world_xform->world_pose = node->local_pose * parent_node->local_pose; // local pose is changing from the gizmo
+                    world_xform->world_pose = parent_node->local_pose * node->local_pose;
                 }
             }
             else
@@ -135,8 +136,6 @@ namespace polymer
 
         bool set_local_transform(entity e, const transform new_transform)
         {
-            std::cout << "set_local_transform: " << e << " - " << new_transform << std::endl;
-
             if (e == kInvalidEntity) return kInvalidEntity;
             if (auto * node = scene_graph_transforms.get(e))
             {
