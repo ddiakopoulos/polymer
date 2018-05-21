@@ -47,6 +47,7 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
     igm->add_font(droidSansTTFBytes);
 
     cam.look_at({ 0, 9.5f, -6.0f }, { 0, 0.1f, 0 });
+    cam.farclip = 256;
     flycam.set_camera(&cam);
 
     load_editor_intrinsic_assets("../assets/models/runtime/");
@@ -402,6 +403,10 @@ void scene_editor_app::on_draw()
         glViewport(0, 0, width, height);
         fullscreen_surface->draw(scene.render_system->get_renderer()->get_color_texture(0));
 
+        if (show_grid)
+        {
+            grid.draw(viewProjectionMatrix);
+        }
         gl_check_error(__FILE__, __LINE__);
     }
 
@@ -622,6 +627,9 @@ void scene_editor_app::on_draw()
 
         gui::imgui_fixed_window_begin("Renderer", topLeftPane);
         {
+            ImGui::Dummy({ 0, 10 });
+
+            ImGui::Checkbox("Show Floor Grid", &show_grid);
             ImGui::Dummy({ 0, 10 });
 
             if (ImGui::TreeNode("Core"))

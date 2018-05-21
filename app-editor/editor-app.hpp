@@ -2,6 +2,7 @@
 #include "gl-gizmo.hpp"
 #include "gl-imgui.hpp"
 #include "gl-texture-view.hpp"
+#include "gl-renderable-grid.hpp"
 
 #include "ecs/component-pool.hpp"
 #include "ecs/core-ecs.hpp"
@@ -28,8 +29,11 @@ struct scene_editor_app final : public polymer_app
     fps_camera_controller flycam;
     profiler<simple_cpu_timer> editorProfiler;
     gl_shader_monitor shaderMonitor { "../assets/" };
+    gl_renderable_grid grid{ 1.f, 512, 512 };
+
     ImGui::editor_app_log log;
     bool show_imgui = true;
+    bool show_grid = true;
     bool should_open_material_window = false;
 
     shader_handle wireframeHandle{ "wireframe" };

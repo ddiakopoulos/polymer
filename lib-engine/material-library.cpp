@@ -14,6 +14,9 @@ const std::string material_library::kDefaultMaterialId = "default-material";
 
 material_library::material_library(const std::string & library_path) : library_path(library_path)
 {
+    // Create an empty asset for textures. 
+    create_handle_for_asset("", gl_texture_2d());
+
     // Create a default material and create an asset handle for it (also add to local instances)
     std::shared_ptr<polymer_default_material> default = std::make_shared<polymer_default_material>();
     create_handle_for_asset(kDefaultMaterialId.c_str(), static_cast<std::shared_ptr<material_interface>>(default));
