@@ -15,8 +15,7 @@ struct sample_engine_scene final : public polymer_app
     perspective_camera cam;
     fps_camera_controller flycam;
 
-    gl_shader_monitor shaderMonitor{ "../../assets/" };
-
+    std::unique_ptr<gl_shader_monitor> shaderMonitor;
     std::unique_ptr<entity_orchestrator> orchestrator;
     std::unique_ptr<asset_resolver> resolver;
     std::unique_ptr<pbr_renderer> renderer;
@@ -43,36 +42,38 @@ sample_engine_scene::sample_engine_scene() : polymer_app(1280, 720, "sample-engi
     glfwGetWindowSize(window, &width, &height);
     glViewport(0, 0, width, height);
 
-    shaderMonitor.watch("default-shader",
+    shaderMonitor.reset(new gl_shader_monitor("../../assets/"));
+
+    shaderMonitor->watch("default-shader",
         "../../assets/shaders/renderer/forward_lighting_vert.glsl",
         "../../assets/shaders/renderer/default_material_frag.glsl",
         "../../assets/shaders/renderer");
 
-    shaderMonitor.watch("wireframe",
+    shaderMonitor->watch("wireframe",
         "../../assets/shaders/wireframe_vert.glsl",
         "../../assets/shaders/wireframe_frag.glsl",
         "../../assets/shaders/wireframe_geom.glsl",
         "../../assets/shaders/renderer");
 
-    shaderMonitor.watch("blinn-phong",
+    shaderMonitor->watch("blinn-phong",
         "../../assets/shaders/renderer/forward_lighting_vert.glsl",
         "../../assets/shaders/renderer/forward_lighting_blinn_phong_frag.glsl",
         "../../assets/shaders/renderer");
 
-    shaderMonitor.watch("sky-hosek",
+    shaderMonitor->watch("sky-hosek",
         "../../assets/shaders/sky_vert.glsl", 
         "../../assets/shaders/sky_hosek_frag.glsl");
 
-    shaderMonitor.watch("depth-prepass",
+    shaderMonitor->watch("depth-prepass",
         "../../assets/shaders/renderer/depth_prepass_vert.glsl",
         "../../assets/shaders/renderer/depth_prepass_frag.glsl",
         "../../assets/shaders/renderer");
 
-    shaderMonitor.watch("post-tonemap",
+    shaderMonitor->watch("post-tonemap",
         "../../assets/shaders/renderer/post_tonemap_vert.glsl",
         "../../assets/shaders/renderer/post_tonemap_frag.glsl");
 
-    shaderMonitor.watch("cascaded-shadows",
+    shaderMonitor->watch("cascaded-shadows",
         "../../assets/shaders/renderer/shadowcascade_vert.glsl",
         "../../assets/shaders/renderer/shadowcascade_frag.glsl",
         "../../assets/shaders/renderer/shadowcascade_geom.glsl",
@@ -174,7 +175,7 @@ void sample_engine_scene::on_update(const app_update_event & e)
     int width, height;
     glfwGetWindowSize(window, &width, &height);
     flycam.update(e.timestep_ms);
-    shaderMonitor.handle_recompile();
+    shaderMonitor->handle_recompile();
 }
 
 void sample_engine_scene::on_draw()
