@@ -29,6 +29,8 @@ namespace polymer
         renderer_settings settings;
         std::unique_ptr<pbr_renderer> renderer;
 
+        friend class asset_resolver; // for private access to the components
+
     public:
 
         transform_system * xform_system{ nullptr };

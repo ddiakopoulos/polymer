@@ -57,6 +57,7 @@ namespace polymer
             auto new_component = geometry_component(e);
             new_component = *static_cast<geometry_component *>(data);
             meshes[e] = new_component;
+            return true;
         }
 
         virtual void destroy(entity e) override final 

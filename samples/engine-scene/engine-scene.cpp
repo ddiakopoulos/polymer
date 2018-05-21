@@ -5,6 +5,9 @@
 #include "index.hpp"
 #include "engine.hpp"
 
+#include "ecs/core-ecs.hpp"
+#include "environment.hpp"
+
 using namespace polymer;
 
 struct sample_engine_scene final : public polymer_app
@@ -70,11 +73,6 @@ sample_engine_scene::sample_engine_scene() : polymer_app(1280, 720, "sample-engi
         "../../assets/shaders/renderer/shadowcascade_geom.glsl",
         "../../assets/shaders/renderer");
 
-    for (auto & shader : shader_handle::list())
-    {
-        std::cout << "Shader Handle: " << shader.name << std::endl;
-    }
-
     fullscreen_surface.reset(new simple_texture_view());
 
     orchestrator.reset(new entity_orchestrator());
@@ -82,9 +80,7 @@ sample_engine_scene::sample_engine_scene() : polymer_app(1280, 720, "sample-engi
     // Initial renderer settings
     renderer_settings settings;
     settings.renderSize = int2(width, height);
-    renderer.reset(new pbr_renderer(orchestrator.get(), settings));
-
-    scene.render_system = orchestrator->create_system<pbr_renderer>(orchestrator.get(), settings);
+    scene.render_system = orchestrator->create_system<render_system>(settings, orchestrator.get());
     scene.collision_system = orchestrator->create_system<collision_system>(orchestrator.get());
     scene.xform_system = orchestrator->create_system<transform_system>(orchestrator.get());
     scene.identifier_system = orchestrator->create_system<identifier_system>(orchestrator.get());
@@ -104,9 +100,11 @@ sample_engine_scene::sample_engine_scene() : polymer_app(1280, 720, "sample-engi
     scene.skybox.reset(new gl_hosek_sky());
     scene.skybox->onParametersChanged = [&]
     {
-        scene.render_system->directional_lights[sunlight].data.direction = scene.skybox->get_sun_direction();
-        scene.render_system->directional_lights[sunlight].data.color = float3(1.f, 1.0f, 1.0f);
-        scene.render_system->directional_lights[sunlight].data.amount = 1.0f;
+        directional_light_component dir_light;
+        dir_light.data.direction = scene.skybox->get_sun_direction();
+        dir_light.data.color = float3(1.f, 1.0f, 1.0f);
+        dir_light.data.amount = 1.f;
+        scene.render_system->create(sunlight, std::move(dir_light));
     };
 
     // Set initial values on the skybox with the sunlight entity we just created
@@ -121,35 +119,35 @@ sample_engine_scene::sample_engine_scene() : polymer_app(1280, 720, "sample-engi
     resolver.reset(new asset_resolver());
     resolver->resolve("../../assets/", &scene, scene.mat_library.get());
 
-    // Debugging
+    // Creating an entity programmatically
     {
-        // Create a debug entity
-        const entity debug_sphere = orchestrator->create_entity();
+        create_handle_for_asset("debug-icosahedron", make_mesh_from_geometry(make_icosasphere(3))); // gpu mesh
+        create_handle_for_asset("debug-icosahedron", make_icosasphere(3)); // cpu mesh
 
-        // Create assets and assign them to handles
-        create_handle_for_asset("debug-sphere", make_icosasphere());
-        create_handle_for_asset("debug-sphere", make_mesh_from_geometry(make_icosasphere()));
+        // Create a debug entity
+        const entity debug_icosa = scene.track_entity(orchestrator->create_entity());
 
         // Create mesh component for the gpu mesh
-        polymer::mesh_component mesh_component(debug_sphere);
-        mesh_component.mesh = gpu_mesh_handle("debug-sphere");
-        scene.render_system->meshes[debug_sphere] = mesh_component;
+        polymer::mesh_component mesh_component(debug_icosa);
+        mesh_component.mesh = gpu_mesh_handle("debug-icosahedron");
+        scene.render_system->create(debug_icosa, std::move(mesh_component));
 
-        // Create material component
-        polymer::material_component mat_component(debug_sphere);
-        mat_component.material = material_handle("sample-material");
-        scene.render_system->materials[debug_sphere] = mat_component;
+        polymer::material_component material_component(debug_icosa);
+        material_component.material = material_handle(material_library::kDefaultMaterialId);
+        scene.render_system->create(debug_icosa, std::move(material_component));
 
-        // Create geom component for the cpu geometry (for collision + raycasting)
-        polymer::geometry_component geom_component(debug_sphere);
-        geom_component.geom = cpu_mesh_handle("debug-sphere");
-        scene.collision_system->meshes[debug_sphere] = geom_component;
+        scene.xform_system->create(debug_icosa, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
+        scene.identifier_system->create(debug_icosa, "debug-icosahedron");
+        scene.collision_system->meshes[debug_icosa].geom = cpu_mesh_handle("debug-icosahedron"); // fixme, direct list accessor
 
-        // Create transform and name components
-        scene.xform_system->create(debug_sphere, transform(), { 1.f, 1.f, 1.f });
-        scene.identifier_system->create(debug_sphere, "debug object: sphere");
+        renderable debug_icosahedron_renderable;
+        debug_icosahedron_renderable.e = debug_icosa;
+        debug_icosahedron_renderable.material = scene.render_system->get_material_component(debug_icosa);
+        debug_icosahedron_renderable.mesh = scene.render_system->get_mesh_component(debug_icosa);
+        debug_icosahedron_renderable.scale = scene.xform_system->get_local_transform(debug_icosa)->local_scale;
+        debug_icosahedron_renderable.t = scene.xform_system->get_world_transform(debug_icosa)->world_pose;
 
-        payload.render_set.push_back(debug_sphere);
+        payload.render_set.push_back(debug_icosahedron_renderable);
     }
 
     cam.look_at({ 0, 0, 2 }, { 0, 0.1f, 0 });
@@ -189,14 +187,14 @@ void sample_engine_scene::on_draw()
     const float4x4 viewProjectionMatrix = mul(projectionMatrix, viewMatrix);
 
     payload.views.emplace_back(view_data(viewIndex, cam.pose, projectionMatrix));
-    scene.render_system->render_frame(payload);
+    scene.render_system->get_renderer()->render_frame(payload);
 
     glUseProgram(0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, width, height);
     glClearColor(1.f, 0.25f, 0.25f, 1.0f);
 
-    fullscreen_surface->draw(scene.render_system->get_color_texture(viewIndex));
+    fullscreen_surface->draw(scene.render_system->get_renderer()->get_color_texture(viewIndex));
     payload.views.clear();
 
     gl_check_error(__FILE__, __LINE__);

@@ -26,6 +26,7 @@
 #include "renderer-pbr.hpp"
 #include "system-collision.hpp"
 #include "environment.hpp"
+#include "system-render.hpp"
 
 namespace polymer
 {
