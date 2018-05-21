@@ -4,19 +4,14 @@
 #include "gl-loaders.hpp"
 #include "math-core.hpp"
 
-sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "VR Sandbox")
+sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-scene")
 {
-    scoped_timer t("constructor");
-
     int windowWidth, windowHeight;
     glfwGetWindowSize(window, &windowWidth, &windowHeight);
 
-    igm.reset(new gui::imgui_instance(window));
+    imgui.reset(new gui::imgui_instance(window));
 
     cameraController.set_camera(&debugCam);
-
-    // Initialize Bullet physics
-    setup_physics();
 
     try
     {
@@ -33,8 +28,8 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "VR Sandbox")
         std::cout << "OpenVR Exception: " << e.what() << std::endl;
     }
 
-
-    gl_check_error(__FILE__, __LINE__);
+    // Initialize Bullet physics
+    setup_physics();
 }
 
 sample_vr_app::~sample_vr_app()
@@ -68,13 +63,12 @@ void sample_vr_app::on_window_resize(int2 size)
 void sample_vr_app::on_input(const app_input_event & event) 
 {
     cameraController.handle_input(event);
-    if (igm) igm->update_input(event);
+    if (imgui) imgui->update_input(event);
 }
 
 void sample_vr_app::on_update(const app_update_event & e) 
 {
     cameraController.update(e.timestep_ms);
-
     shaderMonitor.handle_recompile();
 
     if (hmd)
@@ -169,7 +163,7 @@ void sample_vr_app::on_draw()
 {
     glfwMakeContextCurrent(window);
 
-    if (igm) igm->begin_frame();
+    imgui->begin_frame();
 
     int width, height;
     glfwGetWindowSize(window, &width, &height);
@@ -219,7 +213,7 @@ void sample_vr_app::on_draw()
         ImGui::Text("Head Pose: %f, %f, %f", headPose.position.x, headPose.position.y, headPose.position.z);
     }
 
-    if (igm) igm->end_frame();
+    imgui->end_frame();
 
     glfwSwapBuffers(window);
 
@@ -230,7 +224,15 @@ void sample_vr_app::on_draw()
 
 int main(int argc, char * argv[])
 {
-    sample_vr_app app;
-    app.main_loop();
+    try
+    {
+        sample_vr_app app;
+        app.main_loop();
+    }
+    catch (const std::exception & e)
+    {
+        POLYMER_ERROR("[Fatal] Caught exception: \n" << e.what());
+        return EXIT_FAILURE;
+    }
     return EXIT_SUCCESS;
 }

@@ -135,8 +135,10 @@ namespace polymer
 
     template<class F> void visit_components(entity e, render_system * system, F f)
     {
-        //auto iter = system->meshes.find(e);
-        //if (iter != system->meshes.end()) f("geometry component (collision)", iter->second);
+        if (auto ptr = system->get_mesh_component(e)) f("mesh component", *ptr);
+        else if (auto ptr = system->get_material_component(e)) f("material component", *ptr);
+        else if (auto ptr = system->get_point_light_component(e)) f("point light component", *ptr);
+        else if (auto ptr = system->get_directional_light_component(e)) f("directional light component", *ptr);
     }
 
 } // end namespace polymer

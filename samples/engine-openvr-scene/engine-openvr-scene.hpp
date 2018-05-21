@@ -113,7 +113,7 @@ struct sample_vr_app : public polymer_app
     perspective_camera debugCam;
     fps_camera_controller cameraController;
 
-    gl_shader_monitor shaderMonitor = { "../assets/" };
+    gl_shader_monitor shaderMonitor = { "../../assets/" };
     
     std::vector<viewport_t> viewports;
     vr_app_state scene;
@@ -124,7 +124,7 @@ struct sample_vr_app : public polymer_app
     std::shared_ptr<bullet_engine> physicsEngine;
     std::unique_ptr<physics_visualizer> physicsDebugRenderer;
 
-    std::unique_ptr<gui::imgui_instance> igm;
+    std::unique_ptr<gui::imgui_instance> imgui;
 
     sample_vr_app();
     ~sample_vr_app();

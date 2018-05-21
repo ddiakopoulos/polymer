@@ -266,6 +266,7 @@ void scene_editor_app::on_input(const app_input_event & event)
 
             if (event.value[0] == GLFW_KEY_SPACE && event.action == GLFW_RELEASE)
             {
+                gizmo_selector->clear();
                 scene.export_environment("polymer-environment-export.json");
                 scene.import_environment("polymer-environment-export.json", orchestrator);
                 the_render_payload.render_set.clear();

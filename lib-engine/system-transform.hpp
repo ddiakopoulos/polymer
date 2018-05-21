@@ -165,7 +165,6 @@ namespace polymer
            scene_graph_transforms.for_each([&](scene_graph_component & t) 
            { 
                const auto entity = t.get_entity();
-               std::cout << "Refreshing: " << entity << std::endl;
                if (entity != kInvalidEntity) recalculate_world_transform(entity);
            });
         }
