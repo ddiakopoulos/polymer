@@ -444,7 +444,7 @@ void scene_editor_app::on_draw()
             {
                 gizmo_selector->clear();
                 the_render_payload.render_set.clear();
-                scene.import_environment(export_path, orchestrator);
+                scene.export_environment(export_path);
                 glfwSetWindowTitle(window, export_path.c_str());
             }
         }
