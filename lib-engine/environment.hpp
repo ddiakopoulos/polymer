@@ -220,7 +220,7 @@ namespace polymer
 
     struct point_light_component : public base_component
     {
-        bool enabled = true;
+        bool enabled{ true };
         uniforms::point_light data;
         point_light_component() {};
         point_light_component(entity e) : base_component(e) {}
@@ -284,7 +284,7 @@ namespace polymer
         scene_graph_component() {};
         scene_graph_component(entity e) : base_component(e) {}
         polymer::transform local_pose;
-        polymer::float3 local_scale;
+        polymer::float3 local_scale{ 1, 1, 1 };
         entity parent{ kInvalidEntity };
         std::vector<entity> children;
     };

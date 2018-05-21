@@ -17,14 +17,14 @@ namespace uniforms
     {
         ALIGNED(16) float3    color;
         ALIGNED(16) float3    position;
-        float                 radius;
+        float                 radius{ 0.f };
     };
 
     struct directional_light
     {
         ALIGNED(16) float3    color;
         ALIGNED(16) float3    direction;
-        float                 amount; // constant
+        float                 amount{ 0.f }; // constant
     };
 
     struct spot_light

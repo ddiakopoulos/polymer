@@ -214,10 +214,7 @@ void scene_editor_app::on_input(const app_input_event & event)
 
             if (event.value[0] == GLFW_KEY_SPACE && event.action == GLFW_RELEASE)
             {
-                gizmo_selector->clear();
-                scene.export_environment("polymer-environment-export.json");
-                scene.import_environment("polymer-environment-export.json", orchestrator);
-                the_render_payload.render_set.clear();
+
             }
         }
 
@@ -432,8 +429,9 @@ void scene_editor_app::on_draw()
             const auto import_path = windows_file_dialog("polymer scene", "json", true);
             if (!import_path.empty())
             {
-                scene.render_system->destroy(kAllEntities);
+                scene.destroy(kAllEntities);
                 gizmo_selector->clear();
+                the_render_payload.render_set.clear();
                 scene.import_environment(import_path, orchestrator);
                 glfwSetWindowTitle(window, import_path.c_str());
             }
@@ -445,6 +443,7 @@ void scene_editor_app::on_draw()
             if (!export_path.empty())
             {
                 gizmo_selector->clear();
+                the_render_payload.render_set.clear();
                 scene.import_environment(export_path, orchestrator);
                 glfwSetWindowTitle(window, export_path.c_str());
             }
@@ -453,7 +452,9 @@ void scene_editor_app::on_draw()
         if (menu.item("New Scene", GLFW_MOD_CONTROL, GLFW_KEY_N, mod_enabled))
         {
             gizmo_selector->clear();
-            scene.render_system->destroy(kAllEntities);
+            scene.destroy(kAllEntities);
+            the_render_payload.render_set.clear();
+            glfwSetWindowTitle(window, "unsaved new scene");
         }
 
         if (menu.item("Take Screenshot", GLFW_MOD_CONTROL, GLFW_KEY_EQUAL, mod_enabled))
