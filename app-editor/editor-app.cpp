@@ -380,33 +380,47 @@ void scene_editor_app::on_draw()
     {
         editorProfiler.begin("gather-scene");
 
+        // Clear out transient scene payload data
         the_render_payload.views.clear();
+        the_render_payload.render_set.clear();
+        the_render_payload.point_lights.clear();
+        the_render_payload.sunlight = nullptr;
 
-        /*
-        // Remember to clear any transient per-frame data
-        the_render_payload.pointLights.clear();
-        the_render_payload.renderSet.clear();
-        the_render_payload.views.clear();
-
-        // Gather Lighting
-        for (auto & obj : scene.objects)
+        // Does the entity have a material? If so, we can render it. 
+        for (const auto e : scene.entity_list())
         {
-            if (auto * r = dynamic_cast<PointLight*>(obj.get()))
+            if (material_component * mat_c = scene.render_system->get_material_component(e))
             {
-                the_render_payload.pointLights.push_back(r->data);
+                auto mesh_c = scene.render_system->get_mesh_component(e);
+                if (!mesh_c) continue; // for the case that we just created a material component and haven't set a mesh yet
+
+                auto xform_c = scene.xform_system->get_world_transform(e);
+                assert(xform_c != nullptr); // we did something bad if this entity doesn't also have a world transform component
+
+                auto scale_c = scene.xform_system->get_local_transform(e);
+                assert(scale_c != nullptr); 
+
+                renderable r;
+                r.e = e;
+                r.material = mat_c;
+                r.mesh = mesh_c;
+                r.t = xform_c->world_pose;
+                r.scale = scale_c->local_scale;
+                the_render_payload.render_set.push_back(r);
             }
         }
 
-        // Gather Objects
-        std::vector<Renderable *> sceneObjects;
-        for (auto & obj : scene.objects)
+        // Gather directional lights
+        for (const auto e : scene.entity_list())
         {
-            if (auto * r = dynamic_cast<Renderable*>(obj.get()))
-            {
-                the_render_payload.renderSet.push_back(r);
-            }
+            if (auto dir_light_c = scene.render_system->get_directional_light_component(e)) the_render_payload.sunlight = dir_light_c;
         }
-        */
+
+        // Gather point lights
+        for (const auto e : scene.entity_list())
+        {
+            if (auto pt_light_c = scene.render_system->get_point_light_component(e)) the_render_payload.point_lights.push_back(pt_light_c);
+        }
 
         // Add single-viewport camera
         the_render_payload.views.push_back(view_data(0, cam.pose, projectionMatrix));
@@ -464,24 +478,24 @@ void scene_editor_app::on_draw()
         bool mod_enabled = !gizmo_selector->active();
         if (menu.item("Open Scene", GLFW_MOD_CONTROL, GLFW_KEY_O, mod_enabled))
         {
-            const auto selected_open_path = windows_file_dialog("polymer scene", "json", true);
-            if (!selected_open_path.empty())
+            const auto import_path = windows_file_dialog("polymer scene", "json", true);
+            if (!import_path.empty())
             {
                 scene.render_system->destroy(kAllEntities);
                 gizmo_selector->clear();
-                //cereal::deserialize_from_json(selected_open_path, scene.objects);
-                glfwSetWindowTitle(window, selected_open_path.c_str());
+                scene.import_environment(import_path, orchestrator);
+                glfwSetWindowTitle(window, import_path.c_str());
             }
         }
 
         if (menu.item("Save Scene", GLFW_MOD_CONTROL, GLFW_KEY_S, mod_enabled))
         {
-            const auto save_path = windows_file_dialog("polymer scene", "json", false);
-            if (!save_path.empty())
+            const auto export_path = windows_file_dialog("polymer scene", "json", false);
+            if (!export_path.empty())
             {
                 gizmo_selector->clear();
-                //write_file_text(save_path, cereal::serialize_to_json(scene.objects));
-                glfwSetWindowTitle(window, save_path.c_str());
+                scene.import_environment(export_path, orchestrator);
+                glfwSetWindowTitle(window, export_path.c_str());
             }
         }
 
@@ -593,14 +607,14 @@ void scene_editor_app::on_draw()
                     {
                         if (system_pointer)
                         {
-                            if (type_name == get_typename<identifier_component>()) system_pointer->create(selection, get_typeid<identifier_component>(), &identifier_component());
-                            if (type_name == get_typename<mesh_component>()) system_pointer->create(selection, get_typeid<mesh_component>(), &mesh_component());
-                            if (type_name == get_typename<material_component>()) system_pointer->create(selection, get_typeid<material_component>(), &material_component());
-                            if (type_name == get_typename<geometry_component>()) system_pointer->create(selection, get_typeid<geometry_component>(), &geometry_component());
-                            if (type_name == get_typename<point_light_component>()) system_pointer->create(selection, get_typeid<point_light_component>(), &point_light_component());
-                            if (type_name == get_typename<directional_light_component>()) system_pointer->create(selection, get_typeid<directional_light_component>(), &directional_light_component());
-                            if (type_name == get_typename<scene_graph_component>()) system_pointer->create(selection, get_typeid<scene_graph_component>(), &scene_graph_component());
-                            if (type_name == get_typename<identifier_component>()) system_pointer->create(selection, get_typeid<identifier_component>(), &identifier_component());
+                            if (type_name == get_typename<identifier_component>()) system_pointer->create(selection, get_typeid<identifier_component>(), &identifier_component(selection));
+                            else if (type_name == get_typename<mesh_component>()) system_pointer->create(selection, get_typeid<mesh_component>(), &mesh_component(selection));
+                            else if (type_name == get_typename<material_component>()) system_pointer->create(selection, get_typeid<material_component>(), &material_component(selection));
+                            else if (type_name == get_typename<geometry_component>()) system_pointer->create(selection, get_typeid<geometry_component>(), &geometry_component(selection));
+                            else if (type_name == get_typename<point_light_component>()) system_pointer->create(selection, get_typeid<point_light_component>(), &point_light_component(selection));
+                            else if (type_name == get_typename<directional_light_component>()) system_pointer->create(selection, get_typeid<directional_light_component>(), &directional_light_component(selection));
+                            else if (type_name == get_typename<scene_graph_component>()) system_pointer->create(selection, get_typeid<scene_graph_component>(), &scene_graph_component(selection));
+                            else if (type_name == get_typename<identifier_component>()) system_pointer->create(selection, get_typeid<identifier_component>(), &identifier_component(selection));
                         }
                     });
 
@@ -661,11 +675,11 @@ void scene_editor_app::on_draw()
 
             ImGui::Dummy({ 0, 10 });
 
-            //if (ImGui::TreeNode("Procedural Sky"))
-            //{
-            //    inspect_entity(nullptr, the_render_payload.skybox);
-            //    ImGui::TreePop();
-            //}
+            if (ImGui::TreeNode("Procedural Sky") && the_render_payload.skybox)
+            {
+                //build_imgui("skybox", *the_render_payload.skybox);
+                ImGui::TreePop();
+            }
 
             ImGui::Dummy({ 0, 10 });
 

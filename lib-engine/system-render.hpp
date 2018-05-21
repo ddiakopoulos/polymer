@@ -84,19 +84,23 @@ namespace polymer
         { 
             if (hash == get_typeid<mesh_component>()) 
             {
-                meshes[e] = *static_cast<mesh_component *>(data); return true;
+                meshes[e] = *static_cast<mesh_component *>(data);
+                return true;
             }
             else if (hash == get_typeid<material_component>()) 
             { 
-                materials[e] = *static_cast<material_component *>(data); return true;
+                materials[e] = *static_cast<material_component *>(data); 
+                return true;
             }
             else if (hash == get_typeid<point_light_component>()) 
             { 
-                point_lights[e] = *static_cast<point_light_component *>(data); return true;
+                point_lights[e] = *static_cast<point_light_component *>(data); 
+                return true;
             }
             else if (hash == get_typeid<directional_light_component>()) 
             { 
-                directional_lights[e] = *static_cast<directional_light_component *>(data); return true; 
+                directional_lights[e] = *static_cast<directional_light_component *>(data); 
+                return true; 
             }
             return false;
         }
@@ -136,9 +140,9 @@ namespace polymer
     template<class F> void visit_components(entity e, render_system * system, F f)
     {
         if (auto ptr = system->get_mesh_component(e)) f("mesh component", *ptr);
-        else if (auto ptr = system->get_material_component(e)) f("material component", *ptr);
-        else if (auto ptr = system->get_point_light_component(e)) f("point light component", *ptr);
-        else if (auto ptr = system->get_directional_light_component(e)) f("directional light component", *ptr);
+        if (auto ptr = system->get_material_component(e)) f("material component", *ptr);
+        if (auto ptr = system->get_point_light_component(e)) f("point light component", *ptr);
+        if (auto ptr = system->get_directional_light_component(e)) f("directional light component", *ptr);
     }
 
 } // end namespace polymer

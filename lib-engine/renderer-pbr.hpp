@@ -98,15 +98,6 @@ namespace polymer
         }
     };
 
-    struct renderable
-    {
-        entity e{ kInvalidEntity };
-        material_component * material{ nullptr };
-        mesh_component * mesh{ nullptr };
-        float3 scale{ 1, 1, 1 };
-        transform t;
-    };
-
     class render_system;
     struct render_payload
     {
