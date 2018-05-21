@@ -135,42 +135,6 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
     // Resolve asset_handles to resources on disk
     resolver.reset(new asset_resolver());
     resolver->resolve("../assets/", &scene, scene.mat_library.get());
-
-    // Debugging: 
-    {
-        create_handle_for_asset("debug-icosahedron", make_mesh_from_geometry(make_icosasphere(3))); // gpu mesh
-        create_handle_for_asset("debug-icosahedron", make_icosasphere(3)); // cpu mesh
-
-        // Create a debug entity
-        const entity debug_icosa = scene.track_entity(orchestrator.create_entity());
-
-        // Create mesh component for the gpu mesh
-        polymer::mesh_component mesh_component(debug_icosa);
-        mesh_component.mesh = gpu_mesh_handle("debug-icosahedron");
-        scene.render_system->create(debug_icosa, std::move(mesh_component));
-
-        polymer::material_component material_component(debug_icosa);
-        material_component.material = material_handle(material_library::kDefaultMaterialId);
-        scene.render_system->create(debug_icosa, std::move(material_component));
-
-        scene.xform_system->create(debug_icosa, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
-        scene.identifier_system->create(debug_icosa, "debug-icosahedron");
-        scene.collision_system->meshes[debug_icosa].geom = cpu_mesh_handle("debug-icosahedron"); // fixme, direct list accessor
-
-        renderable debug_icosahedron_renderable;
-        debug_icosahedron_renderable.e = debug_icosa;
-        debug_icosahedron_renderable.material = scene.render_system->get_material_component(debug_icosa);
-        debug_icosahedron_renderable.mesh = scene.render_system->get_mesh_component(debug_icosa);
-        debug_icosahedron_renderable.scale = scene.xform_system->get_local_transform(debug_icosa)->local_scale;
-        debug_icosahedron_renderable.t = scene.xform_system->get_world_transform(debug_icosa)->world_pose;
-
-        the_render_payload.render_set.push_back(debug_icosahedron_renderable);
-    }
-}
-
-scene_editor_app::~scene_editor_app()
-{ 
-
 }
 
 void scene_editor_app::on_drop(std::vector<std::string> filepaths)
@@ -183,10 +147,10 @@ void scene_editor_app::on_drop(std::vector<std::string> filepaths)
         if (fileExtension == "png" || fileExtension == "tga" || fileExtension == "jpg")
         {
             create_handle_for_asset(get_filename_without_extension(path).c_str(), load_image(path, false));
-            return;
+            continue;
         }
 
-        auto importedModel = import_model(path);
+        auto importedModel = import_model(path); // fbx and obj
 
         for (auto & m : importedModel)
         {

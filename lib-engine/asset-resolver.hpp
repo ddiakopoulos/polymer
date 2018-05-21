@@ -60,12 +60,15 @@ namespace polymer
                 auto path = entry.path().string(), name = path.substr(root_len + 1, path.size() - root_len - ext_len - 1);
                 for (auto & chr : path) if (chr == '\\') chr = '/';
 
-                const auto ext = entry.path().extension(); // also includes the dot
+                auto ext = entry.path().extension().string(); // also includes the dot
+                std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
 
-                if (ext == ".png" || ext == ".PNG" || ext == ".tga" || ext == ".jpg" || ext == ".jpeg")
+                if (ext == ".png" | ext == ".tga" || ext == ".jpg" || ext == ".jpeg")
                 {
-                    const auto filename_no_extension = get_filename_without_extension(path);
-                    for (auto & name : texture_names)
+                    auto filename_no_extension = get_filename_without_extension(path);
+                    std::transform(filename_no_extension.begin(), filename_no_extension.end(), filename_no_extension.begin(), ::tolower);
+
+                    for (const auto & name : texture_names)
                     {
                         if (name == filename_no_extension)
                         {
@@ -75,7 +78,7 @@ namespace polymer
                     }
                 }
 
-                if (ext == ".obj" || ".OBJ")
+                if (ext == ".obj")
                 {
                     // todo - .mesh, .fbx, .gltf
                     // all meshes are currently intrinsics, handled separately (for now)

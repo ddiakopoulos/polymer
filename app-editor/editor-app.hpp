@@ -46,7 +46,7 @@ struct scene_editor_app final : public polymer_app
     environment scene;
 
     scene_editor_app();
-    ~scene_editor_app();
+    ~scene_editor_app() {}
 
     void open_material_editor();
 
