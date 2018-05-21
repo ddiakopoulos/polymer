@@ -11,6 +11,7 @@
 #include "editor-inspector-ui.hpp"
 #include "arcball.hpp"
 #include "gl-texture-view.hpp"
+#include "win32.hpp"
 
 template<typename AssetHandleType>
 bool draw_listbox(const std::string & label, ImGuiTextFilter & filter, int & selection)
@@ -110,6 +111,8 @@ struct material_editor_window final : public glfw_window
         previewCam.pose = lookat_rh(float3(0, 0.25f, 2), float3(0, 0.001f, 0));
         auxImgui.reset(new gui::imgui_instance(window, true));
 
+        std::cout << get_current_directory() << std::endl;
+
         auto fontAwesomeBytes = read_file_binary("../assets/fonts/font_awesome_4.ttf");
         auxImgui->append_icon_font(fontAwesomeBytes);
 
@@ -200,6 +203,7 @@ struct material_editor_window final : public glfw_window
                 else
                 {
                     inspected_entity = kInvalidEntity;
+                    assetSelection = -1;
                 }
             }
 

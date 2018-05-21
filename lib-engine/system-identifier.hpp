@@ -29,14 +29,13 @@ namespace polymer
             register_system_for_type(this, get_typeid<identifier_component>());
         }
 
-        ~identifier_system() override { }
+        ~identifier_system() override {}
 
         virtual bool create(entity e, poly_typeid type, void * data) override final
         {
             if (type != get_typeid<identifier_component>()) { return false; }
             if (!get_name(e).empty()) throw std::runtime_error("duplicate names are not permitted");
-            identifier_component * c  = static_cast<identifier_component *>(data);
-            return set_name(e, c->id);
+            return set_name(e, static_cast<identifier_component *>(data)->id);
         }
 
         bool create(entity e, const std::string & name)

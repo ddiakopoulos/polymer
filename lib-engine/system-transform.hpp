@@ -23,10 +23,15 @@ namespace polymer
             auto world_xform = world_transforms.get(child);
 
             // If the node has a parent then we can compute a new world transform.
+            // Note that during deserialization we might not have created the parent yet
+            // so we are allowed to no-op given a null parent node
             if (node->parent != kInvalidEntity)
             {
                 auto parent_node = scene_graph_transforms.get(node->parent);
-                world_xform->world_pose = node->local_pose * parent_node->local_pose;
+                if (parent_node)
+                {
+                    world_xform->world_pose = node->local_pose * parent_node->local_pose; // local pose is changing from the gizmo
+                }
             }
             else
             {
@@ -41,7 +46,7 @@ namespace polymer
         void destroy_recursive(entity child)
         {
             auto node = scene_graph_transforms.get(child);
-            for (auto & n : node->children) destroy_recursive(n);
+            if (node) for (auto & n : node->children) destroy_recursive(n);
 
             // Erase world transform
             world_transforms.destroy(child);
@@ -68,10 +73,14 @@ namespace polymer
         { 
             if (hash != get_typeid<scene_graph_component>()) { return false; }
             auto new_component = static_cast<scene_graph_component *>(data);
-            return create(e, new_component->local_pose, new_component->local_scale);
+            return create(e, new_component->local_pose, new_component->local_scale, new_component->parent, new_component->children);
         }
 
-        bool create(entity e, const transform local_pose, const float3 local_scale)
+        bool create(entity e, 
+            const transform local_pose, 
+            const float3 local_scale = float3(1, 1, 1), 
+            const entity parent = kInvalidEntity, 
+            const std::vector<entity> & children = {})
         {
             const auto check_node = scene_graph_transforms.get(e);
             const auto check_world = world_transforms.get(e);
@@ -81,6 +90,8 @@ namespace polymer
                 auto world = world_transforms.emplace(world_transform_component(e));
                 node->local_pose = local_pose;
                 node->local_scale = local_scale;
+                node->children = children;
+                node->parent = parent;
                 recalculate_world_transform(e);
                 return true;
             }
@@ -94,6 +105,7 @@ namespace polymer
 
         bool add_child(entity parent, entity child)
         {
+            if (parent == child) throw std::invalid_argument("parent and child cannot be the same");
             if (parent == kInvalidEntity) throw std::invalid_argument("parent was invalid");
             if (child == kInvalidEntity) throw std::invalid_argument("child was invalid");
             if (!has_transform(parent)) throw std::invalid_argument("parent has no transform component");
@@ -123,6 +135,8 @@ namespace polymer
 
         bool set_local_transform(entity e, const transform new_transform)
         {
+            std::cout << "set_local_transform: " << e << " - " << new_transform << std::endl;
+
             if (e == kInvalidEntity) return kInvalidEntity;
             if (auto * node = scene_graph_transforms.get(e))
             {
@@ -174,7 +188,7 @@ namespace polymer
     {
         scene_graph_component * component = system->scene_graph_transforms.get(e);
         if (component != nullptr) f("transform component", *component);
-        // while inspecting, we need to continuously recalculate based on potentially changed properties
+        // while inspecting, we need to continuously recalculate based on potentially changed data
         system->recalculate_world_transform(e);
     }
 

@@ -125,6 +125,7 @@ template<class... A>
 inline bool build_imgui(const char * label, std::vector<entity> & e, const A & ... metadata)
 {
     if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
+    // todo - how to edit this? 
     return false;
 }
 

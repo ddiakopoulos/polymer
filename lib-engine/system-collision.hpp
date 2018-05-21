@@ -54,9 +54,7 @@ namespace polymer
         virtual bool create(entity e, poly_typeid hash, void * data) override final 
         { 
             if (hash != get_typeid<geometry_component>()) { return false; }
-            auto new_component = geometry_component(e);
-            new_component = *static_cast<geometry_component *>(data);
-            meshes[e] = new_component;
+            meshes[e] = *static_cast<geometry_component *>(data);
             return true;
         }
 

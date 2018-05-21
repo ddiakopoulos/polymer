@@ -13,6 +13,7 @@
 #include <Windows.h>
 #include <Commdlg.h>
 #include <tchar.h>
+#include <direct.h>
 
 using namespace polymer;
 
@@ -58,6 +59,18 @@ std::string windows_file_dialog(const std::string & filter_type, const std::stri
         return result;
     }
     else return {};
+}
+
+std::string get_current_directory()
+{
+    char buff[FILENAME_MAX];
+    _getcwd(buff, FILENAME_MAX);
+    return buff;
+}
+
+bool set_working_directory(const std::string & dir)
+{
+    return _chdir(dir.c_str()) == 0;
 }
 
 #ifdef UNICODE_WAS_UNDEFINED

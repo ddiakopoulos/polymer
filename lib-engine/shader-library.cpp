@@ -31,8 +31,8 @@ gl_shader_monitor::gl_shader_monitor(const std::string & root_path) : root_path(
         }
     });
 
-    walk_asset_dir();
-    handle_recompile();
+    //walk_asset_dir();
+    //handle_recompile();
 }
 
 gl_shader_monitor::~gl_shader_monitor()

@@ -35,6 +35,7 @@ struct scene_editor_app final : public polymer_app
     bool show_imgui = true;
     bool show_grid = true;
     bool should_open_material_window = false;
+    std::string working_dir_on_launch;
 
     shader_handle wireframeHandle{ "wireframe" };
     shader_handle iblHandle{ "ibl" };

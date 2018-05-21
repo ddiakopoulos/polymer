@@ -77,11 +77,19 @@ void environment::import_environment(const std::string & import_path, entity_orc
     const json env_doc = json::parse(read_file_text(import_path));
     std::unordered_map<entity, entity> remap_table;
 
+    // Remap
     for (auto entityIterator = env_doc.begin(); entityIterator != env_doc.end(); ++entityIterator)
     {
-        const entity entity_value = std::atoi(entityIterator.key().c_str());
+        const entity parsed_entity = std::atoi(entityIterator.key().c_str());
         const entity new_entity = track_entity(o.create_entity());
-        remap_table[entity_value] = new_entity; // remap old entity to new
+        remap_table[parsed_entity] = new_entity; // remap old entity to new (used for transform system)
+        std::cout << "Remapping: " << parsed_entity << " to " << new_entity << std::endl;
+    }
+
+    for (auto entityIterator = env_doc.begin(); entityIterator != env_doc.end(); ++entityIterator)
+    {
+        const entity parsed_entity = std::atoi(entityIterator.key().c_str());
+        const entity new_entity = remap_table[parsed_entity];
 
         const json & comp = entityIterator.value();
 
@@ -93,6 +101,9 @@ void environment::import_environment(const std::string & import_path, entity_orc
                 const std::string type_name = type_key.substr(1);
                 const poly_typeid id = get_typeid(type_name.c_str());
 
+                // This is a inefficient given that components are re-parsed and re-constructed
+                // for every system until a system finally creates it. We should eventually return a system
+                // for a component type.
                 visit_systems(this, [&](const char * system_name, auto * system_pointer)
                 {
                     if (system_pointer)
@@ -100,36 +111,48 @@ void environment::import_environment(const std::string & import_path, entity_orc
                         if (type_name == get_typename<identifier_component>())
                         {
                             identifier_component c = componentIterator.value();
+                            c.e = new_entity;
                             if (system_pointer->create(new_entity, id, &c)) std::cout << "Created " << type_name << " on " << system_name << std::endl;
                         }
                         else if (type_name == get_typename<mesh_component>())
                         {
                             mesh_component c = componentIterator.value();
+                            c.e = new_entity;
                             if (system_pointer->create(new_entity, id, &c)) std::cout << "Created " << type_name << " on " << system_name << std::endl;
                         }
                         else if (type_name == get_typename<material_component>())
                         {
                             material_component c = componentIterator.value();
+                            c.e = new_entity;
                             if (system_pointer->create(new_entity, id, &c)) std::cout << "Created " << type_name << " on " << system_name << std::endl;
                         }
                         else if (type_name == get_typename<geometry_component>())
                         {
                             geometry_component c = componentIterator.value();
+                            c.e = new_entity;
                             if (system_pointer->create(new_entity, id, &c)) std::cout << "Created " << type_name << " on " << system_name << std::endl;
                         }
                         else if (type_name == get_typename<point_light_component>())
                         {
                             point_light_component c = componentIterator.value();
+                            c.e = new_entity;
                             if (system_pointer->create(new_entity, id, &c)) std::cout << "Created " << type_name << " on " << system_name << std::endl;
                         }
                         else if (type_name == get_typename<directional_light_component>())
                         {
                             directional_light_component c = componentIterator.value();
+                            c.e = new_entity;
                             if (system_pointer->create(new_entity, id, &c)) std::cout << "Created " << type_name << " on " << system_name << std::endl;
                         }
                         else if (type_name == get_typename<scene_graph_component>())
                         {
                             scene_graph_component c = componentIterator.value();
+                            c.e = new_entity;
+
+                            // At this point, all the children entities serialized from disk refer to old ones. We need to update them.
+                            if (c.parent != kInvalidEntity) c.parent = remap_table[c.parent];
+                            for (auto & child : c.children) child = remap_table[child];
+
                             if (system_pointer->create(new_entity, id, &c)) std::cout << "Created " << type_name << " on " << system_name << std::endl;
                         }
                         else

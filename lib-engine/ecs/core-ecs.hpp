@@ -27,8 +27,9 @@ namespace polymer
     {
         entity e;
         friend struct component_hash;
+        friend class environment; // for serialization to modify e directly
     public:
-        explicit base_component(entity e = kInvalidEntity) : e(e) {}
+        explicit base_component(entity e = kInvalidEntity) : e(e) { }
         entity get_entity() const { return e; }
     };
 

@@ -32,6 +32,8 @@ void load_editor_intrinsic_assets(path root)
 
 scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
 {
+    working_dir_on_launch = get_current_directory();
+
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
 
@@ -294,6 +296,8 @@ void scene_editor_app::on_update(const app_update_event & e)
     int width, height;
     glfwGetWindowSize(window, &width, &height);
 
+    set_working_directory(working_dir_on_launch);
+
     editorProfiler.begin("on_update");
     flycam.update(e.timestep_ms);
     shaderMonitor.handle_recompile();
@@ -494,7 +498,7 @@ void scene_editor_app::on_draw()
         if (menu.item("entity")) 
         {
             std::vector<entity> list = { scene.track_entity(orchestrator.create_entity()) };
-            scene.xform_system->create(list[0], transform(), {});
+            scene.xform_system->create(list[0], transform());
             scene.identifier_system->create(list[0], "new entity");
             gizmo_selector->set_selection(list); // Newly spawned objects are selected by default
         }
@@ -560,14 +564,13 @@ void scene_editor_app::on_draw()
                     {
                         if (system_pointer)
                         {
-                            if (type_name == get_typename<identifier_component>()) system_pointer->create(selection, get_typeid<identifier_component>(), &identifier_component(selection));
+                            if      (type_name == get_typename<identifier_component>()) system_pointer->create(selection, get_typeid<identifier_component>(), &identifier_component(selection));
+                            else if (type_name == get_typename<scene_graph_component>()) system_pointer->create(selection, get_typeid<scene_graph_component>(), &scene_graph_component(selection));
                             else if (type_name == get_typename<mesh_component>()) system_pointer->create(selection, get_typeid<mesh_component>(), &mesh_component(selection));
                             else if (type_name == get_typename<material_component>()) system_pointer->create(selection, get_typeid<material_component>(), &material_component(selection));
                             else if (type_name == get_typename<geometry_component>()) system_pointer->create(selection, get_typeid<geometry_component>(), &geometry_component(selection));
                             else if (type_name == get_typename<point_light_component>()) system_pointer->create(selection, get_typeid<point_light_component>(), &point_light_component(selection));
                             else if (type_name == get_typename<directional_light_component>()) system_pointer->create(selection, get_typeid<directional_light_component>(), &directional_light_component(selection));
-                            else if (type_name == get_typename<scene_graph_component>()) system_pointer->create(selection, get_typeid<scene_graph_component>(), &scene_graph_component(selection));
-                            else if (type_name == get_typename<identifier_component>()) system_pointer->create(selection, get_typeid<identifier_component>(), &identifier_component(selection));
                         }
                     });
 
