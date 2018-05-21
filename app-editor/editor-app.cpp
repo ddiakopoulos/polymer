@@ -571,14 +571,12 @@ void scene_editor_app::on_draw()
 
             if (ImGui::BeginPopupModal("Create Component", NULL, ImGuiWindowFlags_AlwaysAutoResize))
             {
+                const entity selection = gizmo_selector->get_selection()[0];
+
                 ImGui::Dummy({ 0, 6 });
 
-                // Make a list of the material types (i.e. pbr, blinn-phong, etc)
                 std::vector<std::string> component_names;
-                enumerate_components([&](const char * name, poly_typeid type)
-                {
-                    component_names.push_back(name);
-                });
+                enumerate_components([&](const char * name, poly_typeid type) { component_names.push_back(name); });
 
                 static int componentTypeSelection = -1;
                 gui::Combo("Component", &componentTypeSelection, component_names);
@@ -587,6 +585,25 @@ void scene_editor_app::on_draw()
 
                 if (ImGui::Button("OK", ImVec2(120, 0)))
                 {
+                    if (componentTypeSelection == -1)ImGui::CloseCurrentPopup();
+
+                    const std::string type_name = component_names[componentTypeSelection];
+
+                    visit_systems(&scene, [&](const char * system_name, auto * system_pointer)
+                    {
+                        if (system_pointer)
+                        {
+                            if (type_name == get_typename<identifier_component>()) system_pointer->create(selection, get_typeid<identifier_component>(), &identifier_component());
+                            if (type_name == get_typename<mesh_component>()) system_pointer->create(selection, get_typeid<mesh_component>(), &mesh_component());
+                            if (type_name == get_typename<material_component>()) system_pointer->create(selection, get_typeid<material_component>(), &material_component());
+                            if (type_name == get_typename<geometry_component>()) system_pointer->create(selection, get_typeid<geometry_component>(), &geometry_component());
+                            if (type_name == get_typename<point_light_component>()) system_pointer->create(selection, get_typeid<point_light_component>(), &point_light_component());
+                            if (type_name == get_typename<directional_light_component>()) system_pointer->create(selection, get_typeid<directional_light_component>(), &directional_light_component());
+                            if (type_name == get_typename<scene_graph_component>()) system_pointer->create(selection, get_typeid<scene_graph_component>(), &scene_graph_component());
+                            if (type_name == get_typename<identifier_component>()) system_pointer->create(selection, get_typeid<identifier_component>(), &identifier_component());
+                        }
+                    });
+
                     ImGui::CloseCurrentPopup();
                 }
 

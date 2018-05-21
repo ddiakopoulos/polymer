@@ -96,50 +96,44 @@ void environment::import_environment(const std::string & import_path, entity_orc
                     {
                         if (type_name == get_typename<identifier_component>())
                         {
-                            identifier_component c(new_entity);
-                            c = componentIterator.value();
+                            identifier_component c = componentIterator.value();
                             if (system_pointer->create(new_entity, id, &c)) std::cout << "Created " << type_name << " on " << system_name << std::endl;
                         }
                         else if (type_name == get_typename<mesh_component>())
                         {
-                            mesh_component c(new_entity);
-                            c = componentIterator.value();
+                            mesh_component c = componentIterator.value();
                             if (system_pointer->create(new_entity, id, &c)) std::cout << "Created " << type_name << " on " << system_name << std::endl;
                         }
                         else if (type_name == get_typename<material_component>())
                         {
-                            material_component c(new_entity);
-                            c = componentIterator.value();
+                            material_component c = componentIterator.value();
                             if (system_pointer->create(new_entity, id, &c)) std::cout << "Created " << type_name << " on " << system_name << std::endl;
                         }
                         else if (type_name == get_typename<geometry_component>())
                         {
-                            geometry_component c(new_entity);
-                            c = componentIterator.value();
+                            geometry_component c = componentIterator.value();
                             if (system_pointer->create(new_entity, id, &c)) std::cout << "Created " << type_name << " on " << system_name << std::endl;
                         }
                         else if (type_name == get_typename<point_light_component>())
                         {
-                            point_light_component c(new_entity);
-                            c = componentIterator.value();
+                            point_light_component c = componentIterator.value();
                             if (system_pointer->create(new_entity, id, &c)) std::cout << "Created " << type_name << " on " << system_name << std::endl;
                         }
                         else if (type_name == get_typename<directional_light_component>())
                         {
-                            directional_light_component c(new_entity);
-                            c = componentIterator.value();
+                            directional_light_component c = componentIterator.value();
                             if (system_pointer->create(new_entity, id, &c)) std::cout << "Created " << type_name << " on " << system_name << std::endl;
                         }
                         else if (type_name == get_typename<scene_graph_component>())
                         {
-                            scene_graph_component c(new_entity);
-                            c = componentIterator.value();
+                            scene_graph_component c = componentIterator.value();
                             if (system_pointer->create(new_entity, id, &c)) std::cout << "Created " << type_name << " on " << system_name << std::endl;
                         }
                         else
                         {
                             throw std::runtime_error("component type name mismatch!");
                         }
+   
                     }
                 });
             }
