@@ -5,6 +5,7 @@
 #include "serialization.inl"
 #include "logging.hpp"
 #include "win32.hpp"
+#include "model-io.hpp"
 
 using namespace polymer;
 

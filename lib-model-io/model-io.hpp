@@ -6,6 +6,7 @@
 #include "math-core.hpp"
 #include "string_utils.hpp"
 #include "util.hpp"
+#include "geometry.hpp"
 
 #include <vector>
 #include <string>
@@ -42,19 +43,6 @@ namespace polymer
         uint32_t endFrame = 0;
         uint32_t trackCount = 0;
         std::vector<std::shared_ptr<animation_track>> tracks;
-    };
-
-    struct runtime_mesh
-    {
-        std::vector<float3> vertices;
-        std::vector<float3> normals;
-        std::vector<float4> colors;
-        std::vector<float2> texcoord0;
-        std::vector<float2> texcoord1;
-        std::vector<float3> tangents;
-        std::vector<float3> bitangents;
-        std::vector<uint3> faces;
-        std::vector<uint32_t> material;
     };
 
     struct bone

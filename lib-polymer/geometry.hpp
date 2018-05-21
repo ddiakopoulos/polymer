@@ -1,11 +1,26 @@
-#ifndef geometry_hpp
-#define geometry_hpp
+#pragma once
+
+#ifndef polymer_geometry_hpp
+#define polymer_geometry_hpp
 
 #include "math-core.hpp"
-#include "../lib-model-io/model-io.hpp"
 
 namespace polymer
 {
+
+    struct runtime_mesh
+    {
+        std::vector<float3> vertices;
+        std::vector<float3> normals;
+        std::vector<float4> colors;
+        std::vector<float2> texcoord0;
+        std::vector<float2> texcoord1;
+        std::vector<float3> tangents;
+        std::vector<float3> bitangents;
+        std::vector<uint3> faces;
+        std::vector<uint32_t> material;
+    };
+
     typedef runtime_mesh geometry;
 
     inline aabb_3d compute_bounds(const geometry & g)
@@ -194,6 +209,7 @@ namespace polymer
         }
     }
 
+    // warning: only accounts for vertices and faces
     inline geometry concatenate_geometry(const geometry & a, const geometry & b)
     {
         geometry s;
@@ -240,6 +256,6 @@ namespace polymer
         return true;
     }
 
-}
+} // end namespace polymer
 
-#endif // end geometry_hpp
+#endif // end polymer_geometry_hpp

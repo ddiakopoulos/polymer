@@ -9,6 +9,7 @@
 
 #include "index.hpp"
 #include "gl-loaders.hpp"
+#include "../lib-model-io/model-io.hpp"
 
 using namespace polymer;
 
