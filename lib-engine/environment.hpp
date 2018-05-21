@@ -320,7 +320,7 @@ namespace polymer
     //   environment   //
     /////////////////////
 
-    class pbr_render_system;
+    class render_system;;
     class collision_system;
     class transform_system;
     class identifier_system;
@@ -332,7 +332,7 @@ namespace polymer
     public:
         std::shared_ptr<polymer::material_library> mat_library;
         std::unique_ptr<polymer::gl_procedural_sky> skybox;
-        polymer::pbr_render_system * render_system;
+        polymer::render_system * render_system;
         polymer::collision_system * collision_system;
         polymer::transform_system * xform_system;
         polymer::identifier_system * identifier_system;

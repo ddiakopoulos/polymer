@@ -534,8 +534,8 @@
     </ClCompile>
     <ClCompile Include="openvr-hmd.cpp" />
     <ClCompile Include="openvr-camera.cpp" />
-    <ClCompile Include="system-renderer-pbr.cpp" />
     <ClCompile Include="environment.cpp" />
+    <ClCompile Include="renderer-pbr.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="gfx\gl\gl-api.hpp">
@@ -1564,13 +1564,14 @@
     <ClInclude Include="gfx\gl\gl-mesh-util.hpp">
       <Filter>gfx\gl</Filter>
     </ClInclude>
-    <ClInclude Include="system-renderer-debug.hpp" />
-    <ClInclude Include="system-renderer-pbr.hpp" />
     <ClInclude Include="system-transform.hpp" />
     <ClInclude Include="environment.hpp" />
     <ClInclude Include="system-identifier.hpp" />
     <ClInclude Include="system-collision.hpp" />
     <ClInclude Include="system-util.hpp" />
+    <ClInclude Include="renderer-pbr.hpp" />
+    <ClInclude Include="renderer-debug.hpp" />
+    <ClInclude Include="system-render.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="gfx">

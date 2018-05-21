@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef polymer_renderer_hpp
-#define polymer_renderer_hpp
+#ifndef polymer_renderer_pbr_hpp
+#define polymer_renderer_pbr_hpp
 
 #include "math-core.hpp"
 #include "simple_timer.hpp"
@@ -16,9 +16,6 @@
 
 #include "ecs/typeid.hpp"
 #include "ecs/core-ecs.hpp"
-
-#include "system-identifier.hpp"
-#include "system-transform.hpp"
 #include "environment.hpp"
 
 #undef near
@@ -101,22 +98,33 @@ namespace polymer
         }
     };
 
+    struct renderable
+    {
+        entity e{ kInvalidEntity };
+        material_component * material{ nullptr };
+        mesh_component * mesh{ nullptr };
+        float3 scale{ 1, 1, 1 };
+        transform t;
+    };
+
+    class render_system;
     struct render_payload
     {
         std::vector<view_data> views;
-        std::vector<entity> render_set;
+        std::vector<renderable> render_set;
+        std::vector<point_light_component *> point_lights;
+        directional_light_component * sunlight;
         float4 clear_color{ 1, 0, 0, 1 };
         texture_handle ibl_radianceCubemap;
         texture_handle ibl_irradianceCubemap;
         gl_procedural_sky * skybox{ nullptr };
-        transform_system * xform_system{ nullptr };
     };
 
-    ///////////////////////////
-    //   pbr_render_system   //
-    ///////////////////////////
+    //////////////////////
+    //   pbr_renderer   //
+    //////////////////////
 
-    class pbr_render_system : public base_system
+    class pbr_renderer 
     {
         simple_cpu_timer timer;
 
@@ -143,15 +151,11 @@ namespace polymer
         void run_depth_prepass(const view_data & view, const render_payload & scene);
         void run_skybox_pass(const view_data & view, const render_payload & scene);
         void run_shadow_pass(const view_data & view, const render_payload & scene);
-        void run_forward_pass(std::vector<entity> & render_queue, const view_data & view, const render_payload & scene);
+        void run_forward_pass(std::vector<renderable> & render_queue, const view_data & view, const render_payload & scene);
         void run_post_pass(const view_data & view, const render_payload & scene);
 
     public:
 
-        std::unordered_map<entity, mesh_component> meshes;
-        std::unordered_map<entity, material_component> materials;
-        std::unordered_map<entity, point_light_component> point_lights;
-        std::unordered_map<entity, directional_light_component> directional_lights;
         std::vector<gl_framebuffer> postFramebuffers;
         std::vector<gl_texture_2d> postTextures;
 
@@ -159,22 +163,18 @@ namespace polymer
         profiler<simple_cpu_timer> cpuProfiler;
         profiler<gl_gpu_timer> gpuProfiler;
 
-        pbr_render_system(entity_orchestrator * orch, const renderer_settings settings);
-        ~pbr_render_system();
-
-        virtual bool create(entity e, poly_typeid hash, void * data) override final;
-        virtual void destroy(entity e) override final;
+        pbr_renderer(const renderer_settings settings);
+        ~pbr_renderer();
 
         void render_frame(const render_payload & scene);
 
-        uint32_t get_color_texture(const uint32_t idx) const;
-        uint32_t get_depth_texture(const uint32_t idx) const;
+        uint32_t get_color_texture(const uint32_t idx = 0) const;
+        uint32_t get_depth_texture(const uint32_t idx = 0) const;
 
         stable_cascaded_shadows * get_shadow_pass() const;
     };
-    POLYMER_SETUP_TYPEID(pbr_render_system);
 
-    template<class F> void visit_fields(pbr_render_system & o, F f)
+    template<class F> void visit_fields(pbr_renderer & o, F f)
     {
         f("num_cameras", o.settings.cameraCount, editor_hidden{});
         f("num_msaa_samples", o.settings.msaaSamples, editor_hidden{});
@@ -185,12 +185,7 @@ namespace polymer
         f("shadow_pass", o.settings.shadowsEnabled);
     }
 
-    template<class F> void visit_components(entity e, pbr_render_system * system, F f)
-    {
-        // ... 
-    }
-
 }
 
-#endif // end polymer_renderer_hpp
+#endif // end polymer_renderer_pbr_hpp
   

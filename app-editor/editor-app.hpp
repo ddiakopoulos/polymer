@@ -10,7 +10,8 @@
 
 #include "system-identifier.hpp"
 #include "system-transform.hpp"
-#include "system-renderer-pbr.hpp"
+#include "system-render.hpp"
+#include "system-collision.hpp"
 
 #include "material.hpp"
 #include "uniforms.hpp"
@@ -47,7 +48,6 @@ struct scene_editor_app final : public polymer_app
     scene_editor_app();
     ~scene_editor_app();
 
-    void reset_renderer(int2 size, const renderer_settings & settings);
     void open_material_editor();
 
     void on_window_resize(int2 size) override;

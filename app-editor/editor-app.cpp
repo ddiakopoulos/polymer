@@ -89,7 +89,7 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
 
     renderer_settings initialSettings;
     initialSettings.renderSize = int2(width, height);
-    scene.render_system = orchestrator.create_system<pbr_render_system>(&orchestrator, initialSettings);
+    scene.render_system = orchestrator.create_system<render_system>(initialSettings, &orchestrator);
     scene.collision_system = orchestrator.create_system<collision_system>(&orchestrator);
     scene.xform_system = orchestrator.create_system<transform_system>(&orchestrator);
     scene.identifier_system = orchestrator.create_system<identifier_system>(&orchestrator);
@@ -104,9 +104,11 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
     scene.skybox.reset(new gl_hosek_sky());
     scene.skybox->onParametersChanged = [this, sunlight]
     {
-        scene.render_system->directional_lights[sunlight].data.direction = scene.skybox->get_sun_direction();
-        scene.render_system->directional_lights[sunlight].data.color = float3(1.f, 1.0f, 1.0f);
-        scene.render_system->directional_lights[sunlight].data.amount = 1.0f;
+        directional_light_component dir_light;
+        dir_light.data.direction = scene.skybox->get_sun_direction();
+        dir_light.data.color = float3(1.f, 1.0f, 1.0f);
+        dir_light.data.amount = 1.f;
+        scene.render_system->create(sunlight, std::move(dir_light));
     };
 
     // Set initial values on the skybox with the sunlight entity we just created
@@ -114,7 +116,6 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
 
     // Only need to set the skybox on the |render_payload| once (unless we clear the payload)
     the_render_payload.skybox = scene.skybox.get();
-    the_render_payload.xform_system = scene.xform_system;
 
     // fixme to be resolved
     auto radianceBinary = read_file_binary("../assets/textures/envmaps/wells_radiance.dds");
@@ -144,14 +145,24 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
         // Create mesh component for the gpu mesh
         polymer::mesh_component mesh_component(debug_icosa);
         mesh_component.mesh = gpu_mesh_handle("debug-icosahedron");
-        scene.render_system->meshes[debug_icosa] = mesh_component;
-        scene.render_system->materials[debug_icosa].material = material_handle(material_library::kDefaultMaterialId);
+        scene.render_system->create(debug_icosa, std::move(mesh_component));
+
+        polymer::material_component material_component(debug_icosa);
+        material_component.material = material_handle(material_library::kDefaultMaterialId);
+        scene.render_system->create(debug_icosa, std::move(material_component));
 
         scene.xform_system->create(debug_icosa, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
         scene.identifier_system->create(debug_icosa, "debug-icosahedron");
-        scene.collision_system->meshes[debug_icosa].geom = cpu_mesh_handle("debug-icosahedron");
+        scene.collision_system->meshes[debug_icosa].geom = cpu_mesh_handle("debug-icosahedron"); // fixme, direct list accessor
 
-        the_render_payload.render_set.push_back(debug_icosa);
+        renderable debug_icosahedron_renderable;
+        debug_icosahedron_renderable.e = debug_icosa;
+        debug_icosahedron_renderable.material = scene.render_system->get_material_component(debug_icosa);
+        debug_icosahedron_renderable.mesh = scene.render_system->get_mesh_component(debug_icosa);
+        debug_icosahedron_renderable.scale = scene.xform_system->get_local_transform(debug_icosa)->local_scale;
+        debug_icosahedron_renderable.t = scene.xform_system->get_world_transform(debug_icosa)->world_pose;
+
+        the_render_payload.render_set.push_back(debug_icosahedron_renderable);
     }
 }
 
@@ -204,7 +215,7 @@ void scene_editor_app::on_window_resize(int2 size)
     {
         renderer_settings settings;
         settings.renderSize = size;
-        reset_renderer(size, settings);
+        scene.render_system->reconfigure(settings);
         scene.skybox->onParametersChanged(); // reconfigure directional light
     }
 }
@@ -315,11 +326,6 @@ void scene_editor_app::on_input(const app_input_event & event)
     }
 }
 
-void scene_editor_app::reset_renderer(int2 size, const renderer_settings & settings)
-{
-    scene.render_system = orchestrator.create_system<pbr_render_system>(&orchestrator, settings);
-}
-
 void scene_editor_app::open_material_editor()
 {
     if (!material_editor)
@@ -406,14 +412,14 @@ void scene_editor_app::on_draw()
 
         // Submit scene to the scene renderer
         editorProfiler.begin("submit-scene");
-        scene.render_system->render_frame(the_render_payload);
+        scene.render_system->get_renderer()->render_frame(the_render_payload);
         editorProfiler.end("submit-scene");
 
         // Draw to screen framebuffer
         glUseProgram(0);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, width, height);
-        fullscreen_surface->draw(scene.render_system->get_color_texture(0));
+        fullscreen_surface->draw(scene.render_system->get_renderer()->get_color_texture(0));
 
         gl_check_error(__FILE__, __LINE__);
     }
@@ -434,7 +440,7 @@ void scene_editor_app::on_draw()
             const float3 scale = scene.xform_system->get_local_transform(e)->local_scale;
             const float4x4 modelMatrix = mul(p.matrix(), make_scaling_matrix(scale));
             program.uniform("u_modelMatrix", modelMatrix);
-            scene.render_system->meshes[e].draw();
+            scene.render_system->get_mesh_component(e)->draw();
         }
         program.unbind();
 
@@ -586,12 +592,12 @@ void scene_editor_app::on_draw()
 
             if (ImGui::TreeNode("Core"))
             {
-                renderer_settings lastSettings = scene.render_system->settings;
+                renderer_settings lastSettings = scene.render_system->get_renderer()->settings;
 
                 if (build_imgui("renderer", *scene.render_system))
                 {
-                    scene.render_system->gpuProfiler.set_enabled(scene.render_system->settings.performanceProfiling);
-                    scene.render_system->cpuProfiler.set_enabled(scene.render_system->settings.performanceProfiling);
+                    scene.render_system->get_renderer()->gpuProfiler.set_enabled(scene.render_system->get_renderer()->settings.performanceProfiling);
+                    scene.render_system->get_renderer()->cpuProfiler.set_enabled(scene.render_system->get_renderer()->settings.performanceProfiling);
                 }
 
                 ImGui::TreePop();
@@ -607,7 +613,7 @@ void scene_editor_app::on_draw()
 
             ImGui::Dummy({ 0, 10 });
 
-            if (auto * shadows = scene.render_system->get_shadow_pass())
+            if (auto * shadows = scene.render_system->get_renderer()->get_shadow_pass())
             {
                 if (ImGui::TreeNode("Cascaded Shadow Mapping"))
                 {
@@ -618,10 +624,10 @@ void scene_editor_app::on_draw()
 
             ImGui::Dummy({ 0, 10 });
 
-            if (scene.render_system->settings.performanceProfiling)
+            if (scene.render_system->get_renderer()->settings.performanceProfiling)
             {
-                for (auto & t : scene.render_system->gpuProfiler.get_data()) ImGui::Text("[Renderer GPU] %s %f ms", t.first.c_str(), t.second);
-                for (auto & t : scene.render_system->cpuProfiler.get_data()) ImGui::Text("[Renderer CPU] %s %f ms", t.first.c_str(), t.second);
+                for (auto & t : scene.render_system->get_renderer()->gpuProfiler.get_data()) ImGui::Text("[Renderer GPU] %s %f ms", t.first.c_str(), t.second);
+                for (auto & t : scene.render_system->get_renderer()->cpuProfiler.get_data()) ImGui::Text("[Renderer CPU] %s %f ms", t.first.c_str(), t.second);
             }
 
             ImGui::Dummy({ 0, 10 });

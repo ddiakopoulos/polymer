@@ -4,7 +4,7 @@
 #define material_editor_hpp
 
 #include "material.hpp"
-#include "system-renderer-pbr.hpp"
+#include "renderer-pbr.hpp"
 #include "asset-handle-utils.hpp"
 #include "selection.hpp"
 #include "environment.hpp"
@@ -46,7 +46,7 @@ struct material_editor_window final : public glfw_window
     std::unique_ptr<simple_texture_view> fullscreen_surface;
     std::unique_ptr<gui::imgui_instance> auxImgui;
     std::unique_ptr<arcball_controller> arcball;
-    std::unique_ptr<pbr_render_system> preview_renderer;
+    std::unique_ptr<pbr_renderer> preview_renderer;
     std::unique_ptr<transform_system> xform_system;
 
     perspective_camera previewCam;
@@ -93,7 +93,7 @@ struct material_editor_window final : public glfw_window
         previewSettings.tonemapEnabled = false;
         previewSettings.shadowsEnabled = false;
 
-        preview_renderer.reset(new pbr_render_system(&orch, previewSettings));
+        preview_renderer.reset(new pbr_renderer(&orch, previewSettings));
 
         // Create a debug entity
         debug_sphere = orch.create_entity();

@@ -16,7 +16,7 @@ struct sample_engine_scene final : public polymer_app
 
     std::unique_ptr<entity_orchestrator> orchestrator;
     std::unique_ptr<asset_resolver> resolver;
-    std::unique_ptr<pbr_render_system> renderer;
+    std::unique_ptr<pbr_renderer> renderer;
     std::unique_ptr<simple_texture_view> fullscreen_surface;
 
     render_payload payload;
@@ -82,9 +82,9 @@ sample_engine_scene::sample_engine_scene() : polymer_app(1280, 720, "sample-engi
     // Initial renderer settings
     renderer_settings settings;
     settings.renderSize = int2(width, height);
-    renderer.reset(new pbr_render_system(orchestrator.get(), settings));
+    renderer.reset(new pbr_renderer(orchestrator.get(), settings));
 
-    scene.render_system = orchestrator->create_system<pbr_render_system>(orchestrator.get(), settings);
+    scene.render_system = orchestrator->create_system<pbr_renderer>(orchestrator.get(), settings);
     scene.collision_system = orchestrator->create_system<collision_system>(orchestrator.get());
     scene.xform_system = orchestrator->create_system<transform_system>(orchestrator.get());
     scene.identifier_system = orchestrator->create_system<identifier_system>(orchestrator.get());

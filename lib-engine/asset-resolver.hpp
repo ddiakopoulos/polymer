@@ -23,7 +23,7 @@
 #include "asset-handle.hpp"
 #include "asset-handle-utils.hpp"
 #include "string_utils.hpp"
-#include "system-renderer-pbr.hpp"
+#include "renderer-pbr.hpp"
 #include "system-collision.hpp"
 #include "environment.hpp"
 

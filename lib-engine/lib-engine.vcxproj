@@ -431,8 +431,9 @@
     <ClInclude Include="shader-library.hpp" />
     <ClInclude Include="system-collision.hpp" />
     <ClInclude Include="system-identifier.hpp" />
-    <ClInclude Include="system-renderer-debug.hpp" />
-    <ClInclude Include="system-renderer-pbr.hpp" />
+    <ClInclude Include="renderer-debug.hpp" />
+    <ClInclude Include="renderer-pbr.hpp" />
+    <ClInclude Include="system-render.hpp" />
     <ClInclude Include="system-transform.hpp" />
     <ClInclude Include="system-util.hpp" />
     <ClInclude Include="uniforms.hpp" />
@@ -618,7 +619,7 @@
     <ClCompile Include="material-library.cpp" />
     <ClCompile Include="shader-library.cpp" />
     <ClCompile Include="shader.cpp" />
-    <ClCompile Include="system-renderer-pbr.cpp" />
+    <ClCompile Include="renderer-pbr.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\lib-polymer\lib-polymer.vcxproj">

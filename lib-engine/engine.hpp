@@ -24,8 +24,8 @@
 #include "system-identifier.hpp"
 #include "system-transform.hpp"
 #include "system-collision.hpp"
-#include "system-renderer-pbr.hpp"
-#include "system-renderer-debug.hpp"
+#include "renderer-pbr.hpp"
+#include "renderer-debug.hpp"
 
 #include "gl-api.hpp"
 #include "gl-async-gpu-timer.hpp"
