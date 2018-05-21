@@ -588,7 +588,7 @@ void scene_editor_app::on_draw()
 
             bool selected = gizmo_selector->selected(entity);
             std::string name = scene.identifier_system->get_name(entity);
-            name = name.empty() ? "entity" : name;
+            name = name.empty() ? "entity (" + std::to_string(entity) + ")": name;
 
             if (ImGui::Selectable(name.c_str(), &selected))
             {

@@ -23,13 +23,17 @@ const std::vector<entity> & environment::entity_list()
 
 void environment::copy(entity src, entity dest)
 {
-    visit_systems(this, [src](const char * name, auto * system_pointer)
+    visit_systems(this, [src, dest](const char * name, auto * system_pointer)
     {
         if (system_pointer)
         {
-            visit_components(src, system_pointer, [&](const char * component_name, auto & component_ref, auto... component_metadata)
+            visit_components(src, system_pointer, [system_pointer, src, dest](const char * component_name, auto & component_ref, auto... component_metadata)
             {
-                // system_pointer->create(...)
+                if (component_ref.get_entity() == src)
+                {
+                    const auto id = get_typeid<std::decay<decltype(component_ref)>::type>();
+                    system_pointer->create(dest, id, &component_ref);
+                }
             });
         }
     });
