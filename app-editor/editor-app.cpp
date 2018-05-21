@@ -1,4 +1,5 @@
 #include "index.hpp"
+#include "system-util.hpp"
 #include "editor-app.hpp"
 #include "editor-inspector-ui.hpp"
 #include "serialization.inl"
@@ -558,10 +559,43 @@ void scene_editor_app::on_draw()
         ui_rect bottomRightPane = { { int2(split2.first.min()) },{ int2(split2.first.max()) } };  // bottom half
 
         gui::imgui_fixed_window_begin("Inspector", topRightPane);
+
         if (gizmo_selector->get_selection().size() >= 1)
         {
+            ImGui::Dummy({ 0, 8 });
+            if (ImGui::Button(" Add Component ", { 260, 20 })) ImGui::OpenPopup("Create Component");
+            ImGui::Dummy({ 0, 8 });
+
             gizmo_selector->refresh(); // selector only stores data, not pointers, so we need to recalc new xform.
             inspect_entity(nullptr, gizmo_selector->get_selection()[0], scene);
+
+            if (ImGui::BeginPopupModal("Create Component", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+            {
+                ImGui::Dummy({ 0, 6 });
+
+                // Make a list of the material types (i.e. pbr, blinn-phong, etc)
+                std::vector<std::string> component_names;
+                enumerate_components([&](const char * name, poly_typeid type)
+                {
+                    component_names.push_back(name);
+                });
+
+                static int componentTypeSelection = -1;
+                gui::Combo("Component", &componentTypeSelection, component_names);
+
+                ImGui::Dummy({ 0, 6 });
+
+                if (ImGui::Button("OK", ImVec2(120, 0)))
+                {
+                    ImGui::CloseCurrentPopup();
+                }
+
+                ImGui::SetItemDefaultFocus();
+                ImGui::SameLine();
+                if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
+                ImGui::EndPopup();
+            }
+
         }
         gui::imgui_fixed_window_end();
 
