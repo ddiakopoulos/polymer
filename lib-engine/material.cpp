@@ -26,7 +26,8 @@ void polymer_default_material::resolve_variants() const
 {
     if (!compiled_shader)
     {
-        compiled_shader = shader.get()->get_variant();
+        std::shared_ptr<gl_shader_asset> asset = shader.get();
+        compiled_shader = asset->get_variant();
     }
 }
 

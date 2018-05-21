@@ -85,6 +85,7 @@ namespace polymer
                     log::get()->assetLog->info("asset type {} ({}) was default constructed", typeid(T).name(), name);
                 }
                 handle = a;
+
                 return handle->asset;
             }
         }

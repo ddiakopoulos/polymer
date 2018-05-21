@@ -30,6 +30,9 @@ gl_shader_monitor::gl_shader_monitor(const std::string & root_path) : root_path(
             std::this_thread::sleep_for(std::chrono::milliseconds(250));
         }
     });
+
+    walk_asset_dir();
+    handle_recompile();
 }
 
 gl_shader_monitor::~gl_shader_monitor()
@@ -83,7 +86,7 @@ void gl_shader_monitor::walk_asset_dir()
                     asset.second->writeTime = writeTime;
                     asset.second->shouldRecompile = true;
                     //@todo use logger
-                    std::cout << "Modified Shader: " << asset.second->vertexPath << std::endl;
+                    std::cout << "Processed Shader: " << asset.second->vertexPath << std::endl;
                 }
             }
 
@@ -100,7 +103,7 @@ void gl_shader_monitor::walk_asset_dir()
                         asset.second->shouldRecompile = true;
 
                         //@todo use logger
-                        std::cout << "Modified Include: " << includePath << std::endl;
+                        std::cout << "Processed Include: " << includePath << std::endl;
                         break;
                     }
                 }

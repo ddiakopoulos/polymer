@@ -33,6 +33,7 @@ namespace polymer
 
     public:
 
+        // This must be constructed on the gl thread
         gl_shader_monitor(const std::string & asset_path);
         ~gl_shader_monitor();
 

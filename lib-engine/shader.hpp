@@ -31,8 +31,8 @@ namespace polymer
         std::string vertexPath, fragmentPath, geomPath, includePath;
         std::vector<std::string> includes;
         std::unordered_map<uint64_t, std::shared_ptr<shader_variant>> shaders;
-        bool shouldRecompile = false;
-        int64_t writeTime = 0;
+        bool shouldRecompile{ true };
+        int64_t writeTime{ 0 };
         friend class gl_shader_monitor;
 
     public:

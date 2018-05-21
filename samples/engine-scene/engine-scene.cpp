@@ -43,6 +43,11 @@ sample_engine_scene::sample_engine_scene() : polymer_app(1280, 720, "sample-engi
     glfwGetWindowSize(window, &width, &height);
     glViewport(0, 0, width, height);
 
+    shaderMonitor.watch("default-shader",
+        "../../assets/shaders/renderer/forward_lighting_vert.glsl",
+        "../../assets/shaders/renderer/default_material_frag.glsl",
+        "../../assets/shaders/renderer");
+
     shaderMonitor.watch("wireframe",
         "../../assets/shaders/wireframe_vert.glsl",
         "../../assets/shaders/wireframe_frag.glsl",
@@ -112,6 +117,7 @@ sample_engine_scene::sample_engine_scene() : polymer_app(1280, 720, "sample-engi
 
     // Only need to set the skybox on the |render_payload| once (unless we clear the payload)
     payload.skybox = scene.skybox.get();
+    payload.sunlight = scene.render_system->get_directional_light_component(sunlight);
 
     scene.mat_library.reset(new polymer::material_library("../../assets/sample-material.json"));
 
