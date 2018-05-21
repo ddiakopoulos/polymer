@@ -86,10 +86,10 @@ sample_engine_scene::sample_engine_scene() : polymer_app(1280, 720, "sample-engi
     // Initial renderer settings
     renderer_settings settings;
     settings.renderSize = int2(width, height);
-    scene.render_system = orchestrator->create_system<render_system>(settings, orchestrator.get());
     scene.collision_system = orchestrator->create_system<collision_system>(orchestrator.get());
     scene.xform_system = orchestrator->create_system<transform_system>(orchestrator.get());
     scene.identifier_system = orchestrator->create_system<identifier_system>(orchestrator.get());
+    scene.render_system = orchestrator->create_system<render_system>(settings, orchestrator.get());
 
     auto radianceBinary = read_file_binary("../../assets/textures/envmaps/wells_radiance.dds");
     auto irradianceBinary = read_file_binary("../../assets/textures/envmaps/wells_irradiance.dds");
@@ -98,27 +98,9 @@ sample_engine_scene::sample_engine_scene() : polymer_app(1280, 720, "sample-engi
     payload.ibl_radianceCubemap = create_handle_for_asset("wells-radiance-cubemap", load_cubemap(radianceHandle));
     payload.ibl_irradianceCubemap = create_handle_for_asset("wells-irradiance-cubemap", load_cubemap(irradianceHandle));
 
-    // Create a sun entity
-    entity sunlight = orchestrator->create_entity();
-
-    // Setup the skybox; link internal parameters to a directional light entity owned by the
-    // render system. 
-    scene.skybox.reset(new gl_hosek_sky());
-    scene.skybox->onParametersChanged = [&]
-    {
-        directional_light_component dir_light;
-        dir_light.data.direction = scene.skybox->get_sun_direction();
-        dir_light.data.color = float3(1.f, 1.0f, 1.0f);
-        dir_light.data.amount = 1.f;
-        scene.render_system->create(sunlight, std::move(dir_light));
-    };
-
-    // Set initial values on the skybox with the sunlight entity we just created
-    scene.skybox->onParametersChanged();
-
     // Only need to set the skybox on the |render_payload| once (unless we clear the payload)
-    payload.skybox = scene.skybox.get();
-    payload.sunlight = scene.render_system->get_directional_light_component(sunlight);
+    payload.skybox = scene.render_system->get_skybox();
+    payload.sunlight = scene.render_system->get_implict_sunlight();
 
     scene.mat_library.reset(new polymer::material_library("../../assets/sample-material.json"));
 

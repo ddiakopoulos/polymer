@@ -72,7 +72,7 @@ namespace polymer
     template<class F> void visit_components(entity e, collision_system * system, F f)
     {
         auto iter = system->meshes.find(e);
-        if (iter != system->meshes.end()) f("geometry component (collision)", iter->second);
+        if (iter != system->meshes.end()) f("geometry component", iter->second);
     }
 
 } // end namespace polymer

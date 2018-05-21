@@ -338,13 +338,16 @@ namespace polymer
     class environment
     {
         std::vector<entity> active_entities;
+
     public:
+
         std::shared_ptr<polymer::material_library> mat_library;
-        std::unique_ptr<polymer::gl_procedural_sky> skybox;
+
         polymer::render_system * render_system;
         polymer::collision_system * collision_system;
         polymer::transform_system * xform_system;
         polymer::identifier_system * identifier_system;
+
         void import_environment(const std::string & path, entity_orchestrator & o);
         void export_environment(const std::string & path);
         entity track_entity(entity e);        

@@ -91,34 +91,16 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
 
     renderer_settings initialSettings;
     initialSettings.renderSize = int2(width, height);
-    scene.render_system = orchestrator.create_system<render_system>(initialSettings, &orchestrator);
     scene.collision_system = orchestrator.create_system<collision_system>(&orchestrator);
     scene.xform_system = orchestrator.create_system<transform_system>(&orchestrator);
     scene.identifier_system = orchestrator.create_system<identifier_system>(&orchestrator);
+    scene.render_system = orchestrator.create_system<render_system>(initialSettings, &orchestrator);
 
     gizmo_selector.reset(new selection_controller(scene.xform_system));
 
-    const entity sunlight = scene.track_entity(orchestrator.create_entity());
-    scene.xform_system->create(sunlight, transform(), {});
-    scene.identifier_system->create(sunlight, "sunlight");
-
-    // Setup the skybox; link internal parameters to a directional light entity owned by the render system. 
-    scene.skybox.reset(new gl_hosek_sky());
-    scene.skybox->onParametersChanged = [this, sunlight]
-    {
-        directional_light_component dir_light;
-        dir_light.data.direction = scene.skybox->get_sun_direction();
-        dir_light.data.color = float3(1.f, 1.0f, 1.0f);
-        dir_light.data.amount = 1.f;
-        scene.render_system->create(sunlight, std::move(dir_light));
-    };
-
-    // Set initial values on the skybox with the sunlight entity we just created
-    scene.skybox->onParametersChanged();
-
     // Only need to set the skybox on the |render_payload| once (unless we clear the payload)
-    the_render_payload.skybox = scene.skybox.get();
-    the_render_payload.sunlight = scene.render_system->get_directional_light_component(sunlight);
+    the_render_payload.skybox = scene.render_system->get_skybox();
+    the_render_payload.sunlight = scene.render_system->get_implict_sunlight();
 
     // fixme to be resolved
     auto radianceBinary = read_file_binary("../assets/textures/envmaps/wells_radiance.dds");
@@ -183,7 +165,7 @@ void scene_editor_app::on_window_resize(int2 size)
         renderer_settings settings;
         settings.renderSize = size;
         scene.render_system->reconfigure(settings);
-        scene.skybox->onParametersChanged(); // reconfigure directional light
+        scene.render_system->get_skybox()->onParametersChanged(); // reconfigure directional light
     }
 }
 

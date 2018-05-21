@@ -60,7 +60,6 @@ void environment::destroy(entity e)
         {
             if (system_pointer) system_pointer->destroy(e);
         });
-        
     }
 }
 
@@ -155,17 +154,17 @@ void environment::export_environment(const std::string & export_path)
 
     json environment;
 
-    // foreach entity
+    // foreach entity (array)
     for (const auto & e : entity_list())
     {
         json entity; 
 
-        // foreach system
+        // foreach system (flatten into list of components)
         visit_systems(this, [&](const char * system_name, auto * system_pointer)
         {
             if (system_pointer)
             {
-                // foreach component
+                // foreach component (array)
                 visit_components(e, system_pointer, [&](const char * component_name, auto & component_ref, auto... component_metadata)
                 {
                     const std::string type_key = get_typename<std::decay<decltype(component_ref)>::type>();
@@ -173,7 +172,7 @@ void environment::export_environment(const std::string & export_path)
 
                     json component; 
 
-                    // foreach field
+                    // foreach field (object)
                     visit_fields(component_ref, [&](const char * name, auto & field, auto... metadata)
                     { 
                         component[name] = field;
