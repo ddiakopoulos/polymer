@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27130.0
+VisualStudioVersion = 15.0.27130.2024
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lib-polymer", "lib-polymer\lib-polymer.vcxproj", "{992E85A7-B590-477B-A1B2-8A04AAAD0E10}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -41,6 +41,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "engine-openvr-scene", "samples\engine-openvr-scene\engine-openvr-scene.vcxproj", "{8935AE6A-79E7-421D-B215-C1DEEB35EBA3}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gl-debug-ui", "samples\gl-debug-ui\gl-debug-ui.vcxproj", "{075B006E-1567-4D04-B0BA-98FE9B7134E7}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gl-particles-hull", "samples\gl-particles-hull\gl-particles-hull.vcxproj", "{A8D05388-ADE2-4C6A-A5E5-A83F34616325}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -104,6 +106,10 @@ Global
 		{075B006E-1567-4D04-B0BA-98FE9B7134E7}.Debug|x64.Build.0 = Debug|x64
 		{075B006E-1567-4D04-B0BA-98FE9B7134E7}.Release|x64.ActiveCfg = Release|x64
 		{075B006E-1567-4D04-B0BA-98FE9B7134E7}.Release|x64.Build.0 = Release|x64
+		{A8D05388-ADE2-4C6A-A5E5-A83F34616325}.Debug|x64.ActiveCfg = Debug|x64
+		{A8D05388-ADE2-4C6A-A5E5-A83F34616325}.Debug|x64.Build.0 = Debug|x64
+		{A8D05388-ADE2-4C6A-A5E5-A83F34616325}.Release|x64.ActiveCfg = Release|x64
+		{A8D05388-ADE2-4C6A-A5E5-A83F34616325}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -123,6 +129,7 @@ Global
 		{6A6930FE-F60E-4B0E-9122-232B73686BC8} = {0B054E41-2F3E-4230-8488-B44C3643F315}
 		{8935AE6A-79E7-421D-B215-C1DEEB35EBA3} = {0B054E41-2F3E-4230-8488-B44C3643F315}
 		{075B006E-1567-4D04-B0BA-98FE9B7134E7} = {0B054E41-2F3E-4230-8488-B44C3643F315}
+		{A8D05388-ADE2-4C6A-A5E5-A83F34616325} = {0B054E41-2F3E-4230-8488-B44C3643F315}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {E2D0793D-BD41-4F42-A6AA-DAB3D17A46BE}
