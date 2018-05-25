@@ -54,13 +54,8 @@ namespace polymer
 
         void reset()
         {
-            bf = 0;
-            bl = 0;
-            bb = 0;
-            br = 0;
-            ml = 0;
-            mr = 0;
-            lastCursor = float2(0, 0);
+            bf = bl = bb = br = ml = mr = 0;
+            lastCursor = { 0, 0 };
         }
         
         void handle_input(const app_input_event & e)

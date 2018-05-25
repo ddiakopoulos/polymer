@@ -4,12 +4,16 @@
 
 #include "index.hpp"
 #include "gl-loaders.hpp"
+#include "gl-camera.hpp"
+#include "gl-renderable-grid.hpp"
 
 using namespace polymer;
 
 struct sample_gl_camera_trajectory final : public polymer_app
 {
     perspective_camera cam;
+    fps_camera_controller flycam;
+    gl_renderable_grid grid{ 1.f, 24, 24 };
 
     sample_gl_camera_trajectory();
     ~sample_gl_camera_trajectory();
@@ -31,6 +35,7 @@ sample_gl_camera_trajectory::sample_gl_camera_trajectory()
     glViewport(0, 0, width, height);
 
     cam.look_at({ 0, 0, 2 }, { 0, 0.1f, 0 });
+    flycam.set_camera(&cam);
 }
 
 sample_gl_camera_trajectory::~sample_gl_camera_trajectory() {}
@@ -39,13 +44,14 @@ void sample_gl_camera_trajectory::on_window_resize(int2 size) {}
 
 void sample_gl_camera_trajectory::on_input(const app_input_event & event)
 {
-
+    flycam.handle_input(event);
 }
 
 void sample_gl_camera_trajectory::on_update(const app_update_event & e)
 {
     int width, height;
     glfwGetWindowSize(window, &width, &height);
+    flycam.update(e.timestep_ms);
 }
 
 void sample_gl_camera_trajectory::on_draw()
@@ -67,6 +73,8 @@ void sample_gl_camera_trajectory::on_draw()
     const float4x4 projectionMatrix = cam.get_projection_matrix(float(width) / float(height));
     const float4x4 viewMatrix = cam.get_view_matrix();
     const float4x4 viewProjectionMatrix = mul(projectionMatrix, viewMatrix);
+
+    grid.draw(viewProjectionMatrix);
 
     gl_check_error(__FILE__, __LINE__);
 
