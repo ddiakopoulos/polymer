@@ -37,7 +37,14 @@ namespace polymer
         bool hit{ false };
         float distance{ std::numeric_limits<float>::max() };
         float3 normal{ 0, 0, 0 };
+        raycast_result() {};
         raycast_result(bool h, float t, float3 n) : hit(h), distance(t), normal(n) {}
+    };
+
+    struct entity_hit_result
+    {
+        entity e{ kInvalidEntity };
+        raycast_result r;
     };
 }
 

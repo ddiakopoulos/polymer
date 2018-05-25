@@ -232,24 +232,8 @@ void scene_editor_app::on_input(const app_input_event & event)
             if (length(r.direction) > 0 && !gizmo_selector->active())
             {
                 std::vector<entity> selectedObjects;
-                float best_t = std::numeric_limits<float>::max();
-
-                entity hitObject = kInvalidEntity;
-
-                for (auto & mesh : scene.collision_system->meshes)
-                {
-                    raycast_result result = scene.collision_system->raycast(mesh.first, r);
-                    if (result.hit)
-                    {
-                        if (result.distance < best_t)
-                        {
-                            best_t = result.distance;
-                            hitObject = mesh.first;
-                        }
-                    }
-                }
-
-                if (hitObject != kInvalidEntity) selectedObjects.push_back(hitObject);
+                entity_hit_result result = scene.collision_system->raycast(r);
+                if (result.e != kInvalidEntity) selectedObjects.push_back(result.e);
 
                 // New object was selected
                 if (selectedObjects.size() > 0)

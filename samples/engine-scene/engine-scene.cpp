@@ -116,6 +116,8 @@ sample_engine_scene::sample_engine_scene() : polymer_app(1280, 720, "sample-engi
         // Create a debug entity
         const entity debug_icosa = scene.track_entity(orchestrator->create_entity());
 
+        scene.identifier_system->create(debug_icosa, "debug-icosahedron");
+
         // Create mesh component for the gpu mesh
         polymer::mesh_component mesh_component(debug_icosa);
         mesh_component.mesh = gpu_mesh_handle("debug-icosahedron");
@@ -126,8 +128,10 @@ sample_engine_scene::sample_engine_scene() : polymer_app(1280, 720, "sample-engi
         scene.render_system->create(debug_icosa, std::move(material_component));
 
         scene.xform_system->create(debug_icosa, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
-        scene.identifier_system->create(debug_icosa, "debug-icosahedron");
-        scene.collision_system->meshes[debug_icosa].geom = cpu_mesh_handle("debug-icosahedron"); // fixme, direct list accessor
+
+        polymer::geometry_component geom_component(debug_icosa);
+        geom_component.geom = cpu_mesh_handle("debug-icosahedron");
+        scene.collision_system->create(debug_icosa, std::move(geom_component));
 
         renderable debug_icosahedron_renderable;
         debug_icosahedron_renderable.e = debug_icosa;
