@@ -44,6 +44,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gl-debug-ui", "samples\gl-d
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gl-particles-hull", "samples\gl-particles-hull\gl-particles-hull.vcxproj", "{A8D05388-ADE2-4C6A-A5E5-A83F34616325}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gl-camera-trajectory", "samples\gl-camera-trajectory\gl-camera-trajectory.vcxproj", "{8CA04023-9EA3-4AF0-89EF-C0E6568E377E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -110,6 +112,10 @@ Global
 		{A8D05388-ADE2-4C6A-A5E5-A83F34616325}.Debug|x64.Build.0 = Debug|x64
 		{A8D05388-ADE2-4C6A-A5E5-A83F34616325}.Release|x64.ActiveCfg = Release|x64
 		{A8D05388-ADE2-4C6A-A5E5-A83F34616325}.Release|x64.Build.0 = Release|x64
+		{8CA04023-9EA3-4AF0-89EF-C0E6568E377E}.Debug|x64.ActiveCfg = Debug|x64
+		{8CA04023-9EA3-4AF0-89EF-C0E6568E377E}.Debug|x64.Build.0 = Debug|x64
+		{8CA04023-9EA3-4AF0-89EF-C0E6568E377E}.Release|x64.ActiveCfg = Release|x64
+		{8CA04023-9EA3-4AF0-89EF-C0E6568E377E}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -130,6 +136,7 @@ Global
 		{8935AE6A-79E7-421D-B215-C1DEEB35EBA3} = {0B054E41-2F3E-4230-8488-B44C3643F315}
 		{075B006E-1567-4D04-B0BA-98FE9B7134E7} = {0B054E41-2F3E-4230-8488-B44C3643F315}
 		{A8D05388-ADE2-4C6A-A5E5-A83F34616325} = {0B054E41-2F3E-4230-8488-B44C3643F315}
+		{8CA04023-9EA3-4AF0-89EF-C0E6568E377E} = {0B054E41-2F3E-4230-8488-B44C3643F315}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {E2D0793D-BD41-4F42-A6AA-DAB3D17A46BE}
