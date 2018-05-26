@@ -1,5 +1,5 @@
 /*
- * File: samples/
+ * File: samples/gl-camera-trajectory.cpp
  */
 
 #include "index.hpp"
@@ -9,6 +9,7 @@
 #include "gl-gizmo.hpp"
 #include "gl-mesh-util.hpp"
 #include "gl-procedural-mesh.hpp"
+#include "gl-texture-view.hpp"
 
 using namespace polymer;
 
@@ -41,7 +42,7 @@ class trajectory_follower
 
 public:
 
-    void compute(std::array<transform, 4> & controlPoints, uint32_t segments = 128)
+    void recompute(std::array<transform, 4> & controlPoints, uint32_t segments = 128)
     {
         frames = make_parallel_transport_frame_bezier(controlPoints, segments);
     }
@@ -64,8 +65,7 @@ public:
 
         for (int i = 0; i < frames.size(); ++i)
         {
-            auto m = get_transform(i);
-
+            const float4x4 m = get_transform(i);
             const float3 qxdir = normalize(mul(m, float4(1, 0, 0, 0)).xyz());
             const float3 qydir = normalize(mul(m, float4(0, 1, 0, 0)).xyz());
             const float3 qzdir = normalize(mul(m, float4(0, 0, 1, 0)).xyz());
@@ -78,9 +78,12 @@ public:
 
 struct sample_gl_camera_trajectory final : public polymer_app
 {
-    perspective_camera cam;
-    fps_camera_controller flycam;
-    gl_renderable_grid grid{ 1.f, 24, 24 };
+    perspective_camera debug_cam;
+    perspective_camera follow_cam;
+
+    fps_camera_controller fly_controller;
+
+    gl_renderable_grid grid{ 1.f, 32, 32};
     trajectory_follower follower;
 
     std::unique_ptr<gl_gizmo> gizmo;
@@ -90,9 +93,15 @@ struct sample_gl_camera_trajectory final : public polymer_app
     gl_mesh axis_mesh;
     gl_shader basic_shader;
 
+    gl_texture_2d renderTextureRGBA;
+    gl_framebuffer renderFramebuffer;
+
+    std::unique_ptr<gl_texture_view_2d> view;
+
     sample_gl_camera_trajectory();
     ~sample_gl_camera_trajectory();
 
+    void render_scene(const GLuint framebuffer, const perspective_camera cam);
     void on_window_resize(int2 size) override;
     void on_input(const app_input_event & event) override;
     void on_update(const app_update_event & e) override;
@@ -109,10 +118,15 @@ sample_gl_camera_trajectory::sample_gl_camera_trajectory()
     glfwGetWindowSize(window, &width, &height);
     glViewport(0, 0, width, height);
 
+    view.reset(new gl_texture_view_2d(true));
+
+    renderTextureRGBA.setup(width, height, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glNamedFramebufferTexture2DEXT(renderFramebuffer, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, renderTextureRGBA, 0);
+    renderFramebuffer.check_complete();
+
     gizmo.reset(new gl_gizmo());
 
     axis_mesh = make_mesh_from_geometry(make_axis());
-
     basic_shader = gl_shader(basic_vert, basic_frag);
 
     control_points[0].position = { -3, 2, 0 };
@@ -125,8 +139,10 @@ sample_gl_camera_trajectory::sample_gl_camera_trajectory()
     gizmo_ctrl_point[2] = from_linalg(control_points[2]);
     gizmo_ctrl_point[3] = from_linalg(control_points[3]);
 
-    cam.look_at({ 0, 0, 2 }, { 0, 0.1f, 0 });
-    flycam.set_camera(&cam);
+    follower.recompute(control_points, 32);
+
+    debug_cam.look_at({ 0, 0, 2 }, { 0, 0.1f, 0 });
+    fly_controller.set_camera(&debug_cam);
 }
 
 sample_gl_camera_trajectory::~sample_gl_camera_trajectory() {}
@@ -135,25 +151,39 @@ void sample_gl_camera_trajectory::on_window_resize(int2 size) {}
 
 void sample_gl_camera_trajectory::on_input(const app_input_event & event)
 {
-    flycam.handle_input(event);
+    fly_controller.handle_input(event);
     gizmo->handle_input(event);
 
     if (event.type == app_input_event::KEY && event.action == GLFW_RELEASE)
     {
-        if (event.value[0] == GLFW_KEY_SPACE)
-        {
-
-        }
+        // ...
     }
-
 }
 
 void sample_gl_camera_trajectory::on_update(const app_update_event & e)
 {
     int width, height;
     glfwGetWindowSize(window, &width, &height);
-    flycam.update(e.timestep_ms);
-    gizmo->update(cam, float2(width, height));
+    fly_controller.update(e.timestep_ms);
+    gizmo->update(debug_cam, float2(width, height));
+}
+
+void sample_gl_camera_trajectory::render_scene(const GLuint framebuffer, const perspective_camera cam)
+{
+    int width, height;
+    glfwGetWindowSize(window, &width, &height);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+
+    glViewport(0, 0, width, height);
+    glClearColor(0.25f, 0.25f, 0.25f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    const float4x4 projectionMatrix = cam.get_projection_matrix(float(width) / float(height));
+    const float4x4 viewMatrix = cam.get_view_matrix();
+    const float4x4 viewProjectionMatrix = mul(projectionMatrix, viewMatrix);
+
+    grid.draw(viewProjectionMatrix);
 }
 
 void sample_gl_camera_trajectory::on_draw()
@@ -163,20 +193,18 @@ void sample_gl_camera_trajectory::on_draw()
     int width, height;
     glfwGetWindowSize(window, &width, &height);
 
-    glViewport(0, 0, width, height);
-    glClearColor(0.25f, 0.25f, 0.25f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    const float4x4 projectionMatrix = cam.get_projection_matrix(float(width) / float(height));
-    const float4x4 viewMatrix = cam.get_view_matrix();
-    const float4x4 viewProjectionMatrix = mul(projectionMatrix, viewMatrix);
+    // Render into framebuffer
+    render_scene(renderFramebuffer, debug_cam);
 
-    grid.draw(viewProjectionMatrix);
+    // Render onto default framebuffer
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, width, height);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     for (int i = 0; i < 4; ++i)
     {
@@ -186,11 +214,13 @@ void sample_gl_camera_trajectory::on_draw()
             control_points[1] = to_linalg(gizmo_ctrl_point[1]);
             control_points[2] = to_linalg(gizmo_ctrl_point[2]);
             control_points[3] = to_linalg(gizmo_ctrl_point[3]);
-            follower.compute(control_points, 32);
+            follower.recompute(control_points, 32);
         }
     }
 
     {
+        const float4x4 viewProjectionMatrix = mul(debug_cam.get_projection_matrix(float(width) / float(height)), debug_cam.get_view_matrix());
+
         basic_shader.bind();
 
         if (follower.get_frames().size() > 0)
@@ -208,6 +238,9 @@ void sample_gl_camera_trajectory::on_draw()
     }
 
     gizmo->draw();
+
+    const aabb_2d view_rect = { {10, 10}, {320, 180} };
+    view->draw(view_rect, float2(width, height), renderTextureRGBA);
 
     gl_check_error(__FILE__, __LINE__);
 
