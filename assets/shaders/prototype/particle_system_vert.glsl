@@ -6,9 +6,11 @@ uniform mat4 u_viewProjMat;
 
 layout(location = 0) in vec4 in_pos_size;
 layout(location = 1) in vec2 in_texcoord;
+layout(location = 2) in vec3 in_color;
 
 out vec3 v_position;
 out vec2 v_texcoord;
+out vec3 v_color;
 
 void main() 
 {
@@ -21,5 +23,6 @@ void main()
     vec4 position = vec4(in_pos_size.xyz + qxdir * (sizeX) + qydir * (sizeY), 1);
     v_position = (u_inverseViewMatrix * vec4((u_modelMatrix * position).xyz, 1)).xyz;
     v_texcoord = in_texcoord;
+    v_color = in_color;
     gl_Position = u_viewProjMat * u_modelMatrix * position;
 }

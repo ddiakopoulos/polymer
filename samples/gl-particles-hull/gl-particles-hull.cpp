@@ -60,6 +60,7 @@ struct sample_gl_particle_hull final : public polymer_app
     gl_particle_system particle_system{ 0 };
     point_emitter pt_emitter;
     std::shared_ptr<gravity_modifier> grav_mod;
+    std::shared_ptr<color_modifier> color_mod;
 
     std::unique_ptr<quickhull::QuickHull> convex_hull;
     gl_mesh convex_hull_mesh;
@@ -91,8 +92,10 @@ sample_gl_particle_hull::sample_gl_particle_hull() : polymer_app(1280, 720, "sam
     sphere_mesh = make_sphere_mesh(1.f);
     sky_shader = gl_shader(skybox_vert, skybox_frag);
 
+    color_mod = std::make_shared<color_modifier>();
     grav_mod = std::make_shared<gravity_modifier>(float3(0, -1, 0));
     particle_system.add_modifier(grav_mod);
+    particle_system.add_modifier(color_mod);
 
     particle_tex = load_image("../../assets/images/particle_alt_large.png");
     glTextureParameteriEXT(particle_tex, GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);

@@ -95,9 +95,7 @@ void gl_particle_system::draw(
 
     // Instance buffer contains position (xyz) and size/radius (w)
     glBindBuffer(GL_ARRAY_BUFFER, instanceBuffer);
-
     glEnableVertexAttribArray(0);
-
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(float4), nullptr);
     glVertexAttribDivisor(0, 1);
 
@@ -107,10 +105,16 @@ void gl_particle_system::draw(
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(float2), nullptr);
     glVertexAttribDivisor(1, 0);
 
+    //glBindBuffer(GL_ARRAY_BUFFER, colorBuffer);
+    //glEnableVertexAttribArray(2);
+    //glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(float3), nullptr);
+    //glVertexAttribDivisor(0, 1);
+
     glDrawArraysInstanced(GL_TRIANGLES, 0, 6, (GLsizei)instances.size());
 
     glDisableVertexAttribArray(0);
     glDisableVertexAttribArray(1);
+    glDisableVertexAttribArray(2);
 
     glBindVertexArray(0);
 

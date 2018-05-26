@@ -5,6 +5,7 @@
 
 #include "gl-api.hpp"
 #include "util.hpp"
+#include "algo_misc.hpp"
 
 namespace polymer
 {
@@ -17,6 +18,7 @@ namespace polymer
     {
         float3 position;
         float3 velocity;
+        float3 color;
         float size;
         float lifeMs;
         bool isDead{ false };
@@ -29,6 +31,17 @@ namespace polymer
     struct particle_modifier
     {
         virtual void update(std::vector<particle> & particles, float dt) = 0;
+    };
+
+    struct color_modifier final : public particle_modifier
+    {
+        void update(std::vector<particle> & particles, float dt) override
+        {
+            for (auto & p : particles)
+            {
+                p.color += float3(0.1, 1, 1);
+            }
+        }
     };
 
     struct gravity_modifier final : public particle_modifier
@@ -106,7 +119,7 @@ namespace polymer
     {
         std::vector<particle> particles;
         std::vector<float4> instances;
-        gl_buffer vertexBuffer, instanceBuffer;
+        gl_buffer vertexBuffer, instanceBuffer, colorBuffer;
         gl_vertex_array_object vao;
         std::vector<std::shared_ptr<particle_modifier>> particleModifiers;
         size_t trail{ 0 };
