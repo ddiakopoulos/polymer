@@ -13,7 +13,6 @@
 
 using namespace polymer;
 
-
 constexpr const char basic_vert[] = R"(#version 330
     layout(location = 0) in vec3 vertex;
     layout(location = 2) in vec3 inColor;

@@ -566,6 +566,7 @@ namespace quickhull
         bool reorderHorizonEdges(std::vector<size_t> & horizonEdges)
         {
             const size_t horizonEdgeCount = horizonEdges.size();
+            if (horizonEdgeCount == 0) return false;
 
             for (size_t i=0;i<horizonEdgeCount-1;i++) 
             {

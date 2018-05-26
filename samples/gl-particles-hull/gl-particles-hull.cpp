@@ -13,33 +13,12 @@
 #include "shader-library.hpp"
 #include "asset-handle.hpp"
 #include "asset-handle-utils.hpp"
-
+#include "quick_hull.hpp"
 #include "gl-particle-system.hpp"
 
+#include <future>
+
 using namespace polymer;
-
-constexpr const char textured_vert[] = R"(#version 330
-    layout(location = 0) in vec3 inPosition;
-    layout(location = 1) in vec3 inNormal;
-    layout(location = 2) in vec2 inTexcoord;
-    uniform mat4 u_mvp;
-    out vec2 v_texcoord;
-    void main()
-    {
-	    gl_Position = u_mvp * vec4(inPosition.xyz, 1);
-        v_texcoord = inTexcoord;
-    }
-)";
-
-constexpr const char textured_frag[] = R"(#version 330
-    uniform sampler2D s_texture;
-    in vec2 v_texcoord;
-    out vec4 f_color;
-    void main()
-    {
-        f_color = texture(s_texture, vec2(v_texcoord.x, v_texcoord.y));
-    }
-)";
 
 constexpr const char skybox_vert[] = R"(#version 330
     layout(location = 0) in vec3 vertex;
@@ -74,16 +53,19 @@ struct sample_gl_particle_hull final : public polymer_app
     perspective_camera cam;
     fps_camera_controller flycam;
     app_update_event last_update;
-    gl_renderable_grid grid{ 1.f, 32, 32 };
+    gl_renderable_grid grid{ 0.5f, 16, 16 };
 
     std::unique_ptr<gl_shader_monitor> shaderMonitor;
 
-    gl_particle_system particle_system{ 4 };
+    gl_particle_system particle_system{ 0 };
     point_emitter pt_emitter;
     std::shared_ptr<gravity_modifier> grav_mod;
 
+    std::unique_ptr<quickhull::QuickHull> convex_hull;
+    gl_mesh convex_hull_mesh;
+
     gl_mesh sphere_mesh;
-    gl_shader texured_shader;
+    gl_shader basic_shader;
     gl_shader sky_shader;
 
     gl_texture_2d particle_tex;
@@ -107,19 +89,28 @@ sample_gl_particle_hull::sample_gl_particle_hull() : polymer_app(1280, 720, "sam
     glViewport(0, 0, width, height);
 
     sphere_mesh = make_sphere_mesh(1.f);
-    texured_shader = gl_shader(textured_vert, textured_frag);
     sky_shader = gl_shader(skybox_vert, skybox_frag);
 
     grav_mod = std::make_shared<gravity_modifier>(float3(0, -1, 0));
     particle_system.add_modifier(grav_mod);
 
-    particle_tex = load_image("../../assets/images/particle.png");
+    particle_tex = load_image("../../assets/images/particle_alt_large.png");
+    glTextureParameteriEXT(particle_tex, GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTextureParameteriEXT(particle_tex, GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+    pt_emitter.pose.position = float3(0, 1, 0);
 
     shaderMonitor.reset(new gl_shader_monitor("../../assets"));
 
     shaderMonitor->watch("particle-shader",
         "../../assets/shaders/prototype/particle_system_vert.glsl",
         "../../assets/shaders/prototype/particle_system_frag.glsl");
+
+    shaderMonitor->watch("wireframe",
+        "../../assets/shaders/wireframe_vert.glsl",
+        "../../assets/shaders/wireframe_frag.glsl",
+        "../../assets/shaders/wireframe_geom.glsl",
+        "../../assets/shaders/renderer");
 
     cam.look_at({ 0, 0, 2 }, { 0, 0.1f, 0 });
     flycam.set_camera(&cam);
@@ -144,6 +135,15 @@ void sample_gl_particle_hull::on_update(const app_update_event & e)
     pt_emitter.emit(particle_system);
 }
 
+inline gl_mesh make_convex_hull_mesh(std::vector<float3> & vertices, std::vector<size_t> & indices)
+{
+    gl_mesh mesh;
+    mesh.set_vertices(vertices, GL_STREAM_DRAW);
+    mesh.set_attribute(0, 3, GL_FLOAT, GL_FALSE, sizeof(float3), ((float*)0) + 0);
+    mesh.set_elements(reinterpret_cast<std::vector<uint3>&>(indices), GL_STREAM_DRAW);
+    return mesh;
+}
+
 void sample_gl_particle_hull::on_draw()
 {
     glfwMakeContextCurrent(window);
@@ -157,7 +157,6 @@ void sample_gl_particle_hull::on_draw()
     glClearColor(0.25f, 0.25f, 0.25f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -166,12 +165,48 @@ void sample_gl_particle_hull::on_draw()
     const float4x4 viewMatrix = cam.get_view_matrix();
     const float4x4 viewProjectionMatrix = mul(projectionMatrix, viewMatrix);
 
-    shader_handle particle_shader_h("particle-shader");
-    gl_shader & shader = particle_shader_h.get()->get_variant()->shader;
+    // Draw the sky
+    glDisable(GL_DEPTH_TEST);
+    {
+        const float4x4 world = mul(make_translation_matrix(cam.get_eye_point()), scaling_matrix(float3(cam.farclip * .99f)));
+        sky_shader.bind();
+        sky_shader.uniform("u_viewProj", viewProjectionMatrix);
+        sky_shader.uniform("u_modelMatrix", world);
+        sky_shader.uniform("u_bottomColor", float3(100.0f / 255.f, 100.0f / 255.f, 100.0f / 255.f));
+        sky_shader.uniform("u_topColor", float3(81.0f / 255.f, 128.0f / 255.f, 160.0f / 255.f));
+        sphere_mesh.draw_elements();
+        sky_shader.unbind();
+    }
+
+    glEnable(GL_DEPTH_TEST);
 
     grid.draw(viewProjectionMatrix);
 
+    // Draw the particle system
+    shader_handle particle_shader_h("particle-shader");
+    gl_shader & shader = particle_shader_h.get()->get_variant()->shader;
     particle_system.draw(viewMatrix, projectionMatrix, shader, particle_tex, last_update.elapsed_s);
+
+    auto particles = particle_system.get();
+    std::vector<float3> positions;
+    for (const auto & p : particles) positions.push_back(p.position);
+    convex_hull.reset(new quickhull::QuickHull(positions));
+    auto hull = convex_hull->computeConvexHull(true, false);
+    convex_hull_mesh = make_convex_hull_mesh(hull.getVertexBuffer(), hull.getIndexBuffer());
+
+    {
+        glEnable(GL_BLEND);
+
+        shader_handle wireframe_shader_h("wireframe");
+        gl_shader & wireframe_shader = wireframe_shader_h.get()->get_variant()->shader;
+        wireframe_shader.bind();
+        wireframe_shader.uniform("u_color", float4(1, 0, 0, 0.5f));
+        wireframe_shader.uniform("u_eyePos", cam.get_eye_point());
+        wireframe_shader.uniform("u_viewProjMatrix", viewProjectionMatrix);
+        wireframe_shader.uniform("u_modelMatrix", Identity4x4);
+        convex_hull_mesh.draw_elements();
+        wireframe_shader.unbind();
+    }
 
     gl_check_error(__FILE__, __LINE__);
 

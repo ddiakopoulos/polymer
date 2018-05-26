@@ -116,6 +116,7 @@ namespace polymer
         void add_modifier(std::shared_ptr<particle_modifier> modifier);
         void add(const float3 position, const float3 velocity, const float size, const float lifeMs);
         void draw(const float4x4 & viewMat, const float4x4 & projMat, gl_shader & shader, gl_texture_2d & particle_tex, const float time);
+        std::vector<particle> & get() { return particles; }
     };
 
     ///////////////////////////
@@ -133,12 +134,12 @@ namespace polymer
     {
         void emit(gl_particle_system & system) override
         {
-            for (int i = 0; i < 12; ++i)
+            for (int i = 0; i < 4; ++i)
             {
                 const auto v1 = gen.random_float(-.5f, +.5f);
                 const auto v2 = gen.random_float(0.5f, 2.f);
                 const auto v3 = gen.random_float(-.5f, +.5f);
-                system.add(pose.position, float3(v1, v2, v3), gen.random_float(0.05f, 0.2f), 4.f);
+                system.add(pose.position, float3(v1, v2, v3), gen.random_float(0.05f, 0.2f), 2.5f);
             }
         }
     };

@@ -55,15 +55,15 @@ void gl_particle_system::update(const float dt, const float3 gravityVec)
 
     for (auto & p : particles)
     {
-        float3 position = p.position;
-        float sz = p.size;
+        float3 & position = p.position;
+        float & sz = p.size;
 
-        // create a trail using instancing
+        // Create a trail using instancing
         for (int i = 0; i < (trail + 1); ++i)
         {
-            instances.push_back({ position, sz });
             position -= p.velocity * 0.001f;
-            sz *= 0.9f;
+            sz *= 0.97f;
+            instances.push_back({ position, sz });
         }
     }
 
