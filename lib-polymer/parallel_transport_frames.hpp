@@ -45,11 +45,9 @@ namespace polymer
         if (num_points >= 3)
         {
             // First frame, expressed in a Y-up, right-handed coordinate system
-            const float3 zDir = normalize(points[1] - points[0]);    // 
-            const float3 xDir = normalize(cross({ 0, 1, 0 }, zDir)); // 
-            const float3 yDir = cross(zDir, xDir);                   // 
-
-            std::cout << "Start Normal: " << yDir << std::endl;
+            const float3 zDir = normalize(points[1] - points[0]);   
+            const float3 xDir = normalize(cross({ 0, 1, 0 }, zDir));
+            const float3 yDir = cross(zDir, xDir);                  
 
             frames[0] = { float4(xDir, 0), float4(yDir, 0), float4(zDir, 0), float4(points[0], 1) };
 

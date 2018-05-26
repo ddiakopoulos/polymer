@@ -32,11 +32,40 @@ constexpr const char basic_frag[] = R"(#version 330
     uniform vec3 u_color;
     void main()
     {
-        f_color = vec4(color, 1);
+        f_color = vec4(color + u_color, 1);
     }
 )";
 
-class trajectory_follower
+constexpr const char skybox_vert[] = R"(#version 330
+    layout(location = 0) in vec3 vertex;
+    layout(location = 1) in vec3 normal;
+    uniform mat4 u_viewProj;
+    uniform mat4 u_modelMatrix;
+    out vec3 v_normal;
+    out vec3 v_world;
+    void main()
+    {
+        vec4 worldPosition = u_modelMatrix * vec4(vertex, 1);
+        gl_Position = u_viewProj * worldPosition;
+        v_world = worldPosition.xyz;
+        v_normal = normal;
+    }
+)";
+
+constexpr const char skybox_frag[] = R"(#version 330
+    in vec3 v_normal, v_world;
+    out vec4 f_color;
+    uniform vec3 u_bottomColor;
+    uniform vec3 u_topColor;
+    void main()
+    {
+        float h = normalize(v_world).y;
+        f_color = vec4(mix(u_bottomColor, u_topColor, max(pow(max(h, 0.0), 0.8), 0.0)), 1.0);
+    }
+)";
+
+
+class transport_frames
 {
     std::vector<float4x4> frames;
 
@@ -49,7 +78,7 @@ public:
 
     void reset() { frames.clear(); }
 
-    std::vector<float4x4> & get_frames() { return frames; }
+    std::vector<float4x4> & get() { return frames; }
 
     float4x4 get_transform(const size_t idx) const
     {
@@ -66,11 +95,10 @@ public:
         for (int i = 0; i < frames.size(); ++i)
         {
             const float4x4 m = get_transform(i);
-            const float3 qxdir = normalize(mul(m, float4(1, 0, 0, 0)).xyz());
-            const float3 qydir = normalize(mul(m, float4(0, 1, 0, 0)).xyz());
-            const float3 qzdir = normalize(mul(m, float4(0, 0, 1, 0)).xyz());
-
-            axisMeshes.push_back(make_axis_mesh(qxdir, qydir, qzdir));
+            const float3 xdir = normalize(mul(m, float4(1, 0, 0, 0)).xyz());
+            const float3 ydir = normalize(mul(m, float4(0, 1, 0, 0)).xyz());
+            const float3 zdir = normalize(mul(m, float4(0, 0, 1, 0)).xyz());
+            axisMeshes.push_back(make_axis_mesh(xdir, ydir, zdir));
         }
         return axisMeshes;
     }
@@ -84,16 +112,21 @@ struct sample_gl_camera_trajectory final : public polymer_app
     fps_camera_controller fly_controller;
 
     gl_renderable_grid grid{ 1.f, 32, 32};
-    trajectory_follower follower;
+    transport_frames frames;
 
     std::unique_ptr<gl_gizmo> gizmo;
     tinygizmo::rigid_transform gizmo_ctrl_point[4];
     std::array<transform, 4> control_points;
 
     gl_mesh axis_mesh;
+    gl_mesh sphere_mesh;
     gl_shader basic_shader;
+    gl_shader sky_shader;
+
+    uint32_t playback_index = 0;
 
     gl_texture_2d renderTextureRGBA;
+    gl_texture_2d renderTextureDepth;
     gl_framebuffer renderFramebuffer;
 
     std::unique_ptr<gl_texture_view_2d> view;
@@ -121,13 +154,17 @@ sample_gl_camera_trajectory::sample_gl_camera_trajectory()
     view.reset(new gl_texture_view_2d(true));
 
     renderTextureRGBA.setup(width, height, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    renderTextureDepth.setup(width, height, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
     glNamedFramebufferTexture2DEXT(renderFramebuffer, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, renderTextureRGBA, 0);
+    glNamedFramebufferTexture2DEXT(renderFramebuffer, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, renderTextureDepth, 0);
     renderFramebuffer.check_complete();
 
     gizmo.reset(new gl_gizmo());
 
+    sphere_mesh = make_sphere_mesh(1.f);
     axis_mesh = make_mesh_from_geometry(make_axis());
     basic_shader = gl_shader(basic_vert, basic_frag);
+    sky_shader = gl_shader(skybox_vert, skybox_frag);
 
     control_points[0].position = { -3, 2, 0 };
     control_points[1].position = { -1, 4, 0 };
@@ -139,7 +176,7 @@ sample_gl_camera_trajectory::sample_gl_camera_trajectory()
     gizmo_ctrl_point[2] = from_linalg(control_points[2]);
     gizmo_ctrl_point[3] = from_linalg(control_points[3]);
 
-    follower.recompute(control_points, 32);
+    frames.recompute(control_points, 32);
 
     debug_cam.look_at({ 0, 0, 2 }, { 0, 0.1f, 0 });
     fly_controller.set_camera(&debug_cam);
@@ -156,7 +193,7 @@ void sample_gl_camera_trajectory::on_input(const app_input_event & event)
 
     if (event.type == app_input_event::KEY && event.action == GLFW_RELEASE)
     {
-        // ...
+        playback_index = 0;
     }
 }
 
@@ -166,6 +203,11 @@ void sample_gl_camera_trajectory::on_update(const app_update_event & e)
     glfwGetWindowSize(window, &width, &height);
     fly_controller.update(e.timestep_ms);
     gizmo->update(debug_cam, float2(width, height));
+
+    const auto frameMatrix = frames.get_transform(playback_index);
+    follow_cam.pose.position = frameMatrix[3].xyz();
+    follow_cam.pose.orientation = make_rotation_quat_from_pose_matrix(frameMatrix);
+    playback_index = playback_index++ % (frames.get().size() - 1);
 }
 
 void sample_gl_camera_trajectory::render_scene(const GLuint framebuffer, const perspective_camera cam)
@@ -176,13 +218,31 @@ void sample_gl_camera_trajectory::render_scene(const GLuint framebuffer, const p
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 
     glViewport(0, 0, width, height);
-    glClearColor(0.25f, 0.25f, 0.25f, 1.0f);
+    glClearColor(0.15f, 0.15f, 0.15f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     const float4x4 projectionMatrix = cam.get_projection_matrix(float(width) / float(height));
     const float4x4 viewMatrix = cam.get_view_matrix();
     const float4x4 viewProjectionMatrix = mul(projectionMatrix, viewMatrix);
 
+    // Draw the sky
+    glDisable(GL_DEPTH_TEST);
+    {
+        // Largest non-clipped sphere
+        const float4x4 world = mul(make_translation_matrix(cam.get_eye_point()), scaling_matrix(float3(cam.farclip * .99f)));
+
+        sky_shader.bind();
+        sky_shader.uniform("u_viewProj", viewProjectionMatrix);
+        sky_shader.uniform("u_modelMatrix", world);
+        sky_shader.uniform("u_bottomColor", float3(52.0f / 255.f, 62.0f / 255.f, 82.0f / 255.f));
+        sky_shader.uniform("u_topColor", float3(81.0f / 255.f, 101.0f / 255.f, 142.0f / 255.f));
+        sphere_mesh.draw_elements();
+        sky_shader.unbind();
+    }
+
+    glEnable(GL_DEPTH_TEST);
+
+    // Draw the floor
     grid.draw(viewProjectionMatrix);
 }
 
@@ -193,13 +253,12 @@ void sample_gl_camera_trajectory::on_draw()
     int width, height;
     glfwGetWindowSize(window, &width, &height);
 
-    glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // Render into framebuffer
-    render_scene(renderFramebuffer, debug_cam);
+    render_scene(renderFramebuffer, follow_cam);
 
     // Render onto default framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -214,7 +273,7 @@ void sample_gl_camera_trajectory::on_draw()
             control_points[1] = to_linalg(gizmo_ctrl_point[1]);
             control_points[2] = to_linalg(gizmo_ctrl_point[2]);
             control_points[3] = to_linalg(gizmo_ctrl_point[3]);
-            follower.recompute(control_points, 32);
+            frames.recompute(control_points, 32);
         }
     }
 
@@ -223,13 +282,13 @@ void sample_gl_camera_trajectory::on_draw()
 
         basic_shader.bind();
 
-        if (follower.get_frames().size() > 0)
+        if (frames.get().size() > 0)
         {
-            auto meshes = follower.debug_mesh();
-            for (int i = 0; i < follower.get_frames().size(); ++i)
+            auto meshes = frames.debug_mesh();
+            for (int i = 0; i < frames.get().size(); ++i)
             {
-                auto modelMatrix = follower.get_transform(i);
-                basic_shader.uniform("u_mvp", mul(viewProjectionMatrix, make_translation_matrix(modelMatrix[3].xyz())));
+                const auto frameMatrix = frames.get_transform(i);
+                basic_shader.uniform("u_mvp", mul(viewProjectionMatrix, make_translation_matrix(frameMatrix[3].xyz())));
                 meshes[i].draw_elements(); // axes drawn directly from matrix
             }
         }
