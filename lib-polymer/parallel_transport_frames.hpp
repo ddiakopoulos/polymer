@@ -26,8 +26,8 @@ namespace polymer
     {
         bezier_spline curve(controlPoints[0].position, controlPoints[1].position, controlPoints[2].position, controlPoints[3].position);
 
-        std::vector<float3> points;         // Points in spline
-        std::vector<float3> tangents;       // Tangents in spline (fwd dir)
+        std::vector<float3> points;   // Points in spline
+        std::vector<float3> tangents; // Tangents in spline (fwd dir)
 
         // Build the spline.
         float dt = 1.0f / float(segments);
@@ -59,8 +59,8 @@ namespace polymer
 
                 if ((length2(tangents[i - 1]) != 0.0f) && (length2(tangents[i]) != 0.0f))
                 {
-                    const float3 prevTangent = normalize(tangents[i - 1]);
-                    const float3 curTangent = normalize(tangents[i]);
+                    const float3 prevTangent = (tangents[i - 1]);
+                    const float3 curTangent = (tangents[i]);
 
                     float dp = dot(prevTangent, curTangent);
 
