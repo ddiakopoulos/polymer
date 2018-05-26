@@ -107,14 +107,15 @@ namespace polymer
         std::vector<particle> particles;
         std::vector<float4> instances;
         gl_buffer vertexBuffer, instanceBuffer;
-        std::vector<std::unique_ptr<particle_modifier>> particleModifiers;
+        gl_vertex_array_object vao;
+        std::vector<std::shared_ptr<particle_modifier>> particleModifiers;
         size_t trail{ 0 };
     public:
         gl_particle_system(size_t trail_count);
         void update(const float dt, const float3 gravityVec);
-        void add_modifier(std::unique_ptr<particle_modifier> modifier);
+        void add_modifier(std::shared_ptr<particle_modifier> modifier);
         void add(const float3 position, const float3 velocity, const float size, const float lifeMs);
-        void draw(const float4x4 & viewMat, const float4x4 & projMat, gl_shader & shader, gl_texture_2d & outerTex, gl_texture_2d & innerTex, const float time);
+        void draw(const float4x4 & viewMat, const float4x4 & projMat, gl_shader & shader, gl_texture_2d & particle_tex, const float time);
     };
 
     ///////////////////////////
@@ -201,7 +202,7 @@ namespace polymer
         disc_emitter(aabb_2d local) : localBounds(local) {}
         void emit(gl_particle_system & system) override
         {
-            float2 size = localBounds.size();
+            const float2 size = localBounds.size();
             float radius = 0.5f * std::sqrt(size.x * size.x + size.y * size.y);
             radius = gen.random_float(0, radius);
             for (int i = 0; i < 3; ++i)

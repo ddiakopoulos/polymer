@@ -10,6 +10,10 @@
 #include "gl-mesh-util.hpp"
 #include "gl-procedural-mesh.hpp"
 #include "gl-texture-view.hpp"
+#include "shader-library.hpp"
+#include "asset-handle.hpp"
+#include "asset-handle-utils.hpp"
+
 #include "gl-particle-system.hpp"
 
 using namespace polymer;
@@ -69,10 +73,20 @@ struct sample_gl_particle_hull final : public polymer_app
 {
     perspective_camera cam;
     fps_camera_controller flycam;
+    app_update_event last_update;
+    gl_renderable_grid grid{ 1.f, 32, 32 };
+
+    std::unique_ptr<gl_shader_monitor> shaderMonitor;
+
+    gl_particle_system particle_system{ 4 };
+    point_emitter pt_emitter;
+    std::shared_ptr<gravity_modifier> grav_mod;
 
     gl_mesh sphere_mesh;
     gl_shader texured_shader;
     gl_shader sky_shader;
+
+    gl_texture_2d particle_tex;
 
     sample_gl_particle_hull();
     ~sample_gl_particle_hull();
@@ -96,6 +110,17 @@ sample_gl_particle_hull::sample_gl_particle_hull() : polymer_app(1280, 720, "sam
     texured_shader = gl_shader(textured_vert, textured_frag);
     sky_shader = gl_shader(skybox_vert, skybox_frag);
 
+    grav_mod = std::make_shared<gravity_modifier>(float3(0, -1, 0));
+    particle_system.add_modifier(grav_mod);
+
+    particle_tex = load_image("../../assets/images/particle.png");
+
+    shaderMonitor.reset(new gl_shader_monitor("../../assets"));
+
+    shaderMonitor->watch("particle-shader",
+        "../../assets/shaders/prototype/particle_system_vert.glsl",
+        "../../assets/shaders/prototype/particle_system_frag.glsl");
+
     cam.look_at({ 0, 0, 2 }, { 0, 0.1f, 0 });
     flycam.set_camera(&cam);
 }
@@ -114,6 +139,9 @@ void sample_gl_particle_hull::on_update(const app_update_event & e)
     int width, height;
     glfwGetWindowSize(window, &width, &height);
     flycam.update(e.timestep_ms);
+    shaderMonitor->handle_recompile();
+    last_update = e;
+    pt_emitter.emit(particle_system);
 }
 
 void sample_gl_particle_hull::on_draw()
@@ -122,6 +150,8 @@ void sample_gl_particle_hull::on_draw()
 
     int width, height;
     glfwGetWindowSize(window, &width, &height);
+
+    particle_system.update(last_update.timestep_ms, float3(0, -1, 0));
 
     glViewport(0, 0, width, height);
     glClearColor(0.25f, 0.25f, 0.25f, 1.0f);
@@ -135,6 +165,13 @@ void sample_gl_particle_hull::on_draw()
     const float4x4 projectionMatrix = cam.get_projection_matrix(float(width) / float(height));
     const float4x4 viewMatrix = cam.get_view_matrix();
     const float4x4 viewProjectionMatrix = mul(projectionMatrix, viewMatrix);
+
+    shader_handle particle_shader_h("particle-shader");
+    gl_shader & shader = particle_shader_h.get()->get_variant()->shader;
+
+    grid.draw(viewProjectionMatrix);
+
+    particle_system.draw(viewMatrix, projectionMatrix, shader, particle_tex, last_update.elapsed_s);
 
     gl_check_error(__FILE__, __LINE__);
 
