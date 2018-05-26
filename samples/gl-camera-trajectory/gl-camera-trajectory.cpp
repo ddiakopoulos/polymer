@@ -64,7 +64,6 @@ constexpr const char skybox_frag[] = R"(#version 330
     }
 )";
 
-
 class transport_frames
 {
     std::vector<float4x4> frames;
@@ -193,7 +192,8 @@ void sample_gl_camera_trajectory::on_input(const app_input_event & event)
 
     if (event.type == app_input_event::KEY && event.action == GLFW_RELEASE)
     {
-        playback_index = 0;
+        if (event.value[0] == GLFW_KEY_LEFT) playback_index--;
+        if (event.value[0] == GLFW_KEY_RIGHT) playback_index++;
     }
 }
 
@@ -207,7 +207,7 @@ void sample_gl_camera_trajectory::on_update(const app_update_event & e)
     const auto frameMatrix = frames.get_transform(playback_index);
     follow_cam.pose.position = frameMatrix[3].xyz();
     follow_cam.pose.orientation = make_rotation_quat_from_pose_matrix(frameMatrix);
-    playback_index = playback_index++ % (frames.get().size() - 1);
+    playback_index = playback_index % (frames.get().size() - 1);
 }
 
 void sample_gl_camera_trajectory::render_scene(const GLuint framebuffer, const perspective_camera cam)
