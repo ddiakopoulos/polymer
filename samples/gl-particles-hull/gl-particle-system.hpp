@@ -58,8 +58,8 @@ namespace polymer
         {
             for (auto & p : particles)
             {
-                float3 distance = position - p.position;
-                float distSqr = length2(distance);
+                const float3 distance = position - p.position;
+                const float distSqr = length2(distance);
                 if (distSqr > radiusSquared) return;
                 float force = strength / distSqr;
                 force = force > maxStrength ? maxStrength : force;
@@ -89,7 +89,7 @@ namespace polymer
         {
             for (auto & p : particles)
             {
-                float reflectedVelocity = dot(ground.get_normal(), p.velocity);
+                const float reflectedVelocity = dot(ground.get_normal(), p.velocity);
                 if (dot(ground.equation, float4(p.position, 1)) < 0.f && reflectedVelocity < 0.f)
                 {
                     p.velocity -= ground.get_normal() * (reflectedVelocity * 2.0f);
@@ -111,9 +111,9 @@ namespace polymer
         size_t trail{ 0 };
     public:
         gl_particle_system(size_t trail_count);
-        void update(float dt, const float3 & gravityVec);
+        void update(const float dt, const float3 gravityVec);
         void add_modifier(std::unique_ptr<particle_modifier> modifier);
-        void add(const float3 & position, const float3 & velocity, float size, float lifeMs);
+        void add(const float3 position, const float3 velocity, const float size, const float lifeMs);
         void draw(const float4x4 & viewMat, const float4x4 & projMat, gl_shader & shader, gl_texture_2d & outerTex, gl_texture_2d & innerTex, const float time);
     };
 
@@ -134,9 +134,9 @@ namespace polymer
         {
             for (int i = 0; i < 12; ++i)
             {
-                auto v1 = gen.random_float(-.5f, +.5f);
-                auto v2 = gen.random_float(0.5f, 2.f);
-                auto v3 = gen.random_float(-.5f, +.5f);
+                const auto v1 = gen.random_float(-.5f, +.5f);
+                const auto v2 = gen.random_float(0.5f, 2.f);
+                const auto v3 = gen.random_float(-.5f, +.5f);
                 system.add(pose.position, float3(v1, v2, v3), gen.random_float(0.05f, 0.2f), 4.f);
             }
         }
@@ -148,14 +148,14 @@ namespace polymer
         cube_emitter(aabb_3d local) : localBounds(local) {}
         void emit(gl_particle_system & system) override
         {
-            float3 min = pose.transform_coord(-(localBounds.size() * 0.5f));
-            float3 max = pose.transform_coord(+(localBounds.size() * 0.5f));
+            const float3 min = pose.transform_coord(-(localBounds.size() * 0.5f));
+            const float3 max = pose.transform_coord(+(localBounds.size() * 0.5f));
 
             for (int i = 0; i < 1; ++i)
             {
-                auto v1 = gen.random_float(min.x, max.x);
-                auto v2 = gen.random_float(min.y, max.y);
-                auto v3 = gen.random_float(min.z, max.z);
+                const auto v1 = gen.random_float(min.x, max.x);
+                const auto v2 = gen.random_float(min.y, max.y);
+                const auto v3 = gen.random_float(min.z, max.z);
                 system.add(float3(v1, v2, v3), float3(0, 1, 0), gen.random_float(0.05f, 0.2f), 4.f);
             }
         }
@@ -169,10 +169,10 @@ namespace polymer
         {
             for (int i = 0; i < 12; ++i)
             {
-                float u = gen.random_float(0, 1) * float(POLYMER_PI);
-                float v = gen.random_float(0, 1) * float(POLYMER_TAU);
-                float3 normal = cartsesian_coord(u, v, 1.f);
-                float3 point = pose.transform_coord(normal);
+                const float u = gen.random_float(0, 1) * float(POLYMER_PI);
+                const float v = gen.random_float(0, 1) * float(POLYMER_TAU);
+                const float3 normal = cartsesian_coord(u, v, 1.f);
+                const float3 point = pose.transform_coord(normal);
                 system.add(point, normal * 0.5f, 0.1f, 4.f);
             }
         }
@@ -189,7 +189,7 @@ namespace polymer
                 const float2 halfExtents = localBounds.size() * 0.5f;
                 const float w = gen.random_float(-halfExtents.x, halfExtents.x);
                 const float h = gen.random_float(-halfExtents.y, halfExtents.y);
-                float3 point = pose.transform_coord(float3(w, 0, h));
+                const float3 point = pose.transform_coord(float3(w, 0, h));
                 system.add(point, float3(0, 1, 0), 0.1f, 4.f);
             }
         }
@@ -209,7 +209,7 @@ namespace polymer
                 const float ang = gen.random_float_sphere();
                 const float w = std::cos(ang) * radius;
                 const float h = std::sin(ang) * radius;
-                float3 point = pose.transform_coord(float3(w, 0, h));
+                const float3 point = pose.transform_coord(float3(w, 0, h));
                 system.add(point, float3(0, 1, 0), 0.1f, 4.f);
             }
         }
