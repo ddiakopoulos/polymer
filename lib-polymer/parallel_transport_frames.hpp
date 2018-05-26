@@ -18,7 +18,7 @@
 //     }
 //     m[n-1] = last_frame(m[n-2], p[n-2], p[n-1]);
 //
-//   See Game Programming Gems 2, Section 2.5
+//   See "The Parallel Transport Frame", Game Programming Gems 2, Section 2.5 (Carl Dougan)
 
 namespace polymer
 {
@@ -38,29 +38,33 @@ namespace polymer
             tangents.push_back(normalize(curve.derivative(t)));
         }
 
-        auto n = points.size();
-        std::vector<float4x4> frames(n); // Coordinate frame at each spline sample
+        const size_t num_points = points.size();
+        std::vector<float4x4> frames(num_points); // Coordinate frame at each spline sample
 
         // Require at least 3 points to start
-        if (n >= 3)
+        if (num_points >= 3)
         {
             // First frame, expressed in a Y-up, right-handed coordinate system
-            const float3 B = normalize(points[1] - points[0]);      // bitangent
-            const float3 T = normalize(cross({ 0, 1, 0 }, B));      // tangent
-            const float3 N = cross(B, N);                           // normal
-            frames[0] = { float4(-T, 0), float4(N, 0), float4(B, 0), float4(points[0], 1) };
+            const float3 zDir = normalize(points[1] - points[0]);    // 
+            const float3 xDir = normalize(cross({ 0, 1, 0 }, zDir)); // 
+            const float3 yDir = cross(zDir, xDir);                   // 
+
+            std::cout << "Start Normal: " << yDir << std::endl;
+
+            frames[0] = { float4(xDir, 0), float4(yDir, 0), float4(zDir, 0), float4(points[0], 1) };
 
             // This sets the transformation matrix to the last reference frame defined by the previously computed 
             // transformation matrix and the last point along the curve.
-            for (int i = 1; i < n - 1; ++i)
+            for (int i = 1; i < num_points - 1; ++i)
             {
                 float3 axis;
                 float r = 0.f;
 
-                if ((length2(tangents[i - 1]) != 0.0f) && (length2(tangents[i]) != 0.0f))
+                // Parallel tangent test. 
+                if ((length(tangents[i - 1]) != 0.0f) && (length(tangents[i]) != 0.0f))
                 {
-                    const float3 prevTangent = (tangents[i - 1]);
-                    const float3 curTangent = (tangents[i]);
+                    const float3 prevTangent = normalize(tangents[i - 1]);
+                    const float3 curTangent = normalize(tangents[i]);
 
                     float dp = dot(prevTangent, curTangent);
 
@@ -86,7 +90,7 @@ namespace polymer
             }
 
             // Last frame
-            frames[n - 1] = mul(make_translation_matrix(points[n - 1] - points[n - 2]), frames[n - 2]);
+            frames[num_points - 1] = mul(make_translation_matrix(points[num_points - 1] - points[num_points - 2]), frames[num_points - 2]);
         }
 
         return frames;
