@@ -10,6 +10,7 @@
 #include "geometry.hpp"
 #include "bullet_utils.hpp"
 #include "bullet_object.hpp"
+#include <memory>
 
 namespace polymer
 {

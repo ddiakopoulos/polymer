@@ -1,3 +1,9 @@
+/*
+ * Based on: https://github.com/google/lullaby/tree/master/lullaby/modules/dispatcher
+ * Apache 2.0 License. Copyright 2017 Google Inc. All Rights Reserved.
+ * See LICENSE file for full attribution information.
+ */
+
 #include "core-events.hpp"
 #include <unordered_map>
 
