@@ -84,11 +84,8 @@ namespace tween
 
 }
 
-/*
- * A simple playback manager for basic animation curves. 
- * Next: explore threaded approach, on_start callback & delay
- */
-
+// A simple playback manager for basic animation curves. 
+// todo - explore threaded approach, on_start callback & delay
 namespace polymer
 {
     class simple_animator

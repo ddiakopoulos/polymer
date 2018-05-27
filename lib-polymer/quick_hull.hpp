@@ -1,14 +1,12 @@
-/*
- * Implementation of the 3d QuickHull algorithm originally by Antti Kuukka
- * Input: a list of points in 3d space (for example, vertices of a 3d mesh)
- * Output: a ConvexHull object which provides vertex and index buffers of the generated convex hull as a triangle mesh.
- * License: This is free and unencumbered software released into the public domain.
- * Original source: https://github.com/akuukka/quickhull
- * References: 
- * [1] http://box2d.org/files/GDC2014/DirkGregorius_ImplementingQuickHull.pdf
- * [2] http://thomasdiewald.com/blog/?p=1888
- * [3] https://fgiesen.wordpress.com/2012/02/21/half-edge-based-mesh-representations-theory/
- */
+/// Implementation of the 3d quick_hull algorithm originally by Antti Kuukka
+/// Input: a list of points in 3d space (for example, vertices of a 3d mesh)
+/// Output: a convex_hull object which provides vertex and index buffers of the generated convex hull as a triangle mesh.
+/// License: This is free and unencumbered software released into the public domain.
+/// Original source: https://github.com/akuukka/quickhull
+/// References: 
+/// [1] http://box2d.org/files/GDC2014/DirkGregorius_ImplementingQuickHull.pdf
+/// [2] http://thomasdiewald.com/blog/?p=1888
+/// [3] https://fgiesen.wordpress.com/2012/02/21/half-edge-based-mesh-representations-theory/
 
 #ifndef polymer_quickhull_hpp
 #define polymer_quickhull_hpp
@@ -281,7 +279,7 @@ namespace quickhull
     //   Convex Hull   //
     /////////////////////
 
-    class ConvexHull 
+    class convex_hull 
     {
         std::unique_ptr<std::vector<float3>> m_optimizedVertexBuffer;
         std::vector<float3> m_vertices;
@@ -289,10 +287,11 @@ namespace quickhull
 
     public:
 
-        ConvexHull() {};
+        // Default constructor for use in std::future
+        convex_hull() {};
 
         // Construct vertex and index buffers from half edge mesh and pointcloud
-        ConvexHull(const MeshBuilder & mesh, std::vector<float3> & pointCloud, bool CCW, bool useOriginalIndices)
+        convex_hull(const MeshBuilder & mesh, std::vector<float3> & pointCloud, bool CCW, bool useOriginalIndices)
         {
             if (!useOriginalIndices) 
             {
@@ -387,7 +386,7 @@ namespace quickhull
         std::vector<float3> & getVertexBuffer() { return m_vertices; }
     };
 
-    class QuickHull 
+    class quick_hull 
     {
         const float Epsilon{ 0.0001f };
 
@@ -408,7 +407,7 @@ namespace quickhull
         std::vector<size_t> m_newHalfEdgeIndices;
         std::vector< std::unique_ptr<std::vector<size_t>> > m_disabledFacePointVectors;
 
-        // Create a half edge mesh representing the base tetrahedron from which the QuickHull iteration proceeds. m_extremeValues must be properly set up when this is called.
+        // Create a half edge mesh representing the base tetrahedron from which the quick_hull iteration proceeds. m_extremeValues must be properly set up when this is called.
         MeshBuilder getInitialTetrahedron()
         {
             const size_t vertexCount = m_vertexData.size();
@@ -682,7 +681,7 @@ namespace quickhull
             return false;
         }
         
-        // This will update m_mesh from which we create the ConvexHull object that getConvexHull function returns
+        // This will update m_mesh from which we create the convex_hull object that get_convex_hull function returns
         void createConvexHalfEdgeMesh()
         {
             // Temporary variables used during iteration
@@ -945,8 +944,8 @@ namespace quickhull
             m_indexVectorPool.clear();
         }
         
-        // Constructs the convex hull into a MeshBuilder object which can be converted to a ConvexHull or Mesh object
-        void buildMesh(bool CCW, bool useOriginalIndices, float eps)
+        // Constructs the convex hull into a MeshBuilder object which can be converted to a convex_hull or Mesh object
+        void build_mesh(bool CCW, bool useOriginalIndices, float eps)
         {
             m_extremeValues = getExtremeValues(); // find extreme values and use them to compute the scale of the point cloud.
             m_scale = getScale(m_extremeValues);
@@ -969,29 +968,27 @@ namespace quickhull
             }
         }
 
-        ConvexHull getConvexHull(bool CCW, bool useOriginalIndices, float eps)
+        convex_hull get_convex_hull(bool CCW, bool useOriginalIndices, float eps)
         {
-            buildMesh(CCW, useOriginalIndices, eps);
-            return ConvexHull(m_mesh, m_vertexData, CCW, useOriginalIndices);
+            build_mesh(CCW, useOriginalIndices, eps);
+            return convex_hull(m_mesh, m_vertexData, CCW, useOriginalIndices);
         }
 
     public:
         
-        // Fair warning: QuickHull has the capacity to mutate the output of pointCloud.
-        QuickHull(std::vector<float3> & pointCloud) : m_vertexData(pointCloud) { }
+        // Fair warning: quick_hull has the capacity to mutate the output of pointCloud.
+        quick_hull(std::vector<float3> & pointCloud) : m_vertexData(pointCloud) { }
 
-        /*
-         * UseOriginalIndices: should the output mesh use same vertex indices as the original point cloud. If this is false,
-         * then we generate a new vertex buffer which contains only the vertices that are part of the convex hull.
-         * Epsilon : minimum distance to a plane to consider a point being on positive of it (for a point cloud with scale 1)
-         */
-        ConvexHull computeConvexHull(bool formatOutputCCW, bool useOriginalIndices, float eps = 0.00001)
+        /// UseOriginalIndices: should the output mesh use same vertex indices as the original point cloud. If this is false,
+        /// then we generate a new vertex buffer which contains only the vertices that are part of the convex hull.
+        /// Epsilon: minimum distance to a plane to consider a point being on positive of it (for a point cloud with scale 1)
+        convex_hull compute(bool formatOutputCCW, bool useOriginalIndices, float eps = 0.00001)
         {
             assert(m_vertexData.size() >= 3);
-            return getConvexHull(formatOutputCCW, useOriginalIndices, eps);
+            return get_convex_hull(formatOutputCCW, useOriginalIndices, eps);
         }
         
-        const size_t & getFailedHorizonEdges() { return m_failedHorizonEdges; }
+        const size_t getFailedHorizonEdges() { return m_failedHorizonEdges; }
     };
 
 } // namespace quickhull

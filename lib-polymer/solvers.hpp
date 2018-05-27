@@ -1,3 +1,4 @@
+// Uses code from the following Graphics Gem sample:
 // https://github.com/erich666/GraphicsGems/blob/master/gems/Roots3And4.c (Jochen Schwarze in Game Gems, 1990)
 // https://github.com/erich666/GraphicsGems/blob/master/LICENSE.md
 

@@ -1,8 +1,3 @@
-#pragma once
-
-#ifndef polymer_culling_octree_hpp
-#define polymer_culling_octree_hpp
-
 /// An octree is a tree data structure in which each internal node has exactly
 /// eight children. Octrees are most often used to partition a three
 /// dimensional space by recursively subdividing it into eight octants.
@@ -10,6 +5,11 @@
 /// approach, which is to use a flat array with an offset. The `inside` method
 /// defines the comparison function (loose in this case). The main usage of this
 /// class is for basic frustum culling.
+
+#pragma once
+
+#ifndef polymer_culling_octree_hpp
+#define polymer_culling_octree_hpp
 
 #include "../lib-engine/gfx/gl/gl-api.hpp"
 

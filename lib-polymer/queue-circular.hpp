@@ -2,6 +2,8 @@
 // Modified for C++11 and added support for some numeric analytics
 // Note: no thread-safety guarantees
 
+#pragma once
+
 #ifndef circular_queue_hpp
 #define circular_queue_hpp
 

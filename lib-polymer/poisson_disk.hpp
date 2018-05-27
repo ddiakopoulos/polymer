@@ -1,4 +1,5 @@
 // Based on https://github.com/simongeilfus/PoissonDiskDistribution (MIT License)
+// Extended from the original for poisson sampling volumes (3d)
 
 #pragma once
 

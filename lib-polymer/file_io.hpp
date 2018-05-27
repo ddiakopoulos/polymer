@@ -1,5 +1,7 @@
-#ifndef file_io_h
-#define file_io_h
+#pragma once
+
+#ifndef file_io_hpp
+#define file_io_hpp
 
 #include <exception>
 #include <vector>
@@ -65,4 +67,4 @@ namespace polymer
 
 }
 
-#endif // file_io_h
+#endif // file_io_hpp

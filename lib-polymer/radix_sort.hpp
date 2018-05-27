@@ -1,4 +1,4 @@
-// Original Source: http://stereopsis.com/radix.html && http://codercorner.com/RadixSortRevisited.htm
+// Original Source: http://stereopsis.com/radix.html + http://codercorner.com/RadixSortRevisited.htm
 // This is free and unencumbered software released into the public domain.
 
 #pragma once
