@@ -38,6 +38,8 @@ void environment::copy(entity src, entity dest)
         }
     });
 
+    log::get()->assetLog->info("[environment] copied entity {} to {}", src, dest);
+
 }
 void environment::destroy(entity e)
 {
@@ -54,6 +56,7 @@ void environment::destroy(entity e)
             });
         }
         active_entities.clear();
+        log::get()->assetLog->info("[environment] destroyed all entities");
     }
     else
     {
@@ -64,6 +67,8 @@ void environment::destroy(entity e)
         {
             if (system_pointer) system_pointer->destroy(e);
         });
+
+        log::get()->assetLog->info("[environment] destroyed single entity {}", e);
     }
 }
 

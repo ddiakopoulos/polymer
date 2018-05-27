@@ -34,8 +34,10 @@ namespace polymer
         virtual bool create(entity e, poly_typeid type, void * data) override final
         {
             if (type != get_typeid<identifier_component>()) { return false; }
-            if (!get_name(e).empty()) throw std::runtime_error("duplicate names are not permitted");
-            return set_name(e, static_cast<identifier_component *>(data)->id);
+            std::string new_name = static_cast<identifier_component *>(data)->id;
+            const entity existing_entity = find_entity(new_name);
+            if (existing_entity != kInvalidEntity) set_name(e, "clone of " + new_name);
+            return set_name(e, new_name);
         }
 
         bool create(entity e, const std::string & name)
@@ -80,7 +82,7 @@ namespace polymer
             hash_to_entity_.erase(hash(existing_name.c_str()));
             hash_to_entity_[h] = entity;
 
-            entity_to_name_[entity] = name;
+            entity_to_name_[entity] = identifier_component(entity, name);
             entity_to_hash_[entity] = h;
 
             return true;

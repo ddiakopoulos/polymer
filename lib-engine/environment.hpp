@@ -116,8 +116,8 @@ namespace polymer
     {
         std::string id;
         identifier_component() {};
-        identifier_component(const std::string & id) : id(id) {};
         identifier_component(entity e) : base_component(e) {}
+        identifier_component(entity e, const std::string & id) : base_component(e), id(id) {}
     };
     POLYMER_SETUP_TYPEID(identifier_component);
 
