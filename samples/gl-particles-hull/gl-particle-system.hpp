@@ -18,7 +18,7 @@ namespace polymer
     {
         float3 position;
         float3 velocity;
-        float3 color;
+        float3 color{ 1, 1, 1 };
         float size;
         float lifeMs;
         bool isDead{ false };
@@ -39,7 +39,7 @@ namespace polymer
         {
             for (auto & p : particles)
             {
-                p.color += float3(0.1, 1, 1);
+                p.color = float3(1, 1, 1);
             }
         }
     };
@@ -117,9 +117,15 @@ namespace polymer
 
     class gl_particle_system
     {
+        struct instance_data
+        {
+            float4 position_size;
+            float4 color;
+        };
+
         std::vector<particle> particles;
-        std::vector<float4> instances;
-        gl_buffer vertexBuffer, instanceBuffer, colorBuffer;
+        std::vector<instance_data> instances;
+        gl_buffer vertexBuffer, instanceBuffer;
         gl_vertex_array_object vao;
         std::vector<std::shared_ptr<particle_modifier>> particleModifiers;
         size_t trail{ 0 };

@@ -63,11 +63,15 @@ void gl_particle_system::update(const float dt, const float3 gravityVec)
         {
             position -= p.velocity * 0.001f;
             sz *= 0.97f;
-            instances.push_back({ position, sz });
+
+            instance_data instance;
+            instance.position_size = float4(position, sz);
+            instance.color = float4(p.color, 1);
+            instances.emplace_back(instance);
         }
     }
 
-    glNamedBufferDataEXT(instanceBuffer, instances.size() * sizeof(float4), instances.data(), GL_DYNAMIC_DRAW);
+    glNamedBufferDataEXT(instanceBuffer, instances.size() * sizeof(instance_data), instances.data(), GL_DYNAMIC_DRAW);
 }
 
 void gl_particle_system::draw(
@@ -95,27 +99,21 @@ void gl_particle_system::draw(
 
     // Instance buffer contains position (xyz) and size/radius (w)
     glBindBuffer(GL_ARRAY_BUFFER, instanceBuffer);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(float4), nullptr);
-    glVertexAttribDivisor(0, 1);
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(instance_data), nullptr);
+    glVertexAttribDivisor(0, 1); // An attribute is referred to as instanced if its GL_VERTEX_ATTRIB_ARRAY_DIVISOR value is non-zero. 
 
     // Draw quad with texcoords
     glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-    glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(float2), nullptr);
-    glVertexAttribDivisor(1, 0);
+    glVertexAttribDivisor(1, 0); // If divisor is zero, the attribute at slot index advances once per vertex
 
-    //glBindBuffer(GL_ARRAY_BUFFER, colorBuffer);
-    //glEnableVertexAttribArray(2);
-    //glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(float3), nullptr);
-    //glVertexAttribDivisor(0, 1);
-
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
     glDrawArraysInstanced(GL_TRIANGLES, 0, 6, (GLsizei)instances.size());
-
     glDisableVertexAttribArray(0);
     glDisableVertexAttribArray(1);
-    glDisableVertexAttribArray(2);
 
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
     glDepthMask(GL_TRUE);
