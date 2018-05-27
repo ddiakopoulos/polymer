@@ -85,6 +85,9 @@ void gl_particle_system::draw(
 
     shader.bind();
 
+    const GLboolean wasBlendingEnabled = glIsEnabled(GL_BLEND);
+    const GLboolean depthWriteEnabled = glIsEnabled(GL_DEPTH_WRITEMASK);
+
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // one-one, additive
     glDepthMask(GL_FALSE);
@@ -96,7 +99,6 @@ void gl_particle_system::draw(
     shader.texture("s_particleTex", 0, particle_tex, GL_TEXTURE_2D);
 
     glBindVertexArray(vao);
-
 
     // Instance buffer contains position (xyz) and size/radius (w)
     glBindBuffer(GL_ARRAY_BUFFER, instanceBuffer);
@@ -120,8 +122,8 @@ void gl_particle_system::draw(
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
-    glDepthMask(GL_TRUE);
-    glDisable(GL_BLEND);
+    if (wasBlendingEnabled) glEnable(GL_BLEND);
+    if (depthWriteEnabled) glDepthMask(GL_TRUE);
 
     shader.unbind();
 
