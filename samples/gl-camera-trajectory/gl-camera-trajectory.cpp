@@ -1,5 +1,10 @@
 /*
  * File: samples/gl-camera-trajectory.cpp
+ * This sample demonstrates how to move a camera along a spline trajectory
+ * using parallel transport frames. The input is given by four bezier control
+ * points, interactively editable using gizmos. The top-left contains a preview 
+ * of the camera along the spline. Left/right arrows keys can be used to step 
+ * along discrete frames. 
  */
 
 #include "index.hpp"
