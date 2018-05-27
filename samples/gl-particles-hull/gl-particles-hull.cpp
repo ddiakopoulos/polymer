@@ -63,7 +63,7 @@ struct sample_gl_particle_hull final : public polymer_app
     std::shared_ptr<color_modifier> color_mod;
 
     gl_mesh convex_hull_mesh;
-    std::future<quickhull::ConvexHull> hullFuture;
+    std::future<quickhull::convex_hull> hullFuture;
 
     gl_mesh sphere_mesh;
     gl_shader basic_shader;
@@ -208,8 +208,8 @@ void sample_gl_particle_hull::on_draw()
         hullFuture = std::async([=]() {
             std::vector<float3> positions;
             for (const auto & p : particles) positions.push_back(p.position);
-            quickhull::QuickHull convex_hull(positions);
-            return convex_hull.computeConvexHull(true, false);
+            quickhull::quick_hull convex_hull(positions);
+            return convex_hull.compute(true, false);
         });
     }
 
