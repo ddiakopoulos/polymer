@@ -4,9 +4,8 @@ uniform mat4 u_modelMatrix;
 uniform mat4 u_inverseViewMatrix;
 uniform mat4 u_viewProjMat;
 
-
-layout(location = 0) in vec4 in_pos_size;
-layout(location = 1) in vec4 in_color;
+layout(location = 0) in vec4 in_pos_size; // instanced
+layout(location = 1) in vec4 in_color;    // instanced
 layout(location = 2) in vec2 in_texcoord;
 
 out vec3 v_position;

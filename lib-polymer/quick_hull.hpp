@@ -567,7 +567,7 @@ namespace quickhull
         bool reorderHorizonEdges(std::vector<size_t> & horizonEdges)
         {
             const size_t horizonEdgeCount = horizonEdges.size();
-            if (horizonEdgeCount == 0) return false;
+            if (horizonEdgeCount == 0) return false; // dimitri
 
             for (size_t i=0;i<horizonEdgeCount-1;i++) 
             {
@@ -982,7 +982,7 @@ namespace quickhull
         /// UseOriginalIndices: should the output mesh use same vertex indices as the original point cloud. If this is false,
         /// then we generate a new vertex buffer which contains only the vertices that are part of the convex hull.
         /// Epsilon: minimum distance to a plane to consider a point being on positive of it (for a point cloud with scale 1)
-        convex_hull compute(bool formatOutputCCW, bool useOriginalIndices, float eps = 0.00001)
+        convex_hull compute(bool formatOutputCCW, bool useOriginalIndices, float eps = 0.001)
         {
             assert(m_vertexData.size() >= 3);
             return get_convex_hull(formatOutputCCW, useOriginalIndices, eps);

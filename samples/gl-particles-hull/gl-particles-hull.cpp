@@ -71,6 +71,8 @@ struct sample_gl_particle_hull final : public polymer_app
 
     gl_texture_2d particle_tex;
 
+    bool pause{ false };
+
     sample_gl_particle_hull();
     ~sample_gl_particle_hull();
 
@@ -126,6 +128,11 @@ void sample_gl_particle_hull::on_window_resize(int2 size) {}
 void sample_gl_particle_hull::on_input(const app_input_event & event)
 {
     flycam.handle_input(event);
+
+    if (event.type == app_input_event::KEY && event.value[0] == GLFW_KEY_SPACE && event.action == GLFW_RELEASE)
+    {
+        pause = !pause;
+    }
 }
 
 void sample_gl_particle_hull::on_update(const app_update_event & e)
@@ -135,7 +142,8 @@ void sample_gl_particle_hull::on_update(const app_update_event & e)
     flycam.update(e.timestep_ms);
     shaderMonitor->handle_recompile();
     last_update = e;
-    pt_emitter.emit(particle_system);
+
+    if (!pause) pt_emitter.emit(particle_system);
 }
 
 inline gl_mesh make_convex_hull_mesh(std::vector<float3> & vertices, std::vector<size_t> & indices)
@@ -154,7 +162,7 @@ void sample_gl_particle_hull::on_draw()
     int width, height;
     glfwGetWindowSize(window, &width, &height);
 
-    particle_system.update(last_update.timestep_ms, float3(0, -1, 0));
+    if (!pause) particle_system.update(last_update.timestep_ms, float3(0, -1, 0));
 
     glViewport(0, 0, width, height);
     glClearColor(0.25f, 0.25f, 0.25f, 1.0f);
@@ -192,7 +200,7 @@ void sample_gl_particle_hull::on_draw()
 
     if (hullFuture.valid())
     {
-        auto status = hullFuture.wait_for(std::chrono::seconds(0));
+        auto status = hullFuture.wait_for(std::chrono::milliseconds(0));
         if (status != std::future_status::timeout)
         {
             auto the_hull = hullFuture.get();
@@ -206,6 +214,7 @@ void sample_gl_particle_hull::on_draw()
         auto particles = particle_system.get();
 
         hullFuture = std::async([=]() {
+            scoped_timer t("compute convex hull");
             std::vector<float3> positions;
             for (const auto & p : particles) positions.push_back(p.position);
             quickhull::quick_hull convex_hull(positions);

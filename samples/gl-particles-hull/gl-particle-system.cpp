@@ -20,7 +20,7 @@ void gl_particle_system::add(const float3 position, const float3 velocity, const
     p.velocity = velocity;
     p.size = size;
     p.lifeMs = lifeMs;
-    particles.push_back(std::move(p));
+    particles.emplace_back(p);
 }
 
 void gl_particle_system::update(const float dt, const float3 gravityVec)
@@ -86,7 +86,6 @@ void gl_particle_system::draw(
     shader.bind();
 
     const GLboolean wasBlendingEnabled = glIsEnabled(GL_BLEND);
-    const GLboolean depthWriteEnabled = glIsEnabled(GL_DEPTH_WRITEMASK);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // one-one, additive
@@ -101,10 +100,12 @@ void gl_particle_system::draw(
     glBindVertexArray(vao);
 
     // Instance buffer contains position (xyz) and size/radius (w)
+    // An attribute is referred to as instanced if its GL_VERTEX_ATTRIB_ARRAY_DIVISOR value is non-zero. 
     glBindBuffer(GL_ARRAY_BUFFER, instanceBuffer);
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(instance_data), (GLvoid*)offsetof(instance_data, position_size));
+    glVertexAttribDivisor(0, 1);
     glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(instance_data), (GLvoid*)offsetof(instance_data, color));
-    glVertexAttribDivisor(0, 1); // An attribute is referred to as instanced if its GL_VERTEX_ATTRIB_ARRAY_DIVISOR value is non-zero. 
+    glVertexAttribDivisor(1, 1); 
 
     // Draw quad with texcoords
     glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
@@ -123,7 +124,7 @@ void gl_particle_system::draw(
     glBindVertexArray(0);
 
     if (wasBlendingEnabled) glEnable(GL_BLEND);
-    if (depthWriteEnabled) glDepthMask(GL_TRUE);
+    glDepthMask(GL_TRUE);
 
     shader.unbind();
 

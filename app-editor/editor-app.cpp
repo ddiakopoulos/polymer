@@ -483,7 +483,7 @@ void scene_editor_app::on_draw()
         {
             std::vector<entity> list = { scene.track_entity(orchestrator.create_entity()) };
             scene.xform_system->create(list[0], transform());
-            scene.identifier_system->create(list[0], "new entity");
+            scene.identifier_system->create(list[0], "new entity (" + std::to_string(list[0]) + ")");
             gizmo_selector->set_selection(list); // Newly spawned objects are selected by default
         }
         menu.end();
@@ -577,7 +577,7 @@ void scene_editor_app::on_draw()
 
             bool selected = gizmo_selector->selected(entity);
             std::string name = scene.identifier_system->get_name(entity);
-            name = name.empty() ? "entity (" + std::to_string(entity) + ")": name;
+            name = name.empty() ? "entity": name;
 
             if (ImGui::Selectable(name.c_str(), &selected))
             {
