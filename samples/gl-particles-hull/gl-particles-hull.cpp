@@ -62,8 +62,8 @@ struct sample_gl_particle_hull final : public polymer_app
     std::shared_ptr<gravity_modifier> grav_mod;
     std::shared_ptr<color_modifier> color_mod;
 
-    std::unique_ptr<quickhull::QuickHull> convex_hull;
     gl_mesh convex_hull_mesh;
+    std::future<quickhull::ConvexHull> hullFuture;
 
     gl_mesh sphere_mesh;
     gl_shader basic_shader;
@@ -97,7 +97,7 @@ sample_gl_particle_hull::sample_gl_particle_hull() : polymer_app(1280, 720, "sam
     particle_system.add_modifier(grav_mod);
     particle_system.add_modifier(color_mod);
 
-    particle_tex = load_image("../../assets/images/particle_alt_large.png");
+    particle_tex = load_image("../../assets/textures/particle_alt_large.png");
     glTextureParameteriEXT(particle_tex, GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
     glTextureParameteriEXT(particle_tex, GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 
@@ -190,12 +190,28 @@ void sample_gl_particle_hull::on_draw()
     gl_shader & shader = particle_shader_h.get()->get_variant()->shader;
     particle_system.draw(viewMatrix, projectionMatrix, shader, particle_tex, last_update.elapsed_s);
 
-    auto particles = particle_system.get();
-    std::vector<float3> positions;
-    for (const auto & p : particles) positions.push_back(p.position);
-    convex_hull.reset(new quickhull::QuickHull(positions));
-    auto hull = convex_hull->computeConvexHull(true, false);
-    convex_hull_mesh = make_convex_hull_mesh(hull.getVertexBuffer(), hull.getIndexBuffer());
+    if (hullFuture.valid())
+    {
+        auto status = hullFuture.wait_for(std::chrono::seconds(0));
+        if (status != std::future_status::timeout)
+        {
+            auto the_hull = hullFuture.get();
+            convex_hull_mesh = make_convex_hull_mesh(the_hull.getVertexBuffer(), the_hull.getIndexBuffer());
+            hullFuture = {};
+        }
+    }
+
+    if (!hullFuture.valid())
+    {
+        auto particles = particle_system.get();
+
+        hullFuture = std::async([=]() {
+            std::vector<float3> positions;
+            for (const auto & p : particles) positions.push_back(p.position);
+            quickhull::QuickHull convex_hull(positions);
+            return convex_hull.computeConvexHull(true, false);
+        });
+    }
 
     {
         glEnable(GL_BLEND);

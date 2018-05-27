@@ -284,13 +284,15 @@ namespace quickhull
     class ConvexHull 
     {
         std::unique_ptr<std::vector<float3>> m_optimizedVertexBuffer;
-        std::vector<float3> & m_vertices;
+        std::vector<float3> m_vertices;
         std::vector<size_t> m_indices;
 
     public:
 
+        ConvexHull() {};
+
         // Construct vertex and index buffers from half edge mesh and pointcloud
-        ConvexHull(const MeshBuilder & mesh, std::vector<float3> & pointCloud, bool CCW, bool useOriginalIndices) : m_vertices(pointCloud)
+        ConvexHull(const MeshBuilder & mesh, std::vector<float3> & pointCloud, bool CCW, bool useOriginalIndices)
         {
             if (!useOriginalIndices) 
             {
