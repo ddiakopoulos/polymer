@@ -97,21 +97,25 @@ void gl_particle_system::draw(
 
     glBindVertexArray(vao);
 
+
     // Instance buffer contains position (xyz) and size/radius (w)
     glBindBuffer(GL_ARRAY_BUFFER, instanceBuffer);
-    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(instance_data), nullptr);
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(instance_data), (GLvoid*)offsetof(instance_data, position_size));
+    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(instance_data), (GLvoid*)offsetof(instance_data, color));
     glVertexAttribDivisor(0, 1); // An attribute is referred to as instanced if its GL_VERTEX_ATTRIB_ARRAY_DIVISOR value is non-zero. 
 
     // Draw quad with texcoords
     glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(float2), nullptr);
-    glVertexAttribDivisor(1, 0); // If divisor is zero, the attribute at slot index advances once per vertex
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(float2), nullptr);
+    glVertexAttribDivisor(2, 0); // If divisor is zero, the attribute at slot index advances once per vertex
 
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
+    glEnableVertexAttribArray(2);
     glDrawArraysInstanced(GL_TRIANGLES, 0, 6, (GLsizei)instances.size());
     glDisableVertexAttribArray(0);
     glDisableVertexAttribArray(1);
+    glDisableVertexAttribArray(2);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
