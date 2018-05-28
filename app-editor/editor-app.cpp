@@ -70,7 +70,7 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
 
     // Only need to set the skybox on the |render_payload| once (unless we clear the payload)
     the_render_payload.skybox = scene.render_system->get_skybox();
-    the_render_payload.sunlight = scene.render_system->get_implict_sunlight();
+    the_render_payload.sunlight = scene.render_system->get_implicit_sunlight();
 
     // fixme to be resolved
     auto radianceBinary = read_file_binary("../assets/textures/envmaps/wells_radiance.dds");

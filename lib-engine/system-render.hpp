@@ -73,7 +73,7 @@ namespace polymer
             skybox->onParametersChanged();
         }
 
-        directional_light_component * get_implict_sunlight() { return get_directional_light_component(sunlight); }
+        directional_light_component * get_implicit_sunlight() { return get_directional_light_component(sunlight); }
         gl_procedural_sky * get_skybox() { return skybox.get(); }
 
         pbr_renderer * get_renderer() { return renderer.get(); }

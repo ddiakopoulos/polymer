@@ -66,7 +66,7 @@ sample_engine_scene::sample_engine_scene() : polymer_app(1280, 720, "sample-engi
 
     // Only need to set the skybox on the |render_payload| once (unless we clear the payload)
     payload.skybox = scene.render_system->get_skybox();
-    payload.sunlight = scene.render_system->get_implict_sunlight();
+    payload.sunlight = scene.render_system->get_implicit_sunlight();
 
     scene.mat_library.reset(new polymer::material_library("../../assets/sample-material.json"));
 

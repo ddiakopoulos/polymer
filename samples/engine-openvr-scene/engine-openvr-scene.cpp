@@ -1,4 +1,5 @@
 #include "engine-openvr-scene.hpp"
+#include "renderer-util.hpp"
 
 sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-scene")
 {
@@ -10,13 +11,35 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
     try
     {
         hmd.reset(new openvr_hmd());
-        const uint2 targetSize = hmd->get_recommended_render_target_size();
+
+        orchestrator.reset(new entity_orchestrator());
+        load_required_renderer_assets("../../assets/", shaderMonitor);
+
+        // Setup for the recommended eye target size
+        const uint2 eye_target_size = hmd->get_recommended_render_target_size();
+        renderer_settings settings;
+        settings.renderSize = int2(eye_target_size.x, eye_target_size.y);
+
+        // Create required systems
+        scene.collision_system = orchestrator->create_system<collision_system>(orchestrator.get());
+        scene.xform_system = orchestrator->create_system<transform_system>(orchestrator.get());
+        scene.identifier_system = orchestrator->create_system<identifier_system>(orchestrator.get());
+        scene.render_system = orchestrator->create_system<render_system>(settings, orchestrator.get());
+
+        // Only need to set the skybox on the |render_payload| once (unless we clear the payload)
+        payload.skybox = scene.render_system->get_skybox();
+        payload.sunlight = scene.render_system->get_implicit_sunlight();
+
         glfwSwapInterval(0);
     }
     catch (const std::exception & e)
     {
-        std::cout << "OpenVR Exception: " << e.what() << std::endl;
+        std::cout << "Application Init Exception: " << e.what() << std::endl;
     }
+
+    // Setup left/right eye debug view we see on the desktop window
+    eye_views.push_back(simple_texture_view());
+    eye_views.push_back(simple_texture_view());
 }
 
 sample_vr_app::~sample_vr_app()
@@ -38,23 +61,20 @@ void sample_vr_app::on_update(const app_update_event & e)
 {
     shaderMonitor.handle_recompile();
 
-    if (hmd)
-    {
-        //scene.leftController->update(hmd->get_controller(vr::TrackedControllerRole_LeftHand)->get_pose(hmd->get_world_pose()));
-        //scene.rightController->update(hmd->get_controller(vr::TrackedControllerRole_RightHand)->get_pose(hmd->get_world_pose()));
+    hmd->update();
 
-        std::vector<openvr_controller::button_state> trackpadStates = {
-            hmd->get_controller(vr::TrackedControllerRole_LeftHand)->pad,
-            hmd->get_controller(vr::TrackedControllerRole_RightHand)->pad
-        };
+    hmd->get_controller(vr::TrackedControllerRole_LeftHand)->get_pose(hmd->get_world_pose());
+    hmd->get_controller(vr::TrackedControllerRole_RightHand)->get_pose(hmd->get_world_pose());
 
-        std::vector<openvr_controller::button_state> triggerStates = {
-            hmd->get_controller(vr::TrackedControllerRole_LeftHand)->trigger,
-            hmd->get_controller(vr::TrackedControllerRole_RightHand)->trigger
-        };
-    }
+    std::vector<openvr_controller::button_state> trackpadStates = {
+        hmd->get_controller(vr::TrackedControllerRole_LeftHand)->pad,
+        hmd->get_controller(vr::TrackedControllerRole_RightHand)->pad
+    };
 
-
+    std::vector<openvr_controller::button_state> triggerStates = {
+        hmd->get_controller(vr::TrackedControllerRole_LeftHand)->trigger,
+        hmd->get_controller(vr::TrackedControllerRole_RightHand)->trigger
+    };
 }
 
 void sample_vr_app::on_draw()
@@ -67,15 +87,27 @@ void sample_vr_app::on_draw()
     glfwGetWindowSize(window, &width, &height);
     glViewport(0, 0, width, height);
 
-    /*
-    aabb_2d rect{ { 0.f, 0.f },{ (float)width,(float)height } };
+    // Render the scene
+    for (auto eye : { vr::Hmd_Eye::Eye_Left, vr::Hmd_Eye::Eye_Right })
+    {
+        const auto eye_pose = hmd->get_eye_pose(eye);
+        const auto eye_projection = hmd->get_proj_matrix(eye, 0.05, 32.f);
+
+        payload.views.emplace_back(view_data(eye, eye_pose, eye_projection));
+        scene.render_system->get_renderer()->render_frame(payload);
+    }
+
+    // Render to the HMD
+    hmd->submit(renderer->get_color_texture(0), renderer->get_color_texture(1));
+    payload.views.clear();
+
+    const aabb_2d rect{ { 0.f, 0.f },{ (float)width,(float)height } }; // Desktop window size
     const float mid = (rect.min().x + rect.max().x) / 2.f;
-    viewport_t leftviewport = { rect.min(),{ mid - 2.f, rect.max().y }, renderer->get_eye_texture(Eye::LeftEye) };
-    viewport_t rightViewport = { { mid + 2.f, rect.min().y }, rect.max(), renderer->get_eye_texture(Eye::RightEye) };
+    const viewport_t leftViewport = { rect.min(),{ mid - 2.f, rect.max().y }, renderer->get_color_texture(0) };
+    const viewport_t rightViewport = { { mid + 2.f, rect.min().y }, rect.max(), renderer->get_color_texture(1) };
     viewports.clear();
-    viewports.push_back(leftviewport);
+    viewports.push_back(leftViewport);
     viewports.push_back(rightViewport);
-    */
 
     if (viewports.size())
     {
@@ -84,26 +116,16 @@ void sample_vr_app::on_draw()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
 
-    for (auto & v : viewports)
+    // Draw to the desktop window
+    for (int i = 0; i < viewports.size(); ++i)
     {
+        const auto & v = viewports[i];
         glViewport(v.bmin.x, height - v.bmax.y, v.bmax.x - v.bmin.x, v.bmax.y - v.bmin.y);
-        glActiveTexture(GL_TEXTURE0);
-        glEnable(GL_TEXTURE_2D);
-        glBindTexture(GL_TEXTURE_2D, v.texture);
-        glBegin(GL_QUADS);
-        glTexCoord2f(0, 0); glVertex2f(-1, -1);
-        glTexCoord2f(1, 0); glVertex2f(+1, -1);
-        glTexCoord2f(1, 1); glVertex2f(+1, +1);
-        glTexCoord2f(0, 1); glVertex2f(-1, +1);
-        glEnd();
-        glDisable(GL_TEXTURE_2D);
+        eye_views[i].draw(v.texture);
     }
 
-    if (hmd)
-    {
-        const auto headPose = hmd->get_hmd_pose();
-        ImGui::Text("Head Pose: %f, %f, %f", headPose.position.x, headPose.position.y, headPose.position.z);
-    }
+    const auto headPose = hmd->get_hmd_pose();
+    ImGui::Text("Head Pose: %f, %f, %f", headPose.position.x, headPose.position.y, headPose.position.z);
 
     imgui->end_frame();
 
