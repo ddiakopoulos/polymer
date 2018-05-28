@@ -31,6 +31,11 @@
 #include "renderer-pbr.hpp"
 #include "renderer-debug.hpp"
 
+#include "bullet_engine.hpp"
+#include "bullet_object.hpp"
+#include "bullet_utils.hpp"
+#include "bullet_visualizer.hpp"
+
 #include "gl-api.hpp"
 #include "gl-async-gpu-timer.hpp"
 #include "gl-camera.hpp"

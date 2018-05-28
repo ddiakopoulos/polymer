@@ -95,6 +95,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="engine-openvr-scene.hpp" />
+    <ClInclude Include="physics-controller.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\lib-engine\lib-engine.vcxproj">

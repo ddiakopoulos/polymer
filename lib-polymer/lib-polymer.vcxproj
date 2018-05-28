@@ -26,6 +26,7 @@
     <ClInclude Include="camera.hpp" />
     <ClInclude Include="image-buffer.hpp" />
     <ClInclude Include="memory-pool.hpp" />
+    <ClInclude Include="parabolic_pointer.hpp" />
     <ClInclude Include="queue-circular.hpp" />
     <ClInclude Include="file_io.hpp" />
     <ClInclude Include="geometry.hpp" />
