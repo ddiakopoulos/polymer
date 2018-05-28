@@ -4,7 +4,7 @@
  * basic frustum culling. 
  */
 
-#include "index.hpp"
+#include "lib-polymer.hpp"
 #include "gl-camera.hpp"
 #include "gl-texture-view.hpp"
 #include "gl-gizmo.hpp"

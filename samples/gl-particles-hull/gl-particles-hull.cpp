@@ -8,7 +8,7 @@
  * use of std::future and std::async. 
  */
 
-#include "index.hpp"
+#include "lib-polymer.hpp"
 #include "gl-loaders.hpp"
 #include "gl-camera.hpp"
 #include "gl-renderable-grid.hpp"

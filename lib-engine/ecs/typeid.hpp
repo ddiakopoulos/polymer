@@ -9,7 +9,7 @@
 #ifndef polymer_typeid_hpp
 #define polymer_typeid_hpp
 
-#include "index.hpp"
+#include "lib-polymer.hpp"
 
 namespace polymer
 {

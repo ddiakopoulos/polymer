@@ -9,7 +9,7 @@
  * as a combination of values relative to a bounary and an absolute offset given in pixels. 
  */
 
-#include "index.hpp"
+#include "lib-polymer.hpp"
 #include "gl-camera.hpp"
 #include "gl-texture-view.hpp"
 

@@ -2,7 +2,7 @@
  * File: samples/engine-scene.cpp
  */
 
-#include "index.hpp"
+#include "lib-polymer.hpp"
 #include "engine.hpp"
 
 #include "ecs/core-ecs.hpp"

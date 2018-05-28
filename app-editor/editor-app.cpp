@@ -1,4 +1,4 @@
-#include "index.hpp"
+#include "lib-polymer.hpp"
 #include "system-util.hpp"
 #include "editor-app.hpp"
 #include "editor-inspector-ui.hpp"

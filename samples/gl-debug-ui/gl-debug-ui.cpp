@@ -9,7 +9,7 @@
  * The gizmo uses hotkeys (ctrl-w, ctrl-e, ctrl-r) to control position, orientation, and scaling. 
  */
 
-#include "index.hpp"
+#include "lib-polymer.hpp"
 #include "gl-loaders.hpp"
 #include "gl-gizmo.hpp"
 #include "gl-nvg.hpp"

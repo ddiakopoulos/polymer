@@ -5,7 +5,7 @@
  * to using basic Polymer types in a correct and idiomatic way.
  */
 
-#include "index.hpp"
+#include "lib-polymer.hpp"
 
 using namespace polymer;
 

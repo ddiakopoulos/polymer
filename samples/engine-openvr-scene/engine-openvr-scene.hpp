@@ -1,4 +1,4 @@
-#include "index.hpp"
+#include "lib-polymer.hpp"
 
 #include "bullet_engine.hpp"
 #include "bullet_visualizer.hpp"

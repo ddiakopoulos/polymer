@@ -7,7 +7,7 @@
  * shading, a texture-only based approach without any actual scene lighting.
  */
 
-#include "index.hpp"
+#include "lib-polymer.hpp"
 #include "gl-loaders.hpp"
 #include "../lib-model-io/model-io.hpp"
 
