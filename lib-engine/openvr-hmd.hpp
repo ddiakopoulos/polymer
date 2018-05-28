@@ -7,6 +7,7 @@
 #include "math-core.hpp"
 #include "geometry.hpp"
 #include "gl-api.hpp"
+#include <functional>
 
 using namespace polymer;
 
@@ -67,6 +68,7 @@ class openvr_hmd
 
     std::shared_ptr<cached_controller_render_data> controllerRenderData;
     openvr_controller controllers[2];
+    std::function<void(std::shared_ptr<cached_controller_render_data>)> async_data_cb;
 
 public:
 
@@ -101,7 +103,8 @@ public:
 
     // Returns current controller state.
     const openvr_controller * get_controller(const vr::ETrackedControllerRole controller);
-    std::shared_ptr<cached_controller_render_data> get_controller_render_data();
+
+    void controller_render_data_callback(std::function<void(std::shared_ptr<cached_controller_render_data>)> callback);
 
     // Must be called per-frame in the update loop
     void update();

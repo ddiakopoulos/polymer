@@ -27,49 +27,6 @@ openvr_hmd::openvr_hmd()
 
     controllerRenderData = std::make_shared<cached_controller_render_data>();
 
-    renderModels = (vr::IVRRenderModels *)vr::VR_GetGenericInterface(vr::IVRRenderModels_Version, &eError);
-    if (!renderModels)
-    {
-        vr::VR_Shutdown();
-        throw std::runtime_error("Unable to get render model interface: " + std::string(vr::VR_GetVRInitErrorAsEnglishDescription(eError)));
-    }
-
-    {
-        vr::RenderModel_t * model = nullptr;
-        vr::RenderModel_TextureMap_t * texture = nullptr;
-
-        while (true)
-        {
-            // see VREvent_TrackedDeviceActivated below for the proper way of doing this
-            renderModels->LoadRenderModel_Async("vr_controller_vive_1_5", &model);
-            if (model) renderModels->LoadTexture_Async(model->diffuseTextureId, &texture);
-            if (model && texture) break;
-        }
-
-        for (uint32_t v = 0; v < model->unVertexCount; v++ )
-        {
-            const vr::RenderModel_Vertex_t vertex = model->rVertexData[v];
-            controllerRenderData->mesh.vertices.push_back({ vertex.vPosition.v[0], vertex.vPosition.v[1], vertex.vPosition.v[2] });
-            controllerRenderData->mesh.normals.push_back({ vertex.vNormal.v[0], vertex.vNormal.v[1], vertex.vNormal.v[2] });
-            controllerRenderData->mesh.texcoord0.push_back({ vertex.rfTextureCoord[0], vertex.rfTextureCoord[1] });
-        }
-
-        for (uint32_t f = 0; f < model->unTriangleCount * 3; f +=3)
-        {
-            controllerRenderData->mesh.faces.push_back({ model->rIndexData[f], model->rIndexData[f + 1] , model->rIndexData[f + 2] });
-        }
-
-        glTextureImage2DEXT(controllerRenderData->tex, GL_TEXTURE_2D, 0, GL_RGBA, texture->unWidth, texture->unHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture->rubTextureMapData);
-        glGenerateTextureMipmapEXT(controllerRenderData->tex, GL_TEXTURE_2D);
-        glTextureParameteriEXT(controllerRenderData->tex, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTextureParameteriEXT(controllerRenderData->tex, GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-
-        renderModels->FreeTexture(texture);
-        renderModels->FreeRenderModel(model);
-
-        controllerRenderData->loaded = true;
-    }
-
     hmd->GetRecommendedRenderTargetSize(&renderTargetSize.x, &renderTargetSize.y);
 
     // Setup the compositor
@@ -94,9 +51,9 @@ const openvr_controller * openvr_hmd::get_controller(const vr::ETrackedControlle
     return nullptr;
 }
 
-std::shared_ptr<cached_controller_render_data> openvr_hmd::get_controller_render_data() 
-{ 
-    return controllerRenderData; 
+void openvr_hmd::controller_render_data_callback(std::function<void(std::shared_ptr<cached_controller_render_data>)> callback)
+{
+    async_data_cb = callback;
 }
 
 void openvr_hmd::set_world_pose(const transform & p) 
@@ -157,13 +114,58 @@ void openvr_hmd::update()
         
         case vr::VREvent_TrackedDeviceActivated: 
         {
-            std::cout << "Device " << event.trackedDeviceIndex << " attached." << std::endl;
+            std::cout << "OpenVR device " << event.trackedDeviceIndex << " attached." << std::endl;
 
             if (hmd->GetTrackedDeviceClass(event.trackedDeviceIndex) == vr::TrackedDeviceClass_Controller && controllerRenderData->loaded == false)
             { 
                 vr::EVRInitError eError = vr::VRInitError_None;
                 std::string sRenderModelName = get_tracked_device_string(hmd, event.trackedDeviceIndex, vr::Prop_RenderModelName_String);
-                std::cout << "Render Model Is: " << sRenderModelName << std::endl;
+
+                renderModels = (vr::IVRRenderModels *)vr::VR_GetGenericInterface(vr::IVRRenderModels_Version, &eError);
+                if (!renderModels)
+                {
+                    vr::VR_Shutdown();
+                    throw std::runtime_error("Unable to get render model interface: " + std::string(vr::VR_GetVRInitErrorAsEnglishDescription(eError)));
+                }
+
+                {
+                    vr::RenderModel_t * model = nullptr;
+                    vr::RenderModel_TextureMap_t * texture = nullptr;
+
+                    while (true)
+                    {
+                        // see VREvent_TrackedDeviceActivated below for the proper way of doing this
+                        renderModels->LoadRenderModel_Async(sRenderModelName.c_str(), &model);
+                        if (model) renderModels->LoadTexture_Async(model->diffuseTextureId, &texture);
+                        if (model && texture) break;
+                    }
+
+                    for (uint32_t v = 0; v < model->unVertexCount; v++)
+                    {
+                        const vr::RenderModel_Vertex_t vertex = model->rVertexData[v];
+                        controllerRenderData->mesh.vertices.push_back({ vertex.vPosition.v[0], vertex.vPosition.v[1], vertex.vPosition.v[2] });
+                        controllerRenderData->mesh.normals.push_back({ vertex.vNormal.v[0], vertex.vNormal.v[1], vertex.vNormal.v[2] });
+                        controllerRenderData->mesh.texcoord0.push_back({ vertex.rfTextureCoord[0], vertex.rfTextureCoord[1] });
+                    }
+
+                    for (uint32_t f = 0; f < model->unTriangleCount * 3; f += 3)
+                    {
+                        controllerRenderData->mesh.faces.push_back({ model->rIndexData[f], model->rIndexData[f + 1] , model->rIndexData[f + 2] });
+                    }
+
+                    glTextureImage2DEXT(controllerRenderData->tex, GL_TEXTURE_2D, 0, GL_RGBA, texture->unWidth, texture->unHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture->rubTextureMapData);
+                    glGenerateTextureMipmapEXT(controllerRenderData->tex, GL_TEXTURE_2D);
+                    glTextureParameteriEXT(controllerRenderData->tex, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                    glTextureParameteriEXT(controllerRenderData->tex, GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+
+                    renderModels->FreeTexture(texture);
+                    renderModels->FreeRenderModel(model);
+
+                    controllerRenderData->loaded = true;
+
+                    async_data_cb(controllerRenderData);
+                }
+
             }
 
             break;
