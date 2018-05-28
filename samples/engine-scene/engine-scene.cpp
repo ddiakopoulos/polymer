@@ -3,7 +3,7 @@
  */
 
 #include "lib-polymer.hpp"
-#include "engine.hpp"
+#include "lib-engine.hpp"
 
 #include "ecs/core-ecs.hpp"
 #include "environment.hpp"
