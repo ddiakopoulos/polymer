@@ -22,6 +22,7 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
     try
     {
         hmd.reset(new openvr_hmd());
+        glfwSwapInterval(0);
 
         vr_imgui.reset(new imgui_surface({ 1024, 1024 }, window));
 
@@ -71,8 +72,6 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
         // Setup render models for controllers when they are loaded
         hmd->controller_render_data_callback([&](cached_controller_render_data & data)
         {
-            std::cout << "Render Model Callback... " << std::endl;
-
             // We will get this callback for each controller, but we only need to handle it once for both.
             if (should_load)
             {
@@ -95,8 +94,6 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
             }
 
         });
-
-        glfwSwapInterval(0);
     }
     catch (const std::exception & e)
     {
@@ -104,8 +101,8 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
     }
 
     // Setup left/right eye debug view we see on the desktop window
-    eye_views.push_back(simple_texture_view());
-    eye_views.push_back(simple_texture_view());
+    eye_views.push_back(simple_texture_view()); // for the left view
+    eye_views.push_back(simple_texture_view()); // for the right view
 }
 
 sample_vr_app::~sample_vr_app()
@@ -132,21 +129,14 @@ void sample_vr_app::on_update(const app_update_event & e)
     hmd->update();
 
     if (!scene.xform_system->set_local_transform(left_controller,
-        hmd->get_controller(vr::TrackedControllerRole_LeftHand)->get_pose(hmd->get_world_pose())))
-    {
+        hmd->get_controller(vr::TrackedControllerRole_LeftHand)->get_pose(hmd->get_world_pose()))) {
         std::cout << "Failed to set left controller transform..." << std::endl;
     }
 
     if (!scene.xform_system->set_local_transform(right_controller,
-        hmd->get_controller(vr::TrackedControllerRole_RightHand)->get_pose(hmd->get_world_pose())))
-    {
+        hmd->get_controller(vr::TrackedControllerRole_RightHand)->get_pose(hmd->get_world_pose()))) {
         std::cout << "Failed to set right controller transform..." << std::endl;
     }
-
-    std::vector<openvr_controller::button_state> trackpadStates = {
-        hmd->get_controller(vr::TrackedControllerRole_LeftHand)->pad,
-        hmd->get_controller(vr::TrackedControllerRole_RightHand)->pad
-    };
 
     std::vector<openvr_controller::button_state> triggerStates = {
         hmd->get_controller(vr::TrackedControllerRole_LeftHand)->trigger,
@@ -162,16 +152,15 @@ void sample_vr_app::on_draw()
     glfwGetWindowSize(window, &width, &height);
     glViewport(0, 0, width, height);
 
-    // Collect eye data
+    // Collect eye data for the render payload
     for (auto eye : { vr::Hmd_Eye::Eye_Left, vr::Hmd_Eye::Eye_Right })
     {
         const auto eye_pose = hmd->get_eye_pose(eye);
-        const auto eye_projection = hmd->get_proj_matrix(eye, 0.05, 32.f);
+        const auto eye_projection = hmd->get_proj_matrix(eye, 0.075, 64.f);
         payload.views.emplace_back(view_data(eye, eye_pose, eye_projection));
     }
 
     // Render scene using payload
-
     payload.render_set.clear();
     payload.render_set.push_back(assemble_renderable(left_controller));
     payload.render_set.push_back(assemble_renderable(right_controller));
