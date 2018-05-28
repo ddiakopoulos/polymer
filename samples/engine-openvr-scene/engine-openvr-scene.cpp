@@ -1,5 +1,16 @@
 #include "engine-openvr-scene.hpp"
 
+renderable sample_vr_app::assemble_renderable(const entity e)
+{
+    renderable r;
+    r.e = e;
+    r.material = scene.render_system->get_material_component(e);
+    r.mesh = scene.render_system->get_mesh_component(e);
+    r.scale = scene.xform_system->get_local_transform(e)->local_scale;
+    r.t = scene.xform_system->get_world_transform(e)->world_pose;
+    return r;
+}
+
 sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-scene")
 {
     int windowWidth, windowHeight;
@@ -17,6 +28,8 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
         orchestrator.reset(new entity_orchestrator());
         load_required_renderer_assets("../../assets/", shaderMonitor);
 
+        scene.mat_library.reset(new polymer::material_library("openvr-scene-materials.json"));
+
         // Setup for the recommended eye target size
         const uint2 eye_target_size = hmd->get_recommended_render_target_size();
         renderer_settings settings;
@@ -33,10 +46,58 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
         payload.skybox = scene.render_system->get_skybox();
         payload.sunlight = scene.render_system->get_implicit_sunlight();
       
+        // Setup left controller
+        left_controller = scene.track_entity(orchestrator->create_entity());
+        scene.identifier_system->create(left_controller, "openvr-left-controller");
+        scene.xform_system->create(left_controller, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
+        polymer::material_component left_material(left_controller);
+        left_material.material = material_handle(material_library::kDefaultMaterialId);
+        scene.render_system->create(left_controller, std::move(left_material));
+        polymer::mesh_component left_mesh(left_controller);
+        scene.render_system->create(left_controller, std::move(left_mesh));
+
+        // Setup right controller
+        right_controller = scene.track_entity(orchestrator->create_entity());
+        scene.identifier_system->create(right_controller, "openvr-right-controller");
+        scene.xform_system->create(right_controller, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
+        polymer::material_component right_material(right_controller);
+        right_material.material = material_handle(material_library::kDefaultMaterialId);
+        scene.render_system->create(right_controller, std::move(right_material));
+        polymer::mesh_component right_mesh(right_controller);
+        scene.render_system->create(right_controller, std::move(right_mesh));
+
+        bool should_load = true;
+
         // Setup render models for controllers when they are loaded
-        hmd->controller_render_data_callback([&](std::shared_ptr<cached_controller_render_data> data)
+        hmd->controller_render_data_callback([&](cached_controller_render_data & data)
         {
-            std::cout << "Got Render Model Callback" << std::endl;
+            std::cout << "Render Model Callback... " << std::endl;
+
+            // We will get this callback for each controller, but we only need to handle it once for both.
+            if (should_load)
+            {
+                should_load = false;
+
+                // Create new gpu mesh from the openvr geometry
+                auto mesh = make_mesh_from_geometry(data.mesh);
+                create_handle_for_asset("openvr-controller-mesh", std::move(mesh));
+
+                // Re-lookup components since they were std::move'd above
+                auto lmc = scene.render_system->get_mesh_component(left_controller);
+                assert(lmc != nullptr);
+
+                auto rmc = scene.render_system->get_mesh_component(right_controller);
+                assert(rmc != nullptr);
+
+                // Set the handles
+                lmc->mesh = gpu_mesh_handle("openvr-controller-mesh");
+                rmc->mesh = gpu_mesh_handle("openvr-controller-mesh");
+
+                // Configure the render payload
+                payload.render_set.push_back(assemble_renderable(left_controller));
+                payload.render_set.push_back(assemble_renderable(right_controller));
+            }
+
         });
 
         glfwSwapInterval(0);

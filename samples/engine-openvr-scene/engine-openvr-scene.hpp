@@ -65,12 +65,16 @@ struct sample_vr_app : public polymer_app
     std::vector<viewport_t> viewports;
     std::vector<simple_texture_view> eye_views;
 
+    entity left_controller;
+    entity right_controller;
+
     gl_shader_monitor shaderMonitor { "../../assets/" };
 
     std::unique_ptr<entity_orchestrator> orchestrator;
 
     render_payload payload;
     environment scene;
+    renderable assemble_renderable(const entity e);
 
     sample_vr_app();
     ~sample_vr_app();

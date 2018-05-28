@@ -25,8 +25,6 @@ openvr_hmd::openvr_hmd()
     std::cout << "VR Driver:  " << get_tracked_device_string(hmd, vr::k_unTrackedDeviceIndex_Hmd, vr::Prop_TrackingSystemName_String) << std::endl;
     std::cout << "VR Display: " << get_tracked_device_string(hmd, vr::k_unTrackedDeviceIndex_Hmd, vr::Prop_SerialNumber_String) << std::endl;
 
-    controllerRenderData = std::make_shared<cached_controller_render_data>();
-
     hmd->GetRecommendedRenderTargetSize(&renderTargetSize.x, &renderTargetSize.y);
 
     // Setup the compositor
@@ -51,7 +49,7 @@ const openvr_controller * openvr_hmd::get_controller(const vr::ETrackedControlle
     return nullptr;
 }
 
-void openvr_hmd::controller_render_data_callback(std::function<void(std::shared_ptr<cached_controller_render_data>)> callback)
+void openvr_hmd::controller_render_data_callback(std::function<void(cached_controller_render_data & data)> callback)
 {
     async_data_cb = callback;
 }
@@ -104,6 +102,62 @@ void openvr_hmd::get_optical_properties(vr::Hmd_Eye eye, float & aspectRatio, fl
     vfov = 2.0f * std::atan(tanHalfFov.y);
 }
 
+void openvr_hmd::load_render_data_impl(vr::VREvent_t event)
+{
+    if (controllerRenderData.loaded == true) return;
+
+    if (hmd->GetTrackedDeviceClass(event.trackedDeviceIndex) == vr::TrackedDeviceClass_Controller)
+    {
+        vr::EVRInitError eError = vr::VRInitError_None;
+        std::string sRenderModelName = get_tracked_device_string(hmd, event.trackedDeviceIndex, vr::Prop_RenderModelName_String);
+
+        renderModels = (vr::IVRRenderModels *)vr::VR_GetGenericInterface(vr::IVRRenderModels_Version, &eError);
+        if (!renderModels)
+        {
+            vr::VR_Shutdown();
+            throw std::runtime_error("Unable to get render model interface: " + std::string(vr::VR_GetVRInitErrorAsEnglishDescription(eError)));
+        }
+
+        {
+            vr::RenderModel_t * model = nullptr;
+            vr::RenderModel_TextureMap_t * texture = nullptr;
+
+            while (true)
+            {
+                // see VREvent_TrackedDeviceActivated below for the proper way of doing this
+                renderModels->LoadRenderModel_Async(sRenderModelName.c_str(), &model);
+                if (model) renderModels->LoadTexture_Async(model->diffuseTextureId, &texture);
+                if (model && texture) break;
+            }
+
+            for (uint32_t v = 0; v < model->unVertexCount; v++)
+            {
+                const vr::RenderModel_Vertex_t vertex = model->rVertexData[v];
+                controllerRenderData.mesh.vertices.push_back({ vertex.vPosition.v[0], vertex.vPosition.v[1], vertex.vPosition.v[2] });
+                controllerRenderData.mesh.normals.push_back({ vertex.vNormal.v[0], vertex.vNormal.v[1], vertex.vNormal.v[2] });
+                controllerRenderData.mesh.texcoord0.push_back({ vertex.rfTextureCoord[0], vertex.rfTextureCoord[1] });
+            }
+
+            for (uint32_t f = 0; f < model->unTriangleCount * 3; f += 3)
+            {
+                controllerRenderData.mesh.faces.push_back({ model->rIndexData[f], model->rIndexData[f + 1] , model->rIndexData[f + 2] });
+            }
+
+            glTextureImage2DEXT(controllerRenderData.tex, GL_TEXTURE_2D, 0, GL_RGBA, texture->unWidth, texture->unHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture->rubTextureMapData);
+            glGenerateTextureMipmapEXT(controllerRenderData.tex, GL_TEXTURE_2D);
+            glTextureParameteriEXT(controllerRenderData.tex, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTextureParameteriEXT(controllerRenderData.tex, GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+
+            renderModels->FreeTexture(texture);
+            renderModels->FreeRenderModel(model);
+
+            controllerRenderData.loaded = true;
+
+            async_data_cb(controllerRenderData);
+        }
+    }
+}
+
 void openvr_hmd::update()
 {
     vr::VREvent_t event;
@@ -111,68 +165,13 @@ void openvr_hmd::update()
     {
         switch (event.eventType)
         {
-        
-        case vr::VREvent_TrackedDeviceActivated: 
-        {
-            std::cout << "OpenVR device " << event.trackedDeviceIndex << " attached." << std::endl;
-
-            if (hmd->GetTrackedDeviceClass(event.trackedDeviceIndex) == vr::TrackedDeviceClass_Controller && controllerRenderData->loaded == false)
-            { 
-                vr::EVRInitError eError = vr::VRInitError_None;
-                std::string sRenderModelName = get_tracked_device_string(hmd, event.trackedDeviceIndex, vr::Prop_RenderModelName_String);
-
-                renderModels = (vr::IVRRenderModels *)vr::VR_GetGenericInterface(vr::IVRRenderModels_Version, &eError);
-                if (!renderModels)
-                {
-                    vr::VR_Shutdown();
-                    throw std::runtime_error("Unable to get render model interface: " + std::string(vr::VR_GetVRInitErrorAsEnglishDescription(eError)));
-                }
-
-                {
-                    vr::RenderModel_t * model = nullptr;
-                    vr::RenderModel_TextureMap_t * texture = nullptr;
-
-                    while (true)
-                    {
-                        // see VREvent_TrackedDeviceActivated below for the proper way of doing this
-                        renderModels->LoadRenderModel_Async(sRenderModelName.c_str(), &model);
-                        if (model) renderModels->LoadTexture_Async(model->diffuseTextureId, &texture);
-                        if (model && texture) break;
-                    }
-
-                    for (uint32_t v = 0; v < model->unVertexCount; v++)
-                    {
-                        const vr::RenderModel_Vertex_t vertex = model->rVertexData[v];
-                        controllerRenderData->mesh.vertices.push_back({ vertex.vPosition.v[0], vertex.vPosition.v[1], vertex.vPosition.v[2] });
-                        controllerRenderData->mesh.normals.push_back({ vertex.vNormal.v[0], vertex.vNormal.v[1], vertex.vNormal.v[2] });
-                        controllerRenderData->mesh.texcoord0.push_back({ vertex.rfTextureCoord[0], vertex.rfTextureCoord[1] });
-                    }
-
-                    for (uint32_t f = 0; f < model->unTriangleCount * 3; f += 3)
-                    {
-                        controllerRenderData->mesh.faces.push_back({ model->rIndexData[f], model->rIndexData[f + 1] , model->rIndexData[f + 2] });
-                    }
-
-                    glTextureImage2DEXT(controllerRenderData->tex, GL_TEXTURE_2D, 0, GL_RGBA, texture->unWidth, texture->unHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture->rubTextureMapData);
-                    glGenerateTextureMipmapEXT(controllerRenderData->tex, GL_TEXTURE_2D);
-                    glTextureParameteriEXT(controllerRenderData->tex, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                    glTextureParameteriEXT(controllerRenderData->tex, GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-
-                    renderModels->FreeTexture(texture);
-                    renderModels->FreeRenderModel(model);
-
-                    controllerRenderData->loaded = true;
-
-                    async_data_cb(controllerRenderData);
-                }
-
-            }
-
-            break;
+        case vr::VREvent_TrackedDeviceActivated: std::cout << "OpenVR device " << event.trackedDeviceIndex << " attached." << std::endl; break;
+        case vr::VREvent_TrackedDeviceDeactivated: std::cout << "OpenVR device " << event.trackedDeviceIndex << " detached." << std::endl; break;
+        case vr::VREvent_TrackedDeviceUpdated: std::cout << "OpenVR device " << event.trackedDeviceIndex << " updated." << std::endl; break;
         }
-        case vr::VREvent_TrackedDeviceDeactivated: std::cout << "Device " << event.trackedDeviceIndex << " detached." << std::endl; break;
-        case vr::VREvent_TrackedDeviceUpdated: std::cout << "Device " << event.trackedDeviceIndex << " updated." << std::endl; break;
-        }
+
+        // Setup render model data if applicable
+        load_render_data_impl(event);
     }
 
     // Get HMD pose

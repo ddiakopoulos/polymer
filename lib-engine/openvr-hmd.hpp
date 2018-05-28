@@ -66,9 +66,10 @@ class openvr_hmd
     uint2 renderTargetSize;
     transform hmdPose, worldPose;
 
-    std::shared_ptr<cached_controller_render_data> controllerRenderData;
+    cached_controller_render_data controllerRenderData;
     openvr_controller controllers[2];
-    std::function<void(std::shared_ptr<cached_controller_render_data>)> async_data_cb;
+    std::function<void(cached_controller_render_data & data)> async_data_cb;
+    void load_render_data_impl(vr::VREvent_t event);
 
 public:
 
@@ -104,7 +105,7 @@ public:
     // Returns current controller state.
     const openvr_controller * get_controller(const vr::ETrackedControllerRole controller);
 
-    void controller_render_data_callback(std::function<void(std::shared_ptr<cached_controller_render_data>)> callback);
+    void controller_render_data_callback(std::function<void(cached_controller_render_data & data)> callback);
 
     // Must be called per-frame in the update loop
     void update();
