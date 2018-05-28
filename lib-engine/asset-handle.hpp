@@ -103,7 +103,7 @@ namespace polymer
 
             handle = a;
             handle->asset = std::move(asset);
-            handle->assigned = true;
+            handle->assigned = name.empty() || name == "empty" ? false : true;
             handle->timestamp = system_time_ns();
 
             log::get()->assetLog->info("asset type {} with id {} was assigned", typeid(T).name(), name);
