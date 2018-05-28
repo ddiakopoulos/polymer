@@ -1,5 +1,8 @@
-// This file incorporates Public Domain and BSD-2 code from: Simon Geilfus, Stefan Gustavson, Robert Bridson, and Iñigo Quilez.
-// See COPYING file for attribution information.
+/*
+ * This file incorporates Public Domain and BSD-2 code from:
+ * Simon Geilfus, Stefan Gustavson, Robert Bridson, and Iñigo Quilez.
+ * See COPYING file for full attribution information.
+ */ 
 
 #pragma once
 

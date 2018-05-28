@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef polymer_camera_hpp
 #define polymer_camera_hpp
 

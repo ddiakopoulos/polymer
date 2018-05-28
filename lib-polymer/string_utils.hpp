@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef string_utils_h
 #define string_utils_h
 

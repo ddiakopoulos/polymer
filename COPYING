@@ -33,6 +33,15 @@ Authored by Forrest Smith, 2016+
 //   Permissively Licensed Libraries  //
 ////////////////////////////////////////
 
+https://github.com/zeux/meshoptimizer (MIT)
+Copyright (C) Arseny Kapoulkine, 2016-2018
+
+https://github.com/nlohmann/json (MIT)
+Copyright (C) Niels Lohmann, 2013-2018
+
+https://github.com/syoyo/tinyexr (BSD 3-Clause)
+Copyright (C) Soyoyo Fujita
+
 https://github.com/bulletphysics/bullet3 (zlib)
 Copyright (C) Erwin Coumans and Bullet contributors 
 
@@ -59,9 +68,6 @@ Copyright (C) The Barbarian Group, 2010+
 
 https://github.com/ocornut/imgui (MIT)
 Copyright (C) Omar Cornut and ImGui contributors, 2014+
-
-https://github.com/bkaradzic/bgfx (BSD 2-Clause)
-Copyright (C) Branimir Karadzic, 2010+
 
 https://github.com/syoyo/tinyobjloader (BSD 2-Clause)
 Copyright (C) Syoyo Fujita, 2012+
@@ -99,20 +105,11 @@ Copyright (C) Nicholas Gillian, 2012
 https://github.com/ekmett/vr (BSD 2-Clause)
 Copyright (C) Edward Kmett, 2015
 
-https://github.com/facebookresearch/HVVR (BSD 3-Clause)
-Copyright (C) Facebook, Inc., 2017+
-
 https://github.com/facebookincubator/FBX2glTF (BSD 3-Clause)
 Copyright (C) Facebook, Inc., 2017+
 
 https://github.com/google/lullaby (Apache 2.0)
 Copyright (C) Google, 2018 
-
-https://github.com/abseil/abseil-cpp (Apache 2.0)
-Copyright (C) Google, 2018 
-
-https://github.com/Microsoft/GSL (MIT)
-Copyright (C) Microsoft Corporation, 2015 
 
 https://github.com/papaboo/Cogwheel (BSD 3-Clause)
 Copyright (C), Cogwheel, 2017

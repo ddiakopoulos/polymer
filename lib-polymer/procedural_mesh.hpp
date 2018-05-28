@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef procedural_mesh_h
 #define procedural_mesh_h
 

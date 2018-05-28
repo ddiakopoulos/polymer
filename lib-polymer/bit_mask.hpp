@@ -1,4 +1,8 @@
-// See COPYING file for attribution information
+// Based on FlagSet.h from the Nimble Library
+// Copyright (c) 2015 Dmitry Sovetov, MIT License
+// https://github.com/dmsovetov/Nimble
+
+#pragma once
 
 #ifndef bitmask_h
 #define bitmask_h
@@ -9,16 +13,17 @@ namespace polymer
     template<typename T>
     class bit_mask 
     {
-        T maskField;
+        T maskField{ 0 };
+
     public:
 
-        bit_mask() : maskField(0) {}
+        bit_mask() = default;
         bit_mask(T value) : maskField(value) {}
 
         bool operator == (const bit_mask & other) const;
         bool operator == (T mask) const;
 
-        operator T( void ) const;
+        operator T(void) const;
 
         // Sets the bit mask
         void set(T mask, bool set);
@@ -30,14 +35,14 @@ namespace polymer
         void off(T mask);
 
         // Check the bit mask.
-        bool isSet(T mask) const;
+        bool is_set(T mask) const;
 
         // Returns true if the bit mask is not set.
-        bool isNotSet(T mask) const;
+        bool is_not_set(T mask) const;
     };
     
     template<typename T>
-    bool bit_mask<T>::operator == (const bit_mask& other) const
+    bool bit_mask<T>::operator == (const bit_mask & other) const
     {
         return maskField == other.maskField;
     }
@@ -73,13 +78,13 @@ namespace polymer
     }
 
     template<typename T>
-    inline bool bit_mask<T>::isSet(T mask) const
+    inline bool bit_mask<T>::is_set(T mask) const
     {
         return (maskField & mask) ? true : false;
     }
     
     template<typename T>
-    inline bool bit_mask<T>::isNotSet(T mask) const
+    inline bool bit_mask<T>::is_not_set(T mask) const
     {
         return (maskField & mask) ? false : true;
     }

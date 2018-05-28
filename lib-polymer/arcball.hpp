@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef arcball_h
 #define arcball_h
 

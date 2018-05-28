@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef animation_tweens_hpp
 #define animation_tweens_hpp
 

@@ -1,12 +1,14 @@
-/// Implementation of the 3d quick_hull algorithm originally by Antti Kuukka
-/// Input: a list of points in 3d space (for example, vertices of a 3d mesh)
-/// Output: a convex_hull object which provides vertex and index buffers of the generated convex hull as a triangle mesh.
-/// License: This is free and unencumbered software released into the public domain.
-/// Original source: https://github.com/akuukka/quickhull
-/// References: 
-/// [1] http://box2d.org/files/GDC2014/DirkGregorius_ImplementingQuickHull.pdf
-/// [2] http://thomasdiewald.com/blog/?p=1888
-/// [3] https://fgiesen.wordpress.com/2012/02/21/half-edge-based-mesh-representations-theory/
+/*
+ * Implementation of the 3d quick_hull algorithm originally by Antti Kuukka
+ * Input: a list of points in 3d space (for example, vertices of a 3d mesh)
+ * Output: a convex_hull object which provides vertex and index buffers of the generated convex hull as a triangle mesh.
+ * License: This is free and unencumbered software released into the public domain.
+ * Original source: https://github.com/akuukka/quickhull
+ * References: 
+ * [1] http://box2d.org/files/GDC2014/DirkGregorius_ImplementingQuickHull.pdf
+ * [2] http://thomasdiewald.com/blog/?p=1888
+ * [3] https://fgiesen.wordpress.com/2012/02/21/half-edge-based-mesh-representations-theory/
+ */ 
 
 #pragma once
 

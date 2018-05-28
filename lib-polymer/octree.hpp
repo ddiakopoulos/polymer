@@ -1,10 +1,12 @@
-/// An octree is a tree data structure in which each internal node has exactly
-/// eight children. Octrees are most often used to partition a three
-/// dimensional space by recursively subdividing it into eight octants.
-/// This implementation stores 8 pointers per node, instead of the other common
-/// approach, which is to use a flat array with an offset. The `inside` method
-/// defines the comparison function (loose in this case). The main usage of this
-/// class is for basic frustum culling.
+/*
+ * An octree is a tree data structure in which each internal node has exactly
+ * eight children. Octrees are most often used to partition a three
+ * dimensional space by recursively subdividing it into eight octants.
+ * This implementation stores 8 pointers per node, instead of the other common
+ * approach, which is to use a flat array with an offset. The `inside` method
+ * defines the comparison function (loose in this case). The main usage of this
+ * class is for basic frustum culling.
+ */
 
 #pragma once
 
