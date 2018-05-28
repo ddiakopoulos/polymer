@@ -92,10 +92,6 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
                 // Set the handles
                 lmc->mesh = gpu_mesh_handle("openvr-controller-mesh");
                 rmc->mesh = gpu_mesh_handle("openvr-controller-mesh");
-
-                // Configure the render payload
-                payload.render_set.push_back(assemble_renderable(left_controller));
-                payload.render_set.push_back(assemble_renderable(right_controller));
             }
 
         });
@@ -135,8 +131,17 @@ void sample_vr_app::on_update(const app_update_event & e)
 
     hmd->update();
 
-    hmd->get_controller(vr::TrackedControllerRole_LeftHand)->get_pose(hmd->get_world_pose());
-    hmd->get_controller(vr::TrackedControllerRole_RightHand)->get_pose(hmd->get_world_pose());
+    if (!scene.xform_system->set_local_transform(left_controller,
+        hmd->get_controller(vr::TrackedControllerRole_LeftHand)->get_pose(hmd->get_world_pose())))
+    {
+        std::cout << "Failed to set left controller transform..." << std::endl;
+    }
+
+    if (!scene.xform_system->set_local_transform(right_controller,
+        hmd->get_controller(vr::TrackedControllerRole_RightHand)->get_pose(hmd->get_world_pose())))
+    {
+        std::cout << "Failed to set right controller transform..." << std::endl;
+    }
 
     std::vector<openvr_controller::button_state> trackpadStates = {
         hmd->get_controller(vr::TrackedControllerRole_LeftHand)->pad,
@@ -166,6 +171,10 @@ void sample_vr_app::on_draw()
     }
 
     // Render scene using payload
+
+    payload.render_set.clear();
+    payload.render_set.push_back(assemble_renderable(left_controller));
+    payload.render_set.push_back(assemble_renderable(right_controller));
     scene.render_system->get_renderer()->render_frame(payload);
 
     const uint32_t left_eye_texture = scene.render_system->get_renderer()->get_color_texture(0);
