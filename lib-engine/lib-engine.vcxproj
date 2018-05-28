@@ -426,6 +426,7 @@
     <ClInclude Include="material-library.hpp" />
     <ClInclude Include="profiling.hpp" />
     <ClInclude Include="environment.hpp" />
+    <ClInclude Include="renderer-util.hpp" />
     <ClInclude Include="serialization.inl" />
     <ClInclude Include="shader.hpp" />
     <ClInclude Include="shader-library.hpp" />

@@ -1572,6 +1572,7 @@
     <ClInclude Include="renderer-debug.hpp" />
     <ClInclude Include="system-render.hpp" />
     <ClInclude Include="lib-engine.hpp" />
+    <ClInclude Include="renderer-util.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="gfx">

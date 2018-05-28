@@ -6,6 +6,7 @@
 #include "logging.hpp"
 #include "win32.hpp"
 #include "model-io.hpp"
+#include "renderer-util.hpp"
 
 using namespace polymer;
 
@@ -54,41 +55,7 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
     flycam.set_camera(&cam);
 
     load_editor_intrinsic_assets("../assets/models/runtime/");
-
-    shaderMonitor.watch("wireframe",
-        "../assets/shaders/wireframe_vert.glsl",
-        "../assets/shaders/wireframe_frag.glsl",
-        "../assets/shaders/wireframe_geom.glsl",
-        "../assets/shaders/renderer");
-
-    shaderMonitor.watch("sky-hosek",
-        "../assets/shaders/sky_vert.glsl",
-        "../assets/shaders/sky_hosek_frag.glsl");
-
-    shaderMonitor.watch("depth-prepass",
-        "../assets/shaders/renderer/depth_prepass_vert.glsl",
-        "../assets/shaders/renderer/depth_prepass_frag.glsl",
-        "../assets/shaders/renderer");
-
-    shaderMonitor.watch("default-shader",
-        "../assets/shaders/renderer/forward_lighting_vert.glsl",
-        "../assets/shaders/renderer/default_material_frag.glsl",
-        "../assets/shaders/renderer");
-
-    shaderMonitor.watch("post-tonemap",
-        "../assets/shaders/renderer/post_tonemap_vert.glsl",
-        "../assets/shaders/renderer/post_tonemap_frag.glsl");
-
-    shaderMonitor.watch("cascaded-shadows",
-        "../assets/shaders/renderer/shadowcascade_vert.glsl",
-        "../assets/shaders/renderer/shadowcascade_frag.glsl",
-        "../assets/shaders/renderer/shadowcascade_geom.glsl",
-        "../assets/shaders/renderer");
-
-    shaderMonitor.watch("pbr-forward-lighting",
-        "../assets/shaders/renderer/forward_lighting_vert.glsl",
-        "../assets/shaders/renderer/forward_lighting_frag.glsl",
-        "../assets/shaders/renderer");
+    load_required_renderer_assets("../assets/", shaderMonitor);
 
     fullscreen_surface.reset(new simple_texture_view());
 
@@ -117,8 +84,6 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
     the_render_payload.ibl_radianceCubemap = texture_handle("wells-radiance-cubemap");
 
     scene.mat_library.reset(new polymer::material_library("../assets/materials.json"));
-
-    create_handle_for_asset("fix-sphere", make_sphere_mesh(1.f));
 
     // Resolve asset_handles to resources on disk
     resolver.reset(new asset_resolver());

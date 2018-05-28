@@ -7,6 +7,7 @@
 
 #include "ecs/core-ecs.hpp"
 #include "environment.hpp"
+#include "renderer-util.hpp"
 
 using namespace polymer;
 
@@ -43,45 +44,10 @@ sample_engine_scene::sample_engine_scene() : polymer_app(1280, 720, "sample-engi
     glViewport(0, 0, width, height);
 
     shaderMonitor.reset(new gl_shader_monitor("../../assets/"));
-
-    shaderMonitor->watch("default-shader",
-        "../../assets/shaders/renderer/forward_lighting_vert.glsl",
-        "../../assets/shaders/renderer/default_material_frag.glsl",
-        "../../assets/shaders/renderer");
-
-    shaderMonitor->watch("wireframe",
-        "../../assets/shaders/wireframe_vert.glsl",
-        "../../assets/shaders/wireframe_frag.glsl",
-        "../../assets/shaders/wireframe_geom.glsl",
-        "../../assets/shaders/renderer");
-
-    shaderMonitor->watch("blinn-phong",
-        "../../assets/shaders/renderer/forward_lighting_vert.glsl",
-        "../../assets/shaders/renderer/forward_lighting_blinn_phong_frag.glsl",
-        "../../assets/shaders/renderer");
-
-    shaderMonitor->watch("sky-hosek",
-        "../../assets/shaders/sky_vert.glsl", 
-        "../../assets/shaders/sky_hosek_frag.glsl");
-
-    shaderMonitor->watch("depth-prepass",
-        "../../assets/shaders/renderer/depth_prepass_vert.glsl",
-        "../../assets/shaders/renderer/depth_prepass_frag.glsl",
-        "../../assets/shaders/renderer");
-
-    shaderMonitor->watch("post-tonemap",
-        "../../assets/shaders/renderer/post_tonemap_vert.glsl",
-        "../../assets/shaders/renderer/post_tonemap_frag.glsl");
-
-    shaderMonitor->watch("cascaded-shadows",
-        "../../assets/shaders/renderer/shadowcascade_vert.glsl",
-        "../../assets/shaders/renderer/shadowcascade_frag.glsl",
-        "../../assets/shaders/renderer/shadowcascade_geom.glsl",
-        "../../assets/shaders/renderer");
-
     fullscreen_surface.reset(new simple_texture_view());
-
     orchestrator.reset(new entity_orchestrator());
+
+    load_required_renderer_assets("../../assets/", *shaderMonitor);
 
     // Initial renderer settings
     renderer_settings settings;
