@@ -5,12 +5,14 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
     int windowWidth, windowHeight;
     glfwGetWindowSize(window, &windowWidth, &windowHeight);
 
-    imgui.reset(new gui::imgui_instance(window));
+    desktop_imgui.reset(new gui::imgui_instance(window));
     gui::make_light_theme();
 
     try
     {
         hmd.reset(new openvr_hmd());
+
+        vr_imgui.reset(new imgui_surface({ 1024, 1024 }, window));
 
         orchestrator.reset(new entity_orchestrator());
         load_required_renderer_assets("../../assets/", shaderMonitor);
@@ -30,6 +32,7 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
         // Only need to set the skybox on the |render_payload| once (unless we clear the payload)
         payload.skybox = scene.render_system->get_skybox();
         payload.sunlight = scene.render_system->get_implicit_sunlight();
+
 
         glfwSwapInterval(0);
     }
@@ -56,7 +59,8 @@ void sample_vr_app::on_window_resize(int2 size)
 
 void sample_vr_app::on_input(const app_input_event & event) 
 {
-    imgui->update_input(event);
+    desktop_imgui->update_input(event);
+    vr_imgui->get_instance()->update_input(event);
 }
 
 void sample_vr_app::on_update(const app_update_event & e) 
@@ -82,8 +86,6 @@ void sample_vr_app::on_update(const app_update_event & e)
 void sample_vr_app::on_draw()
 {
     glfwMakeContextCurrent(window);
-
-    imgui->begin_frame();
 
     int width, height;
     glfwGetWindowSize(window, &width, &height);
@@ -130,10 +132,10 @@ void sample_vr_app::on_draw()
         eye_views[i].draw(v.texture);
     }
 
+    desktop_imgui->begin_frame();
     const auto headPose = hmd->get_hmd_pose();
     ImGui::Text("Head Pose: %f, %f, %f", headPose.position.x, headPose.position.y, headPose.position.z);
-
-    imgui->end_frame();
+    desktop_imgui->end_frame();
 
     glfwSwapBuffers(window);
 

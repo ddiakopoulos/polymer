@@ -69,7 +69,7 @@ namespace gui
         void add_font(const std::vector<uint8_t> & font);
         void append_icon_font(const std::vector<uint8_t> & font);
         void update_input(const polymer::app_input_event & e);
-        void begin_frame();
+        void begin_frame(const uint32_t width = 0, const uint32_t height = 0);
         void end_frame();
     };
 

@@ -133,7 +133,9 @@ namespace gui
         ImGuiIO & io = ImGui::GetIO();
         unsigned char* pixels;
         int width, height;
-        io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);   // Load as RGBA 32-bits for OpenGL3 demo because it is more likely to be compatible with user's existing shader.
+
+        // Load as RGBA 32-bits for OpenGL3 demo because it is more likely to be compatible with user's existing shader.
+        io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
         
         // Upload texture to graphics system
         GLint last_texture;
@@ -262,7 +264,7 @@ namespace gui
         gl_check_error(__FILE__, __LINE__);
     }
     
-    void imgui_instance::begin_frame()
+    void imgui_instance::begin_frame(const uint32_t width, const uint32_t height)
     {
         ImGui::SetCurrentContext(data.context);
         if (!data.FontTexture) create_render_objects();
@@ -276,7 +278,8 @@ namespace gui
 
         for (int i = 0; i < 3; i++)
         {
-            // If a mouse press event came, always pass it as "mouse held this frame", so we don't miss click-release events that are shorter than 1 frame
+            // If a mouse press event came, always pass it as "mouse held this frame",
+            // so we don't miss click-release events that are shorter than 1 frame
             io.MouseDown[i] = data.MousePressed[i] || glfwGetMouseButton(data.window, i) != 0;
             data.MousePressed[i] = false;
         }
@@ -291,10 +294,19 @@ namespace gui
         if (!glfwGetWindowAttrib(data.window, GLFW_ICONIFIED))
         {
             // Setup display size (every frame to accommodate for window resizing)
-            int w, h;
-            int display_w, display_h;
-            glfwGetWindowSize(data.window, &w, &h);
-            glfwGetFramebufferSize(data.window, &display_w, &display_h);
+            int w = width;
+            int h = height;
+            int display_w = width;
+            int display_h = height;
+
+            // Only use glfw window size if we have not passed in a texture size that
+            // we are rendering to 
+            if (w == 0 || h == 0)
+            {
+                glfwGetWindowSize(data.window, &w, &h);
+                glfwGetFramebufferSize(data.window, &display_w, &display_h);
+            }
+
             io.DisplaySize = ImVec2((float)w, (float)h);
             io.DisplayFramebufferScale = ImVec2(w > 0 ? ((float)display_w / w) : 0, h > 0 ? ((float)display_h / h) : 0);
         }
