@@ -1,5 +1,4 @@
 #include "engine-openvr-scene.hpp"
-#include "renderer-util.hpp"
 
 sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-scene")
 {
@@ -7,6 +6,7 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
     glfwGetWindowSize(window, &windowWidth, &windowHeight);
 
     imgui.reset(new gui::imgui_instance(window));
+    gui::make_light_theme();
 
     try
     {
@@ -19,6 +19,7 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
         const uint2 eye_target_size = hmd->get_recommended_render_target_size();
         renderer_settings settings;
         settings.renderSize = int2(eye_target_size.x, eye_target_size.y);
+        settings.cameraCount = 2;
 
         // Create required systems
         scene.collision_system = orchestrator->create_system<collision_system>(orchestrator.get());
@@ -46,6 +47,7 @@ sample_vr_app::~sample_vr_app()
 {
     hmd.reset();
 }
+
 void sample_vr_app::on_window_resize(int2 size)
 {
     int windowWidth, windowHeight;
@@ -87,24 +89,28 @@ void sample_vr_app::on_draw()
     glfwGetWindowSize(window, &width, &height);
     glViewport(0, 0, width, height);
 
-    // Render the scene
+    // Collect eye data
     for (auto eye : { vr::Hmd_Eye::Eye_Left, vr::Hmd_Eye::Eye_Right })
     {
         const auto eye_pose = hmd->get_eye_pose(eye);
         const auto eye_projection = hmd->get_proj_matrix(eye, 0.05, 32.f);
-
         payload.views.emplace_back(view_data(eye, eye_pose, eye_projection));
-        scene.render_system->get_renderer()->render_frame(payload);
     }
 
+    // Render scene using payload
+    scene.render_system->get_renderer()->render_frame(payload);
+
+    const uint32_t left_eye_texture = scene.render_system->get_renderer()->get_color_texture(0);
+    const uint32_t right_eye_texture = scene.render_system->get_renderer()->get_color_texture(1);
+
     // Render to the HMD
-    hmd->submit(renderer->get_color_texture(0), renderer->get_color_texture(1));
+    hmd->submit(left_eye_texture, right_eye_texture);
     payload.views.clear();
 
     const aabb_2d rect{ { 0.f, 0.f },{ (float)width,(float)height } }; // Desktop window size
     const float mid = (rect.min().x + rect.max().x) / 2.f;
-    const viewport_t leftViewport = { rect.min(),{ mid - 2.f, rect.max().y }, renderer->get_color_texture(0) };
-    const viewport_t rightViewport = { { mid + 2.f, rect.min().y }, rect.max(), renderer->get_color_texture(1) };
+    const viewport_t leftViewport = { rect.min(),{ mid - 2.f, rect.max().y }, left_eye_texture };
+    const viewport_t rightViewport = { { mid + 2.f, rect.min().y }, rect.max(), right_eye_texture };
     viewports.clear();
     viewports.push_back(leftViewport);
     viewports.push_back(rightViewport);

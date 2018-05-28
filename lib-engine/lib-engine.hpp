@@ -30,6 +30,7 @@
 
 #include "renderer-pbr.hpp"
 #include "renderer-debug.hpp"
+#include "renderer-util.hpp"
 
 #include "bullet_engine.hpp"
 #include "bullet_object.hpp"

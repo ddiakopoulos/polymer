@@ -417,8 +417,7 @@ void pbr_renderer::render_frame(const render_payload & scene)
 
     view_data shadowAndCullingView = scene.views[0];
 
-    // For stereo rendering, we project the shadows from a center view frustum combining
-    // both eyes
+    // For stereo rendering, we project the shadows from a center view frustum combining both eyes
     if (settings.cameraCount == 2)
     {
         cpuProfiler.begin("center-view");

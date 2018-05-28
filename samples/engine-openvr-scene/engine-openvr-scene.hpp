@@ -23,7 +23,6 @@ struct sample_vr_app : public polymer_app
     gl_shader_monitor shaderMonitor { "../../assets/" };
 
     std::unique_ptr<entity_orchestrator> orchestrator;
-    std::unique_ptr<pbr_renderer> renderer;
 
     render_payload payload;
     environment scene;
