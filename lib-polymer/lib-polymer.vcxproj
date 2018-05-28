@@ -29,7 +29,7 @@
     <ClInclude Include="queue-circular.hpp" />
     <ClInclude Include="file_io.hpp" />
     <ClInclude Include="geometry.hpp" />
-    <ClInclude Include="index.hpp" />
+    <ClInclude Include="lib-polymer.hpp" />
     <ClInclude Include="linalg.h" />
     <ClInclude Include="math-common.hpp" />
     <ClInclude Include="math-core.hpp" />
@@ -50,6 +50,7 @@
     <ClInclude Include="quick_hull.hpp" />
     <ClInclude Include="radix_sort.hpp" />
     <ClInclude Include="simplex_noise.hpp" />
+    <ClInclude Include="simple_timer.hpp" />
     <ClInclude Include="solvers.hpp" />
     <ClInclude Include="splines.hpp" />
     <ClInclude Include="queue-spsc-bounded.hpp" />
@@ -65,7 +66,7 @@
     <ClCompile Include="..\third_party\nanovg\nanovg.c" />
     <ClCompile Include="..\third_party\tiny-gizmo.cpp" />
     <ClCompile Include="..\third_party\tinyexr\tinyexr.cc" />
-    <ClCompile Include="impl.cpp" />
+    <ClCompile Include="lib-polymer.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{992E85A7-B590-477B-A1B2-8A04AAAD0E10}</ProjectGuid>

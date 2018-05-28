@@ -5,6 +5,7 @@
 
 #include "util.hpp"
 #include "string_utils.hpp"
+#include "simple_timer.hpp"
 #include "procedural_mesh.hpp"
 #include "memory-pool.hpp"
 #include "image-buffer.hpp"

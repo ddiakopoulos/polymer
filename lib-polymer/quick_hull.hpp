@@ -8,11 +8,13 @@
 /// [2] http://thomasdiewald.com/blog/?p=1888
 /// [3] https://fgiesen.wordpress.com/2012/02/21/half-edge-based-mesh-representations-theory/
 
+#pragma once
+
 #ifndef polymer_quickhull_hpp
 #define polymer_quickhull_hpp
 
-#include "util.hpp"
-#include "math-core.hpp"
+#include "lib-polymer.hpp"
+
 #include <memory>
 #include <unordered_map>
 #include <array>
@@ -21,6 +23,8 @@
 
 namespace quickhull 
 {
+    using namespace polymer;
+
     ////////////////////////
     //   Math Utilities   //
     ////////////////////////

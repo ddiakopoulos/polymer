@@ -1557,7 +1557,6 @@
     </ClInclude>
     <ClInclude Include="openvr-hmd.hpp" />
     <ClInclude Include="openvr-camera.hpp" />
-    <ClInclude Include="engine.hpp" />
     <ClInclude Include="bullet_visualizer.hpp">
       <Filter>physics</Filter>
     </ClInclude>
@@ -1572,6 +1571,7 @@
     <ClInclude Include="renderer-pbr.hpp" />
     <ClInclude Include="renderer-debug.hpp" />
     <ClInclude Include="system-render.hpp" />
+    <ClInclude Include="lib-engine.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="gfx">

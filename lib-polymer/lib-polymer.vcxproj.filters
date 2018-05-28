@@ -93,9 +93,6 @@
     <ClInclude Include="octree.hpp">
       <Filter>src\math</Filter>
     </ClInclude>
-    <ClInclude Include="index.hpp">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="movement_tracker.hpp">
       <Filter>src\math</Filter>
     </ClInclude>
@@ -174,6 +171,12 @@
     <ClInclude Include="..\third_party\nanovg\fontstash.h">
       <Filter>third_party\nanovg</Filter>
     </ClInclude>
+    <ClInclude Include="lib-polymer.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="simple_timer.hpp">
+      <Filter>src\tools</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\third_party\imgui\imgui.cpp">
@@ -185,14 +188,14 @@
     <ClCompile Include="..\third_party\tiny-gizmo.cpp">
       <Filter>third_party\tinygizmo</Filter>
     </ClCompile>
-    <ClCompile Include="impl.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="..\third_party\tinyexr\tinyexr.cc">
       <Filter>third_party\tinyexr</Filter>
     </ClCompile>
     <ClCompile Include="..\third_party\nanovg\nanovg.c">
       <Filter>third_party\nanovg</Filter>
+    </ClCompile>
+    <ClCompile Include="lib-polymer.cpp">
+      <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

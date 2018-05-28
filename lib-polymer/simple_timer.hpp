@@ -1,55 +1,61 @@
+#pragma once
+
 #ifndef simple_timer_hpp
 #define simple_timer_hpp
 
 #include <iostream>
 #include <chrono>
 
-class simple_cpu_timer 
+namespace polymer
 {
-    typedef std::chrono::high_resolution_clock::time_point timepoint;
-    typedef std::chrono::high_resolution_clock::duration timeduration;
-
-    bool isRunning;
-    timepoint startTime, pauseTime;
-
-    inline timepoint current_time_point() const  { return std::chrono::high_resolution_clock::now(); }
-    inline timeduration running_time() const { return (isRunning) ? current_time_point() - startTime : pauseTime - startTime; }
-    template<typename unit> inline unit running_time() const  { return std::chrono::duration_cast<unit>(running_time()); }
-
-public:
-
-    void start()
+    class simple_cpu_timer
     {
-        reset();
-        isRunning = true;
-    }
+        typedef std::chrono::high_resolution_clock::time_point timepoint;
+        typedef std::chrono::high_resolution_clock::duration timeduration;
 
-    void stop() 
-    {
-        pauseTime = current_time_point();
-        isRunning = false;
-    }
+        bool isRunning;
+        timepoint startTime, pauseTime;
 
-    void reset() 
-    {
-        startTime = std::chrono::high_resolution_clock::now();
-        pauseTime = startTime;
-    }
+        inline timepoint current_time_point() const { return std::chrono::high_resolution_clock::now(); }
+        inline timeduration running_time() const { return (isRunning) ? current_time_point() - startTime : pauseTime - startTime; }
+        template<typename unit> inline unit running_time() const { return std::chrono::duration_cast<unit>(running_time()); }
 
-    double elapsed_ms() const 
-    { 
-        return (std::chrono::duration<float>(pauseTime - startTime).count() * 1000.0); 
-    }
+    public:
 
-    std::chrono::milliseconds milliseconds() const 
-    { 
-        return running_time<std::chrono::milliseconds>();
-    }
+        void start()
+        {
+            reset();
+            isRunning = true;
+        }
 
-    bool is_running() 
-    {
-        return isRunning; 
-    }
-};
+        void stop()
+        {
+            pauseTime = current_time_point();
+            isRunning = false;
+        }
+
+        void reset()
+        {
+            startTime = std::chrono::high_resolution_clock::now();
+            pauseTime = startTime;
+        }
+
+        double elapsed_ms() const
+        {
+            return (std::chrono::duration<float>(pauseTime - startTime).count() * 1000.0);
+        }
+
+        std::chrono::milliseconds milliseconds() const
+        {
+            return running_time<std::chrono::milliseconds>();
+        }
+
+        bool is_running()
+        {
+            return isRunning;
+        }
+    };
+
+} // end namespace polymer
 
 #endif // end simple_timer_hpp

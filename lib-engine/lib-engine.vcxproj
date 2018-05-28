@@ -404,7 +404,7 @@
     <ClInclude Include="ecs\core-ecs.hpp" />
     <ClInclude Include="ecs\core-events.hpp" />
     <ClInclude Include="ecs\typeid.hpp" />
-    <ClInclude Include="engine.hpp" />
+    <ClInclude Include="lib-engine.hpp" />
     <ClInclude Include="openvr-camera.hpp" />
     <ClInclude Include="openvr-hmd.hpp" />
     <ClInclude Include="gfx\gl\gl-api.hpp" />
