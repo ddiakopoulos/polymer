@@ -52,7 +52,6 @@ namespace polymer
         return cube;
     }
     
-    // todo - texcoords
     inline geometry make_sphere(float radius)
     {
         geometry sphereGeom;
@@ -61,22 +60,24 @@ namespace polymer
         
         for (uint32_t ui = 0; ui < U; ++ui)
         {
+            const float u = float(ui) / (U - 1) * float(POLYMER_PI);
+
             for (uint32_t vi = 0; vi < V; ++vi)
             {
-                float u = float(ui) / (U - 1) * float(POLYMER_PI);
-                float v = float(vi) / (V - 1) * 2 * float(POLYMER_PI);
-                float3 normal = cartsesian_coord(u, v);
+                const float v = float(vi) / (V - 1) * 2 * float(POLYMER_PI);
+                const float3 normal = cartsesian_coord(u, v);
                 sphereGeom.vertices.push_back({normal * radius});
-                sphereGeom.normals.push_back(normal);
+                sphereGeom.normals.push_back(normalize(normal));
+                sphereGeom.texcoord0.push_back({ 1.f - (float(vi) / (V - 1)), 1.f - (float(ui) / (U - 1)) });
             }
         }
         
         for (uint32_t ui = 0; ui < U; ++ui)
         {
-            uint32_t un = (ui + 1) % U;
+            const uint32_t un = (ui + 1) % U;
             for (uint32_t vi = 0; vi < V; ++vi)
             {
-                uint32_t vn = (vi + 1) % V;
+                const uint32_t vn = (vi + 1) % V;
                 sphereGeom.faces.push_back({ui * V + vi, un * V + vi, un * V + vn});
                 sphereGeom.faces.push_back({ui * V + vi, un * V + vn, ui * V + vn});
             }

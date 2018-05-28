@@ -38,7 +38,6 @@ struct scene_editor_app final : public polymer_app
     std::string working_dir_on_launch;
 
     shader_handle wireframeHandle{ "wireframe" };
-    shader_handle iblHandle{ "ibl" };
 
     std::unique_ptr<gui::imgui_instance> igm;
     std::unique_ptr<asset_resolver> resolver;
