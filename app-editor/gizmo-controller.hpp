@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef editor_selection_hpp
-#define editor_selection_hpp
+#ifndef gizmo_controller_hpp
+#define gizmo_controller_hpp
 
 #include "gl-gizmo.hpp"
 #include "gl-imgui.hpp"
@@ -9,10 +9,10 @@
 #include "ecs/core-ecs.hpp"
 #include "system-transform.hpp"
 
-class selection_controller
+class gizmo_controller
 {
     gl_gizmo gizmo;
-    tinygizmo::rigid_transform gizmo_transform;             // Center of mass of multiple objects or the pose of a single object
+    tinygizmo::rigid_transform gizmo_transform; // Center of mass of multiple objects or the pose of a single object
     tinygizmo::rigid_transform previous_gizmo_transform;
 
     transform entity_transform;
@@ -55,7 +55,6 @@ class selection_controller
         // we also set the previous transform. 
         gizmo_transform = from_linalg(entity_transform);
         previous_gizmo_transform = gizmo_transform;
-        std::cout << "Setting Gizmo Transform: " << entity_transform << std::endl;
     }
 
     void compute_relative_transforms()
@@ -71,7 +70,7 @@ class selection_controller
 
 public:
 
-    selection_controller(transform_system * system) : xform_system(system) { }
+    gizmo_controller(transform_system * system) : xform_system(system) { }
 
     bool selected(entity e) const
     {
@@ -179,4 +178,4 @@ public:
     }
 };
 
-#endif
+#endif // end gizmo_controller_hpp

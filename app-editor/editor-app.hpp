@@ -19,7 +19,7 @@
 #include "asset-handle-utils.hpp"
 #include "environment.hpp"
 #include "arcball.hpp"
-#include "selection.hpp"
+#include "gizmo-controller.hpp"
 #include "asset-resolver.hpp"
 #include "material-editor.hpp"
 
@@ -43,7 +43,7 @@ struct scene_editor_app final : public polymer_app
     std::unique_ptr<asset_resolver> resolver;
     std::unique_ptr<material_editor_window> material_editor;
     std::unique_ptr<simple_texture_view> fullscreen_surface;
-    std::shared_ptr<selection_controller> gizmo_selector;
+    std::shared_ptr<gizmo_controller> gizmo;
 
     render_payload the_render_payload;
     entity_orchestrator orchestrator;

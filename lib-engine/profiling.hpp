@@ -1,3 +1,10 @@
+/*
+ * A profiler can be templated on either a `simple_cpu_timer` or `gl_gpu_timer`
+ * These timers are completely unrelated, but use the notion of an implicit interface
+ * at compile time, such that both objects implement function signatures for 
+ * start(), stop(), and elapsed_ms().
+ */
+
 #pragma once
 
 #ifndef polymer_profiling_hpp
@@ -6,11 +13,6 @@
 #include "queue-circular.hpp"
 #include "gfx/gl/gl-async-gpu-timer.hpp"
 #include "simple_timer.hpp"
-
-// A profiler can be templated on either a `simple_cpu_timer` or `gl_gpu_timer`
-// These timers are completely unrelated, but use the notion of an implicit interface
-// at compile time, such that both objects implement function signatures for 
-// start(), stop(), and elapsed_ms().
 
 namespace polymer
 {

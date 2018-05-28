@@ -7,7 +7,7 @@
  *   quickly in different directions while is increased with a focus on minimizing lag. Note that
  *   parameters fcmin and have clear conceptual relationships: if high speed lag is a problem,
  *   increase; if slow speed jitter is a problem, decrease fcmin."
- * Rewritten based on the original BOOST-licensed reference algorithm.
+ * Rewritten from the original BOOST-licensed reference algorithm.
  */ 
 
 #pragma once

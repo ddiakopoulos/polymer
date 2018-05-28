@@ -6,14 +6,12 @@
 #include "gl-camera.hpp"
 #include "tiny-gizmo.hpp"
 
-using namespace polymer;
-
-static inline transform to_linalg(tinygizmo::rigid_transform & t)
+static inline polymer::transform to_linalg(tinygizmo::rigid_transform & t)
 {
     return{ reinterpret_cast<polymer::float4 &>(t.orientation), reinterpret_cast<polymer::float3 &>(t.position) };
 }
 
-static inline tinygizmo::rigid_transform from_linalg(transform & p)
+static inline tinygizmo::rigid_transform from_linalg(polymer::transform & p)
 {
     return{ reinterpret_cast<minalg::float4 &>(p.orientation), reinterpret_cast<minalg::float3 &>(p.position) };
 }

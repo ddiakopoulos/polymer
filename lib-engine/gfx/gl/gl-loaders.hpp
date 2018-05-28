@@ -1,5 +1,7 @@
-#ifndef asset_io_hpp
-#define asset_io_hpp
+#pragma once
+
+#ifndef gl_loaders_hpp
+#define gl_loaders_hpp
 
 #include "file_io.hpp"
 #include "gl-api.hpp"
@@ -18,9 +20,9 @@ namespace polymer
 
         for (; low < high; low += stride, high -= stride)
         {
-            memcpy(row.data(), low, stride);
-            memcpy(low, high, stride);
-            memcpy(high, row.data(), stride);
+            std::memcpy(row.data(), low, stride);
+            std::memcpy(low, high, stride);
+            std::memcpy(high, row.data(), stride);
         }
     }
 
@@ -35,8 +37,6 @@ namespace polymer
         stbi_image_free(data);
         return d;
     }
-
-    // fixme - these functions belong in a gl-xyz.hpp file
 
     inline gl_texture_2d load_image(const std::string & path, bool flip = false)
     {
@@ -93,4 +93,4 @@ namespace polymer
 
 } // end namespace polymer
 
-#endif // asset_io_hpp
+#endif // gl_loaders_hpp

@@ -6,7 +6,7 @@
 #include "material.hpp"
 #include "renderer-pbr.hpp"
 #include "asset-handle-utils.hpp"
-#include "selection.hpp"
+#include "gizmo-controller.hpp"
 #include "environment.hpp"
 #include "editor-inspector-ui.hpp"
 #include "arcball.hpp"
@@ -60,7 +60,7 @@ struct material_editor_window final : public glfw_window
     const uint32_t previewHeight = 420;
 
     environment & scene;
-    std::shared_ptr<selection_controller> selector;
+    std::shared_ptr<gizmo_controller> selector;
 
     entity inspected_entity{ kInvalidEntity };
     entity debug_sphere{ kInvalidEntity };
@@ -70,7 +70,7 @@ struct material_editor_window final : public glfw_window
         const std::string & title,
         int samples,
         environment & scene,
-        std::shared_ptr<selection_controller> selector,
+        std::shared_ptr<gizmo_controller> selector,
         entity_orchestrator & orch)
         : glfw_window(context, w, h, title, samples), scene(scene), selector(selector)
     {

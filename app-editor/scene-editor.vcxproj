@@ -107,7 +107,7 @@
     <ClInclude Include="editor-app.hpp" />
     <ClInclude Include="editor-inspector-ui.hpp" />
     <ClInclude Include="material-editor.hpp" />
-    <ClInclude Include="selection.hpp" />
+    <ClInclude Include="gizmo-controller.hpp" />
     <ClInclude Include="win32.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

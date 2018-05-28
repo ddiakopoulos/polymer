@@ -66,7 +66,7 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
     scene.identifier_system = orchestrator.create_system<identifier_system>(&orchestrator);
     scene.render_system = orchestrator.create_system<render_system>(initialSettings, &orchestrator);
 
-    gizmo_selector.reset(new selection_controller(scene.xform_system));
+    gizmo.reset(new gizmo_controller(scene.xform_system));
 
     // Only need to set the skybox on the |render_payload| once (unless we clear the payload)
     the_render_payload.skybox = scene.render_system->get_skybox();
@@ -142,12 +142,12 @@ void scene_editor_app::on_window_resize(int2 size)
 void scene_editor_app::on_input(const app_input_event & event)
 {
     igm->update_input(event);
-    gizmo_selector->on_input(event);
+    gizmo->on_input(event);
 
     if (ImGui::GetIO().WantCaptureMouse || ImGui::GetIO().WantCaptureKeyboard)
     {
         flycam.reset();
-        gizmo_selector->reset_input();
+        gizmo->reset_input();
         return;
     }
 
@@ -160,14 +160,14 @@ void scene_editor_app::on_input(const app_input_event & event)
             // De-select all objects
             if (event.value[0] == GLFW_KEY_ESCAPE && event.action == GLFW_RELEASE)
             {
-                gizmo_selector->clear();
+                gizmo->clear();
             }
 
             // Focus on currently selected object
             if (event.value[0] == GLFW_KEY_F && event.action == GLFW_RELEASE)
             {
-                if (gizmo_selector->get_selection().size() == 0) return;
-                if (entity theSelection = gizmo_selector->get_selection()[0])
+                if (gizmo->get_selection().size() == 0) return;
+                if (entity theSelection = gizmo->get_selection()[0])
                 {
                     const transform selectedObjectPose = scene.xform_system->get_world_transform(theSelection)->world_pose;
                     const float3 focusOffset = selectedObjectPose.position + float3(0.f, 0.5f, 4.f);
@@ -196,7 +196,7 @@ void scene_editor_app::on_input(const app_input_event & event)
 
             const ray r = cam.get_world_ray(event.cursor, float2(static_cast<float>(width), static_cast<float>(height)));
 
-            if (length(r.direction) > 0 && !gizmo_selector->active())
+            if (length(r.direction) > 0 && !gizmo->active())
             {
                 std::vector<entity> selectedObjects;
                 entity_hit_result result = scene.collision_system->raycast(r);
@@ -208,17 +208,17 @@ void scene_editor_app::on_input(const app_input_event & event)
                     // Multi-selection
                     if (event.mods & GLFW_MOD_CONTROL)
                     {
-                        auto existingSelection = gizmo_selector->get_selection();
+                        auto existingSelection = gizmo->get_selection();
                         for (auto s : selectedObjects)
                         {
-                            if (!gizmo_selector->selected(s)) existingSelection.push_back(s);
+                            if (!gizmo->selected(s)) existingSelection.push_back(s);
                         }
-                        gizmo_selector->set_selection(existingSelection);
+                        gizmo->set_selection(existingSelection);
                     }
                     // Single Selection
                     else
                     {
-                        gizmo_selector->set_selection(selectedObjects);
+                        gizmo->set_selection(selectedObjects);
                     }
                 }
             }
@@ -231,12 +231,12 @@ void scene_editor_app::open_material_editor()
 {
     if (!material_editor)
     {
-       material_editor.reset(new material_editor_window(get_shared_gl_context(), 500, 1200, "", 1, scene, gizmo_selector, orchestrator));
+       material_editor.reset(new material_editor_window(get_shared_gl_context(), 500, 1200, "", 1, scene, gizmo, orchestrator));
     }
     else if (!material_editor->get_window())
     {
         // Workaround since there's no convenient way to reset the material_editor when it's been closed
-        material_editor.reset(new material_editor_window(get_shared_gl_context(), 500, 1200, "", 1, scene, gizmo_selector, orchestrator));
+        material_editor.reset(new material_editor_window(get_shared_gl_context(), 500, 1200, "", 1, scene, gizmo, orchestrator));
     }
 
     glfwMakeContextCurrent(window);
@@ -252,7 +252,7 @@ void scene_editor_app::on_update(const app_update_event & e)
     editorProfiler.begin("on_update");
     flycam.update(e.timestep_ms);
     shaderMonitor.handle_recompile();
-    gizmo_selector->on_update(cam, float2(static_cast<float>(width), static_cast<float>(height)));
+    gizmo->on_update(cam, float2(static_cast<float>(width), static_cast<float>(height)));
     editorProfiler.end("on_update");
 }
 
@@ -355,7 +355,7 @@ void scene_editor_app::on_draw()
         program.bind();
         program.uniform("u_eyePos", cam.get_eye_point());
         program.uniform("u_viewProjMatrix", viewProjectionMatrix);
-        for (const entity e : gizmo_selector->get_selection())
+        for (const entity e : gizmo->get_selection())
         {
             const transform p = scene.xform_system->get_world_transform(e)->world_pose;
             const float3 scale = scene.xform_system->get_local_transform(e)->local_scale;
@@ -379,14 +379,14 @@ void scene_editor_app::on_draw()
     menu.app_menu_begin();
     {
         menu.begin("File");
-        bool mod_enabled = !gizmo_selector->active();
+        bool mod_enabled = !gizmo->active();
         if (menu.item("Open Scene", GLFW_MOD_CONTROL, GLFW_KEY_O, mod_enabled))
         {
             const auto import_path = windows_file_dialog("polymer scene", "json", true);
             if (!import_path.empty())
             {
                 scene.destroy(kAllEntities);
-                gizmo_selector->clear();
+                gizmo->clear();
                 the_render_payload.render_set.clear();
                 scene.import_environment(import_path, orchestrator);
                 glfwSetWindowTitle(window, import_path.c_str());
@@ -398,7 +398,7 @@ void scene_editor_app::on_draw()
             const auto export_path = windows_file_dialog("polymer scene", "json", false);
             if (!export_path.empty())
             {
-                gizmo_selector->clear();
+                gizmo->clear();
                 the_render_payload.render_set.clear();
                 scene.export_environment(export_path);
                 glfwSetWindowTitle(window, export_path.c_str());
@@ -407,7 +407,7 @@ void scene_editor_app::on_draw()
 
         if (menu.item("New Scene", GLFW_MOD_CONTROL, GLFW_KEY_N, mod_enabled))
         {
-            gizmo_selector->clear();
+            gizmo->clear();
             scene.destroy(kAllEntities);
             the_render_payload.render_set.clear();
             glfwSetWindowTitle(window, "unsaved new scene");
@@ -424,24 +424,24 @@ void scene_editor_app::on_draw()
         menu.begin("Edit");
         if (menu.item("Clone", GLFW_MOD_CONTROL, GLFW_KEY_D)) 
         {
-            const auto selection_list = gizmo_selector->get_selection();
+            const auto selection_list = gizmo->get_selection();
             if (!selection_list.empty() && selection_list[0] != kInvalidEntity)
             {
                 const entity the_copy = scene.track_entity(orchestrator.create_entity());
                 scene.copy(selection_list[0], the_copy);
                 std::vector<entity> new_selection_list = { the_copy };
-                gizmo_selector->set_selection(new_selection_list);
+                gizmo->set_selection(new_selection_list);
             }
         }
         if (menu.item("Delete", 0, GLFW_KEY_DELETE)) 
         {
-            const auto selection_list = gizmo_selector->get_selection();
+            const auto selection_list = gizmo->get_selection();
             if (!selection_list.empty() && selection_list[0] != kInvalidEntity) scene.destroy(selection_list[0]);
-            gizmo_selector->clear();
+            gizmo->clear();
         }
         if (menu.item("Select All", GLFW_MOD_CONTROL, GLFW_KEY_A)) 
         {
-            gizmo_selector->set_selection(scene.entity_list());
+            gizmo->set_selection(scene.entity_list());
         }
         menu.end();
 
@@ -451,7 +451,7 @@ void scene_editor_app::on_draw()
             std::vector<entity> list = { scene.track_entity(orchestrator.create_entity()) };
             scene.xform_system->create(list[0], transform());
             scene.identifier_system->create(list[0], "new entity (" + std::to_string(list[0]) + ")");
-            gizmo_selector->set_selection(list); // Newly spawned objects are selected by default
+            gizmo->set_selection(list); // Newly spawned objects are selected by default
         }
         menu.end();
 
@@ -482,18 +482,18 @@ void scene_editor_app::on_draw()
 
         gui::imgui_fixed_window_begin("Inspector", topRightPane);
 
-        if (gizmo_selector->get_selection().size() >= 1)
+        if (gizmo->get_selection().size() >= 1)
         {
             ImGui::Dummy({ 0, 8 });
             if (ImGui::Button(" Add Component ", { 260, 20 })) ImGui::OpenPopup("Create Component");
             ImGui::Dummy({ 0, 8 });
 
-            gizmo_selector->refresh(); // selector only stores data, not pointers, so we need to recalc new xform.
-            inspect_entity(nullptr, gizmo_selector->get_selection()[0], scene);
+            gizmo->refresh(); // selector only stores data, not pointers, so we need to recalc new xform.
+            inspect_entity(nullptr, gizmo->get_selection()[0], scene);
 
             if (ImGui::BeginPopupModal("Create Component", NULL, ImGuiWindowFlags_AlwaysAutoResize))
             {
-                const entity selection = gizmo_selector->get_selection()[0];
+                const entity selection = gizmo->get_selection()[0];
 
                 ImGui::Dummy({ 0, 6 });
 
@@ -542,14 +542,14 @@ void scene_editor_app::on_draw()
         {
             ImGui::PushID(static_cast<int>(entity));
 
-            bool selected = gizmo_selector->selected(entity);
+            bool selected = gizmo->selected(entity);
             std::string name = scene.identifier_system->get_name(entity);
             name = name.empty() ? "entity": name;
 
             if (ImGui::Selectable(name.c_str(), &selected))
             {
-                if (!ImGui::GetIO().KeyCtrl) gizmo_selector->clear();
-                gizmo_selector->update_selection(entity);
+                if (!ImGui::GetIO().KeyCtrl) gizmo->clear();
+                gizmo->update_selection(entity);
             }
             ImGui::PopID();
         }
@@ -629,7 +629,7 @@ void scene_editor_app::on_draw()
     {
         editorProfiler.begin("gizmo_on_draw");
         glClear(GL_DEPTH_BUFFER_BIT);
-        gizmo_selector->on_draw();
+        gizmo->on_draw();
         editorProfiler.end("gizmo_on_draw");
     }
 
