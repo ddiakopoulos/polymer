@@ -21,7 +21,7 @@ Polymer is a research framework for spatial interaction and real-time rendering,
 
 ## Architecture
 
-todo
+Polymer is built as a collection of static libraries. `lib-polymer` is a base library consisting of common data structures and algorithms familiar to game developers. `lib-engine` depends on `lib-polymer` and introduces an entity-component system alongside a physically-based rendering pipeline. `lib-engine` also offers a runtime asset management solution. Lastly, `lib-model-io` contains code to import, export, and optimize common geometry formats (presently obj, ply, and fbx). In the future, rendering code will move to `lib-graphics` which will introduce an abstract render-hardware-interface capable of targeting multiple graphics backends. 
 
 ## Building
 
@@ -29,7 +29,7 @@ This repository hosts maintained project files for Visual Studio 2017. All depen
 
 ## Samples + Documentation
 
-todo
+...
 
 ## Contributing 
 
