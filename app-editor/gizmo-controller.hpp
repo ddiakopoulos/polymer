@@ -122,13 +122,6 @@ public:
         gizmo.reset_input();
     }
 
-    // Behavior:
-    // works if moving parent
-    // does not work if moving child. 
-    // The gizmo lands in the new spot alright, but as soon
-    // as I move it fucks up
-    // It only fucks up if I move the parent... 
-
     void on_update(const perspective_camera & camera, const float2 viewport_size)
     {
         gizmo.update(camera, viewport_size);
@@ -159,10 +152,6 @@ public:
                     // local is already in worldspace. 
                     xform_system->set_local_transform(e, updated_pose);
                 }
-
-                // Update the location of the drawn gizmo?
-                //compute_entity_transform();
-                //gizmo_transform = from_linalg(entity_transform);
             }
 
             previous_gizmo_transform = gizmo_transform;

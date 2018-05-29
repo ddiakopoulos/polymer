@@ -130,8 +130,6 @@ namespace polymer
         static std::string generate() { return generate_impl<T>(); }
     };
 
-    // Setup polymer_typeids for a variety of common types
-
     // Intrinsic Types
     POLYMER_SETUP_TYPEID(bool);
     POLYMER_SETUP_TYPEID(float);

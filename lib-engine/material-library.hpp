@@ -14,9 +14,9 @@ namespace polymer
     class polymer_pbr_standard;
     class polymer_blinn_phong_standard;
 
-    // Materials are serialized separately from a scene. Cereal-deserializes
-    // directly into |instances| and is used as a convenience container,
-    // although all materials also live in the static table of asset_handles.
+    // Materials are serialized separately from a scene. 
+    // All materials also live in the static table of asset_handles, but
+    // this is where serialization/deserialization occurs.
     struct material_library
     {
         static const std::string kDefaultMaterialId;
