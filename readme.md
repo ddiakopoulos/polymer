@@ -21,15 +21,15 @@ Polymer is a research framework for spatial interaction and real-time rendering,
 
 ## Architecture
 
-Polymer is built as a collection of static libraries. `lib-polymer` is a base library consisting of common data structures and algorithms familiar to game developers. `lib-engine` depends on `lib-polymer` and introduces an entity-component system alongside a physically-based rendering pipeline. `lib-engine` also offers a runtime asset management solution. Lastly, `lib-model-io` contains code to import, export, and optimize common geometry formats (presently obj, ply, and fbx). In the future, rendering code will move to `lib-graphics` which will introduce an abstract render-hardware-interface capable of targeting multiple graphics backends. 
+Polymer is designed as a collection of static libraries. `lib-polymer` is a base library consisting of common data structures and algorithms familiar to game developers. `lib-engine` depends on `lib-polymer` and introduces an entity-component system alongside a physically-based rendering pipeline. `lib-engine` also offers a runtime asset management solution. Lastly, `lib-model-io` contains code to import, export, and optimize common geometry formats (presently obj, ply, and fbx). In the future, rendering code will move to `lib-graphics` which will introduce an abstract render-hardware-interface capable of targeting multiple graphics backends. 
 
 ## Building
 
-This repository hosts maintained project files for Visual Studio 2017. All dependencies are included in source form without the use of submodules. 
+This repository hosts maintained project files for Visual Studio 2017. Most dependencies are included in source form without the use of submodules. Use of the FBX 2017 SDK is controlled through an environment variable (`SYSTEM_HAS_FBX_SDK`). The extracted SDK itself must be moved to `polymer\lib-model-io\third-party\fbxsdk`. 
 
-## Samples + Documentation
+## Samples & Documentation
 
-The API of Polymer is consistently in flux. More than 10 sample projects have been assembled in the `samples/` directory to demonstrate a variety of Polymer's features. Most projects depend on both `lib-polymer` and `lib-engine` although many do not use most features in `lib-engine` beyond GLFW window creation and event handling. A growing number of tests projects verify the correctness of some critical internal systems, but also act as an interim reference for features that lack formal documentation. 
+The API of Polymer is consistently in flux. More than 10 sample projects have been assembled in the `samples/` directory to demonstrate a variety of Polymer's features. Most projects depend on both `lib-polymer` and `lib-engine` although many do not use most features in `lib-engine` beyond GLFW window creation and event handling. A growing number of tests projects verify the correctness of some critical internal systems, but also act as an interim reference for functions and objects lacking formal documentation. 
 
 ## Contributing 
 
