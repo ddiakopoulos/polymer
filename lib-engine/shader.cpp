@@ -129,21 +129,28 @@ gl_shader_asset::gl_shader_asset(const std::string & n, const std::string & v, c
 
 }
 
-std::shared_ptr<shader_variant> gl_shader_asset::get_variant(const std::vector<std::string> defines)
+uint64_t gl_shader_asset::hash(const std::vector<std::string> defines)
 {
     uint64_t sumOfHashes = 0;
     for (auto & define : defines) sumOfHashes += poly_hash_fnv1a(define);
+    return sumOfHashes;
+}
 
-    auto itr = shaders.find(sumOfHashes);
-    if (itr != shaders.end())
-    {
-        return itr->second;
-    }
+std::shared_ptr<shader_variant> gl_shader_asset::get_variant(const std::vector<std::string> defines)
+{
+    // Hash the defines
+    uint64_t theHash = hash(defines);
 
+    // Lookup if exists
+    auto itr = shaders.find(theHash);
+    if (itr != shaders.end()) return itr->second;
+
+    // Create if not
     auto newVariant = std::make_shared<shader_variant>();
     newVariant->shader = std::move(compile_variant(defines));
     newVariant->defines = defines;
-    shaders[sumOfHashes] = newVariant;
+    newVariant->hash = theHash;
+    shaders[theHash] = newVariant;
     return newVariant;
 }
 

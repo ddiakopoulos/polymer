@@ -22,7 +22,7 @@ void polymer_default_material::use()
     compiled_shader->shader.bind();
 }
 
-void polymer_default_material::resolve_variants() const
+void polymer_default_material::resolve_variants()
 {
     if (!compiled_shader)
     {
@@ -31,7 +31,7 @@ void polymer_default_material::resolve_variants() const
     }
 }
 
-uint32_t polymer_default_material::id() const
+uint32_t polymer_default_material::id()
 {
     resolve_variants();
     return compiled_shader->shader.handle();
@@ -46,7 +46,7 @@ polymer_blinn_phong_standard::polymer_blinn_phong_standard()
     shader = shader_handle("blinn-phong");
 }
 
-void polymer_blinn_phong_standard::resolve_variants() const
+void polymer_blinn_phong_standard::resolve_variants()
 {
     if (!compiled_shader)
     {
@@ -54,7 +54,7 @@ void polymer_blinn_phong_standard::resolve_variants() const
     }
 }
 
-uint32_t polymer_blinn_phong_standard::id() const
+uint32_t polymer_blinn_phong_standard::id()
 {
     resolve_variants();
     return compiled_shader->shader.handle();
@@ -97,15 +97,41 @@ polymer_pbr_standard::polymer_pbr_standard()
     shader = shader_handle("pbr-forward-lighting");
 }
 
-void polymer_pbr_standard::resolve_variants() const
+void polymer_pbr_standard::resolve_variants() 
 {
+    std::vector<std::string> processed_defines;
+
+    // Required Features
+    processed_defines.push_back("ENABLE_SHADOWS");
+    processed_defines.push_back("TWO_CASCADES");
+    processed_defines.push_back("USE_PCF_3X3");
+    processed_defines.push_back("USE_IMAGE_BASED_LIGHTING");
+
+    // Material slots
+    if (albedo.assigned()) processed_defines.push_back("HAS_ALBEDO_MAP");
+    if (roughness.assigned()) processed_defines.push_back("HAS_ROUGHNESS_MAP");
+    if (metallic.assigned()) processed_defines.push_back("HAS_METALNESS_MAP");
+    if (normal.assigned()) processed_defines.push_back("HAS_NORMAL_MAP");
+    if (occlusion.assigned()) processed_defines.push_back("HAS_OCCLUSION_MAP");
+    if (emissive.assigned()) processed_defines.push_back("HAS_EMISSIVE_MAP");
+
+    const auto variant_hash = shader.get()->hash(processed_defines);
+
+    // First time
     if (!compiled_shader)
     {
-        compiled_shader = shader.get()->get_variant(required_defines);
+        compiled_shader = shader.get()->get_variant(processed_defines);
+        return;
+    }
+    else if (compiled_shader->hash != variant_hash)
+    {
+        // We updated the set of defines and need to recompile
+        compiled_shader = shader.get()->get_variant(processed_defines);
+        return;
     }
 }
 
-uint32_t polymer_pbr_standard::id() const
+uint32_t polymer_pbr_standard::id()
 {
     resolve_variants();
     return compiled_shader->shader.handle();

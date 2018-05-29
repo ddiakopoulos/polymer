@@ -19,20 +19,21 @@ namespace polymer
 
     struct material_interface
     {
+        std::vector<std::string> defines;                   // list of shader defines required to use this material
         mutable cached_variant compiled_shader{ nullptr };  // cached on first access (because needs to happen on GL thread)
         shader_handle shader;                               // typically set during object inflation / deserialization
         virtual void update_uniforms() {}                   // generic interface for overriding specific uniform sets
         virtual void use() {}                               // generic interface for binding the program
-        virtual void resolve_variants() const = 0;          // all overridden functions need to call this to cache the shader
-        virtual uint32_t id() const = 0;                    // returns the gl handle, used for sorting materials by type to minimize state changes in the renderer
+        virtual void resolve_variants() = 0;                // all overridden functions need to call this to cache the shader
+        virtual uint32_t id() = 0;                          // returns the gl handle, used for sorting materials by type to minimize state changes in the renderer
     };
 
     struct polymer_default_material final : public material_interface
     {
         polymer_default_material();
         virtual void use() override final;
-        virtual void resolve_variants() const override final;
-        virtual uint32_t id() const override final;
+        virtual void resolve_variants() override final;
+        virtual uint32_t id() override final;
     };
     POLYMER_SETUP_TYPEID(polymer_default_material);
 
@@ -48,8 +49,8 @@ namespace polymer
 
         polymer_blinn_phong_standard();
         virtual void use() override final;
-        virtual void resolve_variants() const override final;
-        virtual uint32_t id() const override final;
+        virtual void resolve_variants() override final;
+        virtual uint32_t id() override final;
         virtual void update_uniforms() override final;
 
         int2 texcoordScale{ 1, 1 };
@@ -74,6 +75,7 @@ namespace polymer
         f("diffuse_handle", o.diffuse);
         f("normal_handle", o.normal);
         f("program_handle", o.shader, editor_hidden{}); // hidden because shaders are tied to materials
+        o.resolve_variants(); // trigger recompile if a property has been changed
     }
 
     inline void to_json(json & j, const polymer_blinn_phong_standard & p) {
@@ -92,17 +94,14 @@ namespace polymer
     {
         int bindpoint = 0;
 
-        std::vector<std::string> required_defines = { "TWO_CASCADES", "USE_PCF_3X3", "ENABLE_SHADOWS", "USE_IMAGE_BASED_LIGHTING",
-            "HAS_ROUGHNESS_MAP", "HAS_METALNESS_MAP", "HAS_ALBEDO_MAP", "HAS_NORMAL_MAP", "HAS_OCCLUSION_MAP" };
-
     public:
 
         polymer_pbr_standard();
 
         virtual void update_uniforms() override final;
         virtual void use() override final;
-        virtual void resolve_variants() const override final;
-        virtual uint32_t id() const override final;
+        virtual void resolve_variants() override final;
+        virtual uint32_t id() override final;
 
         void update_uniforms_shadow(GLuint handle);
         void update_uniforms_ibl(GLuint irradiance, GLuint radiance);
@@ -155,6 +154,7 @@ namespace polymer
         f("height_handle", o.height);
         f("occlusion_handle", o.occlusion);
         f("program_handle", o.shader, editor_hidden{}); // hidden because shaders are tied to materials
+        o.resolve_variants(); // trigger recompile if a property has been changed
     }
 
     inline void to_json(json & j, const polymer_pbr_standard & p) {

@@ -30,9 +30,6 @@ gl_shader_monitor::gl_shader_monitor(const std::string & root_path) : root_path(
             std::this_thread::sleep_for(std::chrono::milliseconds(250));
         }
     });
-
-    //walk_asset_dir();
-    //handle_recompile();
 }
 
 gl_shader_monitor::~gl_shader_monitor()
@@ -77,8 +74,13 @@ void gl_shader_monitor::walk_asset_dir()
 
         for (auto & asset : assets)
         {
+            // Compare file names + extension instead of paths directly
+            const auto scanned_file = get_filename_with_extension(path);
+
             // Regular shader assets
-            if (path == asset.second->vertexPath || path == asset.second->fragmentPath || path == asset.second->geomPath)
+            if (scanned_file == get_filename_with_extension(asset.second->vertexPath)   || 
+                scanned_file == get_filename_with_extension(asset.second->fragmentPath) ||
+                scanned_file == get_filename_with_extension(asset.second->geomPath))
             {
                 auto writeTime = duration_cast<seconds>(write_time(path).time_since_epoch()).count();
                 if (writeTime > asset.second->writeTime)
