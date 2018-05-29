@@ -29,7 +29,7 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
         orchestrator.reset(new entity_orchestrator());
         load_required_renderer_assets("../../assets/", shaderMonitor);
 
-        scene.mat_library.reset(new polymer::material_library("openvr-scene-materials.json"));
+        scene.mat_library.reset(new polymer::material_library("../../assets/materials/"));
 
         // Setup for the recommended eye target size
         const uint2 eye_target_size = hmd->get_recommended_render_target_size();

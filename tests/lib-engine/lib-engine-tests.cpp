@@ -362,8 +362,8 @@ namespace polymer
         system->add_child(root, child2);
 
         const transform check_p1 = p1;
-        const transform check_p2 = p2 * p1;
-        const transform check_p3 = p3 * p1;
+        const transform check_p2 = p1 * p2;
+        const transform check_p3 = p1 * p3;
 
         REQUIRE(system->get_world_transform(root)->world_pose == check_p1); // root (already in worldspace)
         REQUIRE(system->get_world_transform(child1)->world_pose == check_p2);
