@@ -13,6 +13,11 @@ namespace polymer
     {
         try
         {
+            monitor.watch("ibl",
+                base_path + "/shaders/ibl_vert.glsl",
+                base_path + "/shaders/ibl_frag.glsl",
+                base_path + "/shaders/renderer");
+
             monitor.watch("wireframe",
                 base_path + "/shaders/wireframe_vert.glsl",
                 base_path + "/shaders/wireframe_frag.glsl",

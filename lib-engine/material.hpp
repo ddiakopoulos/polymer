@@ -146,7 +146,7 @@ namespace polymer
         float3 baseEmissive{ 0.f, 0.f, 0.f };
         float emissiveStrength{ 1.f };
 
-        float specularLevel{ 0.04f };
+        float specularLevel{ 0.01f };
         float occlusionStrength{ 1.f };
         float ambientStrength{ 1.f };
 
@@ -173,7 +173,7 @@ namespace polymer
         f("metallic_factor", o.metallicFactor, range_metadata<float>{ 0.f, 1.f });
         f("base_emissive", o.baseEmissive);
         f("emissive_strength", o.emissiveStrength, range_metadata<float>{ 0.f, 1.f });
-        f("specularLevel", o.specularLevel, range_metadata<float>{ 0.f, 2.f });
+        f("specularLevel", o.specularLevel, range_metadata<float>{ 0.f, 1.f });
         f("occulusion_strength", o.occlusionStrength, range_metadata<float>{ 0.f, 1.f });
         f("ambient_strength", o.ambientStrength, range_metadata<float>{ 0.f, 1.f });
         f("shadow_opacity", o.shadowOpacity, range_metadata<float>{ 0.f, 1.f });

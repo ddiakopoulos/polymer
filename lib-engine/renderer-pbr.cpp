@@ -208,7 +208,16 @@ void pbr_renderer::run_skybox_pass(const view_data & view, const render_payload 
     GLboolean wasDepthTestingEnabled = glIsEnabled(GL_DEPTH_TEST);
     glDisable(GL_DEPTH_TEST);
 
-    scene.skybox->render(view.viewProjMatrix, view.pose.position, view.farClip);
+    auto & program = shader_handle("ibl").get()->get_variant()->shader;
+
+    program.bind();
+    program.uniform("u_mvp", Identity4x4);
+    program.texture("sc_ibl", 0, texture_handle("wells-radiance-cubemap").get(), GL_TEXTURE_CUBE_MAP);
+    auto m = make_cube_mesh();
+    m.draw_elements();
+    program.unbind();
+
+    //scene.skybox->render(view.viewProjMatrix, view.pose.position, view.farClip);
 
     if (wasDepthTestingEnabled) glEnable(GL_DEPTH_TEST);
 }

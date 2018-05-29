@@ -8,6 +8,5 @@ in vec3 position;
 
 void main()
 { 
-    //f_color = texture(sc_ibl, position); 
-    f_color = vec4(1, 0, 0, 1);
+    f_color = texture(sc_ibl, position); 
 }
