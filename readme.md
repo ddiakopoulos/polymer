@@ -33,7 +33,7 @@ The API of Polymer is consistently in flux. More than 10 sample projects have be
 
 ## Contributing 
 
-todo 
+Polymer is in early-stages of development and welcomes both experienced and inexperienced open-source contributors. The GitHub issue queue is a good place to start in understanding the scope and priority of upcoming features. For larger pull requests and feature implementations, it is good practice confirm with the maintainer before embarking on the work. 
 
 ## License
 
