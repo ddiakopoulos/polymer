@@ -88,6 +88,12 @@ sample_gl_render_offscreen::sample_gl_render_offscreen() : polymer_app(1280, 720
 
     const geometry procedural_capsule = make_capsule(12, 0.5f, 2);
     const geometry procedural_cylinder = make_cylinder(0.5f, 0.5f, 2, 12, 24, false);
+    const geometry procedural_sphere = make_sphere(1.f);
+    const geometry procedural_cube = make_cube();
+    const geometry procedural_torus = make_torus();
+    const geometry procedural_icosahedron = make_icosahedron();
+    const geometry procedural_tetrahedron = make_tetrahedron();
+
 
     sample_object capsule;
     capsule.t = transform({ -2, 1.5f, 0 });

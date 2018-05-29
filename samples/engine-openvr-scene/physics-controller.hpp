@@ -3,6 +3,7 @@
 #include "lib-polymer.hpp"
 #include "lib-engine.hpp"
 
+/*
 class physics_object_openvr_controller
 {
     transform latestPose;
@@ -61,3 +62,4 @@ public:
         }
     }
 };
+*/
