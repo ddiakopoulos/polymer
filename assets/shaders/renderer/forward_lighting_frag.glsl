@@ -174,7 +174,7 @@ void main()
 
     // Roughness is authored as perceptual roughness; as is convention,
     // convert to material roughness by squaring the perceptual roughness [2].
-    const float alphaRoughness = roughness; //@todo experiment with alpha squared
+    const float alphaRoughness = roughness * roughness; //@todo experiment with alpha squared
 
     // View direction
     vec3 V = normalize(u_eyePos.xyz - v_world_position);

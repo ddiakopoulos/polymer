@@ -48,9 +48,31 @@ polymer_blinn_phong_standard::polymer_blinn_phong_standard()
 
 void polymer_blinn_phong_standard::resolve_variants()
 {
+    std::vector<std::string> processed_defines;
+
+    // Required Features
+    processed_defines.push_back("ENABLE_SHADOWS");
+    processed_defines.push_back("TWO_CASCADES");
+    processed_defines.push_back("USE_PCF_3X3");
+    processed_defines.push_back("USE_IMAGE_BASED_LIGHTING");
+
+    // Material slots
+    if (diffuse.assigned()) processed_defines.push_back("HAS_DIFFUSE_MAP");
+    if (normal.assigned()) processed_defines.push_back("HAS_NORMAL_MAP");
+
+    const auto variant_hash = shader.get()->hash(processed_defines);
+
+    // First time
     if (!compiled_shader)
     {
-        compiled_shader = shader.get()->get_variant({ "HAS_NORMAL_MAP", "HAS_DIFFUSE_MAP" });
+        compiled_shader = shader.get()->get_variant(processed_defines);
+        return;
+    }
+    else if (compiled_shader->hash != variant_hash)
+    {
+        // We updated the set of defines and need to recompile
+        compiled_shader = shader.get()->get_variant(processed_defines);
+        return;
     }
 }
 
