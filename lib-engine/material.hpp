@@ -17,9 +17,12 @@ namespace polymer
 
     typedef std::shared_ptr<polymer::shader_variant> cached_variant;
 
+    ////////////////////////////
+    //   material_interface   //
+    ////////////////////////////
+
     struct material_interface
     {
-        std::vector<std::string> defines;                   // list of shader defines required to use this material
         mutable cached_variant compiled_shader{ nullptr };  // cached on first access (because needs to happen on GL thread)
         shader_handle shader;                               // typically set during object inflation / deserialization
         virtual void update_uniforms() {}                   // generic interface for overriding specific uniform sets
@@ -27,6 +30,10 @@ namespace polymer
         virtual void resolve_variants() = 0;                // all overridden functions need to call this to cache the shader
         virtual uint32_t id() = 0;                          // returns the gl handle, used for sorting materials by type to minimize state changes in the renderer
     };
+
+    //////////////////////////////////
+    //   polymer_default_material   //
+    //////////////////////////////////
 
     struct polymer_default_material final : public material_interface
     {
@@ -40,6 +47,27 @@ namespace polymer
     template<class F> void visit_fields(polymer_default_material & o, F f) {}
     inline void to_json(json & j, const polymer_default_material & p) {}
     inline void from_json(const json & archive, polymer_default_material & m) {}
+
+    ////////////////////////////////////
+    //   polymer_wireframe_material   //
+    ////////////////////////////////////
+
+    struct polymer_wireframe_material final : public material_interface
+    {
+        polymer_wireframe_material();
+        virtual void use() override final;
+        virtual void resolve_variants() override final;
+        virtual uint32_t id() override final;
+    };
+    POLYMER_SETUP_TYPEID(polymer_wireframe_material);
+
+    template<class F> void visit_fields(polymer_wireframe_material & o, F f) {}
+    inline void to_json(json & j, const polymer_wireframe_material & p) {}
+    inline void from_json(const json & archive, polymer_wireframe_material & m) {}
+
+    //////////////////////////////////////
+    //   polymer_blinn_phong_standard   //
+    //////////////////////////////////////
 
     class polymer_blinn_phong_standard final : public material_interface
     {
@@ -89,6 +117,10 @@ namespace polymer
             field = archive.at(name).get<std::remove_reference_t<decltype(field)>>();
         });
     }
+
+    //////////////////////////////
+    //   polymer_pbr_standard   //
+    //////////////////////////////
 
     class polymer_pbr_standard final : public material_interface
     {
@@ -174,6 +206,7 @@ namespace polymer
         f("polymer_default_material", dynamic_cast<polymer_default_material *>(p));
         f("polymer_pbr_standard", dynamic_cast<polymer_pbr_standard *>(p));
         f("polymer_blinn_phong_standard", dynamic_cast<polymer_blinn_phong_standard *>(p));
+        f("polymer_wireframe_material", dynamic_cast<polymer_wireframe_material *>(p));
     }
 
 }

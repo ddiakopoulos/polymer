@@ -37,6 +37,36 @@ uint32_t polymer_default_material::id()
     return compiled_shader->shader.handle();
 }
 
+////////////////////////////
+//   Wireframe Material   //
+////////////////////////////
+
+polymer_wireframe_material::polymer_wireframe_material()
+{
+    shader = shader_handle("wireframe");
+}
+
+void polymer_wireframe_material::use()
+{
+    resolve_variants();
+    compiled_shader->shader.bind();
+}
+
+void polymer_wireframe_material::resolve_variants()
+{
+    if (!compiled_shader)
+    {
+        std::shared_ptr<gl_shader_asset> asset = shader.get();
+        compiled_shader = asset->get_variant();
+    }
+}
+
+uint32_t polymer_wireframe_material::id()
+{
+    resolve_variants();
+    return compiled_shader->shader.handle();
+}
+
 /////////////////////////////////////////
 //   Lambertian Blinn-Phong Material   //
 /////////////////////////////////////////

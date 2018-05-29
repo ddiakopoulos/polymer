@@ -247,7 +247,7 @@ struct material_editor_window final : public glfw_window
                 std::vector<std::string> materialTypes;
                 visit_subclasses((material_interface*)nullptr, [&materialTypes](const char * name, auto * p)
                 {
-                    materialTypes.push_back(name);
+                    if (name != "polymer_default_material") materialTypes.push_back(name);
                 });
 
                 static int materialTypeSelection = -1;
@@ -259,17 +259,19 @@ struct material_editor_window final : public glfw_window
                 {
                     if (!stringBuffer.empty())
                     {
-                        // 0 is the default material -- skip
-
-                        if (materialTypeSelection == 1) // pbr
+                        if (materialTypeSelection == 0) // pbr
                         {
                             auto new_material = std::make_shared<polymer_pbr_standard>();
                             scene.mat_library->create_material(stringBuffer, new_material);
                         }
-
-                        if (materialTypeSelection == 2) // blinn-phong
+                        else if (materialTypeSelection == 1) // blinn-phong
                         {
                             auto new_material = std::make_shared<polymer_blinn_phong_standard>();
+                            scene.mat_library->create_material(stringBuffer, new_material);
+                        }
+                        else if (materialTypeSelection == 2) // wireframe
+                        {
+                            auto new_material = std::make_shared<polymer_wireframe_material>();
                             scene.mat_library->create_material(stringBuffer, new_material);
                         }
                     }
