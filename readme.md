@@ -25,7 +25,7 @@ todo
 
 ## Building
 
-todo
+This repository hosts maintained project files for Visual Studio 2017. All dependencies are included in source form without the use of submodules. 
 
 ## Samples + Documentation
 
