@@ -1,6 +1,6 @@
 # Polymer
 
-[![License is BSD 3-Clause](http://img.shields.io/badge/license-BSD3-blue.svg?style=flat)](https://opensource.org/licenses/BSD-3-Clause)
+[![License is BSD 3-Clause](https://img.shields.io/badge/license-BSD3-blue.svg?style=flat)](https://opensource.org/licenses/BSD-3-Clause)
 
 Platform | Build Status |
 -------- | ------------ |
