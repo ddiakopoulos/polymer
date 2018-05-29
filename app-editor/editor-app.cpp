@@ -83,7 +83,7 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
     the_render_payload.ibl_irradianceCubemap = texture_handle("wells-irradiance-cubemap");
     the_render_payload.ibl_radianceCubemap = texture_handle("wells-radiance-cubemap");
 
-    scene.mat_library.reset(new polymer::material_library("../assets/materials.json"));
+    scene.mat_library.reset(new polymer::material_library("../assets/materials/")); // must include trailing slash
 
     // Resolve asset_handles to resources on disk
     resolver.reset(new asset_resolver());

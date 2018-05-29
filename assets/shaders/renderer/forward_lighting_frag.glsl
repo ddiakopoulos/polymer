@@ -261,8 +261,8 @@ void main()
 
     #ifdef USE_IMAGE_BASED_LIGHTING
     {
-        const int NUM_MIP_LEVELS = 9;
-        float mipLevel = NUM_MIP_LEVELS * roughness;
+        const int NUM_MIP_LEVELS = 6;
+        float mipLevel = NUM_MIP_LEVELS - 1 + log2(roughness);
         vec3 cubemapLookup = fix_cube_lookup(-reflect(V, N), 512, mipLevel);
 
         vec3 irradiance = sRGBToLinear(texture(sc_irradiance, N).rgb, DEFAULT_GAMMA) * u_ambientStrength;

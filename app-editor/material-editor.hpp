@@ -230,12 +230,10 @@ struct material_editor_window final : public glfw_window
             gui::imgui_fixed_window_begin("material-editor", { { 0, 0 },{ width, int(height - previewHeight) } });
 
             ImGui::Dummy({ 0, 12 });
-            ImGui::Text("Library: %s", scene.mat_library->library_path.c_str());
-            ImGui::Dummy({ 0, 12 });
 
             if (ImGui::Button(" " ICON_FA_PLUS " Create Material ", { 160, 24 })) ImGui::OpenPopup("Create Material");
             ImGui::SameLine();
-            if (ImGui::Button(" " ICON_FA_FILE " Save Materials ", { 160, 24 })) scene.mat_library->export_library();
+            if (ImGui::Button(" " ICON_FA_FILE " Save Materials ", { 160, 24 })) scene.mat_library->export_all();
 
             if (ImGui::BeginPopupModal("Create Material", NULL, ImGuiWindowFlags_AlwaysAutoResize))
             {
@@ -275,6 +273,8 @@ struct material_editor_window final : public glfw_window
                             scene.mat_library->create_material(stringBuffer, new_material);
                         }
                     }
+
+                    stringBuffer.clear();
 
                     ImGui::CloseCurrentPopup();
                 }
