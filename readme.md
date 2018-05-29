@@ -8,7 +8,13 @@ MSVC 2017 x64 | [![Build status]()](https://ci.appveyor.com/project/ddiakopoulos
 
 ## Features
 
-todo 
+* Physically-based gamma-correct forward renderer with MSAA
+* Data-driven entity-component architecture with custom RTTI
+* Lightweight, object-oriented wrapper for modern OpenGL
+* Hot-reloadable assets including GLSL shaders
+* Asset import for common geometry and texture formats
+* Desktop scene editor application with JSON serialization
+* OpenVR integration
 
 ## Architecture
 
