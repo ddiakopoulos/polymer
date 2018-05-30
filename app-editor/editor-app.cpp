@@ -111,7 +111,7 @@ void scene_editor_app::on_drop(std::vector<std::string> filepaths)
         for (auto & m : imported_models)
         {
             auto & mesh = m.second;
-            //rescale_geometry(mesh, 1.f);
+            rescale_geometry(mesh, 1.f);
 
             const std::string handle_id = get_filename_without_extension(path) + "-" + m.first;
 
@@ -281,6 +281,55 @@ void scene_editor_app::on_update(const app_update_event & e)
     shaderMonitor.handle_recompile();
     gizmo->on_update(cam, float2(static_cast<float>(width), static_cast<float>(height)));
     editorProfiler.end("on_update");
+}
+
+void scene_editor_app::draw_entity_scenegraph(const entity e)
+{
+    bool open = false;
+
+    ImGui::PushID(static_cast<int>(e));
+
+    // Has a transform system entry
+    if (auto * xform = scene.xform_system->get_local_transform(e))
+    {
+        // Check if this has children
+        if (xform->children.size() > 0)
+        {
+            // Increase spacing to differentiate leaves from expanded contents.
+            ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, ImGui::GetFontSize()); 
+
+            ImGui::SetNextTreeNodeOpen(true, ImGuiSetCond_FirstUseEver);
+            open = ImGui::TreeNode("<root>");
+            std::cout << "Open Tree Node..." << std::endl;
+            ImGui::SameLine();
+        }
+    }
+
+    const bool selected = gizmo->selected(e);
+    std::string name = scene.identifier_system->get_name(e);
+    name = name.empty() ? "<unnamed entity>" : name;
+
+    if (ImGui::Selectable(name.c_str(), selected))
+    {
+        if (!ImGui::GetIO().KeyCtrl) gizmo->clear();
+        gizmo->update_selection(e);
+    }
+
+    if (open)
+    {
+        // Has a transform system entry
+        if (auto * xform = scene.xform_system->get_local_transform(e))
+        {
+            for (auto & c : xform->children)
+            {
+                draw_entity_scenegraph(c);
+            }
+            std::cout << "Tree Pop" << std::endl;
+            ImGui::PopStyleVar();
+            ImGui::TreePop();
+        }
+    }
+    ImGui::PopID();
 }
 
 void scene_editor_app::on_draw()
@@ -565,21 +614,14 @@ void scene_editor_app::on_draw()
         gui::imgui_fixed_window_end();
 
         gui::imgui_fixed_window_begin("Scene Entities", bottomRightPane);
-        for (auto entity : scene.entity_list())
+        
+        const auto entity_list = scene.entity_list();
+
+        for (size_t i = 0; i < entity_list.size(); ++i)
         {
-            ImGui::PushID(static_cast<int>(entity));
-
-            bool selected = gizmo->selected(entity);
-            std::string name = scene.identifier_system->get_name(entity);
-            name = name.empty() ? "entity": name;
-
-            if (ImGui::Selectable(name.c_str(), &selected))
-            {
-                if (!ImGui::GetIO().KeyCtrl) gizmo->clear();
-                gizmo->update_selection(entity);
-            }
-            ImGui::PopID();
+            draw_entity_scenegraph(entity_list[i]);
         }
+
         gui::imgui_fixed_window_end();
 
         // Define a split region between the whole window and the left panel
