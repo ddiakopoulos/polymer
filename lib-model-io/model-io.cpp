@@ -7,7 +7,9 @@
 #include "third-party/meshoptimizer/meshoptimizer.h"
 
 #include <assert.h>
+#include "string_utils.hpp"
 #include <fstream>
+#include <ostream>
 
 using namespace polymer;
 

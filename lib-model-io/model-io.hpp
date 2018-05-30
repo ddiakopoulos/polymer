@@ -3,18 +3,11 @@
 #ifndef polymer_model_io_hpp
 #define polymer_model_io_hpp
 
-#include "math-core.hpp"
-#include "string_utils.hpp"
 #include "util.hpp"
+#include "math-core.hpp"
 #include "geometry.hpp"
-
-#include <vector>
-#include <string>
-#include <memory>
 #include <map>
 #include <unordered_map>
-#include <fstream>
-#include <ostream>
 
 namespace polymer
 {

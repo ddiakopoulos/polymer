@@ -125,6 +125,7 @@
       <DisableSpecificWarnings>4305;4244;4800</DisableSpecificWarnings>
       <SDLCheck>false</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <MinimalRebuild>false</MinimalRebuild>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
