@@ -15,31 +15,30 @@ using namespace polymer;
 
 std::map<std::string, runtime_mesh> polymer::import_model(const std::string & path)
 {
-    std::map<std::string, runtime_mesh> results;
-
-    auto & ext = get_extension(path);
+    std::map<std::string, runtime_mesh> models;
+    const std::string ext = get_extension(path);
 
     if (ext == "FBX" || ext == "fbx")
     {
         auto asset = import_fbx_model(path);
-        for (auto & a : asset) results[a.first] = a.second;
+        for (auto & a : asset) models[a.first] = a.second;
     }
     else if (ext == "OBJ" || ext == "obj")
     {
         auto asset = import_obj_model(path);
-        for (auto & a : asset) results[a.first] = a.second;
+        for (auto & a : asset) models[a.first] = a.second;
     }
     else if (ext == "mesh")
     {
         auto m = import_mesh_binary(path);
-        results[get_filename_without_extension(path)] = m;
+        models[get_filename_without_extension(path)] = m;
     }
     else
     {
         throw std::runtime_error("cannot import model format");
     }
 
-    return results;
+    return models;
 }
 
 std::map<std::string, runtime_mesh> polymer::import_fbx_model(const std::string & path)

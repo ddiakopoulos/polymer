@@ -95,34 +95,39 @@ void scene_editor_app::on_drop(std::vector<std::string> filepaths)
     for (auto & path : filepaths)
     {
         std::transform(path.begin(), path.end(), path.begin(), ::tolower);
-        const std::string fileExtension = get_extension(path);
+        const std::string ext = get_extension(path);
 
-        if (fileExtension == "png" || fileExtension == "tga" || fileExtension == "jpg")
+        if (ext == "png" || ext == "tga" || ext == "jpg")
         {
             create_handle_for_asset(get_filename_without_extension(path).c_str(), load_image(path, false));
             continue;
         }
 
-        auto importedModel = import_model(path); // fbx and obj
+        auto imported_models = import_model(path);
 
-        for (auto & m : importedModel)
+        const size_t num_models = imported_models.size();
+        std::vector<entity> children;
+
+        for (auto & m : imported_models)
         {
             auto & mesh = m.second;
-            rescale_geometry(mesh, 1.f);
+            //rescale_geometry(mesh, 1.f);
 
-            if (mesh.normals.size() == 0) compute_normals(mesh);
-            if (mesh.tangents.size() == 0) compute_tangents(mesh);
-                
-            const std::string filename = get_filename_without_extension(path);
-            const std::string outputBasePath = "../assets/models/runtime/";
-            const std::string outputFile = outputBasePath + filename + "-" + m.first + "-" + ".mesh";
+            const std::string handle_id = get_filename_without_extension(path) + "-" + m.first;
 
-            export_mesh_binary(outputFile, mesh, false);
+            create_handle_for_asset(handle_id.c_str(), make_mesh_from_geometry(mesh));
+            create_handle_for_asset(handle_id.c_str(), std::move(mesh));
 
-            auto importedMesh = import_mesh_binary(outputFile);
+            if (num_models == 1) create_model(handle_id, handle_id);
+            else children.push_back(create_model(handle_id, handle_id));
+        }
 
-            create_handle_for_asset(std::string(get_filename_without_extension(path) + "-" + m.first).c_str(), make_mesh_from_geometry(importedMesh));
-            create_handle_for_asset(std::string(get_filename_without_extension(path) + "-" + m.first).c_str(), std::move(importedMesh));
+        if (children.size())
+        {
+            const entity root_entity = scene.track_entity(orchestrator.create_entity());
+            scene.identifier_system->create(root_entity, "root-" + std::to_string(root_entity));
+            scene.xform_system->create(root_entity, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
+            for (const entity child : children) scene.xform_system->add_child(root_entity, child);
         }
     }
 }
@@ -225,6 +230,28 @@ void scene_editor_app::on_input(const app_input_event & event)
 
         }
     }
+}
+
+entity scene_editor_app::create_model(const std::string & geom_handle, const std::string & mesh_handle)
+{
+    const entity e = scene.track_entity(orchestrator.create_entity());
+
+    scene.identifier_system->create(e, mesh_handle);
+    scene.xform_system->create(e, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
+
+    polymer::material_component model_mat(e);
+    model_mat.material = material_handle(material_library::kDefaultMaterialId);
+    scene.render_system->create(e, std::move(model_mat));
+
+    polymer::mesh_component model_mesh(e);
+    model_mesh.mesh = gpu_mesh_handle(mesh_handle);
+    scene.render_system->create(e, std::move(model_mesh));
+
+    polymer::geometry_component model_geom(e);
+    model_geom.geom = cpu_mesh_handle(mesh_handle);
+    scene.collision_system->create(e, std::move(model_geom));;
+
+    return e;
 }
 
 void scene_editor_app::open_material_editor()
