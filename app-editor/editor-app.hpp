@@ -50,7 +50,7 @@ struct scene_editor_app final : public polymer_app
     environment scene;
 
     entity create_model(const std::string & geom_handle, const std::string & mesh_handle);
-    void draw_entity_scenegraph(const entity e);
+    void draw_entity_scenegraph(const entity e, int32_t depth);
 
     scene_editor_app();
     ~scene_editor_app() {}

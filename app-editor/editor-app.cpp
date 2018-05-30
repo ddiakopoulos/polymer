@@ -283,25 +283,28 @@ void scene_editor_app::on_update(const app_update_event & e)
     editorProfiler.end("on_update");
 }
 
-void scene_editor_app::draw_entity_scenegraph(const entity e)
+void scene_editor_app::draw_entity_scenegraph(const entity e, int32_t depth)
 {
     bool open = false;
 
     ImGui::PushID(static_cast<int>(e));
 
-    // Has a transform system entry
-    if (auto * xform = scene.xform_system->get_local_transform(e))
+    if (depth >= 0)
     {
-        // Check if this has children
-        if (xform->children.size() > 0)
+        // Has a transform system entry
+        if (auto * xform = scene.xform_system->get_local_transform(e))
         {
-            // Increase spacing to differentiate leaves from expanded contents.
-            ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, ImGui::GetFontSize()); 
+            // Check if this has children
+            if (xform->children.size() > 0)
+            {
+                // Increase spacing to differentiate leaves from expanded contents.
+                ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, ImGui::GetFontSize());
 
-            ImGui::SetNextTreeNodeOpen(true, ImGuiSetCond_FirstUseEver);
-            open = ImGui::TreeNode("<root>");
-            std::cout << "Open Tree Node..." << std::endl;
-            ImGui::SameLine();
+                ImGui::SetNextTreeNodeOpen(true, ImGuiSetCond_FirstUseEver);
+                open = ImGui::TreeNode("<root> ");
+                std::cout << "Open Tree Node..." << std::endl;
+                ImGui::SameLine();
+            }
         }
     }
 
@@ -315,6 +318,8 @@ void scene_editor_app::draw_entity_scenegraph(const entity e)
         gizmo->update_selection(e);
     }
 
+    if (depth == -1) return;
+
     if (open)
     {
         // Has a transform system entry
@@ -322,7 +327,7 @@ void scene_editor_app::draw_entity_scenegraph(const entity e)
         {
             for (auto & c : xform->children)
             {
-                draw_entity_scenegraph(c);
+                draw_entity_scenegraph(c, depth++);
             }
             std::cout << "Tree Pop" << std::endl;
             ImGui::PopStyleVar();
@@ -619,7 +624,7 @@ void scene_editor_app::on_draw()
 
         for (size_t i = 0; i < entity_list.size(); ++i)
         {
-            draw_entity_scenegraph(entity_list[i]);
+            draw_entity_scenegraph(entity_list[i], 0);
         }
 
         gui::imgui_fixed_window_end();
