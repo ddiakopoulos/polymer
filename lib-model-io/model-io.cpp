@@ -27,6 +27,11 @@ std::map<std::string, runtime_mesh> polymer::import_model(const std::string & pa
         auto asset = import_obj_model(path);
         for (auto & a : asset) results[a.first] = a.second;
     }
+    else if (ext == "mesh")
+    {
+        auto m = import_mesh_binary(path);
+        results[get_filename_without_extension(path)] = m;
+    }
     else
     {
         throw std::runtime_error("cannot import model format");
@@ -225,4 +230,62 @@ void polymer::export_mesh_binary(const std::string & path, runtime_mesh & mesh, 
     file.write(reinterpret_cast<char*>(mesh.material.data()), header.materialsBytes);
 
     file.close();
+}
+
+void export_obj_data(std::ofstream & file, runtime_mesh & mesh)
+{
+    file << "# vertices\n";
+    for (auto & v : mesh.vertices) file << "v " << std::fixed << v.x << " " << std::fixed << v.y << " " << std::fixed << v.z << std::endl;
+
+    float3 normalSum{ 0.f };
+    float2 texcoordSum{ 0.f };
+    for (auto v : mesh.normals) normalSum += v;
+    for (auto v : mesh.texcoord0) texcoordSum += v;
+
+    if (normalSum > float3(0.f)) for (auto & v : mesh.normals) file << "vn " << std::fixed << v.x << " " << std::fixed << v.y << " " << std::fixed << v.z << std::endl;
+    if (texcoordSum > float2(0.f)) for (auto & v : mesh.texcoord0) file << "vt " << std::fixed << v.x << " " << std::fixed << v.y << std::endl;
+
+    file << "# faces\n";
+    for (auto & v : mesh.faces) file << "f " << v.x + 1 << " " << v.y + 1 << " " << v.z + 1 << std::endl;
+}
+
+bool polymer::export_obj_model(const std::string & name, const std::string & filename, runtime_mesh & mesh)
+{
+    std::ofstream file(filename);
+
+    if (!file.is_open())  return false;
+
+    file.precision(3);
+    file << "# OBJ file created by Polymer\n";
+    file << "o " << name << "\n";
+
+    export_obj_data(file, mesh);
+
+    file.close();
+
+    return true;
+}
+
+bool polymer::export_obj_multi_model(const std::vector<std::string> & names, const std::string & filename, std::vector<runtime_mesh *> & meshes)
+{
+    assert(names.size() == meshes.size());
+
+    std::ofstream file(filename);
+
+    if (!file.is_open())  return false;
+
+    file.precision(3);
+    file << "# OBJ file created by Polymer\n";
+
+    for (int i = 0; i < meshes.size(); ++i)
+    {
+        auto & mesh = meshes[i];
+        auto & name = names[i];
+        file << "o " << name << "\n";
+        export_obj_data(file, *mesh);
+    }
+
+    file.close();
+
+    return true;
 }
