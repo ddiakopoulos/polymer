@@ -88,13 +88,13 @@ void gl_shader_monitor::walk_asset_dir()
                     asset.second->writeTime = writeTime;
                     asset.second->shouldRecompile = true;
                     //@todo use logger
-                    std::cout << "Processed Shader: " << asset.second->vertexPath << std::endl;
+                    std::cout << "Processed Asset: " << asset.first << std::endl;
                 }
             }
 
             // Each shader keeps a list of the files it includes. gl_shader_monitor watches a base path,
             // so we should be able to recompile shaders dependent on common includes
-            for (const std::string & includePath : asset.second->includes)
+            for (std::string includePath : asset.second->includes)
             {
                 if (get_filename_with_extension(path) == get_filename_with_extension(includePath))
                 {
@@ -117,11 +117,11 @@ void gl_shader_monitor::walk_asset_dir()
 
 void gl_shader_monitor::handle_recompile()
 {
+    try_locker locker(watch_mutex);
     for (auto & asset : assets)
     {
         if (asset.second->shouldRecompile)
         {
-            std::lock_guard<std::mutex> guard(watch_mutex);
             asset.second->recompile_all();
             asset.second->shouldRecompile = false;
         }

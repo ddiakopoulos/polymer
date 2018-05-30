@@ -94,10 +94,10 @@ sample_gl_octree_culling::sample_gl_octree_culling() : polymer_app(1280, 720, "s
     boxMesh = make_cube_mesh();
     boxMesh.set_non_indexed(GL_LINES);
 
-    for (int i = 0; i < 2048; ++i)
+    for (int i = 0; i < 512; ++i)
     {
         const float3 position = { gen.random_float(48.f) - 24.f, gen.random_float(48.f) - 24.f, gen.random_float(48.f) - 24.f };
-        const float radius = gen.random_float(0.125f);
+        const float radius = gen.random_float(0.225f);
 
         debug_sphere s;
         s.p = transform(float4(0, 0, 0, 1), position);

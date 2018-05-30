@@ -1,10 +1,14 @@
 # Polymer
 
-[![License is BSD 3-Clause](http://img.shields.io/badge/license-BSD3-blue.svg?style=flat)](https://opensource.org/licenses/BSD-3-Clause)
+[![License is BSD 3-Clause](https://img.shields.io/badge/license-BSD3-blue.svg?style=flat)](https://opensource.org/licenses/BSD-3-Clause)
 
 Platform | Build Status |
 -------- | ------------ |
 MSVC 2017 x64 | [![Build status]()](https://ci.appveyor.com/project/ddiakopoulos/polymer)
+
+<p align="center">
+  <img src="https://s3-us-west-1.amazonaws.com/polymer-engine/polymer-github-hero.png"/>
+</p>
 
 Polymer is a research framework for spatial interaction and real-time rendering, presently targeting C++14 and desktop-class OpenGL on Windows. It was built to explore AR/VR prototyping tools as a core concept in-engine. It is inspired by projects such as NVIDIA's [Falcor](https://github.com/NVIDIAGameWorks/Falcor), Google's [Lullaby](https://github.com/google/lullaby), and Microsoft's [Mixed Reality Toolkit](https://github.com/Microsoft/MixedRealityToolkit-Unity). While the primary focus of Polymer is immersive media, the engine contains features useful to tool and utility development as well. 
 

@@ -209,22 +209,23 @@ void pbr_renderer::run_skybox_pass(const view_data & view, const render_payload 
     const GLboolean wasCullingEnabled = glIsEnabled(GL_CULL_FACE);
 
     glDisable(GL_DEPTH_TEST);
-    glDepthMask(GL_FALSE);
-    glDisable(GL_CULL_FACE);
 
-    auto & program = shader_handle("ibl").get()->get_variant()->shader;
+    //glDepthMask(GL_FALSE);
+    //glDisable(GL_CULL_FACE);
 
-    program.bind();
-    program.uniform("u_mvp", mul(view.projectionMatrix, rotation_matrix(qconj(view.pose.orientation))));
-    program.texture("sc_ibl", 0, texture_handle("wells-radiance-cubemap").get(), GL_TEXTURE_CUBE_MAP);
-    auto m = make_cube_mesh();
-    m.draw_elements();
-    program.unbind();
+    //auto & program = shader_handle("ibl").get()->get_variant()->shader;
+    //program.bind();
+    //program.uniform("u_mvp", mul(view.projectionMatrix, rotation_matrix(qconj(view.pose.orientation))));
+    //program.texture("sc_ibl", 0, texture_handle("wells-radiance-cubemap").get(), GL_TEXTURE_CUBE_MAP);
+    //auto m = make_cube_mesh();
+    //m.draw_elements();
+    //program.unbind();
 
-    //scene.skybox->render(view.viewProjMatrix, view.pose.position, view.farClip);
+    scene.skybox->render(view.viewProjMatrix, view.pose.position, view.farClip);
 
-    glDepthMask(GL_TRUE);
-    if (wasCullingEnabled) glEnable(GL_CULL_FACE);
+    //glDepthMask(GL_TRUE);
+    //if (wasCullingEnabled) glEnable(GL_CULL_FACE);
+
     if (wasDepthTestingEnabled) glEnable(GL_DEPTH_TEST);
 }
 
