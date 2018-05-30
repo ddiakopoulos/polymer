@@ -14,67 +14,9 @@
 
 namespace polymer
 {
-    struct physics_component : public base_component
-    {
-        physics_component() {};
-        physics_component(entity e) : base_component(e) {}
-        float value1, value2, value3;
-    };
-    POLYMER_SETUP_TYPEID(physics_component);
-
-    struct render_component : public base_component
-    {
-        render_component() {}
-        render_component(entity e) : base_component(e) {}
-        float value1, value2, value3;
-    };
-    POLYMER_SETUP_TYPEID(render_component);
-
-    struct ex_system_one final : public base_system
-    {
-        const poly_typeid c1 = get_typeid<physics_component>();
-        ex_system_one(entity_orchestrator * f) : base_system(f) { register_system_for_type(this, c1); }
-        ~ex_system_one() override { }
-        bool create(entity e, poly_typeid hash, void * data) override final
-        {
-            if (hash != get_typeid<physics_component>()) { return false; }
-            auto new_component = physics_component(e);
-            new_component = *static_cast<physics_component *>(data);
-            components[e] = std::move(new_component);
-            return true;
-        }
-        void destroy(entity entity) override final { }
-        std::unordered_map<entity, physics_component> components;
-    };
-    POLYMER_SETUP_TYPEID(ex_system_one);
-
-    struct ex_system_two final : public base_system
-    {
-        const poly_typeid c2 = get_typeid<render_component>();
-        ex_system_two(entity_orchestrator * f) : base_system(f) { register_system_for_type(this, c2); }
-        ~ex_system_two() override { }
-        bool create(entity e, poly_typeid hash, void * data) override final
-        {
-            if (hash != c2) { return false; }
-            auto new_component = render_component(e);
-            new_component = *static_cast<render_component *>(data);
-            components[e] = std::move(new_component);
-            return true;
-        }
-        void destroy(entity entity) override final { }
-        std::unordered_map<entity, render_component> components;
-    };
-    POLYMER_SETUP_TYPEID(ex_system_two);
-
-    template<class F> void visit_systems(base_system * s, F f)
-    {
-        f("system_one", dynamic_cast<ex_system_one *>(s));
-        f("system_two", dynamic_cast<ex_system_two *>(s));
-    }
-
-    //////////////////////////
-    //   Transform System   //
-    //////////////////////////
+    /////////////////////
+    //   Event Tests   //
+    /////////////////////
 
     struct example_event { uint32_t value; };
     POLYMER_SETUP_TYPEID(example_event);
@@ -531,9 +473,9 @@ namespace polymer
         REQUIRE(static_cast<int>(scene_graph_pool.size()) == (128 - 101 + 44));
     }
 
-    ///////////////////////////
-    //   Name System Tests   //
-    ///////////////////////////
+    /////////////////////////////////
+    //   Identifier System Tests   //
+    /////////////////////////////////
 
     TEST_CASE("identifier_system unified tests")
     {

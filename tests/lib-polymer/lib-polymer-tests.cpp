@@ -239,11 +239,6 @@ TEST_CASE("polynomial root solvers")
 
 }
 
-TEST_CASE("ring buffer")
-{
-
-}
-
 TEST_CASE("timers")
 {
     // Manual timers are helpful to debug large sections of code
