@@ -587,7 +587,7 @@ void scene_editor_app::on_draw()
 
             if (ImGui::TreeNode("Procedural Sky") && the_render_payload.skybox)
             {
-                //build_imgui("skybox", *the_render_payload.skybox);
+                build_imgui("skybox", *the_render_payload.skybox);
                 ImGui::TreePop();
             }
 
