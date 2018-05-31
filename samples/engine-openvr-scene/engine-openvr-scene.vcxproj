@@ -107,6 +107,9 @@
     <ProjectReference Include="..\..\lib-polymer\lib-polymer.vcxproj">
       <Project>{992e85a7-b590-477b-a1b2-8a04aaad0e10}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\..\third_party\bullet3\bullet3.vcxproj">
+      <Project>{915353e9-42ac-4ea0-92c8-9fbb0e8e747a}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\third_party\glfw3\glfw3.vcxproj">
       <Project>{be423e72-28c2-4fb7-9fe1-42aa2f393bbc}</Project>
     </ProjectReference>

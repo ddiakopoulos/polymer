@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27130.2024
+VisualStudioVersion = 15.0.27130.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lib-polymer", "lib-polymer\lib-polymer.vcxproj", "{992E85A7-B590-477B-A1B2-8A04AAAD0E10}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -45,6 +45,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gl-particles-hull", "samples\gl-particles-hull\gl-particles-hull.vcxproj", "{A8D05388-ADE2-4C6A-A5E5-A83F34616325}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gl-camera-trajectory", "samples\gl-camera-trajectory\gl-camera-trajectory.vcxproj", "{8CA04023-9EA3-4AF0-89EF-C0E6568E377E}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bullet3", "third_party\bullet3\bullet3.vcxproj", "{915353E9-42AC-4EA0-92C8-9FBB0E8E747A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -116,6 +118,10 @@ Global
 		{8CA04023-9EA3-4AF0-89EF-C0E6568E377E}.Debug|x64.Build.0 = Debug|x64
 		{8CA04023-9EA3-4AF0-89EF-C0E6568E377E}.Release|x64.ActiveCfg = Release|x64
 		{8CA04023-9EA3-4AF0-89EF-C0E6568E377E}.Release|x64.Build.0 = Release|x64
+		{915353E9-42AC-4EA0-92C8-9FBB0E8E747A}.Debug|x64.ActiveCfg = Debug|x64
+		{915353E9-42AC-4EA0-92C8-9FBB0E8E747A}.Debug|x64.Build.0 = Debug|x64
+		{915353E9-42AC-4EA0-92C8-9FBB0E8E747A}.Release|x64.ActiveCfg = Release|x64
+		{915353E9-42AC-4EA0-92C8-9FBB0E8E747A}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -137,6 +143,7 @@ Global
 		{075B006E-1567-4D04-B0BA-98FE9B7134E7} = {0B054E41-2F3E-4230-8488-B44C3643F315}
 		{A8D05388-ADE2-4C6A-A5E5-A83F34616325} = {0B054E41-2F3E-4230-8488-B44C3643F315}
 		{8CA04023-9EA3-4AF0-89EF-C0E6568E377E} = {0B054E41-2F3E-4230-8488-B44C3643F315}
+		{915353E9-42AC-4EA0-92C8-9FBB0E8E747A} = {25969120-2DC7-47EA-827F-41616989B284}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {E2D0793D-BD41-4F42-A6AA-DAB3D17A46BE}
