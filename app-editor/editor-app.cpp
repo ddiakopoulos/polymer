@@ -289,22 +289,22 @@ void scene_editor_app::draw_entity_scenegraph(const entity e, int32_t depth, uin
 
     ImGui::PushID(static_cast<int>(e));
 
-    if (depth >= 0)
+    // Has a transform system entry
+    if (auto * xform = scene.xform_system->get_local_transform(e))
     {
-        // Has a transform system entry
-        if (auto * xform = scene.xform_system->get_local_transform(e))
+        // Check if this has children
+        if (xform->children.size())
         {
-            // Check if this has children
-            if (xform->children.size())
+            // Increase spacing to differentiate leaves from expanded contents.
+            ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, ImGui::GetFontSize());
+            stack_open++;
+            ImGui::SetNextTreeNodeOpen(true, ImGuiSetCond_FirstUseEver);
+            open = ImGui::TreeNode("");
+            if (!open)
             {
-                // Increase spacing to differentiate leaves from expanded contents.
-                ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, ImGui::GetFontSize());
-                stack_open++;
-                ImGui::SetNextTreeNodeOpen(true, ImGuiSetCond_FirstUseEver);
-                open = ImGui::TreeNode("");
-                if (!open) ImGui::PopStyleVar();
-                ImGui::SameLine();
+                ImGui::PopStyleVar();
             }
+            ImGui::SameLine();
         }
     }
 
@@ -318,8 +318,6 @@ void scene_editor_app::draw_entity_scenegraph(const entity e, int32_t depth, uin
         gizmo->update_selection(e);
     }
 
-    if (depth == -1) return;
-
     if (open)
     {
         // Has a transform system entry
@@ -331,6 +329,7 @@ void scene_editor_app::draw_entity_scenegraph(const entity e, int32_t depth, uin
             }
             stack_open--;
             ImGui::PopStyleVar();
+            ImGui::Unindent(ImGui::GetFontSize());
             ImGui::TreePop();
         }
     }
@@ -622,9 +621,6 @@ void scene_editor_app::on_draw()
         gui::imgui_fixed_window_begin("Scene Entities", bottomRightPane);
         
         const auto entity_list = scene.entity_list();
-
-        uint32_t stack_open = 0;
-
         std::vector<entity> root_list;
         for (auto & e : entity_list)
         {
@@ -642,6 +638,8 @@ void scene_editor_app::on_draw()
             }
         }
 
+        // Now walk the root list
+        uint32_t stack_open = 0;
         for (size_t i = 0; i < root_list.size(); ++i)
         {
             draw_entity_scenegraph(root_list[i], 0, stack_open);
