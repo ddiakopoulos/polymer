@@ -283,7 +283,7 @@ void scene_editor_app::on_update(const app_update_event & e)
     editorProfiler.end("on_update");
 }
 
-void scene_editor_app::draw_entity_scenegraph(const entity e, int32_t depth)
+void scene_editor_app::draw_entity_scenegraph(const entity e, int32_t depth, uint32_t & stack_open)
 {
     bool open = false;
 
@@ -295,14 +295,15 @@ void scene_editor_app::draw_entity_scenegraph(const entity e, int32_t depth)
         if (auto * xform = scene.xform_system->get_local_transform(e))
         {
             // Check if this has children
-            if (xform->children.size() > 0)
+            if (xform->children.size())
             {
                 // Increase spacing to differentiate leaves from expanded contents.
                 ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, ImGui::GetFontSize());
-
+                stack_open++;
                 ImGui::SetNextTreeNodeOpen(true, ImGuiSetCond_FirstUseEver);
-                open = ImGui::TreeNode("<root> ");
-                std::cout << "Open Tree Node..." << std::endl;
+                open = ImGui::TreeNode("");
+                std::cout << "Push..." << stack_open << std::endl;
+                if (!open) ImGui::PopStyleVar();
                 ImGui::SameLine();
             }
         }
@@ -327,13 +328,19 @@ void scene_editor_app::draw_entity_scenegraph(const entity e, int32_t depth)
         {
             for (auto & c : xform->children)
             {
-                draw_entity_scenegraph(c, depth++);
+                draw_entity_scenegraph(c, depth++, stack_open);
             }
             std::cout << "Tree Pop" << std::endl;
+            stack_open--;
             ImGui::PopStyleVar();
             ImGui::TreePop();
         }
     }
+
+    std::cout << "End... " << stack_open << std::endl;
+
+    //if (stack_open >= 1) ImGui::PopStyleVar();
+
     ImGui::PopID();
 }
 
@@ -622,10 +629,12 @@ void scene_editor_app::on_draw()
         
         const auto entity_list = scene.entity_list();
 
+        uint32_t stack_open = 0;
         for (size_t i = 0; i < entity_list.size(); ++i)
         {
-            draw_entity_scenegraph(entity_list[i], 0);
+            draw_entity_scenegraph(entity_list[i], 0, stack_open);
         }
+        std::cout << "Done..." << std::endl;
 
         gui::imgui_fixed_window_end();
 
