@@ -650,43 +650,49 @@ void scene_editor_app::on_draw()
         ui_rect topLeftPane = { { int2(lsplit2.second.min()) },{ int2(lsplit2.second.max()) } };
         ui_rect bottomLeftPane = { { int2(lsplit2.first.min()) },{ int2(lsplit2.first.max()) } };
 
-        gui::imgui_fixed_window_begin("Renderer", topLeftPane);
+        gui::imgui_fixed_window_begin("Settings", topLeftPane);
         {
             ImGui::Dummy({ 0, 10 });
 
-            ImGui::Checkbox("Show Floor Grid", &show_grid);
-            ImGui::Dummy({ 0, 10 });
-
-            if (ImGui::TreeNode("Core"))
+            if (ImGui::TreeNode("Rendering"))
             {
-                renderer_settings lastSettings = scene.render_system->get_renderer()->settings;
+                ImGui::Checkbox("Show Floor Grid", &show_grid);
 
-                if (build_imgui("renderer", *scene.render_system->get_renderer()))
+                renderer_settings lastSettings = scene.render_system->get_renderer()->settings;
+                if (build_imgui("Renderer", *scene.render_system->get_renderer()))
                 {
                     scene.render_system->get_renderer()->gpuProfiler.set_enabled(scene.render_system->get_renderer()->settings.performanceProfiling);
                     scene.render_system->get_renderer()->cpuProfiler.set_enabled(scene.render_system->get_renderer()->settings.performanceProfiling);
                 }
 
-                ImGui::TreePop();
-            }
+                ImGui::Dummy({ 0, 10 });
 
-            ImGui::Dummy({ 0, 10 });
-
-            if (ImGui::TreeNode("Procedural Sky") && the_render_payload.skybox)
-            {
-                build_imgui("skybox", *the_render_payload.skybox);
-                ImGui::TreePop();
-            }
-
-            ImGui::Dummy({ 0, 10 });
-
-            if (auto * shadows = scene.render_system->get_renderer()->get_shadow_pass())
-            {
-                if (ImGui::TreeNode("Cascaded Shadow Mapping"))
+                if (ImGui::TreeNode("Procedural Sky") && the_render_payload.skybox)
                 {
-                    build_imgui("shadows", *shadows);
+                    build_imgui("skybox", *the_render_payload.skybox);
                     ImGui::TreePop();
                 }
+
+                ImGui::Dummy({ 0, 10 });
+
+                if (auto * shadows = scene.render_system->get_renderer()->get_shadow_pass())
+                {
+                    if (ImGui::TreeNode("Shadow Mapping"))
+                    {
+                        build_imgui("shadows", *shadows);
+                        ImGui::TreePop();
+                    }
+                }
+
+                ImGui::TreePop();
+            }
+
+            ImGui::Dummy({ 0, 10 });
+
+            if (ImGui::TreeNode("Scene"))
+            {
+                build_imgui("Radiance IBL", the_render_payload.ibl_radianceCubemap);
+                build_imgui("Irradiance IBL", the_render_payload.ibl_irradianceCubemap);
             }
 
             ImGui::Dummy({ 0, 10 });
