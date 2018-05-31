@@ -302,7 +302,6 @@ void scene_editor_app::draw_entity_scenegraph(const entity e, int32_t depth, uin
                 stack_open++;
                 ImGui::SetNextTreeNodeOpen(true, ImGuiSetCond_FirstUseEver);
                 open = ImGui::TreeNode("");
-                std::cout << "Push..." << stack_open << std::endl;
                 if (!open) ImGui::PopStyleVar();
                 ImGui::SameLine();
             }
@@ -330,16 +329,11 @@ void scene_editor_app::draw_entity_scenegraph(const entity e, int32_t depth, uin
             {
                 draw_entity_scenegraph(c, depth++, stack_open);
             }
-            std::cout << "Tree Pop" << std::endl;
             stack_open--;
             ImGui::PopStyleVar();
             ImGui::TreePop();
         }
     }
-
-    std::cout << "End... " << stack_open << std::endl;
-
-    //if (stack_open >= 1) ImGui::PopStyleVar();
 
     ImGui::PopID();
 }
@@ -630,11 +624,28 @@ void scene_editor_app::on_draw()
         const auto entity_list = scene.entity_list();
 
         uint32_t stack_open = 0;
-        for (size_t i = 0; i < entity_list.size(); ++i)
+
+        std::vector<entity> root_list;
+        for (auto & e : entity_list)
         {
-            draw_entity_scenegraph(entity_list[i], 0, stack_open);
+            // Does the entity have a transform?
+            if (auto * t = scene.xform_system->get_local_transform(e))
+            {
+                // If it has a valid parent, it's a child, so we skip it
+                if (t->parent != kInvalidEntity) continue;
+                root_list.push_back(e);
+            }
+            else
+            {
+                // We also list out entities with no transform
+                root_list.push_back(e);
+            }
         }
-        std::cout << "Done..." << std::endl;
+
+        for (size_t i = 0; i < root_list.size(); ++i)
+        {
+            draw_entity_scenegraph(root_list[i], 0, stack_open);
+        }
 
         gui::imgui_fixed_window_end();
 
