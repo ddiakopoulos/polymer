@@ -283,7 +283,7 @@ void scene_editor_app::on_update(const app_update_event & e)
     editorProfiler.end("on_update");
 }
 
-void scene_editor_app::draw_entity_scenegraph(const entity e, int32_t depth, uint32_t & stack_open)
+void scene_editor_app::draw_entity_scenegraph(const entity e)
 {
     bool open = false;
 
@@ -297,13 +297,9 @@ void scene_editor_app::draw_entity_scenegraph(const entity e, int32_t depth, uin
         {
             // Increase spacing to differentiate leaves from expanded contents.
             ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, ImGui::GetFontSize());
-            stack_open++;
             ImGui::SetNextTreeNodeOpen(true, ImGuiSetCond_FirstUseEver);
             open = ImGui::TreeNode("");
-            if (!open)
-            {
-                ImGui::PopStyleVar();
-            }
+            if (!open) ImGui::PopStyleVar();
             ImGui::SameLine();
         }
     }
@@ -325,9 +321,8 @@ void scene_editor_app::draw_entity_scenegraph(const entity e, int32_t depth, uin
         {
             for (auto & c : xform->children)
             {
-                draw_entity_scenegraph(c, depth++, stack_open);
+                draw_entity_scenegraph(c);
             }
-            stack_open--;
             ImGui::PopStyleVar();
             ImGui::Unindent(ImGui::GetFontSize());
             ImGui::TreePop();
@@ -642,7 +637,7 @@ void scene_editor_app::on_draw()
         uint32_t stack_open = 0;
         for (size_t i = 0; i < root_list.size(); ++i)
         {
-            draw_entity_scenegraph(root_list[i], 0, stack_open);
+            draw_entity_scenegraph(root_list[i]);
         }
 
         gui::imgui_fixed_window_end();
