@@ -269,6 +269,20 @@ void scene_editor_app::open_material_editor()
     glfwMakeContextCurrent(window);
 }
 
+void scene_editor_app::open_asset_browser()
+{
+    if (!asset_browser)
+    {
+        asset_browser.reset(new asset_browser_window(get_shared_gl_context(), 800, 400, "assets", 1));
+    }
+    else if (!asset_browser->get_window())
+    {
+        asset_browser.reset(new asset_browser_window(get_shared_gl_context(), 800, 400, "assets", 1));
+    }
+
+    glfwMakeContextCurrent(window);
+}
+
 void scene_editor_app::on_update(const app_update_event & e)
 {
     int width, height;
@@ -536,6 +550,10 @@ void scene_editor_app::on_draw()
         {
             should_open_material_window = true;
         }
+        else if (menu.item("Asset Browser", GLFW_MOD_CONTROL, GLFW_KEY_B))
+        {
+            should_open_asset_browser = true;
+        }
         menu.end();
     }
 
@@ -738,7 +756,15 @@ void scene_editor_app::on_draw()
         open_material_editor();
     }
 
+    if (should_open_asset_browser)
+    {
+        should_open_asset_browser = false;
+        open_asset_browser();
+    }
+
     if (material_editor && material_editor->get_window()) material_editor->run();
+    if (asset_browser && asset_browser->get_window()) asset_browser->run();
+
     glfwSwapBuffers(window);
 }
 

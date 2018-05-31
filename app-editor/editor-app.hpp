@@ -21,7 +21,9 @@
 #include "arcball.hpp"
 #include "gizmo-controller.hpp"
 #include "asset-resolver.hpp"
+
 #include "material-editor.hpp"
+#include "asset-browser.hpp"
 
 struct scene_editor_app final : public polymer_app
 {
@@ -35,6 +37,7 @@ struct scene_editor_app final : public polymer_app
     bool show_imgui = true;
     bool show_grid = true;
     bool should_open_material_window = false;
+    bool should_open_asset_browser = false;
     std::string working_dir_on_launch;
 
     shader_handle wireframeHandle{ "wireframe" };
@@ -42,6 +45,7 @@ struct scene_editor_app final : public polymer_app
     std::unique_ptr<gui::imgui_instance> igm;
     std::unique_ptr<asset_resolver> resolver;
     std::unique_ptr<material_editor_window> material_editor;
+    std::unique_ptr<asset_browser_window> asset_browser;
     std::unique_ptr<simple_texture_view> fullscreen_surface;
     std::shared_ptr<gizmo_controller> gizmo;
 
@@ -56,6 +60,7 @@ struct scene_editor_app final : public polymer_app
     ~scene_editor_app() {}
 
     void open_material_editor();
+    void open_asset_browser();
 
     void on_window_resize(int2 size) override;
     void on_input(const app_input_event & event) override;

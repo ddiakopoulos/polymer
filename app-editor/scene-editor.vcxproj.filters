@@ -10,5 +10,6 @@
     <ClInclude Include="material-editor.hpp" />
     <ClInclude Include="editor-inspector-ui.hpp" />
     <ClInclude Include="gizmo-controller.hpp" />
+    <ClInclude Include="asset-browser.hpp" />
   </ItemGroup>
 </Project>
