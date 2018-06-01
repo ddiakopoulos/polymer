@@ -53,7 +53,6 @@ struct scene_editor_app final : public polymer_app
     entity_orchestrator orchestrator;
     environment scene;
 
-    entity create_model(const std::string & geom_handle, const std::string & mesh_handle);
     void draw_entity_scenegraph(const entity e);
 
     scene_editor_app();
