@@ -25,6 +25,8 @@ public:
 
     gui::imgui_instance * get_instance() { return imgui.get(); }
 
+    uint32_t get_render_texture() const { return renderTexture; }
+
     void begin_frame()
     {
         imgui->begin_frame(framebufferSize.x, framebufferSize.y);
@@ -60,13 +62,16 @@ struct sample_vr_app : public polymer_app
 {
     std::unique_ptr<openvr_hmd> hmd;
     std::unique_ptr<gui::imgui_instance> desktop_imgui;
+
     std::unique_ptr<imgui_surface> vr_imgui;
+    std::shared_ptr<polymer_fx_material> imgui_material;
 
     std::vector<viewport_t> viewports;
     std::vector<simple_texture_view> eye_views;
 
     entity left_controller;
     entity right_controller;
+    entity imgui_billboard;
 
     gl_shader_monitor shaderMonitor { "../../assets/" };
 

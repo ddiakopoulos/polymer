@@ -29,6 +29,11 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
         orchestrator.reset(new entity_orchestrator());
         load_required_renderer_assets("../../assets/", shaderMonitor);
 
+        shaderMonitor.watch("textured",
+            "../../assets/shaders/renderer/forward_lighting_vert.glsl",
+            "../../assets/shaders/renderer/textured_frag.glsl",
+            "../../assets/shaders/renderer");
+
         scene.mat_library.reset(new polymer::material_library("../../assets/materials/"));
 
         // Setup for the recommended eye target size
@@ -47,6 +52,32 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
         payload.skybox = scene.render_system->get_skybox();
         payload.sunlight = scene.render_system->get_implicit_sunlight();
       
+
+        {
+            auto mesh = make_plane_mesh(0.25, 0.25, 4, 4);
+            create_handle_for_asset("billboard-mesh", std::move(mesh));
+
+            // Create custom material
+            imgui_material = std::make_shared<polymer_fx_material>();
+            imgui_material->shader = shader_handle("textured");
+            scene.mat_library->create_material("imgui", imgui_material);
+
+            // Create and track entity (along with name + transform)
+            imgui_billboard = scene.track_entity(orchestrator->create_entity());
+            scene.identifier_system->create(imgui_billboard, "imgui-billboard");
+            scene.xform_system->create(imgui_billboard, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
+
+            // Attach material to entity
+            polymer::material_component billboard_mat(imgui_billboard);
+            billboard_mat.material = material_handle("imgui");
+            scene.render_system->create(imgui_billboard, std::move(billboard_mat));
+
+            // Attach empty mesh to entity
+            polymer::mesh_component billboard_mesh(imgui_billboard);
+            billboard_mesh.mesh = gpu_mesh_handle("billboard-mesh");
+            scene.render_system->create(imgui_billboard, std::move(billboard_mesh));
+        }
+
         // Setup left controller
         left_controller = scene.track_entity(orchestrator->create_entity());
         scene.identifier_system->create(left_controller, "openvr-left-controller");
@@ -138,6 +169,11 @@ void sample_vr_app::on_update(const app_update_event & e)
         std::cout << "Failed to set right controller transform..." << std::endl;
     }
 
+    if (!scene.xform_system->set_local_transform(imgui_billboard,
+        hmd->get_controller(vr::TrackedControllerRole_RightHand)->get_pose(hmd->get_world_pose()))) {
+        std::cout << "Failed to set billboard transform..." << std::endl;
+    }
+
     std::vector<openvr_controller::button_state> triggerStates = {
         hmd->get_controller(vr::TrackedControllerRole_LeftHand)->trigger,
         hmd->get_controller(vr::TrackedControllerRole_RightHand)->trigger
@@ -164,6 +200,7 @@ void sample_vr_app::on_draw()
     payload.render_set.clear();
     payload.render_set.push_back(assemble_renderable(left_controller));
     payload.render_set.push_back(assemble_renderable(right_controller));
+    payload.render_set.push_back(assemble_renderable(imgui_billboard));
     scene.render_system->get_renderer()->render_frame(payload);
 
     const uint32_t left_eye_texture = scene.render_system->get_renderer()->get_color_texture(0);
@@ -202,9 +239,13 @@ void sample_vr_app::on_draw()
     desktop_imgui->end_frame();
 
     vr_imgui->begin_frame();
-    const auto headPose = hmd->get_hmd_pose();
     ImGui::Text("Head Pose: %f, %f, %f", headPose.position.x, headPose.position.y, headPose.position.z);
     vr_imgui->end_frame();
+
+    imgui_material->use();
+    auto & imgui_shader = imgui_material->compiled_shader->shader;
+    imgui_shader.texture("s_texture", 0, vr_imgui->get_render_texture(), GL_TEXTURE_2D);
+    imgui_shader.unbind();
 
     glfwSwapBuffers(window);
 
