@@ -48,6 +48,23 @@ namespace polymer
     inline void to_json(json & j, const polymer_default_material & p) {}
     inline void from_json(const json & archive, polymer_default_material & m) {}
 
+    /////////////////////////////
+    //   polymer_fx_material   //
+    /////////////////////////////
+
+    struct polymer_fx_material final : public material_interface
+    {
+        polymer_fx_material();
+        virtual void use() override final;
+        virtual void resolve_variants() override final;
+        virtual uint32_t id() override final;
+    };
+    POLYMER_SETUP_TYPEID(polymer_fx_material);
+
+    template<class F> void visit_fields(polymer_fx_material & o, F f) {}
+    inline void to_json(json & j, const polymer_fx_material & p) {}
+    inline void from_json(const json & archive, polymer_fx_material & m) {}
+
     ////////////////////////////////////
     //   polymer_wireframe_material   //
     ////////////////////////////////////
@@ -207,6 +224,7 @@ namespace polymer
         f("polymer_pbr_standard", dynamic_cast<polymer_pbr_standard *>(p));
         f("polymer_blinn_phong_standard", dynamic_cast<polymer_blinn_phong_standard *>(p));
         f("polymer_wireframe_material", dynamic_cast<polymer_wireframe_material *>(p));
+        f("polymer_wireframe_material", dynamic_cast<polymer_fx_material *>(p));
     }
 
 }

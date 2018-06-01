@@ -37,6 +37,35 @@ uint32_t polymer_default_material::id()
     return compiled_shader->shader.handle();
 }
 
+/////////////////////////////
+//   Special FX Material   //
+/////////////////////////////
+
+polymer_fx_material::polymer_fx_material() {}
+
+void polymer_fx_material::use()
+{
+    if (!shader.assigned()) return;
+    resolve_variants();
+    compiled_shader->shader.bind();
+}
+
+void polymer_fx_material::resolve_variants()
+{
+    if (!compiled_shader && shader.assigned())
+    {
+        std::shared_ptr<gl_shader_asset> asset = shader.get();
+        compiled_shader = asset->get_variant();
+    }
+}
+
+uint32_t polymer_fx_material::id()
+{
+    if (!shader.assigned()) return 0;
+    resolve_variants();
+    return compiled_shader->shader.handle();
+}
+
 ////////////////////////////
 //   Wireframe Material   //
 ////////////////////////////
