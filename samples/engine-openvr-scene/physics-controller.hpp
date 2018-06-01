@@ -24,13 +24,12 @@ namespace polymer
 
         std::shared_ptr<bullet_engine> engine;
         const openvr_controller * ctrl;
-        std::shared_ptr<cached_controller_render_data> renderData;
 
         btCollisionShape * controllerShape{ nullptr };
         physics_object * physicsObject{ nullptr };
 
-        physics_object_openvr_controller(std::shared_ptr<bullet_engine> engine, const openvr_controller * ctrl, std::shared_ptr<cached_controller_render_data> renderData)
-            : engine(engine), ctrl(ctrl), renderData(renderData)
+        physics_object_openvr_controller(std::shared_ptr<bullet_engine> engine, const openvr_controller * ctrl)
+            : engine(engine), ctrl(ctrl)
         {
 
             // Physics tick

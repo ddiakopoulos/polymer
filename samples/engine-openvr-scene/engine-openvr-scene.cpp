@@ -201,6 +201,11 @@ void sample_vr_app::on_draw()
     ImGui::Text("Head Pose: %f, %f, %f", headPose.position.x, headPose.position.y, headPose.position.z);
     desktop_imgui->end_frame();
 
+    vr_imgui->begin_frame();
+    const auto headPose = hmd->get_hmd_pose();
+    ImGui::Text("Head Pose: %f, %f, %f", headPose.position.x, headPose.position.y, headPose.position.z);
+    vr_imgui->end_frame();
+
     glfwSwapBuffers(window);
 
     gl_check_error(__FILE__, __LINE__);

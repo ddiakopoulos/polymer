@@ -220,37 +220,49 @@ namespace polymer
         return s;
     }
 
-    inline bool intersect_ray_mesh(const ray & ray, const geometry & mesh, float * outRayT = nullptr, float3 * outFaceNormal = nullptr, aabb_3d * bounds = nullptr)
+    inline bool intersect_ray_mesh(const ray & ray,
+        const geometry & mesh,
+        float * outRayT = nullptr,
+        float3 * outFaceNormal = nullptr,
+        float2 * outTexcoord = nullptr,
+        aabb_3d * bounds = nullptr)
     {
-        float bestT = std::numeric_limits<float>::infinity(), t;
-        uint3 bestFace = { 0, 0, 0 };
+        float best_t = std::numeric_limits<float>::infinity(), t;
+        uint3 best_face = { 0, 0, 0 };
         float2 outUv;
 
-        aabb_3d meshBounds = (bounds) ? *bounds : compute_bounds(mesh);
+        const aabb_3d meshBounds = (bounds) ? *bounds : compute_bounds(mesh);
         if (!meshBounds.contains(ray.origin) && intersect_ray_box(ray, meshBounds.min(), meshBounds.max()))
         {
             for (int f = 0; f < mesh.faces.size(); ++f)
             {
                 auto & tri = mesh.faces[f];
-                if (intersect_ray_triangle(ray, mesh.vertices[tri.x], mesh.vertices[tri.y], mesh.vertices[tri.z], &t, &outUv) && t < bestT)
+                if (intersect_ray_triangle(ray, mesh.vertices[tri.x], mesh.vertices[tri.y], mesh.vertices[tri.z], &t, &outUv) && t < best_t)
                 {
-                    bestT = t;
-                    bestFace = mesh.faces[f];
+                    best_t = t;
+                    best_face = mesh.faces[f];
                 }
             }
         }
 
-        if (bestT == std::numeric_limits<float>::infinity()) return false;
+        if (best_t == std::numeric_limits<float>::infinity()) return false;
 
-        if (outRayT) *outRayT = bestT;
+        if (outRayT)
+        {
+            *outRayT = best_t;
+        }
+
+        if (outTexcoord)
+        {
+            *outTexcoord = outUv;
+        }
 
         if (outFaceNormal)
         {
-            auto v0 = mesh.vertices[bestFace.x];
-            auto v1 = mesh.vertices[bestFace.y];
-            auto v2 = mesh.vertices[bestFace.z];
-            float3 n = safe_normalize(cross(v1 - v0, v2 - v0));
-            *outFaceNormal = n;
+            const auto v0 = mesh.vertices[best_face.x];
+            const auto v1 = mesh.vertices[best_face.y];
+            const auto v2 = mesh.vertices[best_face.z];
+            *outFaceNormal = safe_normalize(cross(v1 - v0, v2 - v0));
         }
 
         return true;

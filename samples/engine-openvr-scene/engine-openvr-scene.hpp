@@ -74,6 +74,7 @@ struct sample_vr_app : public polymer_app
 
     render_payload payload;
     environment scene;
+
     renderable assemble_renderable(const entity e);
 
     sample_vr_app();
