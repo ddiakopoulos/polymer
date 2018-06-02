@@ -530,42 +530,7 @@ namespace polymer
             }
         }
 
-        /*
-        if (doubleSided)
-        {
-            for (float w = width / 2.0; w > -width / 2.0; w -= ow)
-            {
-                for (float h = height / 2.0; h > -height / 2.0; h -= oh)
-                {
-                    float u = (w + width / 2.0) * rw;
-                    float v = (h + height / 2.0) * rh;
-
-                    plane.vertices.emplace_back(w, h + oh, 0.f);
-                    plane.vertices.emplace_back(w, h, 0.f);
-                    plane.vertices.emplace_back(w + ow, h, 0.f);
-                    plane.vertices.emplace_back(w + ow, h + oh, 0.f);
-
-                    plane.texcoord0.emplace_back(u, v + ov);
-                    plane.texcoord0.emplace_back(u, v);
-                    plane.texcoord0.emplace_back(u + ou, v);
-                    plane.texcoord0.emplace_back(u + ou, v + ov);
-
-                    plane.normals.emplace_back(0.f, 0.f, 1.f);
-                    plane.normals.emplace_back(0.f, 0.f, 1.f);
-                    plane.normals.emplace_back(0.f, 0.f, 1.f);
-                    plane.normals.emplace_back(0.f, 0.f, 1.f);
-
-                    plane.faces.push_back({ indexOffset + 0, indexOffset + 1, indexOffset + 2 });
-                    plane.faces.push_back({ indexOffset + 0, indexOffset + 2, indexOffset + 3 });
-
-                    indexOffset += 4;
-                }
-            }
-        }
-        */
-        
         compute_tangents(plane);
-        compute_bounds(plane);
         
         return plane;
     }

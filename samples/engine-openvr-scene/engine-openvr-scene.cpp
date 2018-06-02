@@ -24,7 +24,7 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
         hmd.reset(new openvr_hmd());
         glfwSwapInterval(0);
 
-        vr_imgui.reset(new imgui_surface({ 1024, 1024 }, window));
+        vr_imgui.reset(new imgui_surface({ 256, 256 }, window));
 
         orchestrator.reset(new entity_orchestrator());
         load_required_renderer_assets("../../assets/", shaderMonitor);
@@ -54,7 +54,7 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
       
 
         {
-            auto mesh = make_plane_mesh(0.25, 0.25, 4, 4);
+            auto mesh = make_plane_mesh(0.15, 0.15, 4, 4);
             create_handle_for_asset("billboard-mesh", std::move(mesh));
 
             // Create custom material
@@ -153,7 +153,7 @@ void sample_vr_app::on_input(const app_input_event & event)
     vr_imgui->get_instance()->update_input(event);
 }
 
-void sample_vr_app::on_update(const app_update_event & e) 
+void sample_vr_app::on_update(const app_update_event & e)
 {
     shaderMonitor.handle_recompile();
 
@@ -169,10 +169,10 @@ void sample_vr_app::on_update(const app_update_event & e)
         std::cout << "Failed to set right controller transform..." << std::endl;
     }
 
-    if (!scene.xform_system->set_local_transform(imgui_billboard,
-        hmd->get_controller(vr::TrackedControllerRole_RightHand)->get_pose(hmd->get_world_pose()))) {
-        std::cout << "Failed to set billboard transform..." << std::endl;
-    }
+    auto rct = hmd->get_controller(vr::TrackedControllerRole_RightHand)->get_pose(hmd->get_world_pose());
+    rct = rct * transform(float4(0, 0, 0, 1), float3(0, 0, -.1f));
+    rct = rct * transform(make_rotation_quat_axis_angle({ 1, 0, 0 }, POLYMER_PI / 2.f), float3()); 
+    scene.xform_system->set_local_transform(imgui_billboard, rct);
 
     std::vector<openvr_controller::button_state> triggerStates = {
         hmd->get_controller(vr::TrackedControllerRole_LeftHand)->trigger,
@@ -232,14 +232,17 @@ void sample_vr_app::on_draw()
         glViewport(v.bmin.x, height - v.bmax.y, v.bmax.x - v.bmin.x, v.bmax.y - v.bmin.y);
         eye_views[i].draw(v.texture);
     }
-
-    desktop_imgui->begin_frame();
+    
     const auto headPose = hmd->get_hmd_pose();
-    ImGui::Text("Head Pose: %f, %f, %f", headPose.position.x, headPose.position.y, headPose.position.z);
-    desktop_imgui->end_frame();
+
+    //desktop_imgui->begin_frame();
+    //ImGui::Text("Head Pose: %f, %f, %f", headPose.position.x, headPose.position.y, headPose.position.z);
+    //desktop_imgui->end_frame();
 
     vr_imgui->begin_frame();
+    gui::imgui_fixed_window_begin("controls", ui_rect{ {0, 0,}, {256, 256} });
     ImGui::Text("Head Pose: %f, %f, %f", headPose.position.x, headPose.position.y, headPose.position.z);
+    gui::imgui_fixed_window_end();
     vr_imgui->end_frame();
 
     imgui_material->use();

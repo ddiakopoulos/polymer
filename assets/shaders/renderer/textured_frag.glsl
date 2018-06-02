@@ -13,5 +13,5 @@ uniform sampler2D s_texture;
 
 void main()
 {   
-    f_color = texture(s_texture, vec2(v_texcoord.x, v_texcoord.y));
+    f_color = texture(s_texture, vec2(v_texcoord.x, 1 - v_texcoord.y));
 }
