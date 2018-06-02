@@ -54,8 +54,9 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
       
 
         {
-            auto mesh = make_plane_mesh(0.15, 0.15, 4, 4);
-            create_handle_for_asset("billboard-mesh", std::move(mesh));
+            auto mesh = make_plane(0.15, 0.15, 4, 4);
+            create_handle_for_asset("billboard-mesh", make_mesh_from_geometry(mesh)); // gpu mesh
+            create_handle_for_asset("billboard-mesh", std::move(mesh)); // cpu mesh
 
             // Create custom material
             imgui_material = std::make_shared<polymer_fx_material>();
@@ -72,10 +73,32 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
             billboard_mat.material = material_handle("imgui");
             scene.render_system->create(imgui_billboard, std::move(billboard_mat));
 
-            // Attach empty mesh to entity
+            // Attach mesh to entity
             polymer::mesh_component billboard_mesh(imgui_billboard);
             billboard_mesh.mesh = gpu_mesh_handle("billboard-mesh");
             scene.render_system->create(imgui_billboard, std::move(billboard_mesh));
+
+            // Attach geometry to entity (for raycasting)
+            polymer::geometry_component billboard_geom(imgui_billboard);
+            billboard_geom.geom = cpu_mesh_handle("billboard-mesh");
+            scene.collision_system->create(imgui_billboard, std::move(billboard_geom));
+        }
+
+        {
+            // Create and track pointer entity (along with name + transform)
+            pointer = scene.track_entity(orchestrator->create_entity());
+            scene.identifier_system->create(pointer, "laser-pointer");
+            scene.xform_system->create(pointer, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
+
+            // Attach material to entity
+            polymer::material_component pointer_mat(pointer);
+            pointer_mat.material = material_handle(material_library::kDefaultMaterialId);
+            scene.render_system->create(pointer, std::move(pointer_mat));
+
+            // Attach empty mesh to entity
+            polymer::mesh_component pointer_mesh(pointer);
+            pointer_mesh.mesh = gpu_mesh_handle("pointer");
+            scene.render_system->create(pointer, std::move(pointer_mesh));
         }
 
         // Setup left controller
@@ -169,10 +192,34 @@ void sample_vr_app::on_update(const app_update_event & e)
         std::cout << "Failed to set right controller transform..." << std::endl;
     }
 
-    auto rct = hmd->get_controller(vr::TrackedControllerRole_RightHand)->get_pose(hmd->get_world_pose());
-    rct = rct * transform(float4(0, 0, 0, 1), float3(0, 0, -.1f));
-    rct = rct * transform(make_rotation_quat_axis_angle({ 1, 0, 0 }, POLYMER_PI / 2.f), float3()); 
-    scene.xform_system->set_local_transform(imgui_billboard, rct);
+    // Billboard is on left hand
+    auto lct = hmd->get_controller(vr::TrackedControllerRole_LeftHand)->get_pose(hmd->get_world_pose());
+    lct = lct * transform(float4(0, 0, 0, 1), float3(0, 0, -.1f));
+    lct = lct * transform(make_rotation_quat_axis_angle({ 1, 0, 0 }, POLYMER_PI / 2.f), float3());
+    scene.xform_system->set_local_transform(imgui_billboard, lct);
+
+    {
+        // Pointer is on right hand 
+        auto rct = hmd->get_controller(vr::TrackedControllerRole_RightHand)->get_pose(hmd->get_world_pose());
+        ray controller_ray = ray(rct.position, -qzdir(rct.orientation));
+        auto result = scene.collision_system->raycast(controller_ray);
+        if (result.r.hit)
+        {
+            if (auto * pc = scene.render_system->get_mesh_component(pointer))
+            {
+                // scoped_timer t("raycast assign");
+                geometry ray_geo = make_plane(0.025, 2.f, 24, 24);
+                auto & gpu_mesh = pc->mesh.get();
+                gpu_mesh = make_mesh_from_geometry(ray_geo);
+
+                if (auto * tc = scene.xform_system->get_local_transform(pointer))
+                {
+                    rct = rct * transform(make_rotation_quat_axis_angle({ 1, 0, 0 }, POLYMER_PI / 2.f)); // coordinate
+                    scene.xform_system->set_local_transform(pointer, rct);
+                }
+            }
+        }
+    }
 
     std::vector<openvr_controller::button_state> triggerStates = {
         hmd->get_controller(vr::TrackedControllerRole_LeftHand)->trigger,
@@ -201,6 +248,7 @@ void sample_vr_app::on_draw()
     payload.render_set.push_back(assemble_renderable(left_controller));
     payload.render_set.push_back(assemble_renderable(right_controller));
     payload.render_set.push_back(assemble_renderable(imgui_billboard));
+    payload.render_set.push_back(assemble_renderable(pointer));
     scene.render_system->get_renderer()->render_frame(payload);
 
     const uint32_t left_eye_texture = scene.render_system->get_renderer()->get_color_texture(0);

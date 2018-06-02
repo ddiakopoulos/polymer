@@ -72,6 +72,7 @@ struct sample_vr_app : public polymer_app
     entity left_controller;
     entity right_controller;
     entity imgui_billboard;
+    entity pointer;
 
     gl_shader_monitor shaderMonitor { "../../assets/" };
 
