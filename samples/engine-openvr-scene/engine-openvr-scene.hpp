@@ -69,10 +69,13 @@ struct sample_vr_app : public polymer_app
     std::vector<viewport_t> viewports;
     std::vector<simple_texture_view> eye_views;
 
+    gl_mesh empty_mesh;
     entity left_controller;
     entity right_controller;
     entity imgui_billboard;
     entity pointer;
+
+    float2 debug_pt;
 
     gl_shader_monitor shaderMonitor { "../../assets/" };
 

@@ -98,6 +98,15 @@ namespace polymer
         return sprialMesh;
     }
 
+    inline geometry make_fullscreen_quad_ndc_geom()
+    {
+        geometry g;
+        g.vertices = { { -1.0f, -1.0f, 0.0f },{ 1.0f, -1.0f, 0.0f },{ -1.0f, 1.0f, 0.0f },{ -1.0f, 1.0f, 0.0f },{ 1.0f, -1.0f, 0.0f },{ 1.0f, 1.0f, 0.0f } };
+        g.texcoord0 = { { 0, 0 },{ 1, 0 },{ 0, 1 },{ 0, 1 },{ 1, 0 },{ 1, 1 } };
+        g.faces = { { 0, 1, 2 },{ 3, 4, 5 } };
+        return g;
+    }
+
     inline gl_mesh make_fullscreen_quad_ndc()
     {
         geometry g;

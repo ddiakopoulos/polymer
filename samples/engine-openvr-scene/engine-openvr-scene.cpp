@@ -25,6 +25,7 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
         glfwSwapInterval(0);
 
         vr_imgui.reset(new imgui_surface({ 256, 256 }, window));
+        gui::make_light_theme();
 
         orchestrator.reset(new entity_orchestrator());
         load_required_renderer_assets("../../assets/", shaderMonitor);
@@ -54,7 +55,12 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
       
 
         {
-            auto mesh = make_plane(0.15, 0.15, 4, 4);
+            auto mesh = make_fullscreen_quad_ndc_geom(); // make_plane(0.15, 0.15, 1, 1);
+            for (auto & v : mesh.vertices)
+            {
+                v *= 0.15f;
+            }
+
             create_handle_for_asset("billboard-mesh", make_mesh_from_geometry(mesh)); // gpu mesh
             create_handle_for_asset("billboard-mesh", std::move(mesh)); // cpu mesh
 
@@ -173,7 +179,6 @@ void sample_vr_app::on_window_resize(int2 size)
 void sample_vr_app::on_input(const app_input_event & event) 
 {
     desktop_imgui->update_input(event);
-    vr_imgui->get_instance()->update_input(event);
 }
 
 void sample_vr_app::on_update(const app_update_event & e)
@@ -181,6 +186,11 @@ void sample_vr_app::on_update(const app_update_event & e)
     shaderMonitor.handle_recompile();
 
     hmd->update();
+
+    std::vector<openvr_controller::button_state> triggerStates = {
+        hmd->get_controller(vr::TrackedControllerRole_LeftHand)->trigger,
+        hmd->get_controller(vr::TrackedControllerRole_RightHand)->trigger
+    };
 
     if (!scene.xform_system->set_local_transform(left_controller,
         hmd->get_controller(vr::TrackedControllerRole_LeftHand)->get_pose(hmd->get_world_pose()))) {
@@ -196,6 +206,7 @@ void sample_vr_app::on_update(const app_update_event & e)
     auto lct = hmd->get_controller(vr::TrackedControllerRole_LeftHand)->get_pose(hmd->get_world_pose());
     lct = lct * transform(float4(0, 0, 0, 1), float3(0, 0, -.1f));
     lct = lct * transform(make_rotation_quat_axis_angle({ 1, 0, 0 }, POLYMER_PI / 2.f), float3());
+    lct = lct * transform(make_rotation_quat_axis_angle({ 0, 1, 0 }, -POLYMER_PI), float3());
     scene.xform_system->set_local_transform(imgui_billboard, lct);
 
     {
@@ -203,28 +214,43 @@ void sample_vr_app::on_update(const app_update_event & e)
         auto rct = hmd->get_controller(vr::TrackedControllerRole_RightHand)->get_pose(hmd->get_world_pose());
         ray controller_ray = ray(rct.position, -qzdir(rct.orientation));
         auto result = scene.collision_system->raycast(controller_ray);
-        if (result.r.hit)
+
+        if (auto * pc = scene.render_system->get_mesh_component(pointer))
         {
-            if (auto * pc = scene.render_system->get_mesh_component(pointer))
+            if (result.r.hit)
             {
                 // scoped_timer t("raycast assign");
-                geometry ray_geo = make_plane(0.025, 2.f, 24, 24);
+                geometry ray_geo = make_plane(0.010, result.r.distance, 24, 24);
                 auto & gpu_mesh = pc->mesh.get();
                 gpu_mesh = make_mesh_from_geometry(ray_geo);
 
                 if (auto * tc = scene.xform_system->get_local_transform(pointer))
                 {
                     rct = rct * transform(make_rotation_quat_axis_angle({ 1, 0, 0 }, POLYMER_PI / 2.f)); // coordinate
+                    rct = rct * transform(float4(0, 0, 0, 1), float3(0, -(result.r.distance / 2.f), 0)); // translation
                     scene.xform_system->set_local_transform(pointer, rct);
                 }
+
+                // world-space hit point
+                // controller_ray.calculate_position(result.r.distance);
+
+                const float2 pixel_coord = { (1 - result.r.uv.x) * 256.f, result.r.uv.y * 256.f};
+                debug_pt = pixel_coord;
+
+                app_input_event controller_event;
+                controller_event.type = app_input_event::MOUSE;
+                controller_event.action = triggerStates[1].pressed;
+                controller_event.value = { 0, 0 };
+                controller_event.cursor = pixel_coord;
+                vr_imgui->get_instance()->update_input(controller_event);
+            }
+            else
+            {
+                pc->mesh.get() = {};
             }
         }
     }
 
-    std::vector<openvr_controller::button_state> triggerStates = {
-        hmd->get_controller(vr::TrackedControllerRole_LeftHand)->trigger,
-        hmd->get_controller(vr::TrackedControllerRole_RightHand)->trigger
-    };
 }
 
 void sample_vr_app::on_draw()
@@ -283,13 +309,18 @@ void sample_vr_app::on_draw()
     
     const auto headPose = hmd->get_hmd_pose();
 
-    //desktop_imgui->begin_frame();
-    //ImGui::Text("Head Pose: %f, %f, %f", headPose.position.x, headPose.position.y, headPose.position.z);
-    //desktop_imgui->end_frame();
+    desktop_imgui->begin_frame();
+    ImGui::Text("Head Pose: %f, %f, %f", headPose.position.x, headPose.position.y, headPose.position.z);
+    desktop_imgui->end_frame();
 
     vr_imgui->begin_frame();
     gui::imgui_fixed_window_begin("controls", ui_rect{ {0, 0,}, {256, 256} });
     ImGui::Text("Head Pose: %f, %f, %f", headPose.position.x, headPose.position.y, headPose.position.z);
+    ImGui::Text("Hit UV %f, %f", debug_pt.x, debug_pt.y);
+    if (ImGui::Button("ImGui VR Button"))
+    {
+        std::cout << "Click!" << std::endl;
+    }
     gui::imgui_fixed_window_end();
     vr_imgui->end_frame();
 

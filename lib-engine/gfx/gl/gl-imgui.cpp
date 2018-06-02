@@ -94,13 +94,13 @@ namespace gui
                 int button = clamp<int>(e.value[0], 0, 3);
                 data.MousePressed[button] = true;
             }
+            io.MousePos = ImVec2(e.cursor.x, e.cursor.y);
         }
 
         if (e.type == app_input_event::Type::CURSOR)
         {
             io.MousePos = ImVec2(e.cursor.x, e.cursor.y);
         }
-
 
         if (e.type == app_input_event::Type::SCROLL)
         {

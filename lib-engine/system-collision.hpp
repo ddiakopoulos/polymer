@@ -53,7 +53,7 @@ namespace polymer
                 localRay.direction /= meshScale;
                 float outT = 0.0f;
                 float3 outNormal = { 0, 0, 0 };
-                float2 outUv = { 0, 0 };
+                float2 outUv = { -1, -1 };
                 const bool hit = intersect_ray_mesh(localRay, geometry, &outT, &outNormal, &outUv);
                 return{ hit, outT, outNormal, outUv };
             };
