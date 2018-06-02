@@ -252,9 +252,22 @@ namespace polymer
             *outRayT = best_t;
         }
 
-        if (outTexcoord)
+        if (outTexcoord && mesh.texcoord0.size())
         {
-            *outTexcoord = outUv;
+            float u = outUv.x;
+            float v = outUv.y;
+            float w = 1.f - u - v;
+
+            float3 weight = { std::max(0.f, w), std::max(0.f, u), std::max(0.f, v) };
+
+            const float fDiv = 1.f / (weight.x + weight.y + weight.z);
+            weight *= fDiv;
+
+            const float2 tc_0 = mesh.texcoord0[best_face.x];
+            const float2 tc_1 = mesh.texcoord0[best_face.y];
+            const float2 tc_2 = mesh.texcoord0[best_face.z];
+
+            *outTexcoord = tc_0 * weight.x + tc_1 * weight.y + tc_2 * weight.z;
         }
 
         if (outFaceNormal)
