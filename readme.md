@@ -33,7 +33,7 @@ This repository hosts maintained project files for Visual Studio 2017. Most depe
 
 ## Samples & Documentation
 
-The API of Polymer is consistently in flux. More than 10 sample projects have been assembled in the `samples/` directory to demonstrate a variety of Polymer's features. Most projects depend on both `lib-polymer` and `lib-engine` although many do not use most features in `lib-engine` beyond GLFW window creation and event handling. A growing number of tests projects verify the correctness of some critical internal systems, but also act as an interim reference for functions and objects lacking formal documentation. 
+The API of Polymer is in flux. A growing number of sample projects have been assembled in the `samples/` directory to demonstrate a variety of Polymer's libraries and features. Most projects depend on both `lib-polymer` and `lib-engine` although many do not use features in `lib-engine` beyond GLFW window creation and event handling. A small number of of tests projects verify the correctness of some critical internal systems, but also act as an interim reference for functions and objects lacking formal documentation. 
 
 ## Contributing 
 
