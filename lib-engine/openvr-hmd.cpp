@@ -104,7 +104,11 @@ void openvr_hmd::get_optical_properties(vr::Hmd_Eye eye, float & aspectRatio, fl
 
 void openvr_hmd::load_render_data_impl(vr::VREvent_t event)
 {
-    if (controllerRenderData.loaded == true) return;
+    if (controllerRenderData.loaded == true)
+    {
+        async_data_cb(controllerRenderData);
+        return;
+    }
 
     if (hmd->GetTrackedDeviceClass(event.trackedDeviceIndex) == vr::TrackedDeviceClass_Controller)
     {

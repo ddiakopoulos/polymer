@@ -135,7 +135,7 @@ namespace polymer
         return angle;
     }
 
-    inline geometry make_parabolic_geometry(const std::vector<float3> & points, const float3 & fwd, const float uvoffset)
+    inline geometry make_parabolic_geometry(const std::vector<float3> & points, const float3 & fwd, const float uvoffset, const float3 thickness)
     {
         geometry g;
 
@@ -143,7 +143,6 @@ namespace polymer
         g.texcoord0.resize(points.size() * 2);
 
         const float3 right = normalize(cross(fwd, float3(0, +1, 0)));
-        const float3 thickness = float3(0.1f);
 
         for (int x = 0; x < points.size(); x++)
         {
@@ -214,10 +213,11 @@ namespace polymer
     struct pointer_data
     {
         aabb_3d navMeshBounds;
-        float3 position = { 0, 0, 0 };
-        float3 forward = { 0, 0, 0 };
-        float pointSpacing = 0.1f;
-        uint32_t pointCount = 32; // pointSpacing * pointCount is maximum travel distance in meters
+        float3 position{ 0, 0, 0 };
+        float3 forward{ 0, 0, 0 };
+        float3 lineThickness{ 0.05f };
+        float pointSpacing{ 0.1f };
+        uint32_t pointCount{ 32 }; // pointSpacing * pointCount is maximum travel distance in meters
     };
 
     inline bool make_parabolic_pointer(const pointer_data & params, geometry & pointer, float3 & worldHit)
@@ -231,7 +231,7 @@ namespace polymer
 
         if (solution)
         {
-            pointer = make_parabolic_geometry(points, forwardDirScaled, 0.1f);
+            pointer = make_parabolic_geometry(points, forwardDirScaled, 0.1f, params.lineThickness);
             worldHit = points[points.size() - 1];
             return true;
         }

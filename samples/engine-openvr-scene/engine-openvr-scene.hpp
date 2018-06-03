@@ -79,7 +79,7 @@ namespace polymer
         bool should_draw{ false };
         openvr_hmd * hmd{ nullptr };
 
-        entity teleportation_arc;
+        entity teleportation_arc{ kInvalidEntity };
         mesh_component * cached_mesh;
 
     public:
@@ -191,21 +191,26 @@ struct sample_vr_app : public polymer_app
     std::vector<simple_texture_view> eye_views;
 
     gl_mesh empty_mesh;
+
     entity left_controller;
     entity right_controller;
     entity imgui_billboard;
     entity pointer;
+    entity floor;
 
     float2 debug_pt;
 
     gl_shader_monitor shaderMonitor { "../../assets/" };
 
     std::unique_ptr<entity_orchestrator> orchestrator;
+    std::unique_ptr<vr_teleport_system> teleporter;
 
     render_payload payload;
     environment scene;
 
     renderable assemble_renderable(const entity e);
+
+    uint64_t frame_count{ 0 };
 
     sample_vr_app();
     ~sample_vr_app();

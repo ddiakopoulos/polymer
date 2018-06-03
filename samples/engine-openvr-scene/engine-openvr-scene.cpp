@@ -35,6 +35,11 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
             "../../assets/shaders/renderer/textured_frag.glsl",
             "../../assets/shaders/renderer");
 
+        shaderMonitor.watch("colored",
+            "../../assets/shaders/renderer/forward_lighting_vert.glsl",
+            "../../assets/shaders/renderer/colored_frag.glsl",
+            "../../assets/shaders/renderer");
+
         scene.mat_library.reset(new polymer::material_library("../../assets/materials/"));
 
         // Setup for the recommended eye target size
@@ -49,17 +54,37 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
         scene.identifier_system = orchestrator->create_system<identifier_system>(orchestrator.get());
         scene.render_system = orchestrator->create_system<render_system>(settings, orchestrator.get());
 
+        teleporter.reset(new vr_teleport_system(orchestrator.get(), &scene, hmd.get()));
+
         // Only need to set the skybox on the |render_payload| once (unless we clear the payload)
         payload.skybox = scene.render_system->get_skybox();
         payload.sunlight = scene.render_system->get_implicit_sunlight();
-      
+
+        {
+            auto colored_mat = std::make_shared<polymer_fx_material>();
+            colored_mat->shader = shader_handle("colored");
+            scene.mat_library->create_material("colored", colored_mat);
+
+            floor = scene.track_entity(orchestrator->create_entity());
+            scene.identifier_system->create(floor, "floor-nav-mesh");
+            scene.xform_system->create(floor, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
+
+            auto floor_geom = make_plane(48, 48, 24, 24);
+            for (auto & v : floor_geom.vertices) { v = transform_coord(make_rotation_matrix({ 1, 0, 0 }, POLYMER_PI / 2), v); }
+            create_handle_for_asset("floor-mesh", make_mesh_from_geometry(floor_geom)); // gpu mesh
+
+            polymer::material_component floor_mat(floor);
+            floor_mat.material = material_handle("colored");
+            scene.render_system->create(floor, std::move(floor_mat));
+
+            polymer::mesh_component floor_mesh(floor);
+            floor_mesh.mesh = gpu_mesh_handle("floor-mesh");
+            scene.render_system->create(floor, std::move(floor_mesh));
+        }
 
         {
             auto mesh = make_fullscreen_quad_ndc_geom(); // make_plane(0.15, 0.15, 1, 1);
-            for (auto & v : mesh.vertices)
-            {
-                v *= 0.15f;
-            }
+            for (auto & v : mesh.vertices) { v *= 0.15f; }
 
             create_handle_for_asset("billboard-mesh", make_mesh_from_geometry(mesh)); // gpu mesh
             create_handle_for_asset("billboard-mesh", std::move(mesh)); // cpu mesh
@@ -135,7 +160,7 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
             // We will get this callback for each controller, but we only need to handle it once for both.
             if (should_load)
             {
-                should_load = false;
+                 should_load = false;
 
                 // Create new gpu mesh from the openvr geometry
                 auto mesh = make_mesh_from_geometry(data.mesh);
@@ -183,9 +208,12 @@ void sample_vr_app::on_input(const app_input_event & event)
 
 void sample_vr_app::on_update(const app_update_event & e)
 {
+    frame_count++;
+
     shaderMonitor.handle_recompile();
 
     hmd->update();
+    teleporter->update(frame_count);
 
     std::vector<openvr_controller::button_state> triggerStates = {
         hmd->get_controller(vr::TrackedControllerRole_LeftHand)->trigger,
@@ -275,6 +303,12 @@ void sample_vr_app::on_draw()
     payload.render_set.push_back(assemble_renderable(right_controller));
     payload.render_set.push_back(assemble_renderable(imgui_billboard));
     payload.render_set.push_back(assemble_renderable(pointer));
+    payload.render_set.push_back(assemble_renderable(floor));
+    if (teleporter->get_teleportation_arc() != kInvalidEntity)
+    {
+        payload.render_set.push_back(assemble_renderable(teleporter->get_teleportation_arc()));
+    }
+
     scene.render_system->get_renderer()->render_frame(payload);
 
     const uint32_t left_eye_texture = scene.render_system->get_renderer()->get_color_texture(0);
