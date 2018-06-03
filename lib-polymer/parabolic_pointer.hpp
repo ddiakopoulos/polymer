@@ -88,17 +88,17 @@ namespace polymer
         return false;
     }
 
-    inline float angle_between(float3 a, float3 b, float3 origin)
+    inline float angle_between(const float3 & a, const float3 & b, const float3 & origin)
     {
-        auto da = normalize(a);
-        auto db = normalize(b);
+        const float3 da = normalize(a);
+        const float3 db = normalize(b);
         return std::acos(dot(da, db));
     }
 
     // Clamps the given velocity vector so that it can't be more than N degrees above the horizontal.
     // This is done so that it is easier to leverage the maximum distance (at the N degree angle) of parabolic motion.
     // Returns angle with reference to the XZ plane
-    inline float clamp_initial_velocity(const float3 origin, float3 & velocity, float3 & velocity_normalized)
+    inline float clamp_initial_velocity(const float angle_degrees, const float3 origin, float3 & velocity, float3 & velocity_normalized)
     {
         // Project the initial velocity onto the XZ plane.
         float3 velocity_fwd = project_on_plane(velocity, float3(0, 1, 0));
@@ -116,16 +116,17 @@ namespace polymer
             angle *= -1.0;
         }
 
-        const float clampAngle = 75.f;
-
         // Clamp the angle
-        if (angle > clampAngle)
+        if (angle > angle_degrees)
         {
-            velocity = slerp(velocity_fwd, velocity, clampAngle / angle);
-            velocity /= length(velocity);
+            //std::cout << "Velocity: " << velocity << std::endl;
+            //std::cout << "Vel Fwd:  " << velocity_fwd << std::endl;
+            velocity = slerp(normalize(velocity_fwd), normalize(velocity), angle_degrees / angle);
+            velocity = normalize(velocity);
             velocity_normalized = velocity;
-            velocity *= length(float3(10)); // initial velocity...
-            angle = clampAngle;
+            velocity *= float3(10); // initial velocity...
+            std::cout << "Slerped Value: " << velocity << std::endl;
+            angle = angle_degrees;
         }
         else
         {
@@ -215,24 +216,26 @@ namespace polymer
         aabb_3d navMeshBounds;
         float3 position{ 0, 0, 0 };
         float3 forward{ 0, 0, 0 };
-        float3 lineThickness{ 0.05f };
+        float3 lineThickness{ 0.025f };
         float pointSpacing{ 0.1f };
-        uint32_t pointCount{ 32 }; // pointSpacing * pointCount is maximum travel distance in meters
+        uint32_t pointCount{ 128 }; // pointSpacing * pointCount is maximum travel distance in meters
     };
 
     inline bool make_parabolic_pointer(const pointer_data & params, geometry & pointer, float3 & worldHit)
     {
-        float3 forwardDirScaled = params.forward * float3(10.0);
-        float3 normalizedScale = normalize(forwardDirScaled);
-        float currentAngle = clamp_initial_velocity(params.position, forwardDirScaled, normalizedScale);
+        float3 velocity_fwd = params.forward * float3(10.0);
+        float3 out_velocity_fwd; // pointing vector
+        const float currentAngleDegrees = clamp_initial_velocity(50.f, params.position, velocity_fwd, out_velocity_fwd);
 
-        std::vector<float3> points;
-        const bool solution = compute_parabolic_curve(params.position, forwardDirScaled, float3(0, -20.f, 0), params.pointSpacing, params.pointCount, params.navMeshBounds, points);
+        std::cout << "Out Velocity: " << velocity_fwd << std::endl;
+
+        std::vector<float3> out_points;
+        const bool solution = compute_parabolic_curve(params.position, velocity_fwd, float3(0, -25.f, 0), params.pointSpacing, params.pointCount, params.navMeshBounds, out_points);
 
         if (solution)
         {
-            pointer = make_parabolic_geometry(points, forwardDirScaled, 0.1f, params.lineThickness);
-            worldHit = points[points.size() - 1];
+            pointer = make_parabolic_geometry(out_points, velocity_fwd, 0.1f, params.lineThickness);
+            worldHit = out_points[out_points.size() - 1];
             return true;
         }
 

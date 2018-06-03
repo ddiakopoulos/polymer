@@ -69,7 +69,7 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
             scene.identifier_system->create(floor, "floor-nav-mesh");
             scene.xform_system->create(floor, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
 
-            auto floor_geom = make_plane(48, 48, 24, 24);
+            auto floor_geom = make_plane(48, 48, 4, 4);
             for (auto & v : floor_geom.vertices) { v = transform_coord(make_rotation_matrix({ 1, 0, 0 }, POLYMER_PI / 2), v); }
             create_handle_for_asset("floor-mesh", make_mesh_from_geometry(floor_geom)); // gpu mesh
 
@@ -79,6 +79,7 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
 
             polymer::mesh_component floor_mesh(floor);
             floor_mesh.mesh = gpu_mesh_handle("floor-mesh");
+            floor_mesh.set_mesh_render_mode(GL_LINES);
             scene.render_system->create(floor, std::move(floor_mesh));
         }
 
@@ -152,15 +153,13 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
         polymer::mesh_component right_mesh(right_controller);
         scene.render_system->create(right_controller, std::move(right_mesh));
 
-        bool should_load = true;
-
         // Setup render models for controllers when they are loaded
-        hmd->controller_render_data_callback([&](cached_controller_render_data & data)
+        hmd->controller_render_data_callback([this](cached_controller_render_data & data)
         {
             // We will get this callback for each controller, but we only need to handle it once for both.
-            if (should_load)
+            if (should_load == true)
             {
-                 should_load = false;
+                should_load = false;
 
                 // Create new gpu mesh from the openvr geometry
                 auto mesh = make_mesh_from_geometry(data.mesh);
@@ -309,6 +308,7 @@ void sample_vr_app::on_draw()
         payload.render_set.push_back(assemble_renderable(teleporter->get_teleportation_arc()));
     }
 
+    glDisable(GL_CULL_FACE);
     scene.render_system->get_renderer()->render_frame(payload);
 
     const uint32_t left_eye_texture = scene.render_system->get_renderer()->get_color_texture(0);

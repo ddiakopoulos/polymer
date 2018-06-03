@@ -211,6 +211,7 @@ struct sample_vr_app : public polymer_app
     renderable assemble_renderable(const entity e);
 
     uint64_t frame_count{ 0 };
+    bool should_load{ true };
 
     sample_vr_app();
     ~sample_vr_app();
