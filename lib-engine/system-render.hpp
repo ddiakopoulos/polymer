@@ -136,10 +136,10 @@ namespace polymer
             return false;
         }
 
-        bool create(entity e, mesh_component && c) { meshes[e] = std::move(c); return true;  }
-        bool create(entity e, material_component && c) { materials[e] = std::move(c); return true; }
-        bool create(entity e, point_light_component && c) { point_lights[e] = std::move(c); return true; }
-        bool create(entity e, directional_light_component && c) { directional_lights[e] = std::move(c); return true; }
+        mesh_component * create(entity e, mesh_component && c) { meshes[e] = std::move(c); return &meshes[e]; }
+        material_component * create(entity e, material_component && c) { materials[e] = std::move(c); return &materials[e]; }
+        point_light_component * create(entity e, point_light_component && c) { point_lights[e] = std::move(c); return &point_lights[e]; }
+        directional_light_component * create(entity e, directional_light_component && c) { directional_lights[e] = std::move(c);return &directional_lights[e]; }
 
         virtual void destroy(entity e) override final 
         {

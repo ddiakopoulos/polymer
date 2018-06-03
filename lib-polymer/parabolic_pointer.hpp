@@ -135,7 +135,7 @@ namespace polymer
         return angle;
     }
 
-    inline geometry make_parabolic_geometry(const std::vector<float3> & points, const float3 fwd, const float uvoffset)
+    inline geometry make_parabolic_geometry(const std::vector<float3> & points, const float3 & fwd, const float uvoffset)
     {
         geometry g;
 
