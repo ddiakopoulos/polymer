@@ -57,11 +57,10 @@ public:
 
 class imgui_vr : public imgui_surface
 {
-
     entity imgui_billboard;
     entity pointer;
-
     std::shared_ptr<polymer_fx_material> imgui_material;
+    bool should_draw_pointer{ false };
 
 public:
 
@@ -131,7 +130,7 @@ public:
                 // scoped_timer t("raycast assign");
                 geometry ray_geo = make_plane(0.010, result.r.distance, 24, 24);
                 auto & gpu_mesh = pc->mesh.get();
-                gpu_mesh = make_mesh_from_geometry(ray_geo);
+                gpu_mesh = make_mesh_from_geometry(ray_geo, GL_STREAM_DRAW);
 
                 if (auto * tc = env->xform_system->get_local_transform(pointer))
                 {
@@ -150,8 +149,13 @@ public:
                 controller_event.cursor = pixel_coord;
 
                 imgui->update_input(controller_event);
+
+                should_draw_pointer = true;
             }
-            else pc->mesh.get() = {};
+            else
+            {
+                should_draw_pointer = false;
+            }
         }
     }
 
@@ -166,7 +170,7 @@ public:
 
     entity get_pointer() const
     {
-        return pointer;
+        return should_draw_pointer ? pointer : kInvalidEntity;
     }
 
     entity get_billboard() const
@@ -249,7 +253,7 @@ namespace polymer
                     {
                         should_draw = true;
                         auto & m = cached_mesh->mesh.get();
-                        m = make_mesh_from_geometry(g);
+                        m = make_mesh_from_geometry(g, GL_STREAM_DRAW);
                     }
                 }
 

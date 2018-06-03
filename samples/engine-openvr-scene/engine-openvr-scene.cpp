@@ -206,7 +206,11 @@ void sample_vr_app::on_draw()
     payload.render_set.push_back(assemble_renderable(floor));
 
     payload.render_set.push_back(assemble_renderable(vr_imgui->get_billboard()));
-    payload.render_set.push_back(assemble_renderable(vr_imgui->get_pointer()));
+
+    if (vr_imgui->get_pointer() != kInvalidEntity)
+    {
+        payload.render_set.push_back(assemble_renderable(vr_imgui->get_pointer()));
+    }
 
     if (teleporter->get_teleportation_arc() != kInvalidEntity)
     {
