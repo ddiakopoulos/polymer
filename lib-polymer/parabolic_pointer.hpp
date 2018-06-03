@@ -1,4 +1,5 @@
-// Original Source: MIT License Copyright (c) 2016 Adrian Biagioli
+// Adapted from https://github.com/Flafla2/Vive-Teleporter 
+// MIT License, Copyright (c) 2016 Adrian Biagioli
 
 #pragma once
 
@@ -98,7 +99,7 @@ namespace polymer
     // Clamps the given velocity vector so that it can't be more than N degrees above the horizontal.
     // This is done so that it is easier to leverage the maximum distance (at the N degree angle) of parabolic motion.
     // Returns angle with reference to the XZ plane
-    inline float clamp_initial_velocity(const float angle_degrees, const float3 origin, float3 & velocity, float3 & velocity_normalized)
+    inline float clamp_initial_velocity(const float angle_degrees, const float3 origin, float3 & velocity)
     {
         // Project the initial velocity onto the XZ plane.
         float3 velocity_fwd = project_on_plane(velocity, float3(0, 1, 0));
@@ -119,18 +120,10 @@ namespace polymer
         // Clamp the angle
         if (angle > angle_degrees)
         {
-            //std::cout << "Velocity: " << velocity << std::endl;
-            //std::cout << "Vel Fwd:  " << velocity_fwd << std::endl;
             velocity = slerp(normalize(velocity_fwd), normalize(velocity), angle_degrees / angle);
             velocity = normalize(velocity);
-            velocity_normalized = velocity;
             velocity *= float3(10); // initial velocity...
-            std::cout << "Slerped Value: " << velocity << std::endl;
             angle = angle_degrees;
-        }
-        else
-        {
-            velocity_normalized = normalize(velocity);
         }
 
         return angle;
@@ -224,10 +217,7 @@ namespace polymer
     inline bool make_parabolic_pointer(const pointer_data & params, geometry & pointer, float3 & worldHit)
     {
         float3 velocity_fwd = params.forward * float3(10.0);
-        float3 out_velocity_fwd; // pointing vector
-        const float currentAngleDegrees = clamp_initial_velocity(50.f, params.position, velocity_fwd, out_velocity_fwd);
-
-        std::cout << "Out Velocity: " << velocity_fwd << std::endl;
+        const float currentAngleDegrees = clamp_initial_velocity(50.f, params.position, velocity_fwd);
 
         std::vector<float3> out_points;
         const bool solution = compute_parabolic_curve(params.position, velocity_fwd, float3(0, -25.f, 0), params.pointSpacing, params.pointCount, params.navMeshBounds, out_points);

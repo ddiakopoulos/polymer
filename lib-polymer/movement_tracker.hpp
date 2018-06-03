@@ -1,3 +1,6 @@
+// Adapted from https://github.com/emilk/emilib/blob/master/emilib/movement_tracker.hpp
+// This code is in the public domain
+
 #pragma once
 
 #ifndef movement_tracker_hpp
