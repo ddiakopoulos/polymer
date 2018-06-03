@@ -12,6 +12,7 @@
 #include "arcball.hpp"
 #include "gl-texture-view.hpp"
 #include "win32.hpp"
+#include "model-io.hpp"
 
 inline entity create_model(const std::string & geom_handle,
     const std::string & mesh_handle,
@@ -54,7 +55,6 @@ inline void import_asset(const std::string & filepath, environment & env, entity
 
     // Haandle mesh types
     auto imported_models = import_model(path);
-
     const size_t num_models = imported_models.size();
     std::vector<entity> children;
 

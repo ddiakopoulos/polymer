@@ -72,7 +72,7 @@ uint32_t polymer_fx_material::id()
 
 polymer_wireframe_material::polymer_wireframe_material()
 {
-    shader = shader_handle("wireframe");
+    shader = shader_handle("renderer-wireframe");
 }
 
 void polymer_wireframe_material::use()
@@ -146,6 +146,7 @@ void polymer_blinn_phong_standard::use()
     resolve_variants();
     gl_shader & program = compiled_shader->shader;
     program.bind();
+    program.uniform("u_diffuseColor", diffuseColor);
 }
 
 void polymer_blinn_phong_standard::update_uniforms()

@@ -272,10 +272,10 @@ struct material_editor_window final : public glfw_window
                             auto new_material = std::make_shared<polymer_wireframe_material>();
                             scene.mat_library->create_material(stringBuffer, new_material);
                         }
+                        // todo - 3 = fx material
                     }
 
                     stringBuffer.clear();
-
                     ImGui::CloseCurrentPopup();
                 }
 

@@ -57,6 +57,12 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
     load_editor_intrinsic_assets("../assets/models/runtime/");
     load_required_renderer_assets("../assets", shaderMonitor);
 
+    shaderMonitor.watch("wireframe",
+       "../assets/shaders/wireframe_vert.glsl",
+       "../assets/shaders/wireframe_frag.glsl",
+       "../assets/shaders/wireframe_geom.glsl",
+       "../assets/shaders/renderer");
+
     fullscreen_surface.reset(new simple_texture_view());
 
     renderer_settings initialSettings;

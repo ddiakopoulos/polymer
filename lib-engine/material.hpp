@@ -71,6 +71,7 @@ namespace polymer
 
     struct polymer_wireframe_material final : public material_interface
     {
+        float4 color{ 1, 1, 1, 0.5f};
         polymer_wireframe_material();
         virtual void use() override final;
         virtual void resolve_variants() override final;
@@ -224,7 +225,7 @@ namespace polymer
         f("polymer_pbr_standard", dynamic_cast<polymer_pbr_standard *>(p));
         f("polymer_blinn_phong_standard", dynamic_cast<polymer_blinn_phong_standard *>(p));
         f("polymer_wireframe_material", dynamic_cast<polymer_wireframe_material *>(p));
-        f("polymer_wireframe_material", dynamic_cast<polymer_fx_material *>(p));
+        f("polymer_fx_material", dynamic_cast<polymer_fx_material *>(p));
     }
 
 }

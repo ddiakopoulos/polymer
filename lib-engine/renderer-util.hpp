@@ -18,10 +18,10 @@ namespace polymer
                 base_path + "/shaders/ibl_frag.glsl",
                 base_path + "/shaders/renderer");
 
-            monitor.watch("wireframe",
-                base_path + "/shaders/wireframe_vert.glsl",
-                base_path + "/shaders/wireframe_frag.glsl",
-                base_path + "/shaders/wireframe_geom.glsl",
+            monitor.watch("renderer-wireframe",
+                base_path + "/shaders/renderer/forward_lighting_vert.glsl",
+                base_path + "/shaders/renderer/wireframe_frag.glsl",
+                base_path + "/shaders/renderer/wireframe_geom.glsl",
                 base_path + "/shaders/renderer");
 
             monitor.watch("default-shader",
