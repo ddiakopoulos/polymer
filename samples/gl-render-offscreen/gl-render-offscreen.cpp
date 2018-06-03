@@ -32,8 +32,9 @@ raycast_result raycast(const sample_object & obj, const ray & worldRay)
     localRay.direction /= obj.scale;
     float outT = 0.0f;
     float3 outNormal = { 0, 0, 0 };
-    const bool hit = intersect_ray_mesh(localRay, obj.geometry, &outT, &outNormal);
-    return{ hit, outT, outNormal };
+    float2 outUv{ -1, -1 };
+    const bool hit = intersect_ray_mesh(localRay, obj.geometry, &outT, &outNormal, &outUv);
+    return{ hit, outT, outNormal, outUv };
 }
 
 struct sample_gl_render_offscreen final : public polymer_app
