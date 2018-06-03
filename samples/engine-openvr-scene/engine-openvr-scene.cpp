@@ -24,9 +24,6 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
         hmd.reset(new openvr_hmd());
         glfwSwapInterval(0);
 
-        vr_imgui.reset(new imgui_surface({ 256, 256 }, window));
-        gui::make_light_theme();
-
         orchestrator.reset(new entity_orchestrator());
         load_required_renderer_assets("../../assets/", shaderMonitor);
 
@@ -51,6 +48,9 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
 
         teleporter.reset(new vr_teleport_system(orchestrator.get(), &scene, hmd.get()));
 
+        vr_imgui.reset(new imgui_vr(orchestrator.get(), &scene, { 256, 256 }, window));
+        gui::make_light_theme();
+
         // Only need to set the skybox on the |render_payload| once (unless we clear the payload)
         payload.skybox = scene.render_system->get_skybox();
         payload.sunlight = scene.render_system->get_implicit_sunlight();
@@ -73,56 +73,6 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
             polymer::mesh_component floor_mesh(floor);
             floor_mesh.mesh = gpu_mesh_handle("floor-mesh");
             scene.render_system->create(floor, std::move(floor_mesh));
-        }
-
-        {
-            auto mesh = make_fullscreen_quad_ndc_geom(); // make_plane(0.15, 0.15, 1, 1);
-            for (auto & v : mesh.vertices) { v *= 0.15f; }
-
-            create_handle_for_asset("billboard-mesh", make_mesh_from_geometry(mesh)); // gpu mesh
-            create_handle_for_asset("billboard-mesh", std::move(mesh)); // cpu mesh
-
-            // Create custom material
-            imgui_material = std::make_shared<polymer_fx_material>();
-            imgui_material->shader = shader_handle("textured");
-            scene.mat_library->create_material("imgui", imgui_material);
-
-            // Create and track entity (along with name + transform)
-            imgui_billboard = scene.track_entity(orchestrator->create_entity());
-            scene.identifier_system->create(imgui_billboard, "imgui-billboard");
-            scene.xform_system->create(imgui_billboard, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
-
-            // Attach material to entity
-            polymer::material_component billboard_mat(imgui_billboard);
-            billboard_mat.material = material_handle("imgui");
-            scene.render_system->create(imgui_billboard, std::move(billboard_mat));
-
-            // Attach mesh to entity
-            polymer::mesh_component billboard_mesh(imgui_billboard);
-            billboard_mesh.mesh = gpu_mesh_handle("billboard-mesh");
-            scene.render_system->create(imgui_billboard, std::move(billboard_mesh));
-
-            // Attach geometry to entity (for raycasting)
-            polymer::geometry_component billboard_geom(imgui_billboard);
-            billboard_geom.geom = cpu_mesh_handle("billboard-mesh");
-            scene.collision_system->create(imgui_billboard, std::move(billboard_geom));
-        }
-
-        {
-            // Create and track pointer entity (along with name + transform)
-            pointer = scene.track_entity(orchestrator->create_entity());
-            scene.identifier_system->create(pointer, "laser-pointer");
-            scene.xform_system->create(pointer, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
-
-            // Attach material to entity
-            polymer::material_component pointer_mat(pointer);
-            pointer_mat.material = material_handle(material_library::kDefaultMaterialId);
-            scene.render_system->create(pointer, std::move(pointer_mat));
-
-            // Attach empty mesh to entity
-            polymer::mesh_component pointer_mesh(pointer);
-            pointer_mesh.mesh = gpu_mesh_handle("pointer");
-            scene.render_system->create(pointer, std::move(pointer_mesh));
         }
 
         // Setup left controller
@@ -226,50 +176,11 @@ void sample_vr_app::on_update(const app_update_event & e)
     lct = lct * transform(float4(0, 0, 0, 1), float3(0, 0, -.1f));
     lct = lct * transform(make_rotation_quat_axis_angle({ 1, 0, 0 }, POLYMER_PI / 2.f), float3());
     lct = lct * transform(make_rotation_quat_axis_angle({ 0, 1, 0 }, -POLYMER_PI), float3());
-    scene.xform_system->set_local_transform(imgui_billboard, lct);
 
-    {
-        // Pointer is on right hand 
-        auto rct = hmd->get_controller(vr::TrackedControllerRole_RightHand)->get_pose(hmd->get_world_pose());
-        ray controller_ray = ray(rct.position, -qzdir(rct.orientation));
-        auto result = scene.collision_system->raycast(controller_ray);
+    auto rct = hmd->get_controller(vr::TrackedControllerRole_RightHand)->get_pose(hmd->get_world_pose());
 
-        if (auto * pc = scene.render_system->get_mesh_component(pointer))
-        {
-            if (result.r.hit)
-            {
-                // scoped_timer t("raycast assign");
-                geometry ray_geo = make_plane(0.010, result.r.distance, 24, 24);
-                auto & gpu_mesh = pc->mesh.get();
-                gpu_mesh = make_mesh_from_geometry(ray_geo);
-
-                if (auto * tc = scene.xform_system->get_local_transform(pointer))
-                {
-                    rct = rct * transform(make_rotation_quat_axis_angle({ 1, 0, 0 }, POLYMER_PI / 2.f)); // coordinate
-                    rct = rct * transform(float4(0, 0, 0, 1), float3(0, -(result.r.distance / 2.f), 0)); // translation
-                    scene.xform_system->set_local_transform(pointer, rct);
-                }
-
-                // world-space hit point
-                // controller_ray.calculate_position(result.r.distance);
-
-                const float2 pixel_coord = { (1 - result.r.uv.x) * 256.f, result.r.uv.y * 256.f};
-                debug_pt = pixel_coord;
-
-                app_input_event controller_event;
-                controller_event.type = app_input_event::MOUSE;
-                controller_event.action = triggerStates[1].pressed;
-                controller_event.value = { 0, 0 };
-                controller_event.cursor = pixel_coord;
-                vr_imgui->get_instance()->update_input(controller_event);
-            }
-            else
-            {
-                pc->mesh.get() = {};
-            }
-        }
-    }
-
+    // Imgui needs the location of the pointer (controller), the billboard, and the click state.
+    vr_imgui->update(&scene, rct, lct, triggerStates[1].pressed);
 }
 
 void sample_vr_app::on_draw()
@@ -292,9 +203,11 @@ void sample_vr_app::on_draw()
     payload.render_set.clear();
     payload.render_set.push_back(assemble_renderable(left_controller));
     payload.render_set.push_back(assemble_renderable(right_controller));
-    payload.render_set.push_back(assemble_renderable(imgui_billboard));
-    payload.render_set.push_back(assemble_renderable(pointer));
     payload.render_set.push_back(assemble_renderable(floor));
+
+    payload.render_set.push_back(assemble_renderable(vr_imgui->get_billboard()));
+    payload.render_set.push_back(assemble_renderable(vr_imgui->get_pointer()));
+
     if (teleporter->get_teleportation_arc() != kInvalidEntity)
     {
         payload.render_set.push_back(assemble_renderable(teleporter->get_teleportation_arc()));
@@ -343,17 +256,12 @@ void sample_vr_app::on_draw()
     gui::imgui_fixed_window_begin("controls", ui_rect{ {0, 0,}, {256, 256} });
     ImGui::Text("Head Pose: %f, %f, %f", headPose.position.x, headPose.position.y, headPose.position.z);
     ImGui::Text("Hit UV %f, %f", debug_pt.x, debug_pt.y);
-    if (ImGui::Button("ImGui VR Button"))
-    {
-        std::cout << "Click!" << std::endl;
-    }
+    if (ImGui::Button("ImGui VR Button")) std::cout << "Click!" << std::endl;
     gui::imgui_fixed_window_end();
     vr_imgui->end_frame();
 
-    imgui_material->use();
-    auto & imgui_shader = imgui_material->compiled_shader->shader;
-    imgui_shader.texture("s_texture", 0, vr_imgui->get_render_texture(), GL_TEXTURE_2D);
-    imgui_shader.unbind();
+    // Update textures
+    vr_imgui->update_renderloop();
 
     glfwSwapBuffers(window);
 

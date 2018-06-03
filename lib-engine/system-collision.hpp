@@ -64,6 +64,8 @@ namespace polymer
 
             for (auto & mesh : meshes)
             {
+                if (mesh.first == kInvalidEntity) continue;
+
                 result = raycast(mesh.first);
                 if (result.hit)
                 {

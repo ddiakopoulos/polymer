@@ -8,10 +8,13 @@ using namespace polymer;
 
 class imgui_surface
 {
-    std::unique_ptr<gui::imgui_instance> imgui;
     gl_framebuffer renderFramebuffer;
     gl_texture_2d renderTexture;
     uint2 framebufferSize;
+
+protected:
+
+    std::unique_ptr<gui::imgui_instance> imgui;
 
 public:
 
@@ -23,16 +26,14 @@ public:
         renderFramebuffer.check_complete();
     }
 
+    uint2 get_size() const { return framebufferSize; }
     gui::imgui_instance * get_instance() { return imgui.get(); }
-
     uint32_t get_render_texture() const { return renderTexture; }
 
     void begin_frame()
     {
         imgui->begin_frame(framebufferSize.x, framebufferSize.y);
     }
-
-    uint2 get_size() const { return framebufferSize; }
 
     void end_frame()
     {
@@ -57,13 +58,121 @@ public:
 class imgui_vr : public imgui_surface
 {
 
+    entity imgui_billboard;
+    entity pointer;
+
+    std::shared_ptr<polymer_fx_material> imgui_material;
+
 public:
 
-    imgui_vr(const uint2 size, GLFWwindow * window) : imgui_surface(size, window)
+    imgui_vr(entity_orchestrator * orch, environment * env, const uint2 size, GLFWwindow * window) : imgui_surface(size, window)
     {
+        // Setup the billboard entity
+        {
+            auto mesh = make_fullscreen_quad_ndc_geom();
+            for (auto & v : mesh.vertices) { v *= 0.15f; }
 
+            create_handle_for_asset("billboard-mesh", make_mesh_from_geometry(mesh)); // gpu mesh
+            create_handle_for_asset("billboard-mesh", std::move(mesh)); // cpu mesh
+
+            imgui_billboard = env->track_entity(orch->create_entity());
+            env->identifier_system->create(imgui_billboard, "imgui-billboard");
+            env->xform_system->create(imgui_billboard, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
+
+            polymer::geometry_component billboard_geom(imgui_billboard);
+            billboard_geom.geom = cpu_mesh_handle("billboard-mesh");
+            env->collision_system->create(imgui_billboard, std::move(billboard_geom));
+
+            imgui_material = std::make_shared<polymer_fx_material>();
+            imgui_material->shader = shader_handle("textured");
+            env->mat_library->create_material("imgui", imgui_material);
+
+            polymer::material_component billboard_mat(imgui_billboard);
+            billboard_mat.material = material_handle("imgui");
+            env->render_system->create(imgui_billboard, std::move(billboard_mat));
+
+            polymer::mesh_component billboard_mesh(imgui_billboard);
+            billboard_mesh.mesh = gpu_mesh_handle("billboard-mesh");
+            env->render_system->create(imgui_billboard, std::move(billboard_mesh));
+        }
+
+        // Setup the pointer entity
+        {
+            pointer = env->track_entity(orch->create_entity());
+            env->identifier_system->create(pointer, "laser-pointer");
+            env->xform_system->create(pointer, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
+
+            polymer::material_component pointer_mat(pointer);
+            pointer_mat.material = material_handle(material_library::kDefaultMaterialId);
+            env->render_system->create(pointer, std::move(pointer_mat));
+
+            polymer::mesh_component pointer_mesh(pointer);
+            pointer_mesh.mesh = gpu_mesh_handle("imgui-pointer");
+            env->render_system->create(pointer, std::move(pointer_mesh));
+        }
     }
 
+    void update(environment * env, const transform & pointer_transform, const transform & billboard_origin, bool trigger_state)
+    {
+        // Update billboard position
+        if (auto * tc = env->xform_system->get_local_transform(pointer))
+        {
+            env->xform_system->set_local_transform(imgui_billboard, billboard_origin);
+        }
+
+        transform t = pointer_transform;
+        const ray controller_ray = ray(t.position, -qzdir(t.orientation));
+        const entity_hit_result result = env->collision_system->raycast(controller_ray);
+
+        if (auto * pc = env->render_system->get_mesh_component(pointer))
+        {
+            if (result.r.hit)
+            {
+                // scoped_timer t("raycast assign");
+                geometry ray_geo = make_plane(0.010, result.r.distance, 24, 24);
+                auto & gpu_mesh = pc->mesh.get();
+                gpu_mesh = make_mesh_from_geometry(ray_geo);
+
+                if (auto * tc = env->xform_system->get_local_transform(pointer))
+                {
+                    t = t * transform(make_rotation_quat_axis_angle({ 1, 0, 0 }, POLYMER_PI / 2.f)); // coordinate
+                    t = t * transform(float4(0, 0, 0, 1), float3(0, -(result.r.distance / 2.f), 0)); // translation
+                    env->xform_system->set_local_transform(pointer, t);
+                }
+
+                const uint2 sz = get_size();
+                const float2 pixel_coord = { (1 - result.r.uv.x) * sz.x, result.r.uv.y * sz.y };
+
+                app_input_event controller_event;
+                controller_event.type = app_input_event::MOUSE;
+                controller_event.action = trigger_state;
+                controller_event.value = { 0, 0 };
+                controller_event.cursor = pixel_coord;
+
+                imgui->update_input(controller_event);
+            }
+            else pc->mesh.get() = {};
+        }
+    }
+
+    // This function must be called in the render loop
+    void update_renderloop()
+    {
+        imgui_material->use();
+        auto & imgui_shader = imgui_material->compiled_shader->shader;
+        imgui_shader.texture("s_texture", 0, get_render_texture(), GL_TEXTURE_2D);
+        imgui_shader.unbind();
+    }
+
+    entity get_pointer() const
+    {
+        return pointer;
+    }
+
+    entity get_billboard() const
+    {
+        return imgui_billboard;
+    }
 };
 
 namespace polymer
@@ -183,9 +292,7 @@ struct sample_vr_app : public polymer_app
 {
     std::unique_ptr<openvr_hmd> hmd;
     std::unique_ptr<gui::imgui_instance> desktop_imgui;
-
-    std::unique_ptr<imgui_surface> vr_imgui;
-    std::shared_ptr<polymer_fx_material> imgui_material;
+    std::unique_ptr<imgui_vr> vr_imgui;
 
     std::vector<viewport_t> viewports;
     std::vector<simple_texture_view> eye_views;
@@ -194,8 +301,6 @@ struct sample_vr_app : public polymer_app
 
     entity left_controller;
     entity right_controller;
-    entity imgui_billboard;
-    entity pointer;
     entity floor;
 
     float2 debug_pt;
