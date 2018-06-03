@@ -1,11 +1,12 @@
 #include "material.hpp"
 #include "material-library.hpp"
-#include "serialization.inl"
+#include "serialization.hpp"
 #include "asset-handle-utils.hpp"
 #include "logging.hpp"
 #include "file_io.hpp"
 #include "json.hpp"
 #include "environment.hpp"
+#include "string_utils.hpp"
 
 using namespace polymer;
 using json = nlohmann::json;

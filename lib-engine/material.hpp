@@ -9,7 +9,7 @@
 #include "shader-library.hpp"
 #include "ecs/typeid.hpp"
 #include "json.hpp"
-#include "serialization.inl"
+#include "serialization.hpp"
 
 namespace polymer
 {

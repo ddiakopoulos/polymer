@@ -2,7 +2,7 @@
 #include "system-util.hpp"
 #include "editor-app.hpp"
 #include "editor-inspector-ui.hpp"
-#include "serialization.inl"
+#include "serialization.hpp"
 #include "logging.hpp"
 #include "win32.hpp"
 #include "model-io.hpp"

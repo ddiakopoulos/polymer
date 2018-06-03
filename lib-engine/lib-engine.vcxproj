@@ -117,7 +117,7 @@
     <ClInclude Include="profiling.hpp" />
     <ClInclude Include="environment.hpp" />
     <ClInclude Include="renderer-util.hpp" />
-    <ClInclude Include="serialization.inl" />
+    <ClInclude Include="serialization.hpp" />
     <ClInclude Include="shader.hpp" />
     <ClInclude Include="shader-library.hpp" />
     <ClInclude Include="system-collision.hpp" />

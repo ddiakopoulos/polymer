@@ -12,6 +12,10 @@
 
 namespace polymer
 {
+    inline bool starts_with(const std::string & str, const std::string & search)
+    {
+        return search.length() <= str.length() && std::equal(search.begin(), search.end(), str.begin());
+    }
 
     inline std::vector<std::string> split(const std::string & s, char delim) 
     {

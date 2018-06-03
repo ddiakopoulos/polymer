@@ -32,13 +32,4 @@ struct input_field { };
 
 using json = nlohmann::json;
 
-namespace polymer
-{
-    inline bool starts_with(const std::string & str, const std::string & search)
-    {
-        return search.length() <= str.length() && std::equal(search.begin(), search.end(), str.begin());
-    }
-
-} // end namespace polymer
-
 #endif // end serialization_hpp

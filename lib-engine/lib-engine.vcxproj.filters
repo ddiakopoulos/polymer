@@ -88,9 +88,6 @@
     <ClInclude Include="shader-library.hpp">
       <Filter>assets</Filter>
     </ClInclude>
-    <ClInclude Include="serialization.inl">
-      <Filter>assets</Filter>
-    </ClInclude>
     <ClInclude Include="logging.hpp" />
     <ClInclude Include="profiling.hpp" />
     <ClInclude Include="uniforms.hpp" />
@@ -136,6 +133,9 @@
     <ClInclude Include="system-render.hpp" />
     <ClInclude Include="lib-engine.hpp" />
     <ClInclude Include="renderer-util.hpp" />
+    <ClInclude Include="serialization.hpp">
+      <Filter>assets</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="gfx">

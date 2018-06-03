@@ -9,7 +9,7 @@
 #include "material.hpp"
 #include "uniforms.hpp"
 #include "asset-handle-utils.hpp"
-#include "serialization.inl"
+#include "serialization.hpp"
 #include "imgui/imgui_internal.h"
 
 ///////////////////////////////////////////////

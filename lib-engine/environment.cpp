@@ -6,7 +6,7 @@
 #include "system-render.hpp"
 
 #include "file_io.hpp"
-#include "serialization.inl"
+#include "serialization.hpp"
 
 using namespace polymer;
 

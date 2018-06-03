@@ -6,7 +6,7 @@
 #include "ecs/typeid.hpp"
 #include "ecs/core-ecs.hpp"
 #include "ecs/component-pool.hpp"
-#include "serialization.inl"
+#include "serialization.hpp"
 #include "environment.hpp"
 
 namespace polymer
