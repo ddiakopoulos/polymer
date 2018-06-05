@@ -277,8 +277,7 @@ namespace polymer
 
         entity get_teleportation_arc()
         {
-            if (should_draw) return teleportation_arc;
-            return kInvalidEntity;
+            return should_draw ? teleportation_arc : kInvalidEntity;
         }
 
     };

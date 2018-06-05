@@ -125,11 +125,14 @@ public:
     void on_update(const perspective_camera & camera, const float2 viewport_size)
     {
         gizmo.update(camera, viewport_size);
-        gizmo_active = tinygizmo::transform_gizmo("editor-controller", gizmo.gizmo_ctx, gizmo_transform);
+        tinygizmo::transform_gizmo("editor-controller", gizmo.gizmo_ctx, gizmo_transform);
 
+        gizmo_active = false;
         // Has the gizmo moved? 
-        if (gizmo_active && (gizmo_transform != previous_gizmo_transform))
+        if (gizmo_transform != previous_gizmo_transform)
         {
+            gizmo_active = true;
+
             // For each selected entity... 
             for (int i = 0; i < selected_entities.size(); ++i)
             {
