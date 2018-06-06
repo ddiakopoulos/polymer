@@ -39,8 +39,12 @@ inline entity create_model(const std::string & geom_handle,
     return e;
 }
 
-inline void import_asset(const std::string & filepath, environment & env, entity_orchestrator & orch)
+inline std::vector<entity> import_asset(const std::string & filepath, 
+    environment & env, 
+    entity_orchestrator & orch)
 {   
+    std::vector<entity> created_entities;
+
     auto path = filepath;
 
     std::transform(path.begin(), path.end(), path.begin(), ::tolower);
@@ -50,10 +54,10 @@ inline void import_asset(const std::string & filepath, environment & env, entity
     if (ext == "png" || ext == "tga" || ext == "jpg")
     {
         create_handle_for_asset(get_filename_without_extension(path).c_str(), load_image(path, false));
-        return;
+        return {};
     }
 
-    // Haandle mesh types
+    // Handle mesh types
     auto imported_models = import_model(path);
     const size_t num_models = imported_models.size();
     std::vector<entity> children;
@@ -68,17 +72,24 @@ inline void import_asset(const std::string & filepath, environment & env, entity
         create_handle_for_asset(handle_id.c_str(), make_mesh_from_geometry(mesh));
         create_handle_for_asset(handle_id.c_str(), std::move(mesh));
 
-        if (num_models == 1) create_model(handle_id, handle_id, env, orch);
+        if (num_models == 1) created_entities.push_back(create_model(handle_id, handle_id, env, orch));
         else children.push_back(create_model(handle_id, handle_id, env, orch));
     }
 
     if (children.size())
     {
         const entity root_entity = env.track_entity(orch.create_entity());
+        created_entities.push_back(root_entity);
         env.identifier_system->create(root_entity, "root-" + std::to_string(root_entity));
         env.xform_system->create(root_entity, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
-        for (const entity child : children) env.xform_system->add_child(root_entity, child);
+        for (const entity child : children)
+        {
+            env.xform_system->add_child(root_entity, child);
+            created_entities.push_back(child);
+        }
     }
+
+    return created_entities;
 }
 
 struct asset_browser_window final : public glfw_window
