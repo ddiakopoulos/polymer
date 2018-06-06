@@ -136,6 +136,7 @@
     <ClInclude Include="serialization.hpp">
       <Filter>assets</Filter>
     </ClInclude>
+    <ClInclude Include="asset-import.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="gfx">

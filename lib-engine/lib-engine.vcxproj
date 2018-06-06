@@ -85,6 +85,7 @@
   <ItemGroup>
     <ClInclude Include="asset-handle-utils.hpp" />
     <ClInclude Include="asset-handle.hpp" />
+    <ClInclude Include="asset-import.hpp" />
     <ClInclude Include="asset-resolver.hpp" />
     <ClInclude Include="bullet_visualizer.hpp" />
     <ClInclude Include="bullet_engine.hpp" />
