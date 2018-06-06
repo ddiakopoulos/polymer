@@ -661,6 +661,7 @@ void scene_editor_app::on_draw()
             {
                 build_imgui("Radiance IBL", the_render_payload.ibl_radianceCubemap);
                 build_imgui("Irradiance IBL", the_render_payload.ibl_irradianceCubemap);
+                ImGui::TreePop();
             }
 
             ImGui::Dummy({ 0, 10 });
