@@ -5,9 +5,19 @@
 
 #include "environment.hpp"
 #include "../lib-model-io/model-io.hpp"
+#include "json.hpp"
 
 namespace polymer
 {
+
+    inline void create_or_load_asset_descriptor(const std::string & filepath)
+    {
+        // Replace extension with .meta
+
+        // Check if meta exists
+
+        // If doesn't exist, create one
+    }
 
     inline entity create_model(const std::string & geom_handle,
         const std::string & mesh_handle,
@@ -29,7 +39,7 @@ namespace polymer
 
         polymer::geometry_component model_geom(e);
         model_geom.geom = cpu_mesh_handle(mesh_handle);
-        env.collision_system->create(e, std::move(model_geom));;
+        env.collision_system->create(e, std::move(model_geom));
 
         return e;
     }
@@ -38,14 +48,16 @@ namespace polymer
         environment & env,
         entity_orchestrator & orch)
     {
+
+        // Keep a list of all the entities we create as part of the import process
         std::vector<entity> created_entities;
 
+        // Normalize paths to lowercase
         auto path = filepath;
-
         std::transform(path.begin(), path.end(), path.begin(), ::tolower);
         const std::string ext = get_extension(path);
 
-        // Handle image/texture types
+        // Handle image/texture types. No entities are directly created.
         if (ext == "png" || ext == "tga" || ext == "jpg")
         {
             create_handle_for_asset(get_filename_without_extension(path).c_str(), load_image(path, false));
