@@ -6,7 +6,6 @@
 #include "util.hpp"
 #include "math-core.hpp"
 #include "geometry.hpp"
-#include <map>
 #include <unordered_map>
 
 namespace polymer
@@ -82,13 +81,13 @@ namespace polymer
     void export_mesh_binary(const std::string & path, runtime_mesh & mesh, bool compressed = false);
 
     // Load an FBX model, assuming the path points to a valid *.fbx
-    std::map<std::string, runtime_mesh> import_fbx_model(const std::string & path);
+    std::unordered_map<std::string, runtime_mesh> import_fbx_model(const std::string & path);
 
     // Load an OBJ model, assuming the path points to a valid *.obj
-    std::map<std::string, runtime_mesh> import_obj_model(const std::string & path);
+    std::unordered_map<std::string, runtime_mesh> import_obj_model(const std::string & path);
 
     // Convenience function that checks extension for *.fbx, *.obj, or *.mesh
-    std::map<std::string, runtime_mesh> import_model(const std::string & path);
+    std::unordered_map<std::string, runtime_mesh> import_model(const std::string & path);
 
     bool export_obj_model(const std::string & name, const std::string & filename, runtime_mesh & mesh);
     bool export_obj_multi_model(const std::vector<std::string> & names, const std::string & filename, std::vector<runtime_mesh *> & meshes);

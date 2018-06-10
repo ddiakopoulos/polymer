@@ -13,9 +13,9 @@
 
 using namespace polymer;
 
-std::map<std::string, runtime_mesh> polymer::import_model(const std::string & path)
+std::unordered_map<std::string, runtime_mesh> polymer::import_model(const std::string & path)
 {
-    std::map<std::string, runtime_mesh> models;
+    std::unordered_map<std::string, runtime_mesh> models;
     const std::string ext = get_extension(path);
 
     if (ext == "FBX" || ext == "fbx")
@@ -41,11 +41,11 @@ std::map<std::string, runtime_mesh> polymer::import_model(const std::string & pa
     return models;
 }
 
-std::map<std::string, runtime_mesh> polymer::import_fbx_model(const std::string & path)
+std::unordered_map<std::string, runtime_mesh> polymer::import_fbx_model(const std::string & path)
 {
-# if (USING_FBX == 1)
+#if (USING_FBX == 1)
     
-    std::map<std::string, runtime_mesh> results;
+    std::unordered_map<std::string, runtime_mesh> results;
 
     try
     {
@@ -67,9 +67,9 @@ std::map<std::string, runtime_mesh> polymer::import_fbx_model(const std::string 
     return {};
 }
 
-std::map<std::string, runtime_mesh> polymer::import_obj_model(const std::string & path)
+std::unordered_map<std::string, runtime_mesh> polymer::import_obj_model(const std::string & path)
 {
-    std::map<std::string, runtime_mesh> meshes;
+    std::unordered_map<std::string, runtime_mesh> meshes;
 
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
@@ -145,13 +145,6 @@ std::map<std::string, runtime_mesh> polymer::import_obj_model(const std::string 
             g.faces.push_back(indices);
             indexOffset += 3;
         }
-
-        /*
-        for (int i = 0; i < attrib.colors.size(); i += 3)
-        {
-            g.colors.push_back({ attrib.colors[i + 0], attrib.colors[i + 1], attrib.colors[i + 2], 1 });
-        }
-        */
     }
 
     return meshes;
