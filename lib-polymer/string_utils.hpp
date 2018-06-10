@@ -27,6 +27,16 @@ namespace polymer
         return list;
     }
 
+    inline std::string replace_extension(const std::string & path, const std::string & extension)
+    {
+        std::string result = path;
+        const size_t pos = path.find_last_of('.');
+        if (pos != std::string::npos) result.replace(pos, path.size() - pos, extension);
+        else result += extension;
+        return result;
+    }
+
+    // Does not include '.' -> "image.jpeg" returns "jpeg"
     inline std::string get_extension(const std::string & path)
     {
         auto found = path.find_last_of('.');

@@ -4,20 +4,10 @@
 #define polymer_asset_import_utils_hpp
 
 #include "environment.hpp"
-#include "../lib-model-io/model-io.hpp"
-#include "json.hpp"
+#include "asset-resolver.hpp"
 
 namespace polymer
 {
-
-    inline void create_or_load_asset_descriptor(const std::string & filepath)
-    {
-        // Replace extension with .meta
-
-        // Check if meta exists
-
-        // If doesn't exist, create one
-    }
 
     inline entity create_model(const std::string & geom_handle,
         const std::string & mesh_handle,
@@ -44,7 +34,7 @@ namespace polymer
         return e;
     }
 
-    inline std::vector<entity> import_asset(const std::string & filepath,
+    inline std::vector<entity> import_asset_runtime(const std::string & filepath,
         environment & env,
         entity_orchestrator & orch)
     {
@@ -56,11 +46,12 @@ namespace polymer
         auto path = filepath;
         std::transform(path.begin(), path.end(), path.begin(), ::tolower);
         const std::string ext = get_extension(path);
+        const std::string name_no_ext = get_filename_without_extension(path);
 
         // Handle image/texture types. No entities are directly created.
         if (ext == "png" || ext == "tga" || ext == "jpg")
         {
-            create_handle_for_asset(get_filename_without_extension(path).c_str(), load_image(path, false));
+            create_handle_for_asset(name_no_ext.c_str(), load_image(path, false));
             return {};
         }
 
@@ -74,7 +65,7 @@ namespace polymer
             auto & mesh = m.second;
             rescale_geometry(mesh, 1.f);
 
-            const std::string handle_id = get_filename_without_extension(path) + "-" + m.first;
+            const std::string handle_id = name_no_ext + "/" + m.first;
 
             create_handle_for_asset(handle_id.c_str(), make_mesh_from_geometry(mesh));
             create_handle_for_asset(handle_id.c_str(), std::move(mesh));
@@ -87,7 +78,7 @@ namespace polymer
         {
             const entity root_entity = env.track_entity(orch.create_entity());
             created_entities.push_back(root_entity);
-            env.identifier_system->create(root_entity, "root-" + std::to_string(root_entity));
+            env.identifier_system->create(root_entity, "root/" + name_no_ext);
             env.xform_system->create(root_entity, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
             for (const entity child : children)
             {
@@ -95,6 +86,11 @@ namespace polymer
                 created_entities.push_back(child);
             }
         }
+
+        // Flatten unordered_map of mesh assets into a list of names
+        std::vector<std::string> submesh_names;
+        for (auto m : imported_models) submesh_names.push_back(m.first);
+        create_asset_descriptor(filepath, submesh_names); // write out .meta on import
 
         return created_entities;
     }

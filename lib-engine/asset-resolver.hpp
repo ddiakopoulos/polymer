@@ -28,14 +28,51 @@
 #include "environment.hpp"
 #include "system-render.hpp"
 
+#include "../lib-model-io/model-io.hpp"
+#include "json.hpp"
+
 namespace polymer
 {
+    //, std::unordered_map<std::string, runtime_mesh> & mesh_assets
 
     template <typename T>
-    void remove_duplicates(std::vector<T> & vec)
+    inline void remove_duplicates(std::vector<T> & vec)
     {
         std::sort(vec.begin(), vec.end());
         vec.erase(std::unique(vec.begin(), vec.end()), vec.end());
+    }
+
+    // Polymer asset handles for meshes are of the form `root_file_name/mesh_name`
+    // This function returns `root_file_name` 
+    inline std::string find_root(const std::string & name)
+    {
+
+    }
+
+    inline void create_asset_descriptor(const std::string & filepath, const std::vector<std::string> & submesh_names)
+    {
+        // Replace extension with .meta
+        const std::string & meta_path = replace_extension(filepath, "meta");
+        std::string filename_no_ext = get_filename_without_extension(meta_path);
+        std::transform(filename_no_ext.begin(), filename_no_ext.end(), filename_no_ext.begin(), ::tolower);
+
+        json json_output;
+        json_output[filename_no_ext] = submesh_names;
+        write_file_text(meta_path, json_output.dump(4));
+    }
+
+    inline void load_or_create_asset_descriptor(const std::string & filepath)
+    {
+        std::string root_path = find_root(filepath);
+
+        try
+        {
+
+        }
+        catch (const std::exception & e)
+        {
+
+        }
     }
 
     // The purpose of an asset resolver is to match an asset_handle to an asset on disk. This is done
@@ -49,7 +86,7 @@ namespace polymer
         std::vector<std::string> material_names;
         std::vector<std::string> texture_names;
 
-        // What to do if we find multiples? 
+        // fixme - what to do if we find multiples? 
         void walk_directory(path root)
         {
             scoped_timer t("load + resolve");
@@ -60,26 +97,37 @@ namespace polymer
                 auto path = entry.path().string(), name = path.substr(root_len + 1, path.size() - root_len - ext_len - 1);
                 for (auto & chr : path) if (chr == '\\') chr = '/';
 
-                auto ext = entry.path().extension().string(); // also includes the dot
+                std::string ext = get_extension(path);
                 std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
 
-                if (ext == ".png" | ext == ".tga" || ext == ".jpg" || ext == ".jpeg")
-                {
-                    auto filename_no_extension = get_filename_without_extension(path);
-                    std::transform(filename_no_extension.begin(), filename_no_extension.end(), filename_no_extension.begin(), ::tolower);
+                std::string filename_no_ext = get_filename_without_extension(path);
+                std::transform(filename_no_ext.begin(), filename_no_ext.end(), filename_no_ext.begin(), ::tolower);
 
+                if (ext == "png" || ext == "tga" || ext == "jpg" || ext == "jpeg")
+                {
                     for (const auto & name : texture_names)
                     {
-                        if (name == filename_no_extension)
+                        if (name == filename_no_ext)
                         {
                             create_handle_for_asset(name.c_str(), load_image(path, false));
                             log::get()->assetLog->info("resolved {} ({})", name, typeid(gl_texture_2d).name());
                         }
                     }
                 }
-
-                if (ext == ".obj")
+                else if (ext == "obj" || ext == "fbx")
                 {
+                    // Name could either be something like "my_mesh" or "my_mesh/sub_component"
+                    for (const auto & name : mesh_names)
+                    {
+                        // "my_mesh/sub_component" should match to "my_mesh.obj" or similar
+                        if (find_root(name) == filename_no_ext)
+                        {
+
+                            load_or_create_asset_descriptor(path);
+                        }
+
+                    }
+
                     // todo - .mesh, .fbx, .gltf
                     // all meshes are currently intrinsics, handled separately (for now)
                 }
@@ -90,18 +138,23 @@ namespace polymer
 
         void resolve(const std::string & asset_dir, environment * scene, material_library * library)
         {
-            assert(scene != nullptr && library != nullptr && asset_dir.size() > 1);
+            assert(scene != nullptr);
+            assert(library != nullptr);
+            assert(asset_dir.size() > 1);
 
+            // Material Names
             for (auto & m : scene->render_system->materials)
             {
                 material_names.push_back(m.second.material.name);
             }
 
+            // GPU Geometry
             for (auto & m : scene->render_system->meshes)
             {
                 mesh_names.push_back(m.second.mesh.name);
             }
 
+            // CPU Geometry
             for (auto & m : scene->collision_system->meshes)
             {
                 geometry_names.push_back(m.second.geom.name);

@@ -100,7 +100,7 @@ void scene_editor_app::on_drop(std::vector<std::string> filepaths)
 {
     for (auto path : filepaths)
     {
-        import_asset(path, scene, orchestrator);
+        import_asset_runtime(path, scene, orchestrator);
     }
 }
 
