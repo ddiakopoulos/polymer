@@ -128,21 +128,15 @@ namespace polymer
 
             // Material Names
             for (auto & m : scene->render_system->materials)
-            {
                 material_names.push_back(m.second.material.name);
-            }
 
             // GPU Geometry
             for (auto & m : scene->render_system->meshes)
-            {
                 mesh_names.push_back(m.second.mesh.name);
-            }
 
-            // CPU Geometry
+            // CPU Geometry (same list as GPU)
             for (auto & m : scene->collision_system->meshes)
-            {
                 mesh_names.push_back(m.second.geom.name);
-            }
 
             remove_duplicates(material_names);
             remove_duplicates(mesh_names);
@@ -173,9 +167,6 @@ namespace polymer
             remove_duplicates(texture_names);
 
             walk_directory(asset_dir);
-
-            // todo - shader_names and material_names need to be resolved somewhat differently, since shaders have includes
-            // and materials come from the library.
         }
     };
 

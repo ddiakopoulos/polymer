@@ -13,6 +13,7 @@ out vec3 v_view_space_position;
 out vec2 v_texcoord;
 out vec3 v_tangent;
 out vec3 v_bitangent;
+out vec3 v_color;
 
 uniform vec2 u_texCoordScale = vec2(1, 1);
 
@@ -26,4 +27,5 @@ void main()
     v_texcoord = inTexCoord * u_texCoordScale;
     v_tangent = (u_modelMatrixIT * vec4(inTangent, 0)).xyz;
     v_bitangent = (u_modelMatrixIT * vec4(inBitangent, 0)).xyz;
+    v_color = inColor;
 }

@@ -91,9 +91,7 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
 
     scene.mat_library.reset(new polymer::material_library("../assets/materials/")); // must include trailing slash
 
-    // Resolve asset_handles to resources on disk
     resolver.reset(new asset_resolver());
-    resolver->resolve("../assets/", &scene, scene.mat_library.get());
 }
 
 void scene_editor_app::on_drop(std::vector<std::string> filepaths)
@@ -159,10 +157,7 @@ void scene_editor_app::on_input(const app_input_event & event)
                 show_imgui = !show_imgui;
             }
 
-            if (event.value[0] == GLFW_KEY_SPACE && event.action == GLFW_RELEASE)
-            {
-
-            }
+            if (event.value[0] == GLFW_KEY_SPACE && event.action == GLFW_RELEASE) {}
         }
 
         // Raycast for editor/gizmo selection on mouse up
@@ -423,12 +418,14 @@ void scene_editor_app::on_draw()
         if (menu.item("Open Scene", GLFW_MOD_CONTROL, GLFW_KEY_O, mod_enabled))
         {
             const auto import_path = windows_file_dialog("polymer scene", "json", true);
+            set_working_directory(working_dir_on_launch); // required because the dialog resets the cwd
             if (!import_path.empty())
             {
                 scene.destroy(kAllEntities);
                 gizmo->clear();
                 the_render_payload.render_set.clear();
                 scene.import_environment(import_path, orchestrator);
+                resolver->resolve("../assets/", &scene, scene.mat_library.get());
                 glfwSetWindowTitle(window, import_path.c_str());
             }
         }
@@ -436,6 +433,7 @@ void scene_editor_app::on_draw()
         if (menu.item("Save Scene", GLFW_MOD_CONTROL, GLFW_KEY_S, mod_enabled))
         {
             const auto export_path = windows_file_dialog("polymer scene", "json", false);
+            set_working_directory(working_dir_on_launch); // required because the dialog resets the cwd
             if (!export_path.empty())
             {
                 gizmo->clear();

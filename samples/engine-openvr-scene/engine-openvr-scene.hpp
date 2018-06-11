@@ -179,6 +179,96 @@ public:
     }
 };
 
+// You must create two of these for stereo rendering!
+// std::unique_ptr<gizmo_vr> left_eye_gizmo;
+// std::unique_ptr<gizmo_vr> right_eye_gizmo;
+
+// This is a new implementation designed for the entity/material system. gl_gizmo
+// in the other applications is drawn on top of everything else (a bit of a hack)
+// and doesn't go through Polymer's actual scene renderer. To render in VR, we need to
+// do everything properly.
+class gizmo_vr
+{
+    entity gizmo_entity;
+    entity pointer;
+    
+    std::shared_ptr<polymer_fx_material> gizmo_material;
+    bool should_draw_pointer{ false };
+
+    tinygizmo::gizmo_application_state gizmo_state;
+    tinygizmo::gizmo_context gizmo_ctx;
+
+public:
+
+    gizmo_vr(entity_orchestrator * orch, environment * env, material_library * library)
+    {
+        // Use `imgui_vr` object as a reference in how to create and assign materials and components.
+
+        // Create a new polymer_fx_material and assign it to `gizmo_material` variable above
+        // Create a new gl_shader (you might need help with this step) -- skip at first
+        // Attach the shader to the `gizmo_material`
+        // Lastly, add this material to the material_library
+        
+        // Now, create all the components that you will need to render 1) the gizmo and 2) the pointer
+        // The components you will need are: identifier, transform, mesh_component, material_component
+        // and geometry_component.
+
+        // 1) setup gizmo_entity here
+
+        // 2) setup pointer here
+
+        // This is tricky so I wrote it for you :)
+        gizmo_ctx.render = [&](const tinygizmo::geometry_mesh & r)
+        {
+            if (auto * mc = env->render_system->get_mesh_component(gizmo_entity))
+            {
+                auto & gizmo_gpu_mesh = mc->mesh.get();
+
+                // Upload new gizmo mesh data to the gpu
+                const std::vector<linalg::aliases::float3> & verts = reinterpret_cast<const std::vector<linalg::aliases::float3> &>(r.vertices);
+                const std::vector<linalg::aliases::uint3> & tris = reinterpret_cast<const std::vector<linalg::aliases::uint3> &>(r.triangles);
+                gizmo_gpu_mesh.set_vertices(verts, GL_DYNAMIC_DRAW);
+                gizmo_gpu_mesh.set_attribute(0, 3, GL_FLOAT, GL_FALSE, sizeof(tinygizmo::geometry_vertex), (GLvoid*)offsetof(tinygizmo::geometry_vertex, position));
+                gizmo_gpu_mesh.set_attribute(1, 3, GL_FLOAT, GL_FALSE, sizeof(tinygizmo::geometry_vertex), (GLvoid*)offsetof(tinygizmo::geometry_vertex, normal));
+                gizmo_gpu_mesh.set_attribute(2, 3, GL_FLOAT, GL_FALSE, sizeof(tinygizmo::geometry_vertex), (GLvoid*)offsetof(tinygizmo::geometry_vertex, color));
+                gizmo_gpu_mesh.set_elements(tris, GL_DYNAMIC_DRAW);
+            }
+        };
+    }
+
+    void handle_input(const app_input_event & e)
+    {
+        // Use `handle_input` in gl_gizmo.hpp as a reference for this function.
+
+        // You must create your own `app_input_event` at the application layer.
+        // We need to translate VR controller events into some kind of mouse/keyboard representation. 
+        // So, this function will set a bunch of properties on `gizmo_state`
+    }
+
+    // Must call this for each eye instance
+    void update(const float4x4 & eyeViewProjectionMatrix,
+        const float nearClip,
+        const float farClip,
+        const float vFov,
+        const transform & eyeTransform, 
+        const polymer::float2 windowSize)
+    {
+        // Use `update` in gl_gizmo.hpp for what needs to update on `gizmo_state`
+
+        // ALSO you will need to understand & copy the code from update() on the imgui_vr object to update
+        // the pointer ray that should be drawn when we're pointing + interacting with the gizmo
+    }
+
+    // Call this somewhere in the application render loop
+    void render()
+    {
+        gizmo_ctx.draw();
+    }
+
+    entity get_pointer() const { return should_draw_pointer ? pointer : kInvalidEntity; }
+    entity get_gizmo() const { return gizmo_entity; }
+};
+
 namespace polymer
 {
     struct vr_teleport_event { float3 world_position; uint64_t frame_count; };
