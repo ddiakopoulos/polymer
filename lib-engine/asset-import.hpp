@@ -88,9 +88,9 @@ namespace polymer
         }
 
         // Flatten unordered_map of mesh assets into a list of names
-        std::vector<std::string> submesh_names;
-        for (auto m : imported_models) submesh_names.push_back(m.first);
-        create_asset_descriptor(filepath, submesh_names); // write out .meta on import
+        //std::vector<std::string> submesh_names;
+        //for (auto m : imported_models) submesh_names.push_back(m.first);
+        //create_asset_descriptor(filepath, submesh_names); // write out .meta on import
 
         return created_entities;
     }

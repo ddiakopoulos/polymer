@@ -42,37 +42,13 @@ namespace polymer
         vec.erase(std::unique(vec.begin(), vec.end()), vec.end());
     }
 
-    // Polymer asset handles for meshes are of the form `root_file_name/mesh_name`
+    // Polymer asset handles for meshes are of the form `root_name/sub_name`
     // This function returns `root_file_name` 
     inline std::string find_root(const std::string & name)
     {
-
-    }
-
-    inline void create_asset_descriptor(const std::string & filepath, const std::vector<std::string> & submesh_names)
-    {
-        // Replace extension with .meta
-        const std::string & meta_path = replace_extension(filepath, "meta");
-        std::string filename_no_ext = get_filename_without_extension(meta_path);
-        std::transform(filename_no_ext.begin(), filename_no_ext.end(), filename_no_ext.begin(), ::tolower);
-
-        json json_output;
-        json_output[filename_no_ext] = submesh_names;
-        write_file_text(meta_path, json_output.dump(4));
-    }
-
-    inline void load_or_create_asset_descriptor(const std::string & filepath)
-    {
-        std::string root_path = find_root(filepath);
-
-        try
-        {
-
-        }
-        catch (const std::exception & e)
-        {
-
-        }
+        auto result = split(name, '/');
+        if (!result.empty()) return result[0];
+        else return name;
     }
 
     // The purpose of an asset resolver is to match an asset_handle to an asset on disk. This is done
@@ -81,7 +57,6 @@ namespace polymer
     {
         // Unresolved asset names
         std::vector<std::string> mesh_names;
-        std::vector<std::string> geometry_names;
         std::vector<std::string> shader_names;
         std::vector<std::string> material_names;
         std::vector<std::string> texture_names;
@@ -117,19 +92,28 @@ namespace polymer
                 else if (ext == "obj" || ext == "fbx")
                 {
                     // Name could either be something like "my_mesh" or "my_mesh/sub_component"
+                    // `mesh_names` contains both CPU and GPU geometry handle ids
                     for (const auto & name : mesh_names)
                     {
                         // "my_mesh/sub_component" should match to "my_mesh.obj" or similar
                         if (find_root(name) == filename_no_ext)
                         {
+                            std::unordered_map<std::string, runtime_mesh> imported_models = import_model(path);
 
-                            load_or_create_asset_descriptor(path);
+                            for (auto & m : imported_models)
+                            {
+                                auto & mesh = m.second;
+                                rescale_geometry(mesh, 1.f);
+
+                                const std::string handle_id = filename_no_ext + "/" + m.first;
+
+                                create_handle_for_asset(handle_id.c_str(), make_mesh_from_geometry(mesh));
+                                create_handle_for_asset(handle_id.c_str(), std::move(mesh));
+
+                                log::get()->assetLog->info("resolved {} ({})", handle_id, typeid(gl_mesh).name());
+                            }
                         }
-
                     }
-
-                    // todo - .mesh, .fbx, .gltf
-                    // all meshes are currently intrinsics, handled separately (for now)
                 }
             }
         }
@@ -157,12 +141,11 @@ namespace polymer
             // CPU Geometry
             for (auto & m : scene->collision_system->meshes)
             {
-                geometry_names.push_back(m.second.geom.name);
+                mesh_names.push_back(m.second.geom.name);
             }
 
             remove_duplicates(material_names);
             remove_duplicates(mesh_names);
-            remove_duplicates(geometry_names);
 
             for (auto & mat : library->instances)
             {
