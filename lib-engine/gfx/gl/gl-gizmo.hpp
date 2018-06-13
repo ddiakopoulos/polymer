@@ -80,9 +80,9 @@ namespace polymer
             {
                 if (e.value[0] == GLFW_KEY_LEFT_CONTROL) gizmo_state.hotkey_ctrl = e.using_control_key();
                 if (e.value[0] == GLFW_KEY_L) gizmo_state.hotkey_local = e.is_down();
-                if (e.value[0] == GLFW_KEY_W) gizmo_state.hotkey_translate = e.is_down();
-                if (e.value[0] == GLFW_KEY_E) gizmo_state.hotkey_rotate = e.is_down();
-                if (e.value[0] == GLFW_KEY_R) gizmo_state.hotkey_scale = e.is_down();
+                else if (e.value[0] == GLFW_KEY_W) gizmo_state.hotkey_translate = e.is_down();
+                else if (e.value[0] == GLFW_KEY_E) gizmo_state.hotkey_rotate = e.is_down();
+                else if (e.value[0] == GLFW_KEY_R) gizmo_state.hotkey_scale = e.is_down();
             }
             if (e.type == app_input_event::MOUSE && e.value[0] == GLFW_MOUSE_BUTTON_LEFT) gizmo_state.mouse_left = e.is_down();
             gizmo_state.cursor = minalg::float2(e.cursor.x, e.cursor.y);
