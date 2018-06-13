@@ -32,6 +32,7 @@ class FbxVector4;
 class FbxScene;
 class FbxAnimEvaluator;
 #include <fbxsdk/fbxsdk_nsend.h>
+#include <map>
 
 namespace polymer
 {
