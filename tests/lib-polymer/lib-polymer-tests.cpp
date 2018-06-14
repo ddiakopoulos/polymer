@@ -59,7 +59,7 @@ TEST_CASE("linalg.h matrices & identities")
     REQUIRE(model_matrix_b.row(0) == float4(0, 0, 0, 3));
 
     const float4x4 translation = make_translation_matrix({ 2, 2, 2 });
-    const float4x4 rotation = make_rotation_matrix({ 0, 1, 0 }, POLYMER_TAU);
+    const float4x4 rotation = make_rotation_matrix({ 0, 1, 0 }, (float) POLYMER_TAU);
     const float4x4 scale = make_scaling_matrix(0.5f);
 
     /// >>>> operator * does NOT perform matrix multiplication <<<<
@@ -88,7 +88,7 @@ TEST_CASE("poses, matrices, and transformations")
     REQUIRE(pose_a.matrix() == matrix_xform);
     REQUIRE(pose_a == pose_b);
 
-    const transform pose_c = { make_rotation_quat_axis_angle({ 1, 0, 0 }, POLYMER_TAU / 2),{ 5, 5, 5 } };
+    const transform pose_c = { make_rotation_quat_axis_angle({ 1, 0, 0 }, (float) POLYMER_TAU / 2.f),{ 5, 5, 5 } };
     const transform pose_d = {};
     const transform pose_e = make_transform_from_to(pose_c, pose_d);
 
@@ -97,9 +97,9 @@ TEST_CASE("poses, matrices, and transformations")
 
 TEST_CASE("projection matrices")
 {
-    const uint32_t width = 1024;
-    const uint32_t height = 1024;
-    const float aspectRatio = (float)width / float(height);
+    const float width = 1024.f;
+    const float height = 1024.f;
+    const float aspectRatio = width / height;
 
     const float4x4 projectionMatrix = make_projection_matrix(to_radians(90.f), aspectRatio, 0.1f, 100.f);
     const float4x4 viewMatrix = Identity4x4;

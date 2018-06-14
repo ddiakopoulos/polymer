@@ -128,13 +128,13 @@ public:
             if (result.r.hit)
             {
                 // scoped_timer t("raycast assign");
-                geometry ray_geo = make_plane(0.010, result.r.distance, 24, 24);
+                geometry ray_geo = make_plane(0.010f, result.r.distance, 24, 24);
                 auto & gpu_mesh = pc->mesh.get();
                 gpu_mesh = make_mesh_from_geometry(ray_geo, GL_STREAM_DRAW);
 
                 if (auto * tc = env->xform_system->get_local_transform(pointer))
                 {
-                    t = t * transform(make_rotation_quat_axis_angle({ 1, 0, 0 }, POLYMER_PI / 2.f)); // coordinate
+                    t = t * transform(make_rotation_quat_axis_angle({ 1, 0, 0 }, (float) POLYMER_PI / 2.f)); // coordinate
                     t = t * transform(float4(0, 0, 0, 1), float3(0, -(result.r.distance / 2.f), 0)); // translation
                     env->xform_system->set_local_transform(pointer, t);
                 }
@@ -294,7 +294,7 @@ namespace polymer
             for (auto & v : nav_geometry.vertices)
             {
                 // Flip nav mesh since it's not automatically the correct orientation to be a floor
-                const float4x4 flip = make_rotation_matrix({ 1, 0, 0 }, -POLYMER_PI / 2);
+                const float4x4 flip = make_rotation_matrix({ 1, 0, 0 }, (float) -POLYMER_PI / 2.f);
                 v = transform_coord(flip, v);
             }
 

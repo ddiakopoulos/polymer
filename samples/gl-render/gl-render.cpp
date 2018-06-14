@@ -96,7 +96,7 @@ sample_gl_render::sample_gl_render() : polymer_app(1280, 720, "sample-gl-render"
     rescale_geometry(m);
     upload_mesh(m, model);
 
-    arcball.reset(new arcball_controller(float2(width, height)));
+    arcball.reset(new arcball_controller({ static_cast<float>(width), static_cast<float>(height) }));
 
     cam.look_at({ 0, 0, 2 }, { 0, 0.1f, 0 });
 }

@@ -61,7 +61,7 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
 
             floor = scene.track_entity(orchestrator->create_entity());
             scene.identifier_system->create(floor, "floor-nav-mesh");
-            scene.xform_system->create(floor, transform(make_rotation_quat_axis_angle({ 1, 0, 0 }, (POLYMER_PI / 2.f)), { 0, -0.01f, 0 }), { 1.f, 1.f, 1.f });
+            scene.xform_system->create(floor, transform(make_rotation_quat_axis_angle({ 1, 0, 0 }, ((float) POLYMER_PI / 2.f)), { 0, -0.01f, 0 }), { 1.f, 1.f, 1.f });
 
             auto floor_geom = make_plane(48, 48, 24, 24);
             create_handle_for_asset("floor-mesh", make_mesh_from_geometry(floor_geom)); // gpu mesh
@@ -174,8 +174,8 @@ void sample_vr_app::on_update(const app_update_event & e)
     // Billboard is on left hand
     auto lct = hmd->get_controller(vr::TrackedControllerRole_LeftHand)->get_pose(hmd->get_world_pose());
     lct = lct * transform(float4(0, 0, 0, 1), float3(0, 0, -.1f));
-    lct = lct * transform(make_rotation_quat_axis_angle({ 1, 0, 0 }, POLYMER_PI / 2.f), float3());
-    lct = lct * transform(make_rotation_quat_axis_angle({ 0, 1, 0 }, -POLYMER_PI), float3());
+    lct = lct * transform(make_rotation_quat_axis_angle({ 1, 0, 0 }, (float) POLYMER_PI / 2.f), float3());
+    lct = lct * transform(make_rotation_quat_axis_angle({ 0, 1, 0 }, (float) -POLYMER_PI), float3());
 
     auto rct = hmd->get_controller(vr::TrackedControllerRole_RightHand)->get_pose(hmd->get_world_pose());
 
@@ -195,7 +195,7 @@ void sample_vr_app::on_draw()
     for (auto eye : { vr::Hmd_Eye::Eye_Left, vr::Hmd_Eye::Eye_Right })
     {
         const auto eye_pose = hmd->get_eye_pose(eye);
-        const auto eye_projection = hmd->get_proj_matrix(eye, 0.075, 64.f);
+        const auto eye_projection = hmd->get_proj_matrix(eye, 0.075f, 64.f);
         payload.views.emplace_back(view_data(eye, eye_pose, eye_projection));
     }
 
@@ -246,7 +246,7 @@ void sample_vr_app::on_draw()
     for (int i = 0; i < viewports.size(); ++i)
     {
         const auto & v = viewports[i];
-        glViewport(v.bmin.x, height - v.bmax.y, v.bmax.x - v.bmin.x, v.bmax.y - v.bmin.y);
+        glViewport(GLint(v.bmin.x), GLint(height - v.bmax.y), GLsizei(v.bmax.x - v.bmin.x), GLsizei(v.bmax.y - v.bmin.y));
         eye_views[i].draw(v.texture);
     }
     

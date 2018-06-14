@@ -11,6 +11,11 @@
 #include "math-common.hpp"
 #include "util.hpp"
 
+#if defined(POLYMER_PLATFORM_WINDOWS)
+#pragma warning(push)
+#pragma warning(disable : 4244)
+#endif
+
 // Implicit casts for linalg types
 #define IM_VEC2_CLASS_EXTRA                                               \
 ImVec2(const polymer::float2 & f) { x = f.x; y = f.y; }                   \
@@ -180,5 +185,7 @@ namespace gui
     }
 
 }
+
+#pragma warning(pop)
 
 #endif // polymer_imgui_hpp

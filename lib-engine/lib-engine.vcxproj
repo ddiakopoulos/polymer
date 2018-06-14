@@ -83,6 +83,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\third_party\imgui\imconfig.h" />
+    <ClInclude Include="..\third_party\imgui\imgui.h" />
+    <ClInclude Include="..\third_party\imgui\imgui_internal.h" />
+    <ClInclude Include="..\third_party\nanovg\fontstash.h" />
+    <ClInclude Include="..\third_party\nanovg\nanovg.h" />
+    <ClInclude Include="..\third_party\nanovg\nanovg_gl.h" />
+    <ClInclude Include="..\third_party\nanovg\nanovg_gl_utils.h" />
+    <ClInclude Include="..\third_party\tiny-gizmo.hpp" />
+    <ClInclude Include="..\third_party\tinyexr\tinyexr.h" />
     <ClInclude Include="asset-handle-utils.hpp" />
     <ClInclude Include="asset-handle.hpp" />
     <ClInclude Include="asset-import.hpp" />
@@ -131,6 +140,11 @@
     <ClInclude Include="uniforms.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\third_party\imgui\imgui.cpp" />
+    <ClCompile Include="..\third_party\imgui\imgui_draw.cpp" />
+    <ClCompile Include="..\third_party\nanovg\nanovg.c" />
+    <ClCompile Include="..\third_party\tiny-gizmo.cpp" />
+    <ClCompile Include="..\third_party\tinyexr\tinyexr.cc" />
     <ClCompile Include="ecs\core-events.cpp" />
     <ClCompile Include="environment.cpp" />
     <ClCompile Include="openvr-camera.cpp" />

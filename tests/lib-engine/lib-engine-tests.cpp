@@ -243,9 +243,9 @@ namespace polymer
 
     TEST_CASE("transform system add/remove parent & children")
     {
-        transform p1(make_rotation_quat_axis_angle({ 0, 1, 0 }, POLYMER_PI / 2.0), float3(0, 5.f, 0));
-        transform p2(make_rotation_quat_axis_angle({ 1, 1, 0 }, POLYMER_PI / 0.5), float3(3.f, 0, 0));
-        transform p3(make_rotation_quat_axis_angle({ 0, 1, -1 }, POLYMER_PI), float3(0, 1.f, 4.f));
+        transform p1(make_rotation_quat_axis_angle({ 0, 1, 0 }, (float) POLYMER_PI / 2.0f), float3(0, 5.f, 0));
+        transform p2(make_rotation_quat_axis_angle({ 1, 1, 0 }, (float) POLYMER_PI / 0.5f), float3(3.f, 0, 0));
+        transform p3(make_rotation_quat_axis_angle({ 0, 1, -1 }, (float) POLYMER_PI), float3(0, 1.f, 4.f));
 
         entity_orchestrator orchestrator;
         transform_system * system = orchestrator.create_system<transform_system>(&orchestrator);
@@ -281,9 +281,9 @@ namespace polymer
 
     TEST_CASE("transform system scene graph math correctness")
     {
-        const transform p1(make_rotation_quat_axis_angle({ 0, 1, 0 }, POLYMER_PI / 2.0), float3(0, 5.f, 0));
-        const transform p2(make_rotation_quat_axis_angle({ 1, 1, 0 }, POLYMER_PI / 0.5), float3(3.f, 0, 0));
-        const transform p3(make_rotation_quat_axis_angle({ 0, 1, -1 }, POLYMER_PI), float3(0, 1.f, 4.f));
+        const transform p1(make_rotation_quat_axis_angle({ 0, 1, 0 }, (float) POLYMER_PI / 2.0f), float3(0, 5.f, 0));
+        const transform p2(make_rotation_quat_axis_angle({ 1, 1, 0 }, (float) POLYMER_PI / 0.5f), float3(3.f, 0, 0));
+        const transform p3(make_rotation_quat_axis_angle({ 0, 1, -1 }, (float) POLYMER_PI), float3(0, 1.f, 4.f));
 
         entity_orchestrator orchestrator;
         transform_system * system = orchestrator.create_system<transform_system>(&orchestrator);
@@ -333,12 +333,12 @@ namespace polymer
         transform_system * system = orchestrator.create_system<transform_system>(&orchestrator);
         uniform_random_gen gen;
 
-        float timer = 0.f;
+        double timer = 0.f;
         manual_timer t;
         auto random_pose = [&]() -> transform
         {
             t.start();
-            auto p = transform(make_rotation_quat_axis_angle({ gen.random_float(), gen.random_float(), gen.random_float() }, gen.random_float() * POLYMER_TAU),
+            auto p = transform(make_rotation_quat_axis_angle({ gen.random_float(), gen.random_float(), gen.random_float() }, gen.random_float() * (float) POLYMER_TAU),
                 float3(gen.random_float() * 100, gen.random_float() * 100, gen.random_float() * 100));
             t.stop();
             timer += t.get();

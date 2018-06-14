@@ -207,7 +207,7 @@ void sample_gl_camera_trajectory::on_update(const app_update_event & e)
     int width, height;
     glfwGetWindowSize(window, &width, &height);
     fly_controller.update(e.timestep_ms);
-    gizmo->update(debug_cam, float2(width, height));
+    gizmo->update(debug_cam, { static_cast<float>(width), static_cast<float>(height) });
 
     const auto frameMatrix = frames.get_transform(playback_index);
     follow_cam.pose.position = frameMatrix[3].xyz();
@@ -307,7 +307,7 @@ void sample_gl_camera_trajectory::on_draw()
     gizmo->draw();
 
     const aabb_2d view_rect = { {10, 10}, {320, 180} };
-    view->draw(view_rect, float2(width, height), renderTextureRGBA);
+    view->draw(view_rect, { static_cast<float>(width), static_cast<float>(height) }, renderTextureRGBA);
 
     gl_check_error(__FILE__, __LINE__);
 

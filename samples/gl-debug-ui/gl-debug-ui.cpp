@@ -175,7 +175,7 @@ void sample_gl_debug_ui::on_update(const app_update_event & e)
     int width, height;
     glfwGetWindowSize(window, &width, &height);
     flycam.update(e.timestep_ms);
-    gizmo->update(cam, float2(width, height));
+    gizmo->update(cam, { static_cast<float>(width), static_cast<float>(height) });
 }
 
 void sample_gl_debug_ui::on_draw()
@@ -228,7 +228,7 @@ void sample_gl_debug_ui::on_draw()
 
     // Render the offscreen nvg surface in the world as a small quad to the left
     {
-        const float4x4 nvgSurfaceModel = mul(make_translation_matrix({ -4, 2, 0 }), make_rotation_matrix({ 0, 1, 0 }, POLYMER_PI / 2));
+        const float4x4 nvgSurfaceModel = mul(make_translation_matrix({ -4, 2, 0 }), make_rotation_matrix({ 0, 1, 0 }, (float) POLYMER_PI / 2.f));
         nvg_surface_shader.bind();
         nvg_surface_shader.uniform("u_mvp", mul(viewProjectionMatrix, nvgSurfaceModel));
         nvg_surface_shader.texture("s_texture", 0, surface->surface_texture(0), GL_TEXTURE_2D);

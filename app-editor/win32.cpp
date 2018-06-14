@@ -9,7 +9,10 @@
     #define UNICODE_WAS_UNDEFINED
 #endif
 
-#define WIN32_LEAN_AND_MEAN
+#ifndef WIN32_LEAN_AND_MEAN
+    #define WIN32_LEAN_AND_MEAN
+#endif
+
 #include <Windows.h>
 #include <Commdlg.h>
 #include <tchar.h>

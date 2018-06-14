@@ -78,7 +78,7 @@ namespace polymer
 
             for (uint32_t i = 0; i < num_surfaces; ++i)
             {
-                glTextureImage2DEXT(texture[i], GL_TEXTURE_2D, 0, GL_RGBA8, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+                glTextureImage2DEXT(texture[i], GL_TEXTURE_2D, 0, GL_RGBA8, static_cast<GLsizei>(size.x), static_cast<GLsizei>(size.y), 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
                 glTextureParameteriEXT(texture[i], GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
                 glTextureParameteriEXT(texture[i], GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
                 glTextureParameteriEXT(texture[i], GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -94,7 +94,7 @@ namespace polymer
         NVGcontext * pre_draw(GLFWwindow * window, const uint32_t surface_idx)
         {
             glBindFramebuffer(GL_FRAMEBUFFER, framebuffer[surface_idx]);
-            glViewport(0, 0, size.x, size.y);
+            glViewport(0, 0, static_cast<GLsizei>(size.x), static_cast<GLsizei>(size.y));
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             nvgBeginFrame(nvg, size.x, size.y, 1.0);
             return nvg;

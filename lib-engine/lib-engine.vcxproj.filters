@@ -29,6 +29,21 @@
     <ClCompile Include="openvr-camera.cpp" />
     <ClCompile Include="environment.cpp" />
     <ClCompile Include="renderer-pbr.cpp" />
+    <ClCompile Include="..\third_party\tinyexr\tinyexr.cc">
+      <Filter>third-party\tinyexr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\third_party\nanovg\nanovg.c">
+      <Filter>third-party\nanovg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\third_party\tiny-gizmo.cpp">
+      <Filter>third-party\tinygizmo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\third_party\imgui\imgui.cpp">
+      <Filter>third-party\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\third_party\imgui\imgui_draw.cpp">
+      <Filter>third-party\imgui</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="gfx\gl\gl-api.hpp">
@@ -137,6 +152,33 @@
       <Filter>assets</Filter>
     </ClInclude>
     <ClInclude Include="asset-import.hpp" />
+    <ClInclude Include="..\third_party\tinyexr\tinyexr.h">
+      <Filter>third-party\tinyexr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third_party\nanovg\fontstash.h">
+      <Filter>third-party\nanovg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third_party\nanovg\nanovg.h">
+      <Filter>third-party\nanovg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third_party\nanovg\nanovg_gl.h">
+      <Filter>third-party\nanovg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third_party\nanovg\nanovg_gl_utils.h">
+      <Filter>third-party\nanovg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third_party\tiny-gizmo.hpp">
+      <Filter>third-party\tinygizmo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third_party\imgui\imconfig.h">
+      <Filter>third-party\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third_party\imgui\imgui.h">
+      <Filter>third-party\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third_party\imgui\imgui_internal.h">
+      <Filter>third-party\imgui</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="gfx">
@@ -153,6 +195,21 @@
     </Filter>
     <Filter Include="physics">
       <UniqueIdentifier>{7ea9b95d-e9dc-4a77-93ce-1a08164dbf2c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third-party">
+      <UniqueIdentifier>{369758e3-eaae-4f70-ac64-cc927df5ba3e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third-party\imgui">
+      <UniqueIdentifier>{a9d0c63f-c4ad-47ad-80fd-442ed184b503}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third-party\nanovg">
+      <UniqueIdentifier>{0f9e79a8-8e77-4718-8dd4-0403ebb9f3aa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third-party\tinyexr">
+      <UniqueIdentifier>{c35a977a-b9ad-4262-a0d1-9ba1f448242d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third-party\tinygizmo">
+      <UniqueIdentifier>{8003dc45-46b5-4e05-a1ea-127406978145}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

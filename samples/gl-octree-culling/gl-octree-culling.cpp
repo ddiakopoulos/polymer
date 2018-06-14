@@ -152,7 +152,7 @@ void sample_gl_octree_culling::on_draw()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    if (gizmo) gizmo->update(cam, float2(width, height));
+    if (gizmo) gizmo->update(cam, { static_cast<float>(width), static_cast<float>(height) });
     tinygizmo::transform_gizmo("octree-gizmo", gizmo->gizmo_ctx, xform);
 
     const float4x4 projectionMatrix = cam.get_projection_matrix((float)width / (float)height);
@@ -193,7 +193,7 @@ void sample_gl_octree_culling::on_draw()
         octree.cull(cullingFrustum, visibleNodes, nullptr, false);
     }
 
-    uint32_t visibleObjects = 0;
+    size_t visibleObjects = 0;
 
     for (octant<debug_sphere> * node : visibleNodes)
     {

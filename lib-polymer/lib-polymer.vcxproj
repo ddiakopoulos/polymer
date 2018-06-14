@@ -11,15 +11,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\third_party\imgui\imconfig.h" />
-    <ClInclude Include="..\third_party\imgui\imgui.h" />
-    <ClInclude Include="..\third_party\imgui\imgui_internal.h" />
-    <ClInclude Include="..\third_party\nanovg\fontstash.h" />
-    <ClInclude Include="..\third_party\nanovg\nanovg.h" />
-    <ClInclude Include="..\third_party\nanovg\nanovg_gl.h" />
-    <ClInclude Include="..\third_party\nanovg\nanovg_gl_utils.h" />
-    <ClInclude Include="..\third_party\tiny-gizmo.hpp" />
-    <ClInclude Include="..\third_party\tinyexr\tinyexr.h" />
     <ClInclude Include="algo_misc.hpp" />
     <ClInclude Include="arcball.hpp" />
     <ClInclude Include="bit_mask.hpp" />
@@ -62,11 +53,6 @@
     <ClInclude Include="util.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\third_party\imgui\imgui.cpp" />
-    <ClCompile Include="..\third_party\imgui\imgui_draw.cpp" />
-    <ClCompile Include="..\third_party\nanovg\nanovg.c" />
-    <ClCompile Include="..\third_party\tiny-gizmo.cpp" />
-    <ClCompile Include="..\third_party\tinyexr\tinyexr.cc" />
     <ClCompile Include="lib-polymer.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

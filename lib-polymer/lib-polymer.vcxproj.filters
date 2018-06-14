@@ -1,18 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="third_party">
-      <UniqueIdentifier>{44fc042c-0d49-441b-ba08-cdbd35a2a947}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="third_party\imgui">
-      <UniqueIdentifier>{b12263b9-093c-4d8a-814d-4c507b45ede6}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="third_party\nanovg">
-      <UniqueIdentifier>{5019fdaa-f676-4a48-9b30-deb85e914465}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="third_party\tinygizmo">
-      <UniqueIdentifier>{154c9f53-9e43-418e-92c2-b97ca9e2b2e5}</UniqueIdentifier>
-    </Filter>
     <Filter Include="src">
       <UniqueIdentifier>{18186070-66de-4e86-bdec-e8ce244b6aff}</UniqueIdentifier>
     </Filter>
@@ -28,23 +16,8 @@
     <Filter Include="src\math-core">
       <UniqueIdentifier>{912ca261-d758-4be2-9f0e-4c906ab3c952}</UniqueIdentifier>
     </Filter>
-    <Filter Include="third_party\tinyexr">
-      <UniqueIdentifier>{15dd50a4-cda1-4457-b1a3-663180403753}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\third_party\imgui\imconfig.h">
-      <Filter>third_party\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\third_party\imgui\imgui.h">
-      <Filter>third_party\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\third_party\imgui\imgui_internal.h">
-      <Filter>third_party\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\third_party\tiny-gizmo.hpp">
-      <Filter>third_party\tinygizmo</Filter>
-    </ClInclude>
     <ClInclude Include="math-common.hpp">
       <Filter>src\math-core</Filter>
     </ClInclude>
@@ -123,9 +96,6 @@
     <ClInclude Include="camera.hpp">
       <Filter>src\tools</Filter>
     </ClInclude>
-    <ClInclude Include="..\third_party\tinyexr\tinyexr.h">
-      <Filter>third_party\tinyexr</Filter>
-    </ClInclude>
     <ClInclude Include="math-primitives.hpp">
       <Filter>src\math-core</Filter>
     </ClInclude>
@@ -159,18 +129,6 @@
     <ClInclude Include="quick_hull.hpp">
       <Filter>src\math</Filter>
     </ClInclude>
-    <ClInclude Include="..\third_party\nanovg\nanovg.h">
-      <Filter>third_party\nanovg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\third_party\nanovg\nanovg_gl.h">
-      <Filter>third_party\nanovg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\third_party\nanovg\nanovg_gl_utils.h">
-      <Filter>third_party\nanovg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\third_party\nanovg\fontstash.h">
-      <Filter>third_party\nanovg</Filter>
-    </ClInclude>
     <ClInclude Include="lib-polymer.hpp">
       <Filter>src</Filter>
     </ClInclude>
@@ -182,21 +140,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\third_party\imgui\imgui.cpp">
-      <Filter>third_party\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\third_party\imgui\imgui_draw.cpp">
-      <Filter>third_party\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\third_party\tiny-gizmo.cpp">
-      <Filter>third_party\tinygizmo</Filter>
-    </ClCompile>
-    <ClCompile Include="..\third_party\tinyexr\tinyexr.cc">
-      <Filter>third_party\tinyexr</Filter>
-    </ClCompile>
-    <ClCompile Include="..\third_party\nanovg\nanovg.c">
-      <Filter>third_party\nanovg</Filter>
-    </ClCompile>
     <ClCompile Include="lib-polymer.cpp">
       <Filter>src</Filter>
     </ClCompile>

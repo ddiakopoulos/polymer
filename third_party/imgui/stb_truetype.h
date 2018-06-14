@@ -1,1 +1,1 @@
-#include <../stb/stb_truetype.h>
+#include "stb/stb_truetype.h"

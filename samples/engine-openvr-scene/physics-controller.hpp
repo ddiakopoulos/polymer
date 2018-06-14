@@ -38,7 +38,7 @@ namespace polymer
                 this->update_physics(time, engine);
             });
 
-            controllerShape = new btBoxShape(btVector3(0.096, 0.096, 0.0123)); // fixme to use renderData
+            controllerShape = new btBoxShape(btVector3(0.096f, 0.096f, 0.0123f)); // fixme to use renderData
 
             physicsObject = new physics_object(new btDefaultMotionState(), controllerShape, engine->get_world(), 0.5f); // Controllers require non-zero mass
 

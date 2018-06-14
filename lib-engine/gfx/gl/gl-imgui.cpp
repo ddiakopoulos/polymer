@@ -1,6 +1,10 @@
+#if defined(POLYMER_PLATFORM_WINDOWS)
+#pragma warning(push)
+#pragma warning(disable : 4244)
+#endif
+
 #include <functional>
 #include <memory>
-
 #include "gl-imgui.hpp"
 #include "imgui/imgui_internal.h"
 #include "gl-api.hpp"
