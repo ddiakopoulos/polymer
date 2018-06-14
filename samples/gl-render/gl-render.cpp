@@ -87,9 +87,11 @@ sample_gl_render::sample_gl_render() : polymer_app(1280, 720, "sample-gl-render"
 
     matcapShader = gl_shader(
         read_file_text("../../assets/shaders/prototype/matcap_vert.glsl"),
-        read_file_text("../..//assets/shaders/prototype/matcap_frag.glsl"));
+        read_file_text("../../assets/shaders/prototype/matcap_frag.glsl"));
 
-    auto imported_mesh_table = import_model("../../assets/models/geometry/TorusKnotUniform.obj");
+    auto imported_mesh_table = import_model("../../assets/models/runtime/torus-knot.mesh");
+    if (imported_mesh_table.size() == 0) throw std::runtime_error("model not found?");
+
     runtime_mesh & m = imported_mesh_table.begin()->second;
     rescale_geometry(m);
     upload_mesh(m, model);
