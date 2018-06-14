@@ -10,7 +10,8 @@
 
 stable_cascaded_shadows::stable_cascaded_shadows()
 {
-    shadowArrayDepth.setup(GL_TEXTURE_2D_ARRAY, resolution, resolution, uniforms::NUM_CASCADES, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+    const GLsizei size = static_cast<GLsizei>(resolution);
+    shadowArrayDepth.setup(GL_TEXTURE_2D_ARRAY, size, size, uniforms::NUM_CASCADES, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
     glNamedFramebufferTextureEXT(shadowArrayFramebuffer, GL_DEPTH_ATTACHMENT, shadowArrayDepth, 0);
     shadowArrayFramebuffer.check_complete();
     gl_check_error(__FILE__, __LINE__);
@@ -65,7 +66,7 @@ void stable_cascaded_shadows::update_cascades(const float4x4 & view, const float
         float sphereRadius = 0.0f;
         for (int i = 0; i < 8; ++i)
         {
-            const float dist = length(splitFrustumVerts[i].xyz() - frustumCentroid) * 1.0;
+            const float dist = length(splitFrustumVerts[i].xyz() - frustumCentroid) * 1.0f;
             sphereRadius = std::max(sphereRadius, dist);
         }
 
@@ -110,7 +111,7 @@ void stable_cascaded_shadows::pre_draw()
     glCullFace(GL_FRONT);
 
     glBindFramebuffer(GL_FRAMEBUFFER, shadowArrayFramebuffer);
-    glViewport(0, 0, resolution, resolution);
+    glViewport(0, 0, static_cast<GLsizei>(resolution), static_cast<GLsizei>(resolution));
     glClear(GL_DEPTH_BUFFER_BIT);
 
     auto & shader = program.get()->get_variant()->shader;

@@ -202,7 +202,7 @@ void sample_gl_particle_hull::on_draw()
     // Draw the particle system
     shader_handle particle_shader_h("particle-shader");
     gl_shader & shader = particle_shader_h.get()->get_variant()->shader;
-    particle_system.draw(viewMatrix, projectionMatrix, shader, particle_tex, last_update.elapsed_s);
+    particle_system.draw(viewMatrix, projectionMatrix, shader, particle_tex, static_cast<float>(last_update.elapsed_s));
 
     if (hullFuture.valid())
     {
@@ -224,7 +224,7 @@ void sample_gl_particle_hull::on_draw()
             std::vector<float3> positions;
             for (const auto & p : particles) positions.push_back(p.position);
             quickhull::quick_hull convex_hull(positions);
-            return convex_hull.compute(true, false, 0.0005);
+            return convex_hull.compute(true, false, 0.0005f);
         });
     }
 
