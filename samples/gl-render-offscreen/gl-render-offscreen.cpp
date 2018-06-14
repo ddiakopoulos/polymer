@@ -3,8 +3,8 @@
  * This sample demonstrates how to setup and render to a framebuffer. This framebuffer
  * is then drawn as a full-screen quad using the `simple_texture_view` utility class. 
  * The rendered meshes are all generated procedurally using Polymer's built-in mesh
- * classes. A user can then click a mesh to highlight it, showing how to raycast 
- * against CPU-side geometry. 
+ * classes. A user can then click a mesh to highlight it, showing how to peform a
+ * simple raycast against CPU-resident geometry. 
  */
 
 #include "lib-polymer.hpp"
@@ -94,7 +94,6 @@ sample_gl_render_offscreen::sample_gl_render_offscreen() : polymer_app(1280, 720
     const geometry procedural_torus = make_torus();
     const geometry procedural_icosahedron = make_icosahedron();
     const geometry procedural_tetrahedron = make_tetrahedron();
-
 
     sample_object capsule;
     capsule.t = transform({ -2, 1.5f, 0 });

@@ -46,16 +46,20 @@ sample_engine_scene::sample_engine_scene() : polymer_app(1280, 720, "sample-engi
     shaderMonitor.reset(new gl_shader_monitor("../../assets/"));
     fullscreen_surface.reset(new simple_texture_view());
     orchestrator.reset(new entity_orchestrator());
+    resolver.reset(new asset_resolver());
 
     load_required_renderer_assets("../../assets/", *shaderMonitor);
 
     // Initial renderer settings
     renderer_settings settings;
     settings.renderSize = int2(width, height);
+
+    // Setup the required systems
     scene.collision_system = orchestrator->create_system<collision_system>(orchestrator.get());
     scene.xform_system = orchestrator->create_system<transform_system>(orchestrator.get());
     scene.identifier_system = orchestrator->create_system<identifier_system>(orchestrator.get());
     scene.render_system = orchestrator->create_system<render_system>(settings, orchestrator.get());
+    scene.mat_library.reset(new polymer::material_library("../../assets/sample-material.json"));
 
     auto radianceBinary = read_file_binary("../../assets/textures/envmaps/wells_radiance.dds");
     auto irradianceBinary = read_file_binary("../../assets/textures/envmaps/wells_irradiance.dds");
@@ -68,37 +72,41 @@ sample_engine_scene::sample_engine_scene() : polymer_app(1280, 720, "sample-engi
     payload.skybox = scene.render_system->get_skybox();
     payload.sunlight = scene.render_system->get_implicit_sunlight();
 
-    scene.mat_library.reset(new polymer::material_library("../../assets/sample-material.json"));
-
-    // Resolve asset_handles to resources on disk
-    resolver.reset(new asset_resolver());
+    // Resolve asset_handles to resources on disk. In the case of this sample, the assets
+    // are created programmatically so no asset resolution needs to be performed.
     resolver->resolve("../../assets/", &scene, scene.mat_library.get());
 
-    // Creating an entity programmatically
-    {
-        create_handle_for_asset("debug-icosahedron", make_mesh_from_geometry(make_icosasphere(3))); // gpu mesh
-        create_handle_for_asset("debug-icosahedron", make_icosasphere(3)); // cpu mesh
+    create_handle_for_asset("debug-icosahedron", make_mesh_from_geometry(make_icosasphere(3))); // gpu mesh
+    create_handle_for_asset("debug-icosahedron", make_icosasphere(3)); // cpu mesh
 
-        // Create a debug entity
+    // Configuring an entity at runtime programmatically
+    {
+        // Create a new entity to represent an icosahedron that we will render
         const entity debug_icosa = scene.track_entity(orchestrator->create_entity());
 
+        // Give the icosa a name and default transform and scale
         scene.identifier_system->create(debug_icosa, "debug-icosahedron");
+        scene.xform_system->create(debug_icosa, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
 
-        // Create mesh component for the gpu mesh
+        // Create mesh component for the gpu mesh.
         polymer::mesh_component mesh_component(debug_icosa);
         mesh_component.mesh = gpu_mesh_handle("debug-icosahedron");
         scene.render_system->create(debug_icosa, std::move(mesh_component));
 
-        polymer::material_component material_component(debug_icosa);
-        material_component.material = material_handle(material_library::kDefaultMaterialId);
-        scene.render_system->create(debug_icosa, std::move(material_component));
-
-        scene.xform_system->create(debug_icosa, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
-
+        // Create a geometry for the cpu mesh. This type of mesh is used for raycasting
+        // and collision, so not strictly required for this sample.
         polymer::geometry_component geom_component(debug_icosa);
         geom_component.geom = cpu_mesh_handle("debug-icosahedron");
         scene.collision_system->create(debug_icosa, std::move(geom_component));
 
+        // Create material component with a default (normal-mapped) material
+        polymer::material_component material_component(debug_icosa);
+        material_component.material = material_handle(material_library::kDefaultMaterialId);
+        scene.render_system->create(debug_icosa, std::move(material_component));
+    
+        // Assemble a renderable (gather components so the renderer does not have to interface
+        // with many systems). Ordinarily this assembly is done per-frame in the update loop, but
+        // this is a fully static scene.
         renderable debug_icosahedron_renderable;
         debug_icosahedron_renderable.e = debug_icosa;
         debug_icosahedron_renderable.material = scene.render_system->get_material_component(debug_icosa);

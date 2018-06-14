@@ -2,11 +2,14 @@
  * File: sample/gl-simplex-noise.cpp
  * This file demonstrates the use Polymer's comprehensive built-in collection
  * of simplex noise generators. These functions are implemented on the CPU and are
- * not presently accelerated by any SSE or AVX intrinsics.
+ * not presently accelerated by SSE or AVX intrinsics.
+ * 
  * Furthermore, this sample also shows how a `universal_layout_container` can be used 
  * to layout elements in screen-space.  This type of container is unique in its ability 
  * to specify layouts in a "universal coordinate system," where positions can be specified 
  * as a combination of values relative to a bounary and an absolute offset given in pixels. 
+ *
+ * This sample is loosely based on a libcinder example by Simon Geilfus. 
  */
 
 #include "lib-polymer.hpp"
@@ -69,10 +72,7 @@ sample_gl_simplex_noise::sample_gl_simplex_noise() : polymer_app(1024, 1024, "sa
     }
 }
 
-sample_gl_simplex_noise::~sample_gl_simplex_noise()
-{
-
-}
+sample_gl_simplex_noise::~sample_gl_simplex_noise() {}
 
 void sample_gl_simplex_noise::on_window_resize(int2 size)
 {
@@ -80,10 +80,7 @@ void sample_gl_simplex_noise::on_window_resize(int2 size)
     layout.recompute();
 }
 
-void sample_gl_simplex_noise::on_input(const app_input_event & event)
-{
-
-}
+void sample_gl_simplex_noise::on_input(const app_input_event & event) {}
 
 void sample_gl_simplex_noise::on_update(const app_update_event & e)
 {

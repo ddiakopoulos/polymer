@@ -2,9 +2,9 @@
  * File: samples/gl-particles-hull.cpp
  * This sample shows a work-in-progress CPU-based particle system with emitters
  * and modifiers. Particles are rendered in screen-space using instanced billboards. 
- * A point emitter is used as the input to Polymer's quick_hull algorithm, the
- * resulting convex hull is rendered using a wireframe geometry shader. Furthermore,
- * The convex hull computation is offloaded to a secondary thread through the
+ * A point emitter is used as input to Polymer's quick_hull algorithm. The resulting 
+ * convex hull is rendered using a wireframe geometry shader. Furthermore,
+ * the convex hull computation is offloaded to a secondary thread through the
  * use of std::future and std::async. 
  */
 
@@ -21,6 +21,7 @@
 #include "asset-handle-utils.hpp"
 #include "quick_hull.hpp"
 #include "gl-particle-system.hpp"
+#include "../lib-model-io/model-io.hpp"
 
 #include <future>
 
@@ -194,7 +195,6 @@ void sample_gl_particle_hull::on_draw()
         sphere_mesh.draw_elements();
         sky_shader.unbind();
     }
-
     glEnable(GL_DEPTH_TEST);
 
     grid.draw(viewProjectionMatrix);
@@ -224,7 +224,7 @@ void sample_gl_particle_hull::on_draw()
             std::vector<float3> positions;
             for (const auto & p : particles) positions.push_back(p.position);
             quickhull::quick_hull convex_hull(positions);
-            return convex_hull.compute(true, false);
+            return convex_hull.compute(true, false, 0.0005);
         });
     }
 

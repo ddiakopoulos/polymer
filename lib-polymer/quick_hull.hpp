@@ -308,7 +308,7 @@ namespace quickhull
             std::vector<size_t> faceStack;
 
             // Map vertex indices from original point cloud to the new mesh vertex indices
-            std::unordered_map<size_t,size_t> vertexIndexMapping; 
+            std::unordered_map<size_t, size_t> vertexIndexMapping; 
             for (size_t i = 0;i<mesh.m_faces.size();i++) 
             {
                 if (!mesh.m_faces[i].isDisabled()) 
@@ -328,6 +328,7 @@ namespace quickhull
                 auto it = faceStack.end()-1;
                 size_t top = *it;
                 assert(!mesh.m_faces[top].isDisabled());
+
                 faceStack.erase(it);
 
                 if (faceProcessed[top]) 
@@ -336,7 +337,7 @@ namespace quickhull
                 }
                 else 
                 {
-                    faceProcessed[top]=true;
+                    faceProcessed[top] = true;
 
                     auto halfEdges = mesh.getHalfEdgeIndicesOfFace(mesh.m_faces[top]);
 
@@ -351,11 +352,11 @@ namespace quickhull
                         if (!faceProcessed[a] && !mesh.m_faces[a].isDisabled()) faceStack.push_back(a);
                     }
 
-                    auto vertices = mesh.getVertexIndicesOfFace(mesh.m_faces[top]);
+                    auto vertex_idx = mesh.getVertexIndicesOfFace(mesh.m_faces[top]);
 
                     if (!useOriginalIndices) 
                     {
-                        for (auto & v : vertices) 
+                        for (auto & v : vertex_idx)
                         {
                             auto it = vertexIndexMapping.find(v);
 
@@ -369,17 +370,25 @@ namespace quickhull
                         }
                     }
 
-                    m_indices.push_back(vertices[0]);
+                    auto is_degenerate = [](const uint3 & f) -> bool
+                    {
+                        return (f.x == f.y || f.y == f.z || f.z == f.x);
+                    };
+                     
+                    if (!is_degenerate({ (uint32_t) vertex_idx[0], (uint32_t) vertex_idx[1], (uint32_t)vertex_idx[2] }))
+                    {
+                        m_indices.push_back(vertex_idx[0]);
 
-                    if (CCW) 
-                    {
-                        m_indices.push_back(vertices[2]);
-                        m_indices.push_back(vertices[1]);
-                    }
-                    else 
-                    {
-                        m_indices.push_back(vertices[1]);
-                        m_indices.push_back(vertices[2]);
+                        if (CCW)
+                        {
+                            m_indices.push_back(vertex_idx[2]);
+                            m_indices.push_back(vertex_idx[1]);
+                        }
+                        else
+                        {
+                            m_indices.push_back(vertex_idx[1]);
+                            m_indices.push_back(vertex_idx[2]);
+                        }
                     }
                 }
             }
@@ -394,18 +403,13 @@ namespace quickhull
 
     class quick_hull 
     {
-        const float Epsilon{ 0.0001f };
-
+        const float Epsilon{ 0.001f };
         float m_epsilon, m_epsilonSquared, m_scale;
         bool m_planar;
-
         std::vector<float3> & m_vertexData;
-
         std::vector<float3> m_planarPointCloudTemp;
         MeshBuilder m_mesh;
-
         std::array<size_t, 6> m_extremeValues;
-
         size_t m_failedHorizonEdges{ 0 };
 
         // Temporary variables used during iteration process
@@ -422,16 +426,14 @@ namespace quickhull
             if (vertexCount <= 4) 
             {
                 size_t v[4] = {0, std::min((size_t)1,vertexCount-1), std::min((size_t)2,vertexCount-1), std::min((size_t)3,vertexCount-1)};
-
                 const float3 N = getTriangleNormal(m_vertexData[v[0]],m_vertexData[v[1]],m_vertexData[v[2]]);
-
                 const plane trianglePlane(N,m_vertexData[v[0]]);
 
                 if (trianglePlane.is_positive_half_space(m_vertexData[v[3]])) 
                 {
-                    std::swap(v[0],v[1]);
+                    std::swap(v[0], v[1]);
                 }
-                return MeshBuilder(v[0],v[1],v[2],v[3]);
+                return MeshBuilder(v[0], v[1], v[2], v[3]);
             }
             
             // Find two most distant extreme points.
