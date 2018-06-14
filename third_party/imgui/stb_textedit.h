@@ -1,1 +1,1 @@
-#include <../stb/stb_textedit.h>
+#include "stb/stb_textedit.h"

@@ -54,7 +54,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\third_party;$(ProjectDir)..\third_party\glew;$(ProjectDir)..\third_party\glfw3\include;$(ProjectDir)..\lib-engine\gfx\gl;$(ProjectDir)..\lib-polymer;$(ProjectDir)..\lib-model-io;$(ProjectDir)..\lib-engine;$(ProjectDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\third_party;$(SolutionDir)third_party\glad\include;$(ProjectDir)..\third_party\glfw3\include;$(ProjectDir)..\lib-engine\gfx\gl;$(ProjectDir)..\lib-polymer;$(ProjectDir)..\lib-model-io;$(ProjectDir)..\lib-engine;$(ProjectDir)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;__WINDOWS_DS__;NOMINMAX;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -62,7 +62,7 @@
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(ProjectDir)..\third_party\glew\lib\$(Platform);$(ProjectDir)..\lib-model-io\third-party\fbxsdk\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glew32s.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
@@ -73,7 +73,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\third_party;$(ProjectDir)..\third_party\glew;$(ProjectDir)..\third_party\glfw3\include;$(ProjectDir)..\lib-engine\gfx\gl;$(ProjectDir)..\lib-polymer;$(ProjectDir)..\lib-model-io;$(ProjectDir)..\lib-engine;$(ProjectDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\third_party;$(SolutionDir)third_party\glad\include;$(ProjectDir)..\third_party\glfw3\include;$(ProjectDir)..\lib-engine\gfx\gl;$(ProjectDir)..\lib-polymer;$(ProjectDir)..\lib-model-io;$(ProjectDir)..\lib-engine;$(ProjectDir)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;__WINDOWS_DS__;NOMINMAX;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -82,7 +82,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>$(ProjectDir)..\third_party\glew\lib\$(Platform);$(ProjectDir)..\lib-model-io\third-party\fbxsdk\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glew32s.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>

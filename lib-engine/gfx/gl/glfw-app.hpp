@@ -12,9 +12,8 @@
 #include <string>
 
 #if defined(POLYMER_PLATFORM_WINDOWS)
-    #define GLEW_STATIC
     #define GL_GLEXT_PROTOTYPES
-    #include "glew.h"
+    #include <glad/glad.h>
     #pragma warning(push)
     #pragma warning(disable : 4800)
 #endif

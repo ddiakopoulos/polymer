@@ -7,6 +7,9 @@ using namespace polymer;
 //   OpenVR Tracked Camera   //
 ///////////////////////////////
 
+#undef near
+#undef far
+
 bool OpenVR_TrackedCamera::initialize(vr::IVRSystem * vr_system)
 {
     hmd = vr_system;

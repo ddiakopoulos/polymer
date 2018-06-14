@@ -7,6 +7,9 @@
     <Filter Include="include">
       <UniqueIdentifier>{5bcb7d5b-3542-440e-8600-6323cd69173a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="glad">
+      <UniqueIdentifier>{42fddf70-4468-4f84-98f4-37b24c47e3db}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\context.c">
@@ -53,6 +56,9 @@
     </ClCompile>
     <ClCompile Include="src\osmesa_context.c">
       <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\glad\src\glad.c">
+      <Filter>glad</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
