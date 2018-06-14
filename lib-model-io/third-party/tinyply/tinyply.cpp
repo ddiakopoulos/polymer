@@ -3,7 +3,7 @@
 // distribute, and modify this file as you see fit.
 // Authored in 2015 by Dimitri Diakopoulos (http://www.dimitridiakopoulos.com)
 // https://github.com/ddiakopoulos/tinyply
-// Version 2.0
+// Version 2.1
 
 #include "tinyply.h"
 #include <algorithm>
@@ -43,6 +43,21 @@ inline double endian_swap_double(const uint64_t & v) { union { double d; uint64_
 // Internal Implementation //
 /////////////////////////////
 
+inline uint32_t hash_fnv1a(const std::string & str)
+{
+    static const uint32_t fnv1aBase32 = 0x811C9DC5u;
+    static const uint32_t fnv1aPrime32 = 0x01000193u;
+
+    uint32_t result = fnv1aBase32;
+
+    for (auto & c : str)
+    {
+        result ^= static_cast<uint32_t>(c);
+        result *= fnv1aPrime32;
+    }
+    return result;
+}
+
 inline Type property_type_from_string(const std::string & t)
 {
     if (t == "int8" || t == "char")             return Type::INT8;
@@ -70,15 +85,16 @@ struct PlyFile::PlyFileImpl
         std::shared_ptr<PlyCursor> cursor;
     };
 
-    std::map<std::string, ParsingHelper> userData;
+    std::unordered_map<uint32_t, ParsingHelper> userData;
 
     bool isBinary = false;
     bool isBigEndian = false;
     std::vector<PlyElement> elements;
     std::vector<std::string> comments;
     std::vector<std::string> objInfo;
+    uint8_t scratch[128];
 
-    void read(std::istream & is);
+    void read(std::istream & is, uint32_t fixed_list_size);
     void write(std::ostream & os, bool isBinary);
 
     std::shared_ptr<PlyData> request_properties_from_element(const std::string & elementKey, const std::initializer_list<std::string> propertyKeys);
@@ -135,11 +151,6 @@ PlyElement::PlyElement(std::istream & is)
 // Utils //
 ///////////
 
-std::string make_key(const std::string & a, const std::string & b)
-{
-    return (a + "-" + b);
-}
-
 template<typename T> void ply_cast(void * dest, const char * src, bool be)
 {
     *(static_cast<T *>(dest)) = (be) ? endian_swap(*(reinterpret_cast<const T *>(src))) : *(reinterpret_cast<const T *>(src));
@@ -167,13 +178,13 @@ template<typename T> void ply_cast_ascii(void * dest, std::istream & is)
     *(static_cast<T *>(dest)) = ply_read_ascii<T>(is);
 }
 
-size_t find_element(const std::string & key, const std::vector<PlyElement> & list)
+int64_t find_element(const std::string & key, const std::vector<PlyElement> & list)
 {
     for (size_t i = 0; i < list.size(); i++) if (list[i].name == key) return i;
     return -1;
 }
 
-size_t find_property(const std::string & key, const std::vector<PlyProperty> & list)
+int64_t find_property(const std::string & key, const std::vector<PlyProperty> & list)
 {
     for (size_t i = 0; i < list.size(); ++i) if (list[i].name == key) return i;
     return -1;
@@ -198,7 +209,7 @@ bool PlyFile::PlyFileImpl::parse_header(std::istream & is)
         else if (token == "property")   read_header_property(ls);
         else if (token == "obj_info")   read_header_text(line, ls, objInfo, 9);
         else if (token == "end_header") break;
-        else return false;
+        else return false; // unexpected header field
     }
     return true;
 }
@@ -223,29 +234,33 @@ void PlyFile::PlyFileImpl::read_header_element(std::istream & is)
 
 void PlyFile::PlyFileImpl::read_header_property(std::istream & is)
 {
+    if (!elements.size()) throw std::runtime_error("no elements defined; file is malformed");
     elements.back().properties.emplace_back(is);
 }
 
 size_t PlyFile::PlyFileImpl::skip_property_binary(const PlyProperty & p, std::istream & is)
 {
-    static std::vector<char> skip(PropertyTable[p.propertyType].stride);
+    const int32_t stride = PropertyTable[p.propertyType].stride;
+
     if (p.isList)
     {
         size_t listSize = 0;
         size_t dummyCount = 0;
         read_property_binary(p.listType, &listSize, dummyCount, is);
-        for (size_t i = 0; i < listSize; ++i) is.read(skip.data(), PropertyTable[p.propertyType].stride);
-        return listSize * PropertyTable[p.propertyType].stride; // in bytes
+        for (size_t i = 0; i < listSize; ++i) is.read((char*) scratch, stride);
+        return listSize * stride; // in bytes
     }
     else
     {
-        is.read(skip.data(), PropertyTable[p.propertyType].stride);
-        return PropertyTable[p.propertyType].stride;
+        is.read((char*)scratch, PropertyTable[p.propertyType].stride);
+        return stride;
     }
 }
 
 size_t PlyFile::PlyFileImpl::skip_property_ascii(const PlyProperty & p, std::istream & is)
 {
+    const int32_t stride = PropertyTable[p.propertyType].stride;
+
     std::string skip;
     if (p.isList)
     {
@@ -253,41 +268,41 @@ size_t PlyFile::PlyFileImpl::skip_property_ascii(const PlyProperty & p, std::ist
         size_t dummyCount = 0;
         read_property_ascii(p.listType, &listSize, dummyCount, is);
         for (size_t i = 0; i < listSize; ++i) is >> skip;
-        return listSize * PropertyTable[p.propertyType].stride; // in bytes
+        return listSize * stride; // in bytes
     }
     else
     {
         is >> skip;
-        return PropertyTable[p.propertyType].stride;
+        return stride;
     }
 }
 
 size_t PlyFile::PlyFileImpl::read_property_binary(const Type t, void * dest, size_t & destOffset, std::istream & is)
 {
-    destOffset += PropertyTable[t].stride;
-
-    std::vector<char> src(PropertyTable[t].stride);
-    is.read(src.data(), PropertyTable[t].stride);
+    const int32_t stride = PropertyTable[t].stride;
+    destOffset += stride;
+    is.read((char*) scratch, stride);
 
     switch (t)
     {
-        case Type::INT8:       ply_cast<int8_t>(dest, src.data(), isBigEndian);        break;
-        case Type::UINT8:      ply_cast<uint8_t>(dest, src.data(), isBigEndian);       break;
-        case Type::INT16:      ply_cast<int16_t>(dest, src.data(), isBigEndian);       break;
-        case Type::UINT16:     ply_cast<uint16_t>(dest, src.data(), isBigEndian);      break;
-        case Type::INT32:      ply_cast<int32_t>(dest, src.data(), isBigEndian);       break;
-        case Type::UINT32:     ply_cast<uint32_t>(dest, src.data(), isBigEndian);      break;
-        case Type::FLOAT32:    ply_cast_float<float>(dest, src.data(), isBigEndian);   break;
-        case Type::FLOAT64:    ply_cast_double<double>(dest, src.data(), isBigEndian); break;
+        case Type::INT8:       ply_cast<int8_t>(dest, (char*)scratch, isBigEndian);        break;
+        case Type::UINT8:      ply_cast<uint8_t>(dest, (char*)scratch, isBigEndian);       break;
+        case Type::INT16:      ply_cast<int16_t>(dest, (char*)scratch, isBigEndian);       break;
+        case Type::UINT16:     ply_cast<uint16_t>(dest, (char*)scratch, isBigEndian);      break;
+        case Type::INT32:      ply_cast<int32_t>(dest, (char*)scratch, isBigEndian);       break;
+        case Type::UINT32:     ply_cast<uint32_t>(dest, (char*)scratch, isBigEndian);      break;
+        case Type::FLOAT32:    ply_cast_float<float>(dest, (char*)scratch, isBigEndian);   break;
+        case Type::FLOAT64:    ply_cast_double<double>(dest, (char*)scratch, isBigEndian); break;
         case Type::INVALID:    throw std::invalid_argument("invalid ply property");
     }
 
-    return PropertyTable[t].stride;
+    return stride;
 }
 
 size_t PlyFile::PlyFileImpl::read_property_ascii(const Type t, void * dest, size_t & destOffset, std::istream & is)
 {
-    destOffset += PropertyTable[t].stride;
+    const int32_t stride = PropertyTable[t].stride;
+    destOffset += stride;
 
     switch (t)
     {
@@ -301,7 +316,7 @@ size_t PlyFile::PlyFileImpl::read_property_ascii(const Type t, void * dest, size
         case Type::FLOAT64:    ply_cast_ascii<double>(dest, is);                       break;
         case Type::INVALID:    throw std::invalid_argument("invalid ply property");
     }
-    return PropertyTable[t].stride;
+    return stride;
 }
 
 void PlyFile::PlyFileImpl::write_property_ascii(Type t, std::ostream & os, uint8_t * src, size_t & srcOffset)
@@ -328,13 +343,17 @@ void PlyFile::PlyFileImpl::write_property_binary(Type t, std::ostream & os, uint
     srcOffset += PropertyTable[t].stride;
 }
 
-void PlyFile::PlyFileImpl::read(std::istream & is)
+void PlyFile::PlyFileImpl::read(std::istream & is, uint32_t fixed_list_size)
 {
     // Parse but only get the data size
-    parse_data(is, true);
+    if (fixed_list_size == 0) parse_data(is, true);
 
     std::vector<std::shared_ptr<PlyData>> buffers;
     for (auto & entry : userData) buffers.push_back(entry.second.data);
+
+    // Count the number of properties (required for allocation)
+    std::unordered_map<PlyData*, int32_t> uniqueCount;
+    for (auto & ptr : buffers) uniqueCount[ptr.get()] += 1;
 
     // Since group-requested properties share the same cursor, we need to find unique cursors so we only allocate once
     std::sort(buffers.begin(), buffers.end());
@@ -347,7 +366,21 @@ void PlyFile::PlyFileImpl::read(std::istream & is)
         {
             if (entry.second.data == b && b->buffer.get() == nullptr)
             {
-                b->buffer = Buffer(entry.second.cursor->totalSizeBytes);
+                // A fixed_list_size of 0 means we have executed two passes over the file
+                // to compute the total length of all (potentially) variable-length lists
+                if (fixed_list_size == 0)
+                {
+                    b->buffer = Buffer(entry.second.cursor->totalSizeBytes);
+                }
+                else
+                {
+                    // otherwise, we can allocate up front and skip the first pass for extra speed.
+                    auto bytes = entry.second.data->count * PropertyTable[entry.second.data->t].stride * (entry.second.data->isList ? fixed_list_size : 1);
+                    bytes *= uniqueCount[b.get()];
+
+                    b->buffer = Buffer(bytes);
+                }
+
             }
         }
     }
@@ -367,18 +400,19 @@ void PlyFile::PlyFileImpl::write_binary_internal(std::ostream & os)
     isBinary = true;
     write_header(os);
 
+    uint8_t listSize[4] = { 0, 0, 0, 0 };
+    size_t dummyCount = 0;
+
     for (auto & e : elements)
     {
         for (size_t i = 0; i < e.size; ++i)
         {
             for (auto & p : e.properties)
             {
-                auto & helper = userData[make_key(e.name, p.name)];
+                auto & helper = userData[hash_fnv1a(e.name + p.name)];
                 if (p.isList)
                 {
-                    uint8_t listSize[4] = {0, 0, 0, 0};
                     std::memcpy(listSize, &p.listCount, sizeof(uint32_t));
-                    size_t dummyCount = 0;
                     write_property_binary(p.listType, os, listSize, dummyCount);
                     for (int j = 0; j < p.listCount; ++j)
                     {
@@ -404,7 +438,7 @@ void PlyFile::PlyFileImpl::write_ascii_internal(std::ostream & os)
         {
             for (auto & p : e.properties)
             {
-                auto & helper = userData[make_key(e.name, p.name)];
+                auto & helper = userData[hash_fnv1a(e.name + p.name)];
                 if (p.isList)
                 {
                     os << p.listCount << " ";
@@ -453,13 +487,13 @@ void PlyFile::PlyFileImpl::write_header(std::ostream & os)
     os << "end_header\n";
 }
 
-// Returns the size (in bytes)
 std::shared_ptr<PlyData> PlyFile::PlyFileImpl::request_properties_from_element(const std::string & elementKey, const std::initializer_list<std::string> propertyKeys)
 {
     // All requested properties in the userDataTable share the same cursor (thrown into the same flat array)
     ParsingHelper helper;
     helper.data = std::make_shared<PlyData>();
     helper.data->count = 0;
+    helper.data->isList = false;
     helper.data->t = Type::INVALID;
     helper.cursor = std::make_shared<PlyCursor>();
     helper.cursor->byteOffset = 0;
@@ -469,7 +503,7 @@ std::shared_ptr<PlyData> PlyFile::PlyFileImpl::request_properties_from_element(c
     if (!propertyKeys.size()) throw std::invalid_argument("`propertyKeys` argument is empty");
     if (elementKey.size() == 0) throw std::invalid_argument("`elementKey` argument is empty");
 
-    const int elementIndex = find_element(elementKey, elements);
+    const int64_t elementIndex = find_element(elementKey, elements);
 
     // Sanity check if the user requested element is in the pre-parsed header
     if (elementIndex >= 0)
@@ -482,17 +516,18 @@ std::shared_ptr<PlyData> PlyFile::PlyFileImpl::request_properties_from_element(c
         // Find each of the keys
         for (auto key : propertyKeys)
         {
-            const int propertyIndex = find_property(key, element.properties);
-
+            const int64_t propertyIndex = find_property(key, element.properties);
             if (propertyIndex >= 0)
             {
                 // We found the property
                 const PlyProperty & property = element.properties[propertyIndex];
-
-                helper.data->t = property.propertyType; // hmm....
-
-                auto result = userData.insert(std::pair<std::string, ParsingHelper>(make_key(element.name, property.name), helper));
-                if (result.second == false) throw std::invalid_argument("element-property key has already been requested: " + make_key(element.name, property.name));
+                helper.data->t = property.propertyType; 
+                helper.data->isList = property.isList;
+                auto result = userData.insert(std::pair<uint32_t, ParsingHelper>(hash_fnv1a(element.name + property.name), helper));
+                if (result.second == false)
+                {
+                    throw std::invalid_argument("element-property key has already been requested: " + hash_fnv1a(element.name + property.name));
+                }
             }
             else throw std::invalid_argument("one of the property keys was not found in the header: " + key);
         }
@@ -518,12 +553,12 @@ void PlyFile::PlyFileImpl::add_properties_to_element(const std::string & element
         for (auto key : propertyKeys)
         {
             PlyProperty newProp = (listType == Type::INVALID) ? PlyProperty(type, key) : PlyProperty(listType, type, key, listCount);
-            /* auto result = */userData.insert(std::pair<std::string, ParsingHelper>(make_key(elementKey, key), helper));
+            userData.insert(std::pair<uint32_t, ParsingHelper>(hash_fnv1a(elementKey + key), helper));
             e.properties.push_back(newProp);
         }
     };
 
-    int idx = find_element(elementKey, elements);
+    int64_t idx = find_element(elementKey, elements);
     if (idx >= 0)
     {
         PlyElement & e = elements[idx];
@@ -531,7 +566,7 @@ void PlyFile::PlyFileImpl::add_properties_to_element(const std::string & element
     }
     else
     {
-        PlyElement newElement = (listType == Type::INVALID) ? PlyElement(elementKey, count / propertyKeys.size()) : PlyElement(elementKey, count / listCount);
+        PlyElement newElement = (listType == Type::INVALID) ? PlyElement(elementKey, count) : PlyElement(elementKey, count);
         create_property_on_element(newElement);
         elements.push_back(newElement);
     }
@@ -546,13 +581,13 @@ void PlyFile::PlyFileImpl::parse_data(std::istream & is, bool firstPass)
 
     if (isBinary)
     {
-        read = [&](const Type t, void * dest, size_t & destOffset, std::istream & _is) { return read_property_binary(t, dest, destOffset, _is); };
-        skip = [&](const PlyProperty & p, std::istream & _is) { return skip_property_binary(p, _is); };
+        read = [this](const Type t, void * dest, size_t & destOffset, std::istream & _is) { return read_property_binary(t, dest, destOffset, _is); };
+        skip = [this](const PlyProperty & p, std::istream & _is) { return skip_property_binary(p, _is); };
     }
     else
     {
-        read = [&](const Type t, void * dest, size_t & destOffset, std::istream & _is) { return read_property_ascii(t, dest, destOffset, _is); };
-        skip = [&](const PlyProperty & p, std::istream & _is) { return skip_property_ascii(p, _is); };
+        read = [this](const Type t, void * dest, size_t & destOffset, std::istream & _is) { return read_property_ascii(t, dest, destOffset, _is); };
+        skip = [this](const PlyProperty & p, std::istream & _is) { return skip_property_ascii(p, _is); };
     }
 
     for (auto & element : elements)
@@ -561,7 +596,7 @@ void PlyFile::PlyFileImpl::parse_data(std::istream & is, bool firstPass)
         {
             for (auto & property : element.properties)
             {
-                auto cursorIt = userData.find(make_key(element.name, property.name));
+                auto cursorIt = userData.find(hash_fnv1a(element.name + property.name));
                 if (cursorIt != userData.end())
                 {
                     auto & helper = cursorIt->second;
@@ -600,13 +635,13 @@ void PlyFile::PlyFileImpl::parse_data(std::istream & is, bool firstPass)
 }
 
 ///////////////////////////////////
-// Pass-Through Public Interface //
+// Passthrough Public Interface //
 ///////////////////////////////////
 
 PlyFile::PlyFile() { impl.reset(new PlyFileImpl()); };
 PlyFile::~PlyFile() { };
 bool PlyFile::parse_header(std::istream & is) { return impl->parse_header(is); }
-void PlyFile::read(std::istream & is) { return impl->read(is); }
+void PlyFile::read(std::istream & is, uint32_t fixed_list_size) { return impl->read(is, fixed_list_size); }
 void PlyFile::write(std::ostream & os, bool isBinary) { return impl->write(os, isBinary); }
 std::vector<PlyElement> PlyFile::get_elements() const { return impl->elements; }
 std::vector<std::string> & PlyFile::get_comments() { return impl->comments; }
