@@ -63,8 +63,6 @@ gl_context::gl_context()
         { "GL_EXT_direct_state_access", false },
         { "GL_KHR_debug", false },
         { "GL_EXT_blend_equation_separate", false },
-        { "GL_EXT_framebuffer_sRGB", false },
-        { "GL_EXT_pixel_buffer_object", false },
     };
     has_gl_extension(extensions);
 
