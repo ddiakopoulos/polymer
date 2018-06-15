@@ -12,16 +12,6 @@
 
 namespace polymer
 {
-    // interface: pre-render, post-render, handle input
-    // input manager
-    // render_component rather than assemble_renderable
-    // renderable submission groups
-    // renderable sort order
-
-    struct vr_pointer
-    {
-
-    };
 
     class vr_imgui_surface : public gui::imgui_surface
     {
