@@ -48,7 +48,7 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
 
         teleporter.reset(new vr_teleport_system(orchestrator.get(), &scene, hmd.get()));
 
-        vr_imgui.reset(new imgui_vr(orchestrator.get(), &scene, { 256, 256 }, window));
+        vr_imgui.reset(new vr_imgui_surface(orchestrator.get(), &scene, { 256, 256 }, window));
         gui::make_light_theme();
 
         // Only need to set the skybox on the |render_payload| once (unless we clear the payload)

@@ -16,7 +16,7 @@ struct sample_vr_app : public polymer_app
 {
     std::unique_ptr<openvr_hmd> hmd;
     std::unique_ptr<gui::imgui_instance> desktop_imgui;
-    std::unique_ptr<imgui_vr> vr_imgui;
+    std::unique_ptr<vr_imgui_surface> vr_imgui;
 
     std::vector<viewport_t> viewports;
     std::vector<simple_texture_view> eye_views;
