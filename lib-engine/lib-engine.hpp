@@ -17,6 +17,7 @@
 
 #include "openvr-hmd.hpp"
 #include "openvr-camera.hpp"
+#include "vr-interaction.hpp"
 
 #include "ecs/core-ecs.hpp"
 #include "ecs/core-events.hpp"

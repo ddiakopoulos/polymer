@@ -44,6 +44,7 @@
     <ClCompile Include="..\third_party\imgui\imgui_draw.cpp">
       <Filter>third-party\imgui</Filter>
     </ClCompile>
+    <ClCompile Include="vr-interaction.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="gfx\gl\gl-api.hpp">
@@ -179,6 +180,7 @@
     <ClInclude Include="..\third_party\imgui\imgui_internal.h">
       <Filter>third-party\imgui</Filter>
     </ClInclude>
+    <ClInclude Include="vr-interaction.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="gfx">

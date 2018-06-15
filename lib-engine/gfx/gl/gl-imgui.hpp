@@ -10,6 +10,7 @@
 #include "IconsFontAwesome4.h"
 #include "math-common.hpp"
 #include "util.hpp"
+#include "gl-api.hpp"
 
 #if defined(POLYMER_PLATFORM_WINDOWS)
 #pragma warning(push)
@@ -75,6 +76,23 @@ namespace gui
         void append_icon_font(const std::vector<uint8_t> & font);
         void update_input(const polymer::app_input_event & e);
         void begin_frame(const uint32_t width = 0, const uint32_t height = 0);
+        void end_frame();
+    };
+
+    class imgui_surface
+    {
+    private:
+        gl_framebuffer renderFramebuffer;
+        gl_texture_2d renderTexture;
+        uint2 framebufferSize;
+    protected:
+        std::unique_ptr<gui::imgui_instance> imgui;
+    public:
+        imgui_surface(const uint2 size, GLFWwindow * window);
+        uint2 get_size() const;
+        gui::imgui_instance * get_instance();
+        uint32_t get_render_texture() const;
+        void begin_frame();
         void end_frame();
     };
 

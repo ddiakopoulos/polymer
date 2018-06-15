@@ -413,6 +413,58 @@ namespace gui
         glViewport(last_viewport[0], last_viewport[1], (GLsizei)last_viewport[2], (GLsizei)last_viewport[3]);
     }
 
+
+    ///////////////////////
+    //   imgui_surface   //
+    ///////////////////////
+
+    imgui_surface::imgui_surface(const uint2 size, GLFWwindow * window) : framebufferSize(size)
+    {
+        imgui.reset(new gui::imgui_instance(window));
+        renderTexture.setup(size.x, size.y, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+        glNamedFramebufferTexture2DEXT(renderFramebuffer, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, renderTexture, 0);
+        renderFramebuffer.check_complete();
+    }
+
+    uint2 imgui_surface::get_size() const 
+    { 
+        return framebufferSize;
+    }
+
+    gui::imgui_instance * imgui_surface::get_instance() 
+    {
+        return imgui.get(); 
+    }
+
+    uint32_t imgui_surface::get_render_texture() const 
+    {
+        return renderTexture; 
+    }
+
+    void imgui_surface::begin_frame()
+    {
+        imgui->begin_frame(framebufferSize.x, framebufferSize.y);
+    }
+
+    void imgui_surface::end_frame()
+    {
+        // Save framebuffer state
+        GLint last_viewport[4]; glGetIntegerv(GL_VIEWPORT, last_viewport);
+        GLint drawFramebuffer = 0, readFramebuffer = 0;
+        glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &drawFramebuffer);
+        glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &readFramebuffer);
+        glBindFramebuffer(GL_FRAMEBUFFER, renderFramebuffer);
+        glViewport(0, 0, (GLsizei)framebufferSize.x, (GLsizei)framebufferSize.y);
+
+        glClear(GL_COLOR_BUFFER_BIT);
+        imgui->end_frame();
+
+        // Restore framebuffer state
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, drawFramebuffer);
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, readFramebuffer);
+        glViewport(last_viewport[0], last_viewport[1], (GLsizei)last_viewport[2], (GLsizei)last_viewport[3]);
+    }
+
     //////////////////////////////
     //   Helper Functionality   //
     //////////////////////////////
