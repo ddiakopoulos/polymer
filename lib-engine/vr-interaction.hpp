@@ -9,6 +9,7 @@
 #include "material.hpp"
 #include "openvr-hmd.hpp"
 #include "tiny-gizmo.hpp"
+#include "renderer-pbr.hpp"
 
 namespace polymer
 {

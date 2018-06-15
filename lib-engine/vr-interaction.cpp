@@ -234,7 +234,7 @@ void vr_gizmo::handle_input(const app_input_event & e)
 
 }
 
-void vr_gizmo::update(view_data view)
+void vr_gizmo::update(const view_data view)
 {
 
 }
