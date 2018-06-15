@@ -4,11 +4,12 @@
 #include "system-render.hpp"
 #include "system-collision.hpp"
 
-/////////////////////////////////
-//   imgui_vr implementation   //
-/////////////////////////////////
+/////////////////////////////////////////
+//   vr_imgui_surface implementation   //
+/////////////////////////////////////////
 
-imgui_vr::imgui_vr(entity_orchestrator * orch, environment * env, const uint2 size, GLFWwindow * window) : imgui_surface(size, window)
+vr_imgui_surface::vr_imgui_surface(entity_orchestrator * orch, environment * env, const uint2 size, GLFWwindow * window) 
+    : imgui_surface(size, window)
 {
     // Setup the billboard entity
     {
@@ -55,7 +56,7 @@ imgui_vr::imgui_vr(entity_orchestrator * orch, environment * env, const uint2 si
     }
 }
 
-void imgui_vr::update(environment * env, const transform & pointer_transform, const transform & billboard_origin, bool trigger_state)
+void vr_imgui_surface::update(environment * env, const transform & pointer_transform, const transform & billboard_origin, bool trigger_state)
 {
     // Update billboard position
     if (auto * tc = env->xform_system->get_local_transform(pointer))
@@ -103,7 +104,7 @@ void imgui_vr::update(environment * env, const transform & pointer_transform, co
     }
 }
 
-void imgui_vr::update_renderloop()
+void vr_imgui_surface::update_renderloop()
 {
     imgui_material->use();
     auto & imgui_shader = imgui_material->compiled_shader->shader;
@@ -111,12 +112,12 @@ void imgui_vr::update_renderloop()
     imgui_shader.unbind();
 }
 
-entity imgui_vr::get_pointer() const
+entity vr_imgui_surface::get_pointer() const
 {
     return should_draw_pointer ? pointer : kInvalidEntity;
 }
 
-entity imgui_vr::get_billboard() const
+entity vr_imgui_surface::get_billboard() const
 {
     return imgui_billboard;
 }
@@ -125,7 +126,7 @@ entity imgui_vr::get_billboard() const
 //   vr_teleport_system implementation   //
 ///////////////////////////////////////////
 
-vr_teleport_system::vr_teleport_system(entity_orchestrator * orch, environment * env, openvr_hmd * hmd) : base_system(orch), hmd(hmd)
+vr_teleport_system::vr_teleport_system(entity_orchestrator * orch, environment * env, openvr_hmd * hmd)  : hmd(hmd)
 {
     nav_geometry = make_plane(48, 48, 2, 2);
 
@@ -139,7 +140,7 @@ vr_teleport_system::vr_teleport_system(entity_orchestrator * orch, environment *
     pointer.navMeshBounds = compute_bounds(nav_geometry);
 
     // Create and track pointer entity (along with name + transform)
-    teleportation_arc = env->track_entity(orchestrator->create_entity());
+    teleportation_arc = env->track_entity(orch->create_entity());
     env->identifier_system->create(teleportation_arc, "teleportation-arc");
     env->xform_system->create(teleportation_arc, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
 
@@ -153,16 +154,6 @@ vr_teleport_system::vr_teleport_system(entity_orchestrator * orch, environment *
     pointer_mesh.mesh = gpu_mesh_handle("teleportation-arc");
     cached_mesh = env->render_system->create(teleportation_arc, std::move(pointer_mesh));
     assert(cached_mesh != nullptr);
-}
-
-bool vr_teleport_system::create(entity e, poly_typeid hash, void * data) 
-{ 
-    return false; 
-}
-
-void vr_teleport_system::destroy(entity e) 
-{
-    // ...
 }
 
 void vr_teleport_system::update(const uint64_t current_frame)
@@ -212,4 +203,53 @@ void vr_teleport_system::update(const uint64_t current_frame)
 entity vr_teleport_system::get_teleportation_arc()
 {
     return should_draw ? teleportation_arc : kInvalidEntity;
+}
+
+/////////////////////////////////
+//   vr_gizmo implementation   //
+/////////////////////////////////
+
+vr_gizmo::vr_gizmo(entity_orchestrator * orch, environment * env, material_library * library)
+{
+    gizmo_ctx.render = [&](const tinygizmo::geometry_mesh & r)
+    {
+        if (auto * mc = env->render_system->get_mesh_component(gizmo_entity))
+        {
+            auto & gizmo_gpu_mesh = mc->mesh.get();
+
+            // Upload new gizmo mesh data to the gpu
+            const std::vector<linalg::aliases::float3> & verts = reinterpret_cast<const std::vector<linalg::aliases::float3> &>(r.vertices);
+            const std::vector<linalg::aliases::uint3> & tris = reinterpret_cast<const std::vector<linalg::aliases::uint3> &>(r.triangles);
+            gizmo_gpu_mesh.set_vertices(verts, GL_DYNAMIC_DRAW);
+            gizmo_gpu_mesh.set_attribute(0, 3, GL_FLOAT, GL_FALSE, sizeof(tinygizmo::geometry_vertex), (GLvoid*)offsetof(tinygizmo::geometry_vertex, position));
+            gizmo_gpu_mesh.set_attribute(1, 3, GL_FLOAT, GL_FALSE, sizeof(tinygizmo::geometry_vertex), (GLvoid*)offsetof(tinygizmo::geometry_vertex, normal));
+            gizmo_gpu_mesh.set_attribute(2, 3, GL_FLOAT, GL_FALSE, sizeof(tinygizmo::geometry_vertex), (GLvoid*)offsetof(tinygizmo::geometry_vertex, color));
+            gizmo_gpu_mesh.set_elements(tris, GL_DYNAMIC_DRAW);
+        }
+    };
+}
+
+void vr_gizmo::handle_input(const app_input_event & e)
+{
+
+}
+
+void vr_gizmo::update(view_data view)
+{
+
+}
+
+void vr_gizmo::render()
+{
+
+}
+
+entity vr_gizmo::get_pointer() const
+{ 
+    return should_draw_pointer ? pointer : kInvalidEntity; 
+}
+
+entity vr_gizmo::get_gizmo() const
+{ 
+    return gizmo_entity; 
 }
