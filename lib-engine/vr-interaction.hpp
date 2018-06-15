@@ -18,9 +18,11 @@ namespace polymer
     // renderable submission groups
     // renderable sort order
 
-    struct vr_pointer
+    struct vr_controller_system
     {
-
+        // visual appearance of openvr controller
+        // render as: arc, line
+        // shaders + materials
     };
 
     class vr_imgui_surface : public gui::imgui_surface
