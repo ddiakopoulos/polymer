@@ -14,16 +14,56 @@
 namespace polymer
 {
     // interface: pre-render, post-render, handle input
-    // input manager
     // render_component rather than assemble_renderable
     // renderable submission groups
     // renderable sort order
+    
+    enum class input_source_t : uint32_t
+    {
+        left_controller,
+        right_controller,
+        left_hand,
+        right_hand,
+        tracker
+    };
+
+    class vr_input_processor
+    {
+        environment * env{ nullptr };
+        openvr_hmd * hmd{ nullptr };
+
+    public:
+
+        vr_input_processor(entity_orchestrator * orch, environment * env, openvr_hmd * hmd)
+            : env(env), hmd(hmd)
+        {
+
+        }
+
+    };
+
+    // visual appearance of openvr controller
+    // render as: arc, line
+    // shaders + materials
+
+    enum class controller_render_style_t : uint32_t
+    {
+        laser,
+        arc
+    };
 
     struct vr_controller_system
     {
-        // visual appearance of openvr controller
-        // render as: arc, line
-        // shaders + materials
+        environment * env{ nullptr };
+        openvr_hmd * hmd{ nullptr };
+
+    public:
+
+        vr_controller_system(entity_orchestrator * orch, environment * env, openvr_hmd * hmd)
+            : env(env), hmd(hmd)
+        {
+
+        }
     };
 
     class vr_imgui_surface : public gui::imgui_surface
