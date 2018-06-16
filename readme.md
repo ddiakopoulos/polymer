@@ -4,7 +4,7 @@
 
 Platform | Build Status |
 -------- | ------------ |
-MSVC 2017 x64 | [![Build status]()](https://ci.appveyor.com/project/ddiakopoulos/polymer)
+MSVC 2017 x64 | [![Build status](https://ci.appveyor.com/api/projects/status/3hjvf03s8bwjciva?svg=true)](https://ci.appveyor.com/project/ddiakopoulos/polymer)
 
 <p align="center">
   <img src="https://s3-us-west-1.amazonaws.com/polymer-engine/polymer-github-hero.png"/>
