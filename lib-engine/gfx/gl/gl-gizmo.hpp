@@ -4,7 +4,7 @@
 #include "util.hpp"
 #include "gl-api.hpp"
 #include "gl-camera.hpp"
-#include "tiny-gizmo.hpp"
+#include "tinygizmo/tiny-gizmo.hpp"
 
 static inline polymer::transform to_linalg(tinygizmo::rigid_transform & t)
 {
@@ -50,6 +50,7 @@ namespace polymer
         gl_mesh mesh;
 
         float4x4 viewProjectionMatrix;
+        float2 lastCursorPosition;
 
         gl_gizmo()
         {
@@ -85,12 +86,13 @@ namespace polymer
                 else if (e.value[0] == GLFW_KEY_R) gizmo_state.hotkey_scale = e.is_down();
             }
             if (e.type == app_input_event::MOUSE && e.value[0] == GLFW_MOUSE_BUTTON_LEFT) gizmo_state.mouse_left = e.is_down();
-            gizmo_state.cursor = minalg::float2(e.cursor.x, e.cursor.y);
+            lastCursorPosition = e.cursor;
         }
 
         void reset_input()
         {
-            gizmo_state.cursor = { 0, 0 };
+            gizmo_state.ray_origin = { 0, 0, 0 };
+            gizmo_state.ray_direction = { 0, 0, 0 };
             gizmo_state.mouse_left = false;
             gizmo_state.hotkey_ctrl = false;
             gizmo_state.hotkey_local = false;;
@@ -102,6 +104,7 @@ namespace polymer
         void update(const perspective_camera & cam, const polymer::float2 windowSize)
         {
             const transform p = cam.pose;
+            const auto r = cam.get_world_ray(lastCursorPosition, windowSize);
             viewProjectionMatrix = mul(cam.get_projection_matrix(windowSize.x / windowSize.y), cam.get_view_matrix());
             gizmo_state.viewport_size = minalg::float2(windowSize.x, windowSize.y);
             gizmo_state.cam.near_clip = cam.nearclip;
@@ -109,6 +112,8 @@ namespace polymer
             gizmo_state.cam.yfov = cam.vfov;
             gizmo_state.cam.position = minalg::float3(p.position.x, p.position.y, p.position.z);
             gizmo_state.cam.orientation = minalg::float4(p.orientation.x, p.orientation.y, p.orientation.z, p.orientation.w);
+            gizmo_state.ray_origin = minalg::float3(r.origin.x, r.origin.y, r.origin.z);
+            gizmo_state.ray_direction = minalg::float3(r.direction.x, r.direction.y, r.direction.z);
             gizmo_ctx.update(gizmo_state);
         }
 

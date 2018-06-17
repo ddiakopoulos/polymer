@@ -4,12 +4,13 @@
 #define polymer_vr_interaction_hpp
 
 #include "gl-imgui.hpp"
+#include "gl-gizmo.hpp"
 #include "environment.hpp"
 #include "ecs/core-events.hpp"
 #include "material.hpp"
 #include "openvr-hmd.hpp"
-#include "tiny-gizmo.hpp"
 #include "renderer-pbr.hpp"
+
 
 namespace polymer
 {
