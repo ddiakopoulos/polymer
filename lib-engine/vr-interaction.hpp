@@ -13,18 +13,35 @@
 
 namespace polymer
 {
-    // interface: pre-render, post-render, handle input
-    // render_component rather than assemble_renderable
-    // renderable submission groups
-    // renderable sort order
-    
-    enum class input_source_t : uint32_t
+    /// interface: pre-render, post-render, handle input
+    /// render_component rather than assemble_renderable
+    /// renderable submission groups
+    /// renderable sort order
+
+    enum class vr_event_t : uint32_t
+    {
+        focus_begin,
+        focus_end,
+        focus_update,
+        press,
+        release,
+        cancel
+    };
+
+    enum class vr_input_source_t : uint32_t
     {
         left_controller,
         right_controller,
         left_hand,
         right_hand,
         tracker
+    };
+
+    struct vr_input_focus
+    {
+        entity target{ kInvalidEntity };
+        ray focused_ray;
+        vr_input_source_t source;
     };
 
     class vr_input_processor
@@ -42,16 +59,16 @@ namespace polymer
 
     };
 
-    // visual appearance of openvr controller
-    // render as: arc, line
-    // shaders + materials
-
     enum class controller_render_style_t : uint32_t
     {
         laser,
         arc
     };
 
+    // visual appearance of openvr controller
+    // render as: arc, line
+    // shaders + materials
+    // lock/unlock focus for teleportation
     struct vr_controller_system
     {
         environment * env{ nullptr };
@@ -66,6 +83,10 @@ namespace polymer
         }
     };
 
+    //////////////////////////
+    //   vr_imgui_surface   //
+    //////////////////////////
+
     class vr_imgui_surface : public gui::imgui_surface
     {
         entity imgui_billboard;
@@ -79,6 +100,10 @@ namespace polymer
         entity get_pointer() const;
         entity get_billboard() const;
     };
+
+    ////////////////////////////
+    //   vr_teleport_system   //
+    ////////////////////////////
 
     // todo - use event
     struct vr_teleport_event { float3 world_position; uint64_t frame_count; };
@@ -98,6 +123,10 @@ namespace polymer
         void update(const uint64_t current_frame);
         entity get_teleportation_arc();
     };
+
+    //////////////////
+    //   vr_gizmo   //
+    //////////////////
 
     class vr_gizmo
     {
