@@ -128,32 +128,7 @@ entity vr_imgui_surface::get_billboard() const
 
 vr_teleport_system::vr_teleport_system(entity_orchestrator * orch, environment * env, openvr_hmd * hmd) : hmd(hmd)
 {
-    nav_geometry = make_plane(48, 48, 2, 2);
 
-    for (auto & v : nav_geometry.vertices)
-    {
-        // Flip nav mesh since it's not automatically the correct orientation to be a floor
-        const float4x4 flip = make_rotation_matrix({ 1, 0, 0 }, (float)-POLYMER_PI / 2.f);
-        v = transform_coord(flip, v);
-    }
-
-    pointer.navMeshBounds = compute_bounds(nav_geometry);
-
-    // Create and track pointer entity (along with name + transform)
-    teleportation_arc = env->track_entity(orch->create_entity());
-    env->identifier_system->create(teleportation_arc, "teleportation-arc");
-    env->xform_system->create(teleportation_arc, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
-
-    // Attach material to arc
-    polymer::material_component pointer_mat(teleportation_arc);
-    pointer_mat.material = material_handle(material_library::kDefaultMaterialId);
-    env->render_system->create(teleportation_arc, std::move(pointer_mat));
-
-    // Attach empty mesh to arc
-    polymer::mesh_component pointer_mesh(teleportation_arc);
-    pointer_mesh.mesh = gpu_mesh_handle("teleportation-arc");
-    cached_mesh = env->render_system->create(teleportation_arc, std::move(pointer_mesh));
-    assert(cached_mesh != nullptr);
 }
 
 void vr_teleport_system::update(const uint64_t current_frame)
@@ -174,7 +149,7 @@ void vr_teleport_system::update(const uint64_t current_frame)
             pointer.forward = -qzdir(t.orientation);
 
             geometry g;
-            if (make_parabolic_pointer(pointer, g, target_location))
+            if (make_pointer_arc(pointer, g, target_location))
             {
                 should_draw = true;
                 auto & m = cached_mesh->mesh.get();
