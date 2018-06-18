@@ -51,7 +51,7 @@ namespace polymer
     };
     POLYMER_SETUP_TYPEID(vr_input_event);
 
-    struct vr_teleport_event { float3 world_position; uint64_t frame_count; };
+    struct vr_teleport_event { float3 world_position; uint64_t timestamp; };
     POLYMER_SETUP_TYPEID(vr_teleport_event);
 
     // triple buffer input_event state
@@ -145,6 +145,8 @@ namespace polymer
 
         void handle_event(const vr_input_event & event)
         {
+            // can this entity be pointed at? 
+
             if (event.type == vr_event_t::focus_begin)
             {
                 set_visual_style(controller_render_style_t::laser);
@@ -154,6 +156,7 @@ namespace polymer
                 auto t = event.controller.t;
                 if (auto * tc = env->xform_system->get_local_transform(pointer))
                 {
+                    // The mesh is in local space so we massage it through a transform 
                     t = t * transform(make_rotation_quat_axis_angle({ 1, 0, 0 }, (float)POLYMER_PI / 2.f)); // coordinate
                     t = t * transform(float4(0, 0, 0, 1), float3(0, -(hit_distance * 0.5f), 0)); // translation
                     env->xform_system->set_local_transform(pointer, t);
@@ -182,16 +185,28 @@ namespace polymer
                 if (touchpad_button_states[i].down)
                 {
                     const transform t = hmd->get_controller(vr::ETrackedControllerRole(i + 1))->t;
-                    auto & m = mesh_component->mesh.get();
                     arc_pointer.position = t.position;
                     arc_pointer.forward = -qzdir(t.orientation);
                     if (make_pointer_arc(arc_pointer, arc_curve))
                     {
                         set_visual_style(controller_render_style_t::arc);
                         should_draw_pointer = true;
-                        const geometry arc_geo = make_parabolic_geometry(arc_curve, arc_pointer.forward, 0.1f, arc_pointer.lineThickness);
-                        m = make_mesh_from_geometry(arc_geo, GL_STREAM_DRAW);
+                        auto & m = mesh_component->mesh.get();
+                        m = make_mesh_from_geometry(make_parabolic_geometry(arc_curve, arc_pointer.forward, 0.1f, arc_pointer.lineThickness), GL_STREAM_DRAW);
+                        if (auto * tc = env->xform_system->get_local_transform(pointer))
+                        {
+                            // the arc mesh is constructed in world space, so we reset its transform
+                            env->xform_system->set_local_transform(pointer, {});
+                        }
                     }
+                }
+                if (touchpad_button_states[i].released)
+                {
+                    should_draw_pointer = false;
+
+                    vr_teleport_event event;
+                    event.world_position = target_pose.position;
+                    event.timestamp = system_time_ns();
                 }
             }
         }
