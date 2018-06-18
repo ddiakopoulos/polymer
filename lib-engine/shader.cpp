@@ -124,10 +124,7 @@ gl_shader preprocess(const std::string & vertexShader,
 ///////////////////////////////////////
 
 gl_shader_asset::gl_shader_asset(const std::string & n, const std::string & v, const std::string & f, const std::string & g, const std::string & inc) 
-    : name(n), vertexPath(v), fragmentPath(f), geomPath(g), includePath(inc) 
-{ 
-
-}
+    : name(n), vertexPath(v), fragmentPath(f), geomPath(g), includePath(inc) {}
 
 uint64_t gl_shader_asset::hash(const std::vector<std::string> defines)
 {

@@ -204,7 +204,7 @@ void openvr_hmd::update()
                     controllers[0].pad.update(!!(controllerState.ulButtonPressed & vr::ButtonMaskFromId(vr::k_EButton_SteamVR_Touchpad)));
                     controllers[0].touchpad.x = controllerState.rAxis[vr::k_eControllerAxis_TrackPad].x;
                     controllers[0].touchpad.y = controllerState.rAxis[vr::k_eControllerAxis_TrackPad].y;
-                    controllers[0].set_pose(make_pose(poses[i].mDeviceToAbsoluteTracking));
+                    controllers[0].set_pose(worldPose * make_pose(poses[i].mDeviceToAbsoluteTracking));
                 }
                 break;
             }
@@ -216,7 +216,7 @@ void openvr_hmd::update()
                     controllers[1].pad.update(!!(controllerState.ulButtonPressed & vr::ButtonMaskFromId(vr::k_EButton_SteamVR_Touchpad)));
                     controllers[1].touchpad.x = controllerState.rAxis[vr::k_eControllerAxis_TrackPad].x;
                     controllers[1].touchpad.y = controllerState.rAxis[vr::k_eControllerAxis_TrackPad].y;
-                    controllers[1].set_pose(make_pose(poses[i].mDeviceToAbsoluteTracking));
+                    controllers[1].set_pose(worldPose * make_pose(poses[i].mDeviceToAbsoluteTracking));
                 }
                 break;
             }

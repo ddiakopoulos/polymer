@@ -15,9 +15,9 @@
 
 namespace polymer
 {
-    ///////////////////////////////////////////
-    //   Polymer Core Event Implementation   //
-    ///////////////////////////////////////////
+    ///////////////////////
+    //   event_wrapper   //
+    ///////////////////////
 
     /// `event_wrapper` is a modified version of the concept found in Google's Lullaby. 
     /// It was changed to only support the notion of a "concrete" event, a compile-time
@@ -82,9 +82,9 @@ namespace polymer
     typedef uint32_t connection_id; // unique id per event
     typedef std::function<void(const event_wrapper & evt)> event_handler;
 
-    ////////////////////////////////////
-    //   Synchronous Event Mananger   //
-    ////////////////////////////////////
+    ////////////////////////////
+    //   event_manager_sync   //
+    ////////////////////////////
 
     // Forward declaration
     class event_handler_map;
@@ -99,7 +99,6 @@ namespace polymer
     /// such as a user interface with a dedicated thread.
     class event_manager_sync
     {
-
     public:
 
         class connection
@@ -204,7 +203,7 @@ namespace polymer
     };
 
     /////////////////////////////
-    //   Async Event Manager   //
+    //   event_manager_async   //
     /////////////////////////////
 
     // This type of event manager queues up events and batches them
@@ -215,19 +214,17 @@ namespace polymer
     class event_manager_async : public event_manager_sync
     {
         mpmc_queue_blocking<std::unique_ptr<event_wrapper>> queue;
-
+        virtual bool send_internal(const event_wrapper & event_w) override final;
         event_manager_async(const event_manager_async &) = delete;
         event_manager_async & operator=(const event_manager_async &) = delete;
-
-        virtual bool send_internal(const event_wrapper & event_w) override final;
-
     public:
 
         event_manager_async() = default;
         ~event_manager_async() = default;
 
-        // Callbacks will happen on the calling thread. It's expected that 
-        // this function is only invoked from a single thread, like an update().
+        // Call this regularly to pump the message queue. 
+        // Event processing will happen on the calling thread. It's required that 
+        // this function is only invoked from a single thread.
         virtual void process() override final;
 
         bool empty() const;

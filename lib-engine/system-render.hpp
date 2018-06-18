@@ -16,9 +16,13 @@
 namespace polymer
 {
     
-    //////////////////////////
-    //   collision system   //
-    //////////////////////////
+    ///////////////////////
+    //   render_system   //
+    ///////////////////////
+
+    /// render_component rather than assemble_renderable
+    /// renderable submission groups
+    /// renderable sort order
 
     class render_system final : public base_system
     {

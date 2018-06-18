@@ -15,9 +15,8 @@
 namespace polymer
 {
     /// interface: pre-render, post-render, handle input
-    /// render_component rather than assemble_renderable
-    /// renderable submission groups
-    /// renderable sort order
+    /// render_source (get list of render components)
+    /// render_source -> update (renderloop)
 
     enum class vr_event_t : uint32_t
     {
@@ -45,6 +44,15 @@ namespace polymer
         vr_input_source_t source;
     };
 
+    struct input_event
+    {
+        vr_event_t type;
+        vr_input_focus focus;
+        uint64_t timestamp;
+    };
+
+    // triple buffer input_event state
+    // lock/unlock focus for teleportation
     class vr_input_processor
     {
         environment * env{ nullptr };
@@ -58,10 +66,22 @@ namespace polymer
 
         }
 
+        void process(const float dt)
+        {
+            for (auto hand : { vr::TrackedControllerRole_LeftHand, vr::TrackedControllerRole_RightHand })
+            {
+                auto controller = hmd->get_controller(hand);
+
+                // collide
+
+                // issue event
+            }
+        }
     };
 
     enum class controller_render_style_t : uint32_t
     {
+        invisible,
         laser,
         arc
     };
@@ -69,7 +89,6 @@ namespace polymer
     // visual appearance of openvr controller
     // render as: arc, line
     // shaders + materials
-    // lock/unlock focus for teleportation
     struct vr_controller_system
     {
         environment * env{ nullptr };
@@ -79,6 +98,16 @@ namespace polymer
 
         vr_controller_system(entity_orchestrator * orch, environment * env, openvr_hmd * hmd)
             : env(env), hmd(hmd)
+        {
+
+        }
+
+        void set_visual_style(const controller_render_style_t style)
+        {
+
+        }
+
+        std::vector<entity> get_renderables() const
         {
 
         }
@@ -137,7 +166,7 @@ namespace polymer
         tinygizmo::gizmo_application_state gizmo_state;
         tinygizmo::gizmo_context gizmo_ctx;
     public:
-        vr_gizmo(entity_orchestrator * orch, environment * env, material_library * library);
+        vr_gizmo(entity_orchestrator * orch, environment * env, openvr_hmd * hmd);
         void handle_input(const app_input_event & e);
         void update(const view_data view);
         void render();

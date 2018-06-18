@@ -109,9 +109,7 @@ public:
 
 struct sample_gl_camera_trajectory final : public polymer_app
 {
-    perspective_camera debug_cam;
-    perspective_camera follow_cam;
-
+    perspective_camera debug_cam, follow_cam;
     fps_camera_controller fly_controller;
 
     gl_renderable_grid grid_ctrl{ 2.f, 8, 8 };
@@ -122,23 +120,20 @@ struct sample_gl_camera_trajectory final : public polymer_app
     tinygizmo::rigid_transform gizmo_ctrl_point[4];
     std::array<transform, 4> control_points;
 
-    gl_mesh axis_mesh;
-    gl_mesh sphere_mesh;
-    gl_shader basic_shader;
-    gl_shader sky_shader;
-
-    uint32_t playback_index = 0;
+    gl_mesh axis_mesh, sphere_mesh;
+    gl_shader basic_shader, sky_shader;
 
     gl_texture_2d renderTextureRGBA;
     gl_texture_2d renderTextureDepth;
     gl_framebuffer renderFramebuffer;
 
+    uint32_t playback_index = 0;
     std::unique_ptr<gl_texture_view_2d> view;
 
     sample_gl_camera_trajectory();
     ~sample_gl_camera_trajectory();
 
-    void render_scene(const GLuint framebuffer, const perspective_camera cam);
+    void render_scene(const GLuint framebuffer, const perspective_camera & cam);
     void on_window_resize(int2 size) override;
     void on_input(const app_input_event & event) override;
     void on_update(const app_update_event & e) override;
@@ -215,13 +210,12 @@ void sample_gl_camera_trajectory::on_update(const app_update_event & e)
     playback_index = playback_index % (frames.get().size() - 1);
 }
 
-void sample_gl_camera_trajectory::render_scene(const GLuint framebuffer, const perspective_camera cam)
+void sample_gl_camera_trajectory::render_scene(const GLuint framebuffer, const perspective_camera & cam)
 {
     int width, height;
     glfwGetWindowSize(window, &width, &height);
 
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-
     glViewport(0, 0, width, height);
     glClearColor(0.15f, 0.15f, 0.15f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -232,19 +226,14 @@ void sample_gl_camera_trajectory::render_scene(const GLuint framebuffer, const p
 
     // Draw the sky
     glDisable(GL_DEPTH_TEST);
-    {
-        // Largest non-clipped sphere
-        const float4x4 world = mul(make_translation_matrix(cam.get_eye_point()), scaling_matrix(float3(cam.farclip * .99f)));
-
-        sky_shader.bind();
-        sky_shader.uniform("u_viewProj", viewProjectionMatrix);
-        sky_shader.uniform("u_modelMatrix", world);
-        sky_shader.uniform("u_bottomColor", float3(52.0f / 255.f, 62.0f / 255.f, 82.0f / 255.f));
-        sky_shader.uniform("u_topColor", float3(81.0f / 255.f, 101.0f / 255.f, 142.0f / 255.f));
-        sphere_mesh.draw_elements();
-        sky_shader.unbind();
-    }
-
+    const float4x4 world = mul(make_translation_matrix(cam.get_eye_point()), scaling_matrix(float3(cam.farclip * .99f)));
+    sky_shader.bind();
+    sky_shader.uniform("u_viewProj", viewProjectionMatrix);
+    sky_shader.uniform("u_modelMatrix", world);
+    sky_shader.uniform("u_bottomColor", float3(52.0f / 255.f, 62.0f / 255.f, 82.0f / 255.f));
+    sky_shader.uniform("u_topColor", float3(81.0f / 255.f, 101.0f / 255.f, 142.0f / 255.f));
+    sphere_mesh.draw_elements();
+    sky_shader.unbind();
     glEnable(GL_DEPTH_TEST);
 
     // Draw the floor
@@ -265,7 +254,7 @@ void sample_gl_camera_trajectory::on_draw()
     // Render into framebuffer
     render_scene(renderFramebuffer, follow_cam);
 
-    // Render onto default framebuffer
+    // Render into default framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, width, height);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -284,30 +273,22 @@ void sample_gl_camera_trajectory::on_draw()
 
     const float4x4 viewProjectionMatrix = mul(debug_cam.get_projection_matrix(float(width) / float(height)), debug_cam.get_view_matrix());
 
+    basic_shader.bind();
+    if (frames.get().size() > 0)
     {
-
-        basic_shader.bind();
-
-        if (frames.get().size() > 0)
+        auto meshes = frames.debug_mesh();
+        for (int i = 0; i < frames.get().size(); ++i)
         {
-            auto meshes = frames.debug_mesh();
-            for (int i = 0; i < frames.get().size(); ++i)
-            {
-                const auto frameMatrix = frames.get_transform(i);
-                basic_shader.uniform("u_mvp", mul(viewProjectionMatrix, make_translation_matrix(frameMatrix[3].xyz())));
-                meshes[i].draw_elements(); // axes drawn directly from matrix
-            }
+            const auto frameMatrix = frames.get_transform(i);
+            basic_shader.uniform("u_mvp", mul(viewProjectionMatrix, make_translation_matrix(frameMatrix[3].xyz())));
+            meshes[i].draw_elements(); // axes drawn directly from matrix
         }
-
-        basic_shader.unbind();
     }
+    basic_shader.unbind();
 
     grid_ctrl.draw(viewProjectionMatrix);
-
     gizmo->draw();
-
-    const aabb_2d view_rect = { {10, 10}, {320, 180} };
-    view->draw(view_rect, { static_cast<float>(width), static_cast<float>(height) }, renderTextureRGBA);
+    view->draw({ { 10, 10 },{ 320, 180 } }, { static_cast<float>(width), static_cast<float>(height) }, renderTextureRGBA);
 
     gl_check_error(__FILE__, __LINE__);
 

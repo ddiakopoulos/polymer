@@ -214,7 +214,7 @@ namespace polymer
         uint32_t pointCount{ 128 }; // pointSpacing * pointCount is maximum travel distance in meters
     };
 
-    inline bool make_parabolic_pointer(const pointer_data & params, geometry & pointer, float3 & worldHit)
+    inline bool make_parabolic_pointer(const pointer_data & params, geometry & out_pointer_geom, float3 & out_world_hit)
     {
         float3 velocity_fwd = params.forward * float3(10.0);
         const float currentAngleDegrees = clamp_initial_velocity(50.f, params.position, velocity_fwd);
@@ -224,8 +224,8 @@ namespace polymer
 
         if (solution)
         {
-            pointer = make_parabolic_geometry(out_points, velocity_fwd, 0.1f, params.lineThickness);
-            worldHit = out_points[out_points.size() - 1];
+            out_pointer_geom = make_parabolic_geometry(out_points, velocity_fwd, 0.1f, params.lineThickness);
+            out_world_hit = out_points[out_points.size() - 1];
             return true;
         }
 

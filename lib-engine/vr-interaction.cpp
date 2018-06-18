@@ -209,7 +209,7 @@ entity vr_teleport_system::get_teleportation_arc()
 //   vr_gizmo implementation   //
 /////////////////////////////////
 
-vr_gizmo::vr_gizmo(entity_orchestrator * orch, environment * env, material_library * library)
+vr_gizmo::vr_gizmo(entity_orchestrator * orch, environment * env, openvr_hmd * hmd)
 {
     gizmo_ctx.render = [&](const tinygizmo::geometry_mesh & r)
     {
