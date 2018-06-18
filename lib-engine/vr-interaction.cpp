@@ -126,7 +126,7 @@ entity vr_imgui_surface::get_billboard() const
 //   vr_teleport_system implementation   //
 ///////////////////////////////////////////
 
-vr_teleport_system::vr_teleport_system(entity_orchestrator * orch, environment * env, openvr_hmd * hmd)  : hmd(hmd)
+vr_teleport_system::vr_teleport_system(entity_orchestrator * orch, environment * env, openvr_hmd * hmd) : hmd(hmd)
 {
     nav_geometry = make_plane(48, 48, 2, 2);
 
@@ -158,14 +158,14 @@ vr_teleport_system::vr_teleport_system(entity_orchestrator * orch, environment *
 
 void vr_teleport_system::update(const uint64_t current_frame)
 {
-    std::vector<openvr_controller::button_state> states = {
+    std::vector<input_button_state> states = {
         hmd->get_controller(vr::TrackedControllerRole_LeftHand)->pad,
         hmd->get_controller(vr::TrackedControllerRole_RightHand)->pad
     };
 
     for (int i = 0; i < states.size(); ++i)
     {
-        const openvr_controller::button_state s = states[i];
+        const input_button_state s = states[i];
 
         if (s.down)
         {

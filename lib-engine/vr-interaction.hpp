@@ -49,6 +49,7 @@ namespace polymer
         vr_event_t type;
         vr_input_focus focus;
         uint64_t timestamp;
+        openvr_controller controller;
     };
 
     // triple buffer input_event state

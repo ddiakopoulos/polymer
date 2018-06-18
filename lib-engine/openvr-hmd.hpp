@@ -26,36 +26,29 @@ struct cached_controller_render_data
     bool loaded = false;
 };
 
-class openvr_controller
+struct input_button_state
 {
-    transform p;
+    bool prev_down{ false };    // do not use directly, for state tracking only
+    bool down{ false };         // query if the button is currently down
+    bool pressed{ false };      // query if the button was pressed for a single frame
+    bool released{ false };     // query if the button was released for a single frame
+};
 
-public:
+inline void update_button_state(input_button_state & state, const bool value)
+{
+    state.prev_down = state.down;
+    state.down = value;
+    state.pressed = !state.prev_down && value;
+    state.released = state.prev_down && !value;
+}
 
-    struct button_state
-    {
-        bool down = false;
-        bool lastDown = false;
-        bool pressed = false;
-        bool released = false;
-
-        void update(bool state)
-        {
-            lastDown = down;
-            down = state;
-            pressed = (!lastDown) && state;
-            released = lastDown && (!state);
-        }
-    };
-
-    button_state pad;
-    button_state trigger;
-
-    float2 touchpad = float2(0.0f, 0.0f);
-
-    void set_pose(const transform & newPose) { p = newPose; }
-    const transform get_pose(const transform & worldPose) const { return worldPose * p; }
-    ray forward_ray() const { return ray(p.position, p.transform_vector(float3(0.0f, 0.0f, -1.0f))); }
+struct openvr_controller
+{
+    transform t;
+    input_button_state touchpad;
+    float2 touchpad_value{ 0.f, 0.f };
+    input_button_state trigger;
+    float trigger_value{ 0.f };
 };
 
 class openvr_hmd 
