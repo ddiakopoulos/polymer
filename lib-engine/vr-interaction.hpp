@@ -177,6 +177,7 @@ namespace polymer
     {
         environment * env{ nullptr };
         openvr_hmd * hmd{ nullptr };
+        vr_input_processor * processor{ nullptr };
         mesh_component * pointer_mesh_component{ nullptr };
         entity pointer, left_controller, right_controller;
         arc_pointer_data arc_pointer;
@@ -189,8 +190,8 @@ namespace polymer
         polymer::event_manager_sync::connection input_handler_connection;
     public:
 
-        vr_controller_system(entity_orchestrator * orch, environment * env, openvr_hmd * hmd)
-            : env(env), hmd(hmd)
+        vr_controller_system(entity_orchestrator * orch, environment * env, openvr_hmd * hmd, vr_input_processor * processor)
+            : env(env), hmd(hmd), processor(processor)
         {
             // Setup the pointer entity (which is re-used between laser/arc styles)
             arc_pointer.xz_plane_bounds = aabb_3d({ -24.f, -0.01f, -24.f }, { +24.f, +0.01f, +24.f });
@@ -267,23 +268,11 @@ namespace polymer
             {
                 set_visual_style(controller_render_style_t::laser);
                 should_draw_pointer = true;
-
-                const float hit_distance = event.focus.result.r.distance;
-                auto & m = pointer_mesh_component->mesh.get();
-                m = make_mesh_from_geometry(make_plane(0.010f, hit_distance, 24, 24), GL_STREAM_DRAW);
-
-                if (auto * tc = env->xform_system->get_local_transform(pointer))
-                {
-                    // The mesh is in local space so we massage it through a transform 
-                    auto t = event.controller.t;
-                    t = t * transform(make_rotation_quat_axis_angle({ 1, 0, 0 }, (float)POLYMER_PI / 2.f)); // coordinate
-                    t = t * transform(float4(0, 0, 0, 1), float3(0, -(hit_distance * 0.5f), 0)); // translation
-                    env->xform_system->set_local_transform(pointer, t);
-                }
             }
             else if (event.type == vr_event_t::focus_end)
             {
                 set_visual_style(controller_render_style_t::invisible);
+                should_draw_pointer = false;
             }
         }
 
@@ -299,6 +288,26 @@ namespace polymer
                 hmd->get_controller(vr::TrackedControllerRole_LeftHand).buttons[vr::k_EButton_SteamVR_Touchpad],
                 hmd->get_controller(vr::TrackedControllerRole_RightHand).buttons[vr::k_EButton_SteamVR_Touchpad]
             };
+
+            if (should_draw_pointer)
+            {
+                const vr_input_focus focus = processor->get_focus();
+                if (focus.result.e != kInvalidEntity)
+                {
+                    const float hit_distance = focus.result.r.distance;
+                    auto & m = pointer_mesh_component->mesh.get();
+                    m = make_mesh_from_geometry(make_plane(0.010f, hit_distance, 24, 24), GL_STREAM_DRAW);
+
+                    if (auto * tc = env->xform_system->get_local_transform(pointer))
+                    {
+                        // The mesh is in local space so we massage it through a transform 
+                        auto t = hmd->get_controller(processor->get_dominant_hand()).t;
+                        t = t * transform(make_rotation_quat_axis_angle({ 1, 0, 0 }, (float)POLYMER_PI / 2.f)); // coordinate
+                        t = t * transform(float4(0, 0, 0, 1), float3(0, -(hit_distance * 0.5f), 0)); // translation
+                        env->xform_system->set_local_transform(pointer, t);
+                    }
+                }
+            }
 
             for (int i = 0; i < touchpad_button_states.size(); ++i)
             {

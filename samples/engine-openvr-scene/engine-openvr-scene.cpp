@@ -74,7 +74,7 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
         }
 
         input_processor.reset(new vr_input_processor(orchestrator.get(), &scene, hmd.get()));
-        controller_system.reset(new vr_controller_system(orchestrator.get(), &scene, hmd.get()));
+        controller_system.reset(new vr_controller_system(orchestrator.get(), &scene, hmd.get(), input_processor.get()));
         gizmo_system.reset(new vr_gizmo(orchestrator.get(), &scene, hmd.get(), input_processor.get()));
     }
     catch (const std::exception & e)
