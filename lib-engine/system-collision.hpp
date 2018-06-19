@@ -44,11 +44,14 @@ namespace polymer
                 assert(xform_system != nullptr);
             }
 
-            auto raycast = [&](entity e) ->raycast_result
+            auto raycast = [&](entity e) -> raycast_result
             {
+                if (!xform_system->has_transform(e)) return {};
+                const runtime_mesh & geometry = meshes[e].geom.get();
+                if (geometry.vertices.empty()) return {};
+
                 const transform meshPose = xform_system->get_world_transform(e)->world_pose;
                 const float3 meshScale = xform_system->get_local_transform(e)->local_scale;
-                const runtime_mesh & geometry = meshes[e].geom.get();
 
                 ray localRay = meshPose.inverse() * worldRay;
                 localRay.origin /= meshScale;
@@ -57,14 +60,14 @@ namespace polymer
                 float3 outNormal = { 0, 0, 0 };
                 float2 outUv = { -1, -1 };
                 const bool hit = intersect_ray_mesh(localRay, geometry, &outT, &outNormal, &outUv);
-                return{ hit, outT, outNormal, outUv };
+                return{ hit, outT, outNormal, outUv};
             };
 
             float best_t = std::numeric_limits<float>::max();
-            raycast_result result;
             entity hit_entity = kInvalidEntity;
+            raycast_result result;
 
-            for (auto & mesh : meshes)
+            for (const auto & mesh : meshes)
             {
                 if (mesh.first == kInvalidEntity) continue;
 
@@ -79,10 +82,7 @@ namespace polymer
                 }
             }
 
-            entity_hit_result out_result;
-            out_result.e = hit_entity;
-            out_result.r = result;
-            return out_result;
+            return { hit_entity, result };
         }
 
         virtual bool create(entity e, poly_typeid hash, void * data) override final 
@@ -96,6 +96,13 @@ namespace polymer
         {
             meshes[e] = std::move(c);
             return true;
+        }
+
+        geometry_component * get_component(entity e)
+        {
+            auto iter = meshes.find(e);
+            if (iter != meshes.end()) return &iter->second;
+            return nullptr;
         }
 
         virtual void destroy(entity e) override final 

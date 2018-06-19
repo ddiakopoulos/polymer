@@ -45,10 +45,8 @@ inline void update_button_state(input_button_state & state, const bool value)
 struct openvr_controller
 {
     transform t;
-    input_button_state touchpad;
-    float2 touchpad_value{ 0.f, 0.f };
-    input_button_state trigger;
-    float trigger_value{ 0.f };
+    float2 axis_values{ 0.f, 0.f };
+    std::unordered_map<vr::EVRButtonId, input_button_state> buttons;
 };
 
 class openvr_hmd 
@@ -96,7 +94,7 @@ public:
     void get_optical_properties(vr::Hmd_Eye eye, float & aspectRatio, float & vfov);
 
     // Returns current controller state.
-    const openvr_controller * get_controller(const vr::ETrackedControllerRole controller);
+    openvr_controller get_controller(const vr::ETrackedControllerRole controller);
 
     void controller_render_data_callback(std::function<void(cached_controller_render_data & data)> callback);
 

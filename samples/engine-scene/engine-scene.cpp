@@ -59,6 +59,7 @@ sample_engine_scene::sample_engine_scene() : polymer_app(1280, 720, "sample-engi
     scene.identifier_system = orchestrator->create_system<identifier_system>(orchestrator.get());
     scene.render_system = orchestrator->create_system<render_system>(settings, orchestrator.get());
     scene.mat_library.reset(new polymer::material_library("../../assets/sample-material.json"));
+    scene.event_manager.reset(new polymer::event_manager_async());
 
     auto radianceBinary = read_file_binary("../../assets/textures/envmaps/wells_radiance.dds");
     auto irradianceBinary = read_file_binary("../../assets/textures/envmaps/wells_irradiance.dds");

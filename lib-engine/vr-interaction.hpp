@@ -11,7 +11,6 @@
 #include "openvr-hmd.hpp"
 #include "renderer-pbr.hpp"
 
-
 namespace polymer
 {
     /// interface: pre-render, post-render, handle input
@@ -38,8 +37,12 @@ namespace polymer
 
     struct vr_input_focus
     {
+        ray r;
         entity_hit_result result;
     };
+
+    inline bool operator != (const vr_input_focus & a, const vr_input_focus & b) { return (a.result.e != b.result.e); }
+    inline bool operator == (const vr_input_focus & a, const vr_input_focus & b) { return (a.result.e == b.result.e); }
 
     struct vr_input_event
     {
@@ -60,10 +63,13 @@ namespace polymer
     {
         environment * env{ nullptr };
         openvr_hmd * hmd{ nullptr };
+        vr_input_focus last_focus;
 
-        vr_input_focus get_focus(const openvr_controller * controller)
+        inline vr_input_focus get_focus(const openvr_controller & controller)
         {
-
+            const ray controller_ray = ray(controller.t.position, -qzdir(controller.t.orientation));
+            const entity_hit_result result = env->collision_system->raycast(controller_ray);
+            return { controller_ray, result };
         }
 
     public:
@@ -74,18 +80,76 @@ namespace polymer
 
         }
 
-        void process(const float dt, const view_data view)
+        vr_input_focus get_focus() const
         {
+            return last_focus;
+        }
+
+        void process(const float dt)
+        {
+            // Generate focus events. todo: this can be rate-limited
             for (auto hand : { vr::TrackedControllerRole_LeftHand, vr::TrackedControllerRole_RightHand })
             {
-                const openvr_controller * controller = hmd->get_controller(hand);
-                vr_input_focus focus = get_focus(controller);
+                const openvr_controller controller = hmd->get_controller(hand);
+                const vr_input_source_t src = (hand == vr::TrackedControllerRole_LeftHand) ? vr_input_source_t::left_controller : vr_input_source_t::right_controller;
+                const vr_input_focus focus = get_focus(controller);
 
-                //vr_input_event event;
-                //event.type = vr_event_t::
-                //if (controller->trigger.pressed)
-                // collide
-                // issue event
+                if (focus != last_focus)
+                {
+                    vr_input_event focus_gained;
+                    focus_gained.type = vr_event_t::focus_begin;
+                    focus_gained.controller = controller;
+                    focus_gained.timestamp = system_time_ns();
+                    focus_gained.source = src;
+                    focus_gained.focus = focus;
+                    env->event_manager->send(focus_gained);
+
+                    // Only send `focus_end` event if the previous focus result was not invalid
+                    if (last_focus.result.e != kInvalidEntity)
+                    {
+                        vr_input_event focus_lost;
+                        focus_lost.type = vr_event_t::focus_end;
+                        focus_lost.controller = controller;
+                        focus_lost.timestamp = system_time_ns();
+                        focus_lost.source = src;
+                        focus_lost.focus = last_focus;
+                        env->event_manager->send(focus_lost);
+                    }
+                }
+
+                last_focus = focus;
+            }
+
+            // Generate button events
+            for (auto hand : { vr::TrackedControllerRole_LeftHand, vr::TrackedControllerRole_RightHand })
+            {
+                const openvr_controller controller = hmd->get_controller(hand);
+                const vr_input_source_t src = (hand == vr::TrackedControllerRole_LeftHand) ? vr_input_source_t::left_controller : vr_input_source_t::right_controller;
+
+                for (auto b : controller.buttons)
+                {
+                    if (b.second.pressed)
+                    {
+                        vr_input_event press;
+                        press.type = vr_event_t::press;
+                        press.controller = controller;
+                        press.timestamp = system_time_ns();
+                        press.source = src;
+                        press.focus = last_focus;
+                        env->event_manager->send(press);
+                    }
+
+                    if (b.second.released)
+                    {
+                        vr_input_event release;
+                        release.type = vr_event_t::release;
+                        release.controller = controller;
+                        release.timestamp = system_time_ns();
+                        release.source = src;
+                        release.focus = last_focus;
+                        env->event_manager->send(release);
+                    }
+                }
             }
         }
     };
@@ -100,42 +164,70 @@ namespace polymer
     // visual appearance of openvr controller
     // render as: arc, line
     // shaders + materials
-    struct vr_controller_system
+    class vr_controller_system
     {
         environment * env{ nullptr };
         openvr_hmd * hmd{ nullptr };
-        mesh_component * mesh_component{ nullptr };
-        entity pointer;
+        mesh_component * pointer_mesh_component{ nullptr };
+        entity pointer, left_controller, right_controller;
         arc_pointer_data arc_pointer;
-        controller_render_style_t style{ controller_render_style_t::laser };
-        float3 target_location;
         std::vector<float3> arc_curve;
+        float3 target_location;
+        controller_render_style_t style{ controller_render_style_t::laser };
         bool should_draw_pointer{ false };
-
+        bool need_controller_render_data{ true };
+        void set_visual_style(const controller_render_style_t new_style) { style = new_style; }
     public:
 
         vr_controller_system(entity_orchestrator * orch, environment * env, openvr_hmd * hmd)
             : env(env), hmd(hmd)
         {
+            // Setup the pointer entity (which is re-used between laser/arc styles)
             arc_pointer.xz_plane_bounds = aabb_3d({ -24.f, -0.01f, -24.f }, { +24.f, +0.01f, +24.f });
 
             pointer = env->track_entity(orch->create_entity());
             env->identifier_system->create(pointer, "vr-pointer");
             env->xform_system->create(pointer, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
+            env->render_system->create(pointer, material_component(pointer, material_handle(material_library::kDefaultMaterialId)));
+            pointer_mesh_component = env->render_system->create(pointer, polymer::mesh_component(pointer, gpu_mesh_handle("vr-pointer")));
 
-            polymer::material_component pointer_mat(pointer);
-            pointer_mat.material = material_handle(material_library::kDefaultMaterialId);
-            env->render_system->create(pointer, std::move(pointer_mat));
+            // Setup left controller
+            left_controller = env->track_entity(orch->create_entity());
+            env->identifier_system->create(left_controller, "openvr-left-controller");
+            env->xform_system->create(left_controller, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
+            env->render_system->create(left_controller, material_component(left_controller, material_handle(material_library::kDefaultMaterialId)));
+            env->render_system->create(left_controller, mesh_component(left_controller));
 
-            polymer::mesh_component pointer_mesh(pointer);
-            pointer_mesh.mesh = gpu_mesh_handle("vr-pointer");
-            mesh_component = env->render_system->create(pointer, std::move(pointer_mesh));
-            assert(mesh_component != nullptr);
-        }
+            // Setup right controller
+            right_controller = env->track_entity(orch->create_entity());
+            env->identifier_system->create(right_controller, "openvr-right-controller");
+            env->xform_system->create(right_controller, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
+            env->render_system->create(right_controller, material_component(right_controller, material_handle(material_library::kDefaultMaterialId)));
+            env->render_system->create(right_controller, mesh_component(right_controller));
 
-        void set_visual_style(const controller_render_style_t new_style)
-        {
-            style = new_style;
+            // Setup render models for controllers when they are loaded
+            hmd->controller_render_data_callback([this, env](cached_controller_render_data & data)
+            {
+                // We will get this callback for each controller, but we only need to handle it once for both.
+                if (need_controller_render_data == true)
+                {
+                    need_controller_render_data = false;
+
+                    // Create new gpu mesh from the openvr geometry
+                    create_handle_for_asset("controller-mesh", make_mesh_from_geometry(data.mesh));
+
+                    // Re-lookup components since they were std::move'd above
+                    auto lmc = env->render_system->get_mesh_component(left_controller);
+                    assert(lmc != nullptr);
+
+                    auto rmc = env->render_system->get_mesh_component(right_controller);
+                    assert(rmc != nullptr);
+
+                    // Set the handles
+                    lmc->mesh = gpu_mesh_handle("controller-mesh");
+                    rmc->mesh = gpu_mesh_handle("controller-mesh");
+                }
+            });
         }
 
         std::vector<entity> get_renderables() const
@@ -145,18 +237,22 @@ namespace polymer
 
         void handle_event(const vr_input_event & event)
         {
-            // can this entity be pointed at? 
+            // can this entity be pointed at? (list)
 
+            // Draw laser on focus
             if (event.type == vr_event_t::focus_begin)
             {
                 set_visual_style(controller_render_style_t::laser);
+                should_draw_pointer = true;
+
                 const float hit_distance = event.focus.result.r.distance;
-                auto & m = mesh_component->mesh.get();
+                auto & m = pointer_mesh_component->mesh.get();
                 m = make_mesh_from_geometry(make_plane(0.010f, hit_distance, 24, 24), GL_STREAM_DRAW);
-                auto t = event.controller.t;
+
                 if (auto * tc = env->xform_system->get_local_transform(pointer))
                 {
                     // The mesh is in local space so we massage it through a transform 
+                    auto t = event.controller.t;
                     t = t * transform(make_rotation_quat_axis_angle({ 1, 0, 0 }, (float)POLYMER_PI / 2.f)); // coordinate
                     t = t * transform(float4(0, 0, 0, 1), float3(0, -(hit_distance * 0.5f), 0)); // translation
                     env->xform_system->set_local_transform(pointer, t);
@@ -173,26 +269,36 @@ namespace polymer
 
         }
 
-        void process(const float dt, const view_data view)
+        void process(const float dt)
         {
-            std::vector<input_button_state> touchpad_button_states = {
-                hmd->get_controller(vr::TrackedControllerRole_LeftHand)->touchpad,
-                hmd->get_controller(vr::TrackedControllerRole_RightHand)->touchpad
+            // update left/right controller positions
+            const transform lct = hmd->get_controller(vr::TrackedControllerRole_LeftHand).t;
+            env->xform_system->set_local_transform(left_controller, lct);
+            const transform rct = hmd->get_controller(vr::TrackedControllerRole_RightHand).t;
+            env->xform_system->set_local_transform(right_controller, rct);
+
+            const std::vector<input_button_state> touchpad_button_states = {
+                hmd->get_controller(vr::TrackedControllerRole_LeftHand).buttons[vr::k_EButton_SteamVR_Touchpad],
+                hmd->get_controller(vr::TrackedControllerRole_RightHand).buttons[vr::k_EButton_SteamVR_Touchpad]
             };
 
             for (int i = 0; i < touchpad_button_states.size(); ++i)
             {
+                // Draw arc on touchpad down
                 if (touchpad_button_states[i].down)
                 {
-                    const transform t = hmd->get_controller(vr::ETrackedControllerRole(i + 1))->t;
+                    const transform t = hmd->get_controller(vr::ETrackedControllerRole(i + 1)).t;
                     arc_pointer.position = t.position;
                     arc_pointer.forward = -qzdir(t.orientation);
+
                     if (make_pointer_arc(arc_pointer, arc_curve))
                     {
                         set_visual_style(controller_render_style_t::arc);
                         should_draw_pointer = true;
-                        auto & m = mesh_component->mesh.get();
+
+                        auto & m = pointer_mesh_component->mesh.get();
                         m = make_mesh_from_geometry(make_parabolic_geometry(arc_curve, arc_pointer.forward, 0.1f, arc_pointer.lineThickness), GL_STREAM_DRAW);
+
                         if (auto * tc = env->xform_system->get_local_transform(pointer))
                         {
                             // the arc mesh is constructed in world space, so we reset its transform
@@ -200,13 +306,23 @@ namespace polymer
                         }
                     }
                 }
-                if (touchpad_button_states[i].released)
+                // Teleport on touchpad up
+                else if (touchpad_button_states[i].released)
                 {
                     should_draw_pointer = false;
 
-                    vr_teleport_event event;
-                    event.world_position = target_pose.position;
-                    event.timestamp = system_time_ns();
+                    // Target location is on the xz plane because of a linecast, so we re-add the current height of the player
+                    target_location.y = hmd->get_hmd_pose().position.y;
+                    const transform target_pose = { hmd->get_hmd_pose().orientation, target_location };
+
+                    hmd->set_world_pose({}); // reset world pose
+                    const transform hmd_pose = hmd->get_hmd_pose(); // hmd_pose is now in the HMD's own coordinate system
+                    hmd->set_world_pose(target_pose * hmd_pose.inverse()); // set the new world pose
+
+                    vr_teleport_event teleport_event;
+                    teleport_event.world_position = target_pose.position;
+                    teleport_event.timestamp = system_time_ns();
+                    env->event_manager->send(teleport_event);
                 }
             }
         }
@@ -219,34 +335,12 @@ namespace polymer
     class vr_imgui_surface : public gui::imgui_surface
     {
         entity imgui_billboard;
-        entity pointer;
         std::shared_ptr<polymer_fx_material> imgui_material;
-        bool should_draw_pointer{ false };
     public:
         vr_imgui_surface(entity_orchestrator * orch, environment * env, const uint2 size, GLFWwindow * window);
         void update(environment * env, const transform & pointer_transform, const transform & billboard_origin, bool trigger_state);
         void update_renderloop();
-        entity get_pointer() const;
-        entity get_billboard() const;
-    };
-
-    ////////////////////////////
-    //   vr_teleport_system   //
-    ////////////////////////////
-
-    // todo - use event
-
-    class vr_teleport_system
-    {
-        geometry nav_geometry;
-        float3 target_location;
-        entity teleportation_arc{ kInvalidEntity };
-        bool should_draw{ false };
-        openvr_hmd * hmd{ nullptr };
-    public:
-        vr_teleport_system(entity_orchestrator * orch, environment * env, openvr_hmd * hmd);
-        void update(const uint64_t current_frame);
-        entity get_teleportation_arc();
+        std::vector<entity> get_renderables() const;
     };
 
     //////////////////
@@ -255,18 +349,20 @@ namespace polymer
 
     class vr_gizmo
     {
-        entity gizmo_entity, pointer;
-        std::shared_ptr<polymer_fx_material> gizmo_material;
-        bool should_draw_pointer{ false };
+        environment * env{ nullptr };
+        openvr_hmd * hmd{ nullptr };
+        vr_input_processor * processor{ nullptr };
+        entity gizmo_entity;
         tinygizmo::gizmo_application_state gizmo_state;
         tinygizmo::gizmo_context gizmo_ctx;
+        tinygizmo::rigid_transform xform;
+        bool focused{ false };
     public:
-        vr_gizmo(entity_orchestrator * orch, environment * env, openvr_hmd * hmd);
-        void handle_input(const app_input_event & e);
+        vr_gizmo(entity_orchestrator * orch, environment * env, openvr_hmd * hmd, vr_input_processor * processor);
+        void handle_event(const vr_input_event & event);
         void update(const view_data view);
         void render();
-        entity get_pointer() const;
-        entity get_gizmo() const;
+        std::vector<entity> get_renderables() const;
     };
 
 } // end namespace polymer

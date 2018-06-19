@@ -39,7 +39,7 @@ namespace polymer
         float3 normal{ 0, 0, 0 };
         float2 uv{ 0, 0 };
         raycast_result() {};
-        raycast_result(bool h, float t, float3 n, float2 uv) : hit(h), distance(t), normal(n), uv(uv) {}
+        raycast_result(bool h, float t, float3 n, float2 uv, ray r) : hit(h), distance(t), normal(n), uv(uv) {}
     };
 
     struct entity_hit_result
@@ -146,6 +146,7 @@ namespace polymer
         gpu_mesh_handle mesh;
         mesh_component() {};
         mesh_component(entity e) : base_component(e) {}
+        mesh_component(entity e, gpu_mesh_handle handle) : base_component(e), mesh(handle) {}
         void set_mesh_render_mode(const GLenum mode) { if (mode != GL_TRIANGLE_STRIP) mesh.get().set_non_indexed(mode); }
         void draw() const { mesh.get().draw_elements(); }
     };
@@ -176,6 +177,7 @@ namespace polymer
         bool cast_shadow{ true };
         material_component() {};
         material_component(entity e) : base_component(e) {}
+        material_component(entity e, material_handle handle) : base_component(e), material(handle) {}
     };
     POLYMER_SETUP_TYPEID(material_component);
 
@@ -205,6 +207,7 @@ namespace polymer
         cpu_mesh_handle geom;
         geometry_component() {};
         geometry_component(entity e) : base_component(e) {}
+        geometry_component(entity e, cpu_mesh_handle handle) : base_component(e), geom(handle) {}
     };
     POLYMER_SETUP_TYPEID(geometry_component);
 
@@ -349,7 +352,8 @@ namespace polymer
 
     public:
 
-        std::shared_ptr<polymer::material_library> mat_library;
+        std::unique_ptr<polymer::material_library> mat_library;
+        std::unique_ptr<polymer::event_manager_async> event_manager;
 
         polymer::render_system * render_system;
         polymer::collision_system * collision_system;

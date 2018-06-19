@@ -12,96 +12,48 @@ vr_imgui_surface::vr_imgui_surface(entity_orchestrator * orch, environment * env
     : imgui_surface(size, window)
 {
     // Setup the billboard entity
-    {
-        auto mesh = make_fullscreen_quad_ndc_geom();
-        for (auto & v : mesh.vertices) { v *= 0.15f; }
+    auto mesh = make_fullscreen_quad_ndc_geom();
+    for (auto & v : mesh.vertices) { v *= 0.15f; }
 
-        create_handle_for_asset("billboard-mesh", make_mesh_from_geometry(mesh)); // gpu mesh
-        create_handle_for_asset("billboard-mesh", std::move(mesh)); // cpu mesh
+    create_handle_for_asset("imgui-billboard", make_mesh_from_geometry(mesh)); // gpu mesh
+    create_handle_for_asset("imgui-billboard", std::move(mesh)); // cpu mesh
 
-        imgui_billboard = env->track_entity(orch->create_entity());
-        env->identifier_system->create(imgui_billboard, "imgui-billboard");
-        env->xform_system->create(imgui_billboard, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
+    imgui_billboard = env->track_entity(orch->create_entity());
+    env->identifier_system->create(imgui_billboard, "imgui-billboard");
+    env->xform_system->create(imgui_billboard, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
+    env->render_system->create(imgui_billboard, material_component(imgui_billboard, material_handle("imgui")));
+    env->render_system->create(imgui_billboard, mesh_component(imgui_billboard, gpu_mesh_handle("imgui-billboard")));
+    env->collision_system->create(imgui_billboard, geometry_component(imgui_billboard, cpu_mesh_handle("imgui-billboard")));
 
-        polymer::geometry_component billboard_geom(imgui_billboard);
-        billboard_geom.geom = cpu_mesh_handle("billboard-mesh");
-        env->collision_system->create(imgui_billboard, std::move(billboard_geom));
-
-        imgui_material = std::make_shared<polymer_fx_material>();
-        imgui_material->shader = shader_handle("textured");
-        env->mat_library->create_material("imgui", imgui_material);
-
-        polymer::material_component billboard_mat(imgui_billboard);
-        billboard_mat.material = material_handle("imgui");
-        env->render_system->create(imgui_billboard, std::move(billboard_mat));
-
-        polymer::mesh_component billboard_mesh(imgui_billboard);
-        billboard_mesh.mesh = gpu_mesh_handle("billboard-mesh");
-        env->render_system->create(imgui_billboard, std::move(billboard_mesh));
-    }
-
-    // Setup the pointer entity
-    {
-        pointer = env->track_entity(orch->create_entity());
-        env->identifier_system->create(pointer, "laser-pointer");
-        env->xform_system->create(pointer, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
-
-        polymer::material_component pointer_mat(pointer);
-        pointer_mat.material = material_handle(material_library::kDefaultMaterialId);
-        env->render_system->create(pointer, std::move(pointer_mat));
-
-        polymer::mesh_component pointer_mesh(pointer);
-        pointer_mesh.mesh = gpu_mesh_handle("imgui-pointer");
-        env->render_system->create(pointer, std::move(pointer_mesh));
-    }
+    imgui_material = std::make_shared<polymer_fx_material>();
+    imgui_material->shader = shader_handle("textured");
+    env->mat_library->create_material("imgui", imgui_material);
 }
 
 void vr_imgui_surface::update(environment * env, const transform & pointer_transform, const transform & billboard_origin, bool trigger_state)
 {
+    /*
     // Update billboard position
     if (auto * tc = env->xform_system->get_local_transform(pointer))
     {
         env->xform_system->set_local_transform(imgui_billboard, billboard_origin);
     }
 
-    transform t = pointer_transform;
-    const ray controller_ray = ray(t.position, -qzdir(t.orientation));
-    const entity_hit_result result = env->collision_system->raycast(controller_ray);
+    const uint2 framebuffer_size = get_size();
+    const float2 pixel_coord = { (1 - result.r.uv.x) * framebuffer_size.x, result.r.uv.y * framebuffer_size.y };
 
-    if (auto * pc = env->render_system->get_mesh_component(pointer))
-    {
-        if (result.r.hit)
-        {
-            // scoped_timer t("raycast assign"); // tofix: this function is pretty slow
-            geometry ray_geo = make_plane(0.010f, result.r.distance, 24, 24);
-            auto & gpu_mesh = pc->mesh.get();
-            gpu_mesh = make_mesh_from_geometry(ray_geo, GL_STREAM_DRAW);
+    app_input_event controller_event;
+    controller_event.type = app_input_event::MOUSE;
+    controller_event.action = trigger_state;
+    controller_event.value = { 0, 0 };
+    controller_event.cursor = pixel_coord;
+    imgui->update_input(controller_event);
+    */
+}
 
-            if (auto * tc = env->xform_system->get_local_transform(pointer))
-            {
-                t = t * transform(make_rotation_quat_axis_angle({ 1, 0, 0 }, (float)POLYMER_PI / 2.f)); // coordinate
-                t = t * transform(float4(0, 0, 0, 1), float3(0, -(result.r.distance / 2.f), 0)); // translation
-                env->xform_system->set_local_transform(pointer, t);
-            }
-
-            const uint2 sz = get_size();
-            const float2 pixel_coord = { (1 - result.r.uv.x) * sz.x, result.r.uv.y * sz.y };
-
-            app_input_event controller_event;
-            controller_event.type = app_input_event::MOUSE;
-            controller_event.action = trigger_state;
-            controller_event.value = { 0, 0 };
-            controller_event.cursor = pixel_coord;
-
-            imgui->update_input(controller_event);
-
-            should_draw_pointer = true;
-        }
-        else
-        {
-            should_draw_pointer = false;
-        }
-    }
+std::vector<entity> vr_imgui_surface::get_renderables() const
+{
+    return { imgui_billboard };
 }
 
 void vr_imgui_surface::update_renderloop()
@@ -112,79 +64,12 @@ void vr_imgui_surface::update_renderloop()
     imgui_shader.unbind();
 }
 
-entity vr_imgui_surface::get_pointer() const
-{
-    return should_draw_pointer ? pointer : kInvalidEntity;
-}
-
-entity vr_imgui_surface::get_billboard() const
-{
-    return imgui_billboard;
-}
-
-///////////////////////////////////////////
-//   vr_teleport_system implementation   //
-///////////////////////////////////////////
-
-vr_teleport_system::vr_teleport_system(entity_orchestrator * orch, environment * env, openvr_hmd * hmd) : hmd(hmd)
-{
-
-}
-
-void vr_teleport_system::update(const uint64_t current_frame)
-{
-    std::vector<input_button_state> states = {
-        hmd->get_controller(vr::TrackedControllerRole_LeftHand)->pad,
-        hmd->get_controller(vr::TrackedControllerRole_RightHand)->pad
-    };
-
-    for (int i = 0; i < states.size(); ++i)
-    {
-        const input_button_state s = states[i];
-
-        if (s.down)
-        {
-            const transform t = hmd->get_controller(vr::ETrackedControllerRole(i + 1))->get_pose(hmd->get_world_pose());
-            pointer.position = t.position;
-            pointer.forward = -qzdir(t.orientation);
-
-            geometry g;
-            if (make_pointer_arc(pointer, g, target_location))
-            {
-                should_draw = true;
-                auto & m = cached_mesh->mesh.get();
-                m = make_mesh_from_geometry(g, GL_STREAM_DRAW);
-            }
-        }
-
-        if (s.released && should_draw)
-        {
-            should_draw = false;
-
-            target_location.y = hmd->get_hmd_pose().position.y;
-            const transform target_pose = { hmd->get_hmd_pose().orientation, target_location };
-
-            hmd->set_world_pose({}); // reset world pose
-            auto hmd_pose = hmd->get_hmd_pose(); // pose is now in the HMD's own coordinate system
-            hmd->set_world_pose(target_pose * hmd_pose.inverse());
-
-            vr_teleport_event event;
-            event.world_position = target_pose.position;
-            event.frame_count = current_frame;
-        }
-    }
-}
-
-entity vr_teleport_system::get_teleportation_arc()
-{
-    return should_draw ? teleportation_arc : kInvalidEntity;
-}
-
 /////////////////////////////////
 //   vr_gizmo implementation   //
 /////////////////////////////////
 
-vr_gizmo::vr_gizmo(entity_orchestrator * orch, environment * env, openvr_hmd * hmd)
+vr_gizmo::vr_gizmo(entity_orchestrator * orch, environment * env, openvr_hmd * hmd, vr_input_processor * processor)
+    : env(env), hmd(hmd), processor(processor)
 {
     gizmo_ctx.render = [&](const tinygizmo::geometry_mesh & r)
     {
@@ -204,27 +89,45 @@ vr_gizmo::vr_gizmo(entity_orchestrator * orch, environment * env, openvr_hmd * h
     };
 }
 
-void vr_gizmo::handle_input(const app_input_event & e)
+void vr_gizmo::handle_event(const vr_input_event & event)
 {
-
+    if (event.type == vr_event_t::focus_begin && event.focus.result.e == gizmo_entity)
+    {
+        focused = true;
+    }
+    else if (event.type == vr_event_t::focus_end && event.focus.result.e == gizmo_entity)
+    {
+        focused = false;
+    }
 }
 
 void vr_gizmo::update(const view_data view)
 {
+    const auto vfov = vfov_from_projection(view.projectionMatrix);
+    gizmo_state.cam.near_clip = view.nearClip;
+    gizmo_state.cam.far_clip = view.farClip;
+    gizmo_state.cam.yfov = vfov;
+    gizmo_state.cam.position = minalg::float3(view.pose.position.x, view.pose.position.y, view.pose.position.z);
+    gizmo_state.cam.orientation = minalg::float4(view.pose.orientation.x, view.pose.orientation.y, view.pose.orientation.z, view.pose.orientation.w);
 
+    if (focused)
+    {   
+        const vr_input_focus focus = processor->get_focus();
+        gizmo_state.ray_origin = minalg::float3(focus.r.origin.x, focus.r.origin.y, focus.r.origin.z);
+        gizmo_state.ray_direction = minalg::float3(focus.r.direction.x, focus.r.direction.y, focus.r.direction.z);
+    }
 }
 
 void vr_gizmo::render()
 {
+    // Draw gizmo @ transform
+    tinygizmo::transform_gizmo("vr-gizmo", gizmo_ctx, xform);
 
+    // Trigger render callback
+    gizmo_ctx.draw();
 }
 
-entity vr_gizmo::get_pointer() const
-{ 
-    return should_draw_pointer ? pointer : kInvalidEntity; 
-}
+std::vector<entity> vr_gizmo::get_renderables() const
+{
 
-entity vr_gizmo::get_gizmo() const
-{ 
-    return gizmo_entity; 
 }

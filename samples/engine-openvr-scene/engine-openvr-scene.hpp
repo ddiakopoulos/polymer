@@ -22,9 +22,6 @@ struct sample_vr_app : public polymer_app
     std::vector<simple_texture_view> eye_views;
 
     gl_mesh empty_mesh;
-
-    entity left_controller;
-    entity right_controller;
     entity floor;
 
     float2 debug_pt;
@@ -32,7 +29,8 @@ struct sample_vr_app : public polymer_app
     gl_shader_monitor shaderMonitor { "../../assets/" };
 
     std::unique_ptr<entity_orchestrator> orchestrator;
-    std::unique_ptr<vr_teleport_system> teleporter;
+    std::unique_ptr<vr_input_processor> input_processor;
+    std::unique_ptr<vr_controller_system> controller_system;
 
     render_payload payload;
     environment scene;

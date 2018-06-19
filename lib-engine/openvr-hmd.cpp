@@ -41,12 +41,11 @@ openvr_hmd::~openvr_hmd()
     if (hmd) vr::VR_Shutdown();
 }
 
-const openvr_controller * openvr_hmd::get_controller(const vr::ETrackedControllerRole controller)
+openvr_controller openvr_hmd::get_controller(const vr::ETrackedControllerRole controller)
 {
-    if (controller == vr::TrackedControllerRole_LeftHand) return &controllers[0];
-    if (controller == vr::TrackedControllerRole_RightHand) return &controllers[1];
-    if (controller == vr::TrackedControllerRole_Invalid) throw std::runtime_error("invalid controller enum");
-    return nullptr;
+    if (controller == vr::TrackedControllerRole_LeftHand) return controllers[0];
+    if (controller == vr::TrackedControllerRole_RightHand) return controllers[1];
+    if (controller == vr::TrackedControllerRole_Invalid) throw std::invalid_argument("invalid controller enum");
 }
 
 void openvr_hmd::controller_render_data_callback(std::function<void(cached_controller_render_data & data)> callback)
@@ -200,9 +199,13 @@ void openvr_hmd::update()
             {
                 if (hmd->GetControllerState(i, &controllerState, sizeof(controllerState)))
                 {
-                    update_button_state(controllers[0].trigger, !!(controllerState.ulButtonPressed & vr::ButtonMaskFromId(vr::k_EButton_SteamVR_Trigger)));
-                    update_button_state(controllers[0].touchpad, !!(controllerState.ulButtonPressed & vr::ButtonMaskFromId(vr::k_EButton_SteamVR_Touchpad)));
-                    controllers[0].touchpad_value = { controllerState.rAxis[vr::k_eControllerAxis_TrackPad].x, controllerState.rAxis[vr::k_eControllerAxis_TrackPad].y };
+                    update_button_state(controllers[0].buttons[vr::k_EButton_SteamVR_Trigger], 
+                        !!(controllerState.ulButtonPressed & vr::ButtonMaskFromId(vr::k_EButton_SteamVR_Trigger)));
+
+                    update_button_state(controllers[0].buttons[vr::k_EButton_SteamVR_Touchpad], 
+                        !!(controllerState.ulButtonPressed & vr::ButtonMaskFromId(vr::k_EButton_SteamVR_Touchpad)));
+
+                    controllers[0].axis_values = { controllerState.rAxis[vr::k_eControllerAxis_TrackPad].x, controllerState.rAxis[vr::k_eControllerAxis_TrackPad].y };
                     controllers[0].t = (worldPose * make_pose(poses[i].mDeviceToAbsoluteTracking));
                 }
                 break;
@@ -211,9 +214,13 @@ void openvr_hmd::update()
             {
                 if (hmd->GetControllerState(i, &controllerState, sizeof(controllerState)))
                 {
-                    update_button_state(controllers[1].trigger, !!(controllerState.ulButtonPressed & vr::ButtonMaskFromId(vr::k_EButton_SteamVR_Trigger)));
-                    update_button_state(controllers[1].touchpad, !!(controllerState.ulButtonPressed & vr::ButtonMaskFromId(vr::k_EButton_SteamVR_Touchpad)));
-                    controllers[1].touchpad_value = { controllerState.rAxis[vr::k_eControllerAxis_TrackPad].x, controllerState.rAxis[vr::k_eControllerAxis_TrackPad].y };
+                    update_button_state(controllers[1].buttons[vr::k_EButton_SteamVR_Trigger],
+                        !!(controllerState.ulButtonPressed & vr::ButtonMaskFromId(vr::k_EButton_SteamVR_Trigger)));
+
+                    update_button_state(controllers[1].buttons[vr::k_EButton_SteamVR_Touchpad],
+                        !!(controllerState.ulButtonPressed & vr::ButtonMaskFromId(vr::k_EButton_SteamVR_Touchpad)));
+
+                    controllers[1].axis_values = { controllerState.rAxis[vr::k_eControllerAxis_TrackPad].x, controllerState.rAxis[vr::k_eControllerAxis_TrackPad].y };
                     controllers[1].t = (worldPose * make_pose(poses[i].mDeviceToAbsoluteTracking));
                 }
                 break;
