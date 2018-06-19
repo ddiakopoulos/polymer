@@ -5,11 +5,16 @@
 
 #include "gl-imgui.hpp"
 #include "gl-gizmo.hpp"
-#include "environment.hpp"
 #include "ecs/core-events.hpp"
 #include "material.hpp"
 #include "openvr-hmd.hpp"
 #include "renderer-pbr.hpp"
+
+#include "environment.hpp"
+#include "system-collision.hpp"
+#include "system-transform.hpp"
+#include "system-identifier.hpp"
+#include "system-render.hpp"
 
 namespace polymer
 {
@@ -57,6 +62,11 @@ namespace polymer
     struct vr_teleport_event { float3 world_position; uint64_t timestamp; };
     POLYMER_SETUP_TYPEID(vr_teleport_event);
 
+    inline vr_input_event make_event(vr_event_t t, vr_input_source_t s, vr_input_focus f, openvr_controller c)
+    {
+        return { t, s, f, system_time_ns(), c };
+    }
+
     // triple buffer input_event state
     // lock/unlock focus for teleportation
     class vr_input_processor
@@ -71,6 +81,12 @@ namespace polymer
             const entity_hit_result result = env->collision_system->raycast(controller_ray);
             return { controller_ray, result };
         }
+
+        vr_event_t type;
+        vr_input_source_t source;
+        vr_input_focus focus;
+        uint64_t timestamp;
+        openvr_controller controller;
 
     public:
 
@@ -94,27 +110,22 @@ namespace polymer
                 const vr_input_source_t src = (hand == vr::TrackedControllerRole_LeftHand) ? vr_input_source_t::left_controller : vr_input_source_t::right_controller;
                 const vr_input_focus focus = get_focus(controller);
 
-                if (focus != last_focus)
+                // New focus, not invalid
+                if (focus != last_focus && focus.result.e != kInvalidEntity)
                 {
-                    vr_input_event focus_gained;
-                    focus_gained.type = vr_event_t::focus_begin;
-                    focus_gained.controller = controller;
-                    focus_gained.timestamp = system_time_ns();
-                    focus_gained.source = src;
-                    focus_gained.focus = focus;
+                    vr_input_event focus_gained = make_event(vr_event_t::focus_begin, src, focus, controller);
                     env->event_manager->send(focus_gained);
+                    std::cout << "dispatching vr_event_t::focus_begin" << std::endl;
 
-                    // Only send `focus_end` event if the previous focus result was not invalid
-                    if (last_focus.result.e != kInvalidEntity)
-                    {
-                        vr_input_event focus_lost;
-                        focus_lost.type = vr_event_t::focus_end;
-                        focus_lost.controller = controller;
-                        focus_lost.timestamp = system_time_ns();
-                        focus_lost.source = src;
-                        focus_lost.focus = last_focus;
-                        env->event_manager->send(focus_lost);
-                    }
+                    // todo - focus_end on old entity
+                }
+
+                // Last one valid, new one invalid
+                if (last_focus.result.e != kInvalidEntity && focus.result.e == kInvalidEntity)
+                {
+                    vr_input_event focus_lost = make_event(vr_event_t::focus_end, src, last_focus, controller);
+                    env->event_manager->send(focus_lost);
+                    std::cout << "dispatching vr_event_t::focus_end" << std::endl;
                 }
 
                 last_focus = focus;
@@ -130,24 +141,15 @@ namespace polymer
                 {
                     if (b.second.pressed)
                     {
-                        vr_input_event press;
-                        press.type = vr_event_t::press;
-                        press.controller = controller;
-                        press.timestamp = system_time_ns();
-                        press.source = src;
-                        press.focus = last_focus;
+                        vr_input_event press = make_event(vr_event_t::press, src, focus, controller);
                         env->event_manager->send(press);
+                        std::cout << "dispatching vr_event_t::press" << std::endl;
                     }
-
-                    if (b.second.released)
+                    else if (b.second.released)
                     {
-                        vr_input_event release;
-                        release.type = vr_event_t::release;
-                        release.controller = controller;
-                        release.timestamp = system_time_ns();
-                        release.source = src;
-                        release.focus = last_focus;
+                        vr_input_event release = make_event(vr_event_t::release, src, focus, controller);
                         env->event_manager->send(release);
+                        std::cout << "dispatching vr_event_t::release" << std::endl;
                     }
                 }
             }
@@ -177,6 +179,7 @@ namespace polymer
         bool should_draw_pointer{ false };
         bool need_controller_render_data{ true };
         void set_visual_style(const controller_render_style_t new_style) { style = new_style; }
+        polymer::event_manager_sync::connection input_handler_connection;
     public:
 
         vr_controller_system(entity_orchestrator * orch, environment * env, openvr_hmd * hmd)
@@ -228,15 +231,28 @@ namespace polymer
                     rmc->mesh = gpu_mesh_handle("controller-mesh");
                 }
             });
+
+            input_handler_connection = env->event_manager->connect(this, [this](const vr_input_event & event)
+            { 
+                handle_event(event); 
+            });
+        }
+
+        ~vr_controller_system()
+        {
+            // todo - input_handler_connection disconnect
         }
 
         std::vector<entity> get_renderables() const
         {
             if (style != controller_render_style_t::invisible && should_draw_pointer) return { pointer };
+            return {};
         }
 
         void handle_event(const vr_input_event & event)
         {
+            std::cout << "vr_controller_system handle event " << event.timestamp << std::endl;
+
             // can this entity be pointed at? (list)
 
             // Draw laser on focus
@@ -262,11 +278,6 @@ namespace polymer
             {
                 set_visual_style(controller_render_style_t::invisible);
             }
-        }
-
-        void handle_event(const vr_teleport_event & event)
-        {
-
         }
 
         void process(const float dt)
@@ -357,11 +368,10 @@ namespace polymer
         tinygizmo::gizmo_context gizmo_ctx;
         tinygizmo::rigid_transform xform;
         bool focused{ false };
+        void handle_event(const vr_input_event & event);
     public:
         vr_gizmo(entity_orchestrator * orch, environment * env, openvr_hmd * hmd, vr_input_processor * processor);
-        void handle_event(const vr_input_event & event);
-        void update(const view_data view);
-        void render();
+        void process(const float dt);
         std::vector<entity> get_renderables() const;
     };
 

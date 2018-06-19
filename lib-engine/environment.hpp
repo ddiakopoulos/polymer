@@ -17,7 +17,7 @@
 
 #include "ecs/typeid.hpp"
 #include "ecs/core-ecs.hpp"
-#include <string>
+#include "ecs/core-events.hpp"
 
 #include "json.hpp"
 
@@ -39,7 +39,7 @@ namespace polymer
         float3 normal{ 0, 0, 0 };
         float2 uv{ 0, 0 };
         raycast_result() {};
-        raycast_result(bool h, float t, float3 n, float2 uv, ray r) : hit(h), distance(t), normal(n), uv(uv) {}
+        raycast_result(bool h, float t, float3 n, float2 uv) : hit(h), distance(t), normal(n), uv(uv) {}
     };
 
     struct entity_hit_result

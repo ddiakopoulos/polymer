@@ -31,6 +31,7 @@ struct sample_vr_app : public polymer_app
     std::unique_ptr<entity_orchestrator> orchestrator;
     std::unique_ptr<vr_input_processor> input_processor;
     std::unique_ptr<vr_controller_system> controller_system;
+    std::unique_ptr<vr_gizmo> gizmo_system;
 
     render_payload payload;
     environment scene;

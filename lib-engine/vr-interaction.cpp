@@ -71,20 +71,40 @@ void vr_imgui_surface::update_renderloop()
 vr_gizmo::vr_gizmo(entity_orchestrator * orch, environment * env, openvr_hmd * hmd, vr_input_processor * processor)
     : env(env), hmd(hmd), processor(processor)
 {
-    gizmo_ctx.render = [&](const tinygizmo::geometry_mesh & r)
+    auto unlit_material = std::make_shared<polymer_fx_material>();
+    unlit_material->shader = shader_handle("unlit-vertex-color");
+    env->mat_library->create_material("unlit-vertex-color", unlit_material);
+
+    gizmo_entity = env->track_entity(orch->create_entity());
+    env->identifier_system->create(gizmo_entity, "gizmo-renderable");
+    env->xform_system->create(gizmo_entity, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
+    env->render_system->create(gizmo_entity, material_component(gizmo_entity, material_handle("unlit-vertex-color")));
+    env->render_system->create(gizmo_entity, mesh_component(gizmo_entity));
+    env->collision_system->create(gizmo_entity, geometry_component(gizmo_entity));
+
+    gizmo_ctx.render = [this, env](const tinygizmo::geometry_mesh & r)
     {
+        const std::vector<tinygizmo::geometry_vertex> & verts = r.vertices;
+        const std::vector<linalg::aliases::uint3> & tris = reinterpret_cast<const std::vector<linalg::aliases::uint3> &>(r.triangles);
+
+        // For rendering
         if (auto * mc = env->render_system->get_mesh_component(gizmo_entity))
         {
             auto & gizmo_gpu_mesh = mc->mesh.get();
 
             // Upload new gizmo mesh data to the gpu
-            const std::vector<linalg::aliases::float3> & verts = reinterpret_cast<const std::vector<linalg::aliases::float3> &>(r.vertices);
-            const std::vector<linalg::aliases::uint3> & tris = reinterpret_cast<const std::vector<linalg::aliases::uint3> &>(r.triangles);
             gizmo_gpu_mesh.set_vertices(verts, GL_DYNAMIC_DRAW);
             gizmo_gpu_mesh.set_attribute(0, 3, GL_FLOAT, GL_FALSE, sizeof(tinygizmo::geometry_vertex), (GLvoid*)offsetof(tinygizmo::geometry_vertex, position));
             gizmo_gpu_mesh.set_attribute(1, 3, GL_FLOAT, GL_FALSE, sizeof(tinygizmo::geometry_vertex), (GLvoid*)offsetof(tinygizmo::geometry_vertex, normal));
             gizmo_gpu_mesh.set_attribute(2, 3, GL_FLOAT, GL_FALSE, sizeof(tinygizmo::geometry_vertex), (GLvoid*)offsetof(tinygizmo::geometry_vertex, color));
             gizmo_gpu_mesh.set_elements(tris, GL_DYNAMIC_DRAW);
+        }
+
+        // For focus/defocus
+        if (auto * gc = env->collision_system->get_component(gizmo_entity))
+        {
+            auto & gizmo_cpu_mesh = gc->geom.get();
+            gizmo_cpu_mesh = make_cube();
         }
     };
 }
@@ -94,16 +114,20 @@ void vr_gizmo::handle_event(const vr_input_event & event)
     if (event.type == vr_event_t::focus_begin && event.focus.result.e == gizmo_entity)
     {
         focused = true;
+        std::cout << "vr_gizmo handle <<focus_begin>> event " << event.timestamp << std::endl;
     }
     else if (event.type == vr_event_t::focus_end && event.focus.result.e == gizmo_entity)
     {
         focused = false;
+        std::cout << "vr_gizmo handle <<focus_end>> event " << event.timestamp << std::endl;
     }
 }
 
-void vr_gizmo::update(const view_data view)
+void vr_gizmo::process(const float dt)
 {
+    const auto view = view_data(0, hmd->get_eye_pose(vr::Hmd_Eye::Eye_Left), hmd->get_proj_matrix(vr::Hmd_Eye::Eye_Left, 0.075f, 64.f));
     const auto vfov = vfov_from_projection(view.projectionMatrix);
+
     gizmo_state.cam.near_clip = view.nearClip;
     gizmo_state.cam.far_clip = view.farClip;
     gizmo_state.cam.yfov = vfov;
@@ -116,18 +140,22 @@ void vr_gizmo::update(const view_data view)
         gizmo_state.ray_origin = minalg::float3(focus.r.origin.x, focus.r.origin.y, focus.r.origin.z);
         gizmo_state.ray_direction = minalg::float3(focus.r.direction.x, focus.r.direction.y, focus.r.direction.z);
     }
-}
 
-void vr_gizmo::render()
-{
     // Draw gizmo @ transform
     tinygizmo::transform_gizmo("vr-gizmo", gizmo_ctx, xform);
 
     // Trigger render callback
     gizmo_ctx.draw();
+
+    // Update transform
+    if (auto * tc = env->xform_system->get_local_transform(gizmo_entity))
+    {
+        transform t(float3(xform.position.x, xform.position.y, xform.position.z));
+        env->xform_system->set_local_transform(gizmo_entity, t);
+    }
 }
 
 std::vector<entity> vr_gizmo::get_renderables() const
 {
-
+    return { gizmo_entity };
 }

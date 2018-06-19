@@ -32,6 +32,11 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
             "../../assets/shaders/renderer/textured_frag.glsl",
             "../../assets/shaders/renderer");
 
+        shaderMonitor.watch("unlit-vertex-color",
+            "../../assets/shaders/renderer/forward_lighting_vert.glsl",
+            "../../assets/shaders/renderer/unlit_vertex_color_frag.glsl",
+            "../../assets/shaders/renderer");
+
         // Create required environment utilities
         scene.mat_library.reset(new polymer::material_library("../../assets/materials/"));
         scene.event_manager.reset(new polymer::event_manager_async());
@@ -70,6 +75,7 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
 
         input_processor.reset(new vr_input_processor(orchestrator.get(), &scene, hmd.get()));
         controller_system.reset(new vr_controller_system(orchestrator.get(), &scene, hmd.get()));
+        gizmo_system.reset(new vr_gizmo(orchestrator.get(), &scene, hmd.get(), input_processor.get()));
     }
     catch (const std::exception & e)
     {
@@ -105,8 +111,10 @@ void sample_vr_app::on_update(const app_update_event & e)
 
     hmd->update();
     input_processor->process(e.timestep_ms);
+    controller_system->process(e.timestep_ms);
+    gizmo_system->process(e.timestep_ms);
     scene.event_manager->process();
-
+    
     //std::vector<openvr_controller::button_state> triggerStates = {
     //    hmd->get_controller(vr::TrackedControllerRole_LeftHand)->trigger,
     //    hmd->get_controller(vr::TrackedControllerRole_RightHand)->trigger
@@ -147,6 +155,7 @@ void sample_vr_app::on_draw()
     payload.render_set.push_back(assemble_renderable(floor));
     for (const entity & r : vr_imgui->get_renderables()) payload.render_set.push_back(assemble_renderable(r));
     for (const entity & r : controller_system->get_renderables()) payload.render_set.push_back(assemble_renderable(r));
+    for (const entity & r : gizmo_system->get_renderables()) payload.render_set.push_back(assemble_renderable(r));
     scene.render_system->get_renderer()->render_frame(payload);
 
     const uint32_t left_eye_texture = scene.render_system->get_renderer()->get_color_texture(0);

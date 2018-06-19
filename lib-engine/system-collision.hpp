@@ -60,7 +60,7 @@ namespace polymer
                 float3 outNormal = { 0, 0, 0 };
                 float2 outUv = { -1, -1 };
                 const bool hit = intersect_ray_mesh(localRay, geometry, &outT, &outNormal, &outUv);
-                return{ hit, outT, outNormal, outUv};
+                return { hit, outT, outNormal, outUv };
             };
 
             float best_t = std::numeric_limits<float>::max();
@@ -82,7 +82,7 @@ namespace polymer
                 }
             }
 
-            return { hit_entity, result };
+            return { best_t > 0.f ? hit_entity : kInvalidEntity, result };
         }
 
         virtual bool create(entity e, poly_typeid hash, void * data) override final 

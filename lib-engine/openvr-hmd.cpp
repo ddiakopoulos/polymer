@@ -44,8 +44,9 @@ openvr_hmd::~openvr_hmd()
 openvr_controller openvr_hmd::get_controller(const vr::ETrackedControllerRole controller)
 {
     if (controller == vr::TrackedControllerRole_LeftHand) return controllers[0];
-    if (controller == vr::TrackedControllerRole_RightHand) return controllers[1];
-    if (controller == vr::TrackedControllerRole_Invalid) throw std::invalid_argument("invalid controller enum");
+    else if (controller == vr::TrackedControllerRole_RightHand) return controllers[1];
+    else throw std::invalid_argument("invalid controller enum");
+    return {};
 }
 
 void openvr_hmd::controller_render_data_callback(std::function<void(cached_controller_render_data & data)> callback)

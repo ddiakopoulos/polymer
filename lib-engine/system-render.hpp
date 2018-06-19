@@ -169,7 +169,6 @@ namespace polymer
             if (dirLightIter != directional_lights.end()) directional_lights.erase(dirLightIter);
         }
     };
-
     POLYMER_SETUP_TYPEID(render_system);
 
     template<class F> void visit_components(entity e, render_system * system, F f)
