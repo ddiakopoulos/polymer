@@ -100,17 +100,40 @@ vr_gizmo::vr_gizmo(entity_orchestrator * orch, environment * env, openvr_hmd * h
             gizmo_gpu_mesh.set_elements(tris, GL_DYNAMIC_DRAW);
         }
 
-        // For focus/defocus
+        // For focus/defocus and pointing
         if (auto * gc = env->collision_system->get_component(gizmo_entity))
         {
+            if (verts.size() != transient_gizmo_geom.vertices.size()) transient_gizmo_geom.vertices.resize(verts.size());
+            if (tris.size() != transient_gizmo_geom.faces.size()) transient_gizmo_geom.faces.resize(tris.size());
+
+            for (int i = 0; i < verts.size(); ++i)
+            {
+                auto & v = verts[i];
+                transient_gizmo_geom.vertices[i] = {v.position.x, v.position.y, v.position.z};
+            }
+
+            for (int i = 0; i < tris.size(); ++i)
+            {
+                auto & tri = tris[i];
+                transient_gizmo_geom.faces[i] = { tri.x, tri.y, tri.z };
+            }
+
             auto & gizmo_cpu_mesh = gc->geom.get();
-            gizmo_cpu_mesh = make_cube();
+            gizmo_cpu_mesh = transient_gizmo_geom;
         }
     };
+
+    input_handler_connection = env->event_manager->connect(this, [this](const vr_input_event & event)
+    {
+        handle_event(event);
+    });
 }
 
 void vr_gizmo::handle_event(const vr_input_event & event)
 {
+    //std::cout << "Focus Result: " << event.focus.result.e << std::endl;
+    //std::cout << "Gizmo Is: " << gizmo_entity << std::endl;
+
     if (event.type == vr_event_t::focus_begin && event.focus.result.e == gizmo_entity)
     {
         focused = true;
@@ -133,12 +156,14 @@ void vr_gizmo::process(const float dt)
     gizmo_state.cam.yfov = vfov;
     gizmo_state.cam.position = minalg::float3(view.pose.position.x, view.pose.position.y, view.pose.position.z);
     gizmo_state.cam.orientation = minalg::float4(view.pose.orientation.x, view.pose.orientation.y, view.pose.orientation.z, view.pose.orientation.w);
-
+    
     if (focused)
     {   
         const vr_input_focus focus = processor->get_focus();
         gizmo_state.ray_origin = minalg::float3(focus.r.origin.x, focus.r.origin.y, focus.r.origin.z);
         gizmo_state.ray_direction = minalg::float3(focus.r.direction.x, focus.r.direction.y, focus.r.direction.z);
+        gizmo_state.mouse_left = hmd->get_controller(processor->get_dominant_hand()).buttons[vr::EVRButtonId::k_EButton_SteamVR_Trigger].down;
+        std::cout << gizmo_state.mouse_left << std::endl;
     }
 
     // Draw gizmo @ transform

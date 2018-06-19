@@ -82,7 +82,8 @@ namespace polymer
                 }
             }
 
-            return { best_t > 0.f ? hit_entity : kInvalidEntity, result };
+            if (result.hit) { return { hit_entity, result }; }
+            else return { kInvalidEntity, raycast_result() };
         }
 
         virtual bool create(entity e, poly_typeid hash, void * data) override final 

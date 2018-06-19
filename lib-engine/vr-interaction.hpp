@@ -74,6 +74,7 @@ namespace polymer
         environment * env{ nullptr };
         openvr_hmd * hmd{ nullptr };
         vr_input_focus last_focus;
+        vr::ETrackedControllerRole dominant_hand{ vr::TrackedControllerRole_RightHand };
 
         inline vr_input_focus get_focus(const openvr_controller & controller)
         {
@@ -96,40 +97,12 @@ namespace polymer
 
         }
 
-        vr_input_focus get_focus() const
-        {
-            return last_focus;
-        }
+        vr::ETrackedControllerRole get_dominant_hand() const { return dominant_hand; }
+        vr_input_focus get_focus() const { return last_focus; }
 
         void process(const float dt)
         {
-            // Generate focus events. todo: this can be rate-limited
-            for (auto hand : { vr::TrackedControllerRole_LeftHand, vr::TrackedControllerRole_RightHand })
-            {
-                const openvr_controller controller = hmd->get_controller(hand);
-                const vr_input_source_t src = (hand == vr::TrackedControllerRole_LeftHand) ? vr_input_source_t::left_controller : vr_input_source_t::right_controller;
-                const vr_input_focus focus = get_focus(controller);
-
-                // New focus, not invalid
-                if (focus != last_focus && focus.result.e != kInvalidEntity)
-                {
-                    vr_input_event focus_gained = make_event(vr_event_t::focus_begin, src, focus, controller);
-                    env->event_manager->send(focus_gained);
-                    std::cout << "dispatching vr_event_t::focus_begin" << std::endl;
-
-                    // todo - focus_end on old entity
-                }
-
-                // Last one valid, new one invalid
-                if (last_focus.result.e != kInvalidEntity && focus.result.e == kInvalidEntity)
-                {
-                    vr_input_event focus_lost = make_event(vr_event_t::focus_end, src, last_focus, controller);
-                    env->event_manager->send(focus_lost);
-                    std::cout << "dispatching vr_event_t::focus_end" << std::endl;
-                }
-
-                last_focus = focus;
-            }
+            //scoped_timer t("vr_input_processor::process()");
 
             // Generate button events
             for (auto hand : { vr::TrackedControllerRole_LeftHand, vr::TrackedControllerRole_RightHand })
@@ -143,6 +116,12 @@ namespace polymer
                     {
                         vr_input_event press = make_event(vr_event_t::press, src, focus, controller);
                         env->event_manager->send(press);
+
+                        if (b.first == vr::EVRButtonId::k_EButton_SteamVR_Trigger)
+                        {
+                            dominant_hand = hand;
+                        }
+
                         std::cout << "dispatching vr_event_t::press" << std::endl;
                     }
                     else if (b.second.released)
@@ -152,6 +131,34 @@ namespace polymer
                         std::cout << "dispatching vr_event_t::release" << std::endl;
                     }
                 }
+            }
+
+            // Generate focus events for the dominant hand. todo: this can be rate-limited
+            {
+                const openvr_controller controller = hmd->get_controller(dominant_hand);
+                const vr_input_source_t src = (dominant_hand == vr::TrackedControllerRole_LeftHand) ? vr_input_source_t::left_controller : vr_input_source_t::right_controller;
+                const vr_input_focus focus = get_focus(controller);
+
+                // New focus, not invalid
+                if (focus != last_focus && focus.result.e != kInvalidEntity)
+                {
+
+                    vr_input_event focus_gained = make_event(vr_event_t::focus_begin, src, focus, controller);
+                    env->event_manager->send(focus_gained);
+                    std::cout << "dispatching vr_event_t::focus_begin for entity" << focus.result.e << std::endl;
+
+                    // todo - focus_end on old entity
+                }
+
+                // Last one valid, new one invalid
+                if (last_focus.result.e != kInvalidEntity && focus.result.e == kInvalidEntity)
+                {
+                    vr_input_event focus_lost = make_event(vr_event_t::focus_end, src, last_focus, controller);
+                    env->event_manager->send(focus_lost);
+                    std::cout << "dispatching vr_event_t::focus_end" << std::endl;
+                }
+
+                last_focus = focus;
             }
         }
     };
@@ -245,8 +252,8 @@ namespace polymer
 
         std::vector<entity> get_renderables() const
         {
-            if (style != controller_render_style_t::invisible && should_draw_pointer) return { pointer };
-            return {};
+            if (style != controller_render_style_t::invisible && should_draw_pointer) return { pointer, left_controller, right_controller };
+            return { left_controller, right_controller };
         }
 
         void handle_event(const vr_input_event & event)
@@ -367,6 +374,8 @@ namespace polymer
         tinygizmo::gizmo_application_state gizmo_state;
         tinygizmo::gizmo_context gizmo_ctx;
         tinygizmo::rigid_transform xform;
+        geometry transient_gizmo_geom;
+        polymer::event_manager_sync::connection input_handler_connection;
         bool focused{ false };
         void handle_event(const vr_input_event & event);
     public:
