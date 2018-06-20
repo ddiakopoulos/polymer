@@ -28,12 +28,12 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
         load_required_renderer_assets("../../assets/", shaderMonitor);
 
         shaderMonitor.watch("textured",
-            "../../assets/shaders/renderer/forward_lighting_vert.glsl",
+            "../../assets/shaders/renderer/renderer_vert.glsl",
             "../../assets/shaders/renderer/textured_frag.glsl",
             "../../assets/shaders/renderer");
 
         shaderMonitor.watch("unlit-vertex-color",
-            "../../assets/shaders/renderer/forward_lighting_vert.glsl",
+            "../../assets/shaders/renderer/renderer_vert.glsl",
             "../../assets/shaders/renderer/unlit_vertex_color_frag.glsl",
             "../../assets/shaders/renderer");
 

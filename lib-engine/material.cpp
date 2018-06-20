@@ -102,7 +102,7 @@ uint32_t polymer_wireframe_material::id()
 
 polymer_blinn_phong_standard::polymer_blinn_phong_standard()
 {
-    shader = shader_handle("blinn-phong");
+    shader = shader_handle("phong-forward-lighting");
 }
 
 void polymer_blinn_phong_standard::resolve_variants()
