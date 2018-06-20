@@ -231,17 +231,13 @@ namespace polymer
         uint3 best_face = { 0, 0, 0 };
         float2 outUv;
 
-        const aabb_3d meshBounds = (bounds) ? *bounds : compute_bounds(mesh);
-        if (!meshBounds.contains(ray.origin) && intersect_ray_box(ray, meshBounds.min(), meshBounds.max()))
+        for (int f = 0; f < mesh.faces.size(); ++f)
         {
-            for (int f = 0; f < mesh.faces.size(); ++f)
+            auto & tri = mesh.faces[f];
+            if (intersect_ray_triangle(ray, mesh.vertices[tri.x], mesh.vertices[tri.y], mesh.vertices[tri.z], &t, &outUv) && t < best_t)
             {
-                auto & tri = mesh.faces[f];
-                if (intersect_ray_triangle(ray, mesh.vertices[tri.x], mesh.vertices[tri.y], mesh.vertices[tri.z], &t, &outUv) && t < best_t)
-                {
-                    best_t = t;
-                    best_face = mesh.faces[f];
-                }
+                best_t = t;
+                best_face = mesh.faces[f];
             }
         }
 

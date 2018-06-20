@@ -106,17 +106,15 @@ vr_gizmo::vr_gizmo(entity_orchestrator * orch, environment * env, openvr_hmd * h
             if (verts.size() != transient_gizmo_geom.vertices.size()) transient_gizmo_geom.vertices.resize(verts.size());
             if (tris.size() != transient_gizmo_geom.faces.size()) transient_gizmo_geom.faces.resize(tris.size());
 
+            // Verts are packed in a struct
             for (int i = 0; i < verts.size(); ++i)
             {
                 auto & v = verts[i];
                 transient_gizmo_geom.vertices[i] = {v.position.x, v.position.y, v.position.z};
             }
 
-            for (int i = 0; i < tris.size(); ++i)
-            {
-                auto & tri = tris[i];
-                transient_gizmo_geom.faces[i] = { tri.x, tri.y, tri.z };
-            }
+            // Faces can be memcpy'd directly
+            std::memcpy(transient_gizmo_geom.faces.data(), tris.data(), tris.size() * sizeof(uint3));
 
             auto & gizmo_cpu_mesh = gc->geom.get();
             gizmo_cpu_mesh = transient_gizmo_geom;
@@ -131,9 +129,6 @@ vr_gizmo::vr_gizmo(entity_orchestrator * orch, environment * env, openvr_hmd * h
 
 void vr_gizmo::handle_event(const vr_input_event & event)
 {
-    //std::cout << "Focus Result: " << event.focus.result.e << std::endl;
-    //std::cout << "Gizmo Is: " << gizmo_entity << std::endl;
-
     if (event.type == vr_event_t::focus_begin && event.focus.result.e == gizmo_entity)
     {
         focused = true;
@@ -163,8 +158,10 @@ void vr_gizmo::process(const float dt)
         gizmo_state.ray_origin = minalg::float3(focus.r.origin.x, focus.r.origin.y, focus.r.origin.z);
         gizmo_state.ray_direction = minalg::float3(focus.r.direction.x, focus.r.direction.y, focus.r.direction.z);
         gizmo_state.mouse_left = hmd->get_controller(processor->get_dominant_hand()).buttons[vr::EVRButtonId::k_EButton_SteamVR_Trigger].down;
-        std::cout << gizmo_state.mouse_left << std::endl;
     }
+
+    // Update
+    gizmo_ctx.update(gizmo_state);
 
     // Draw gizmo @ transform
     tinygizmo::transform_gizmo("vr-gizmo", gizmo_ctx, xform);
@@ -176,7 +173,7 @@ void vr_gizmo::process(const float dt)
     if (auto * tc = env->xform_system->get_local_transform(gizmo_entity))
     {
         transform t(float3(xform.position.x, xform.position.y, xform.position.z));
-        env->xform_system->set_local_transform(gizmo_entity, t);
+        //env->xform_system->set_local_transform(gizmo_entity, t);
     }
 }
 
