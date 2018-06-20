@@ -79,8 +79,22 @@ namespace polymer
         inline vr_input_focus get_focus(const openvr_controller & controller)
         {
             const ray controller_ray = ray(controller.t.position, -qzdir(controller.t.orientation));
-            const entity_hit_result result = env->collision_system->raycast(controller_ray);
-            return { controller_ray, result };
+            const entity_hit_result box_result = env->collision_system->raycast(controller_ray, raycast_type::box);
+
+            if (box_result.r.hit)
+            {
+                const entity_hit_result mesh_result = env->collision_system->raycast(controller_ray, raycast_type::mesh);
+                // Refine if hit the mesh
+                if (mesh_result.r.hit)
+                {
+                    return { controller_ray, mesh_result };
+                }
+                else
+                {
+                    // Otherwise a bounding box is still considered "in focus"
+                    return { controller_ray, box_result };
+                }
+            }
         }
 
         vr_event_t type;
@@ -142,7 +156,6 @@ namespace polymer
                 // New focus, not invalid
                 if (focus != last_focus && focus.result.e != kInvalidEntity)
                 {
-
                     vr_input_event focus_gained = make_event(vr_event_t::focus_begin, src, focus, controller);
                     env->event_manager->send(focus_gained);
                     std::cout << "dispatching vr_event_t::focus_begin for entity" << focus.result.e << std::endl;

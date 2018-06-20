@@ -17,6 +17,12 @@ namespace polymer
     //   collision system   //
     //////////////////////////
     
+    enum class raycast_type
+    {
+        mesh,
+        box,
+    };
+
     // todo - need to support proxy mesh (sphere or box)
     // todo - accelerate using spatial data structure (use existing octree?)
     class collision_system final : public base_system
@@ -34,7 +40,7 @@ namespace polymer
             register_system_for_type(this, get_typeid<geometry_component>());
         }
 
-        entity_hit_result raycast(const ray & worldRay)
+        entity_hit_result raycast(const ray & world_ray, const raycast_type type = raycast_type::mesh)
         {
             // Potential cross-orchestrator issues here
             if (!xform_system)
@@ -44,7 +50,7 @@ namespace polymer
                 assert(xform_system != nullptr);
             }
 
-            auto raycast = [&](entity e) -> raycast_result
+            auto raycast_mesh = [&](entity e) -> raycast_result
             {
                 if (!xform_system->has_transform(e)) return {};
                 const runtime_mesh & geometry = meshes[e].geom.get();
@@ -53,7 +59,7 @@ namespace polymer
                 const transform meshPose = xform_system->get_world_transform(e)->world_pose;
                 const float3 meshScale = xform_system->get_local_transform(e)->local_scale;
 
-                ray localRay = meshPose.inverse() * worldRay;
+                ray localRay = meshPose.inverse() * world_ray;
                 localRay.origin /= meshScale;
                 localRay.direction /= meshScale;
                 float outT = 0.0f;
@@ -63,21 +69,61 @@ namespace polymer
                 return { hit, outT, outNormal, outUv };
             };
 
+            auto raycast_box = [&](entity e) -> raycast_result
+            {
+                if (!xform_system->has_transform(e)) return {};
+                const runtime_mesh & geometry = meshes[e].geom.get();
+                if (geometry.vertices.empty()) return {};
+
+                const transform meshPose = xform_system->get_world_transform(e)->world_pose; // store bounds?
+                const float3 meshScale = xform_system->get_local_transform(e)->local_scale;
+
+                ray r = meshPose.inverse() * world_ray;
+                r.origin /= meshScale;
+                r.direction /= meshScale;
+
+                const aabb_3d mesh_bounds = compute_bounds(geometry);
+                float outMinT, outMaxT;
+                const bool hit = intersect_ray_box(r, mesh_bounds.min(), mesh_bounds.max(), &outMinT, &outMaxT);
+                return raycast_result(hit, outMaxT, {}, {});
+            };
+
             float best_t = std::numeric_limits<float>::max();
             entity hit_entity = kInvalidEntity;
             raycast_result result;
 
-            for (const auto & mesh : meshes)
+            if (type == raycast_type::mesh)
             {
-                if (mesh.first == kInvalidEntity) continue;
-
-                result = raycast(mesh.first);
-                if (result.hit)
+                // Okay, we really need a spatial data structure for this
+                for (const auto & mesh : meshes)
                 {
-                    if (result.distance < best_t)
+                    if (mesh.first == kInvalidEntity) continue;
+
+                    result = raycast_mesh(mesh.first);
+                    if (result.hit)
                     {
-                        best_t = result.distance;
-                        hit_entity = mesh.first;
+                        if (result.distance < best_t)
+                        {
+                            best_t = result.distance;
+                            hit_entity = mesh.first;
+                        }
+                    }
+                }
+            }
+            else if (type == raycast_type::box)
+            {
+                for (const auto & mesh : meshes)
+                {
+                    if (mesh.first == kInvalidEntity) continue;
+
+                    result = raycast_box(mesh.first);
+                    if (result.hit)
+                    {
+                        if (result.distance < best_t)
+                        {
+                            best_t = result.distance;
+                            hit_entity = mesh.first;
+                        }
                     }
                 }
             }
