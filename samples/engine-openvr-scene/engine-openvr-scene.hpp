@@ -14,36 +14,30 @@ struct viewport_t
 
 struct sample_vr_app : public polymer_app
 {
+    gl_shader_monitor shaderMonitor{ "../../assets/" };
+
     std::unique_ptr<openvr_hmd> hmd;
     std::unique_ptr<gui::imgui_instance> desktop_imgui;
+    std::unique_ptr<entity_orchestrator> orchestrator;
+    std::unique_ptr<vr_input_processor> input_processor;
+    std::unique_ptr<vr_controller_system> controller_system;
     std::unique_ptr<vr_imgui_surface> vr_imgui;
+    std::unique_ptr<vr_gizmo> gizmo_system;
 
     std::vector<viewport_t> viewports;
     std::vector<simple_texture_view> eye_views;
 
-    gl_mesh empty_mesh;
-    entity floor;
-
+    uint64_t frame_count{ 0 };
     float2 debug_pt;
-
-    gl_shader_monitor shaderMonitor { "../../assets/" };
-
-    std::unique_ptr<entity_orchestrator> orchestrator;
-    std::unique_ptr<vr_input_processor> input_processor;
-    std::unique_ptr<vr_controller_system> controller_system;
-    std::unique_ptr<vr_gizmo> gizmo_system;
+    entity floor;
 
     render_payload payload;
     environment scene;
 
-    renderable assemble_renderable(const entity e);
-
-    uint64_t frame_count{ 0 };
-    bool should_load{ true };
-
     sample_vr_app();
     ~sample_vr_app();
 
+    renderable assemble_renderable(const entity e);
     void on_window_resize(int2 size) override;
     void on_input(const app_input_event & event) override;
     void on_update(const app_update_event & e) override;

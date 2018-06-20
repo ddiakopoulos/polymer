@@ -40,12 +40,7 @@ namespace polymer
         tracker
     };
 
-    struct vr_input_focus
-    {
-        ray r;
-        entity_hit_result result;
-    };
-
+    struct vr_input_focus { ray r; entity_hit_result result; };
     inline bool operator != (const vr_input_focus & a, const vr_input_focus & b) { return (a.result.e != b.result.e); }
     inline bool operator == (const vr_input_focus & a, const vr_input_focus & b) { return (a.result.e == b.result.e); }
 
@@ -83,15 +78,15 @@ namespace polymer
 
             if (box_result.r.hit)
             {
-                const entity_hit_result mesh_result = env->collision_system->raycast(controller_ray, raycast_type::mesh);
                 // Refine if hit the mesh
+                const entity_hit_result mesh_result = env->collision_system->raycast(controller_ray, raycast_type::mesh);
                 if (mesh_result.r.hit)
                 {
                     return { controller_ray, mesh_result };
                 }
                 else
                 {
-                    // Otherwise a bounding box is still considered "in focus"
+                    // Otherwise hitting the outer bounding box is still considered "in focus"
                     return { controller_ray, box_result };
                 }
             }
@@ -106,10 +101,7 @@ namespace polymer
     public:
 
         vr_input_processor(entity_orchestrator * orch, environment * env, openvr_hmd * hmd)
-            : env(env), hmd(hmd)
-        {
-
-        }
+            : env(env), hmd(hmd) { }
 
         vr::ETrackedControllerRole get_dominant_hand() const { return dominant_hand; }
         vr_input_focus get_focus() const { return last_focus; }
@@ -131,18 +123,16 @@ namespace polymer
                         vr_input_event press = make_event(vr_event_t::press, src, focus, controller);
                         env->event_manager->send(press);
 
+                        // Swap dominant hand based on last activated trigger button
                         if (b.first == vr::EVRButtonId::k_EButton_SteamVR_Trigger)
                         {
                             dominant_hand = hand;
                         }
-
-                        std::cout << "dispatching vr_event_t::press" << std::endl;
                     }
                     else if (b.second.released)
                     {
                         vr_input_event release = make_event(vr_event_t::release, src, focus, controller);
                         env->event_manager->send(release);
-                        std::cout << "dispatching vr_event_t::release" << std::endl;
                     }
                 }
             }
@@ -159,7 +149,6 @@ namespace polymer
                     vr_input_event focus_gained = make_event(vr_event_t::focus_begin, src, focus, controller);
                     env->event_manager->send(focus_gained);
                     std::cout << "dispatching vr_event_t::focus_begin for entity" << focus.result.e << std::endl;
-
                     // todo - focus_end on old entity
                 }
 
@@ -183,9 +172,6 @@ namespace polymer
         arc
     };
 
-    // visual appearance of openvr controller
-    // render as: arc, line
-    // shaders + materials
     class vr_controller_system
     {
         environment * env{ nullptr };
@@ -297,6 +283,7 @@ namespace polymer
             const transform rct = hmd->get_controller(vr::TrackedControllerRole_RightHand).t;
             env->xform_system->set_local_transform(right_controller, rct);
 
+            // touchpad state used for teleportation
             const std::vector<input_button_state> touchpad_button_states = {
                 hmd->get_controller(vr::TrackedControllerRole_LeftHand).buttons[vr::k_EButton_SteamVR_Touchpad],
                 hmd->get_controller(vr::TrackedControllerRole_RightHand).buttons[vr::k_EButton_SteamVR_Touchpad]
@@ -338,7 +325,7 @@ namespace polymer
 
                         auto & m = pointer_mesh_component->mesh.get();
                         m = make_mesh_from_geometry(make_parabolic_geometry(arc_curve, arc_pointer.forward, 0.1f, arc_pointer.lineThickness), GL_STREAM_DRAW);
-
+                        target_location = arc_curve.back(); // world-space hit point
                         if (auto * tc = env->xform_system->get_local_transform(pointer))
                         {
                             // the arc mesh is constructed in world space, so we reset its transform
@@ -349,6 +336,7 @@ namespace polymer
                 // Teleport on touchpad up
                 else if (touchpad_button_states[i].released)
                 {
+                    set_visual_style(controller_render_style_t::invisible);
                     should_draw_pointer = false;
 
                     // Target location is on the xz plane because of a linecast, so we re-add the current height of the player
@@ -374,13 +362,17 @@ namespace polymer
 
     class vr_imgui_surface : public gui::imgui_surface
     {
+        environment * env{ nullptr };
+        openvr_hmd * hmd{ nullptr };
+        vr_input_processor * processor{ nullptr };
         entity imgui_billboard;
         std::shared_ptr<polymer_fx_material> imgui_material;
+        void handle_event(const vr_input_event & event);
     public:
-        vr_imgui_surface(entity_orchestrator * orch, environment * env, const uint2 size, GLFWwindow * window);
-        void update(environment * env, const transform & pointer_transform, const transform & billboard_origin, bool trigger_state);
-        void update_renderloop();
+        vr_imgui_surface(entity_orchestrator * orch, environment * env, openvr_hmd * hmd, vr_input_processor * processor, const uint2 size, GLFWwindow * window);
+        void process(const float dt);
         std::vector<entity> get_renderables() const;
+        void set_surface_transform(const transform & t);
     };
 
     //////////////////

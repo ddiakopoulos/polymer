@@ -8,8 +8,8 @@
 //   vr_imgui_surface implementation   //
 /////////////////////////////////////////
 
-vr_imgui_surface::vr_imgui_surface(entity_orchestrator * orch, environment * env, const uint2 size, GLFWwindow * window) 
-    : imgui_surface(size, window)
+vr_imgui_surface::vr_imgui_surface(entity_orchestrator * orch, environment * env, openvr_hmd * hmd, vr_input_processor * processor, const uint2 size, GLFWwindow * window)
+    : env(env), hmd(hmd), processor(processor), imgui_surface(size, window)
 {
     // Setup the billboard entity
     auto mesh = make_fullscreen_quad_ndc_geom();
@@ -30,7 +30,17 @@ vr_imgui_surface::vr_imgui_surface(entity_orchestrator * orch, environment * env
     env->mat_library->create_material("imgui", imgui_material);
 }
 
-void vr_imgui_surface::update(environment * env, const transform & pointer_transform, const transform & billboard_origin, bool trigger_state)
+void vr_imgui_surface::handle_event(const vr_input_event & event)
+{
+
+}
+
+void vr_imgui_surface::set_surface_transform(const transform & t)
+{
+
+}
+
+void vr_imgui_surface::process(const float dt)
 {
     /*
     // Update billboard position
@@ -49,19 +59,16 @@ void vr_imgui_surface::update(environment * env, const transform & pointer_trans
     controller_event.cursor = pixel_coord;
     imgui->update_input(controller_event);
     */
+
+    imgui_material->use();
+    auto & imgui_shader = imgui_material->compiled_shader->shader;
+    imgui_shader.texture("s_texture", 0, get_render_texture(), GL_TEXTURE_2D);
+    imgui_shader.unbind();
 }
 
 std::vector<entity> vr_imgui_surface::get_renderables() const
 {
     return { imgui_billboard };
-}
-
-void vr_imgui_surface::update_renderloop()
-{
-    imgui_material->use();
-    auto & imgui_shader = imgui_material->compiled_shader->shader;
-    imgui_shader.texture("s_texture", 0, get_render_texture(), GL_TEXTURE_2D);
-    imgui_shader.unbind();
 }
 
 /////////////////////////////////
@@ -73,12 +80,12 @@ vr_gizmo::vr_gizmo(entity_orchestrator * orch, environment * env, openvr_hmd * h
 {
     auto unlit_material = std::make_shared<polymer_fx_material>();
     unlit_material->shader = shader_handle("unlit-vertex-color");
-    env->mat_library->create_material("unlit-vertex-color", unlit_material);
+    env->mat_library->create_material("unlit-vertex-color-material", unlit_material);
 
     gizmo_entity = env->track_entity(orch->create_entity());
     env->identifier_system->create(gizmo_entity, "gizmo-renderable");
     env->xform_system->create(gizmo_entity, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
-    env->render_system->create(gizmo_entity, material_component(gizmo_entity, material_handle("unlit-vertex-color")));
+    env->render_system->create(gizmo_entity, material_component(gizmo_entity, material_handle("unlit-vertex-color-material")));
     env->render_system->create(gizmo_entity, mesh_component(gizmo_entity));
     env->collision_system->create(gizmo_entity, geometry_component(gizmo_entity));
 
@@ -132,12 +139,10 @@ void vr_gizmo::handle_event(const vr_input_event & event)
     if (event.type == vr_event_t::focus_begin && event.focus.result.e == gizmo_entity)
     {
         focused = true;
-        std::cout << "vr_gizmo handle <<focus_begin>> event " << event.timestamp << std::endl;
     }
     else if (event.type == vr_event_t::focus_end && event.focus.result.e == gizmo_entity)
     {
         focused = false;
-        std::cout << "vr_gizmo handle <<focus_end>> event " << event.timestamp << std::endl;
     }
 }
 
@@ -168,13 +173,6 @@ void vr_gizmo::process(const float dt)
 
     // Trigger render callback
     gizmo_ctx.draw();
-
-    // Update transform
-    if (auto * tc = env->xform_system->get_local_transform(gizmo_entity))
-    {
-        transform t(float3(xform.position.x, xform.position.y, xform.position.z));
-        //env->xform_system->set_local_transform(gizmo_entity, t);
-    }
 }
 
 std::vector<entity> vr_gizmo::get_renderables() const

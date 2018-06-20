@@ -53,7 +53,7 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
         scene.identifier_system = orchestrator->create_system<identifier_system>(orchestrator.get());
         scene.render_system = orchestrator->create_system<render_system>(settings, orchestrator.get());
 
-        vr_imgui.reset(new vr_imgui_surface(orchestrator.get(), &scene, { 256, 256 }, window));
+        vr_imgui.reset(new vr_imgui_surface(orchestrator.get(), &scene, hmd.get(), input_processor.get(), { 256, 256 }, window));
         gui::make_light_theme();
 
         // Only need to set the skybox on the |render_payload| once (unless we clear the payload)
@@ -201,9 +201,6 @@ void sample_vr_app::on_draw()
     if (ImGui::Button("ImGui VR Button")) std::cout << "Click!" << std::endl;
     gui::imgui_fixed_window_end();
     vr_imgui->end_frame();
-
-    // Update textures
-    vr_imgui->update_renderloop();
 
     glfwSwapBuffers(window);
 
