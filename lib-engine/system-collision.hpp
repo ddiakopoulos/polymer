@@ -97,11 +97,14 @@ namespace polymer
                 // Okay, we really need a spatial data structure for this
                 for (const auto & mesh : meshes)
                 {
+                    std::cout << "Raycast (Mesh) Check " << mesh.first << std::endl;
+
                     if (mesh.first == kInvalidEntity) continue;
 
                     result = raycast_mesh(mesh.first);
                     if (result.hit)
                     {
+                        std::cout << "Raycast (Mesh) HIT " << mesh.first << std::endl;
                         if (result.distance < best_t)
                         {
                             best_t = result.distance;
@@ -114,11 +117,15 @@ namespace polymer
             {
                 for (const auto & mesh : meshes)
                 {
+                    std::cout << "Raycast (Box) Check " << mesh.first << std::endl;
+
                     if (mesh.first == kInvalidEntity) continue;
 
                     result = raycast_box(mesh.first);
                     if (result.hit)
                     {
+                        std::cout << "Raycast (Box) HIT " << mesh.first << std::endl;
+
                         if (result.distance < best_t)
                         {
                             best_t = result.distance;

@@ -112,14 +112,14 @@ void sample_vr_app::on_update(const app_update_event & e)
     input_processor->process(e.timestep_ms);
     controller_system->process(e.timestep_ms);
     gizmo_system->process(e.timestep_ms);
-    vr_imgui->process(e.timestep_ms);
+    //vr_imgui->process(e.timestep_ms);
 
     // ImGui surface/billboard is attached to left controller
-    auto left_controller_xform = hmd->get_controller(vr::TrackedControllerRole_LeftHand).t;
-    left_controller_xform = left_controller_xform * transform(float4(0, 0, 0, 1), float3(0, 0, -.25f));
-    left_controller_xform = left_controller_xform * transform(make_rotation_quat_axis_angle({ 1, 0, 0 }, (float) POLYMER_PI / 2.f), float3());
-    left_controller_xform = left_controller_xform * transform(make_rotation_quat_axis_angle({ 0, 1, 0 }, (float) -POLYMER_PI), float3());
-    vr_imgui->set_surface_transform(left_controller_xform);
+    //auto left_controller_xform = hmd->get_controller(vr::TrackedControllerRole_LeftHand).t;
+    //left_controller_xform = left_controller_xform * transform(float4(0, 0, 0, 1), float3(0, 0, -.25f));
+    //left_controller_xform = left_controller_xform * transform(make_rotation_quat_axis_angle({ 1, 0, 0 }, (float) POLYMER_PI / 2.f), float3());
+    //left_controller_xform = left_controller_xform * transform(make_rotation_quat_axis_angle({ 0, 1, 0 }, (float) -POLYMER_PI), float3());
+    //vr_imgui->set_surface_transform(left_controller_xform);
 }
 
 void sample_vr_app::on_draw()

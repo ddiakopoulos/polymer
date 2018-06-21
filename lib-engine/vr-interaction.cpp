@@ -15,12 +15,11 @@ vr_input_focus vr_input_processor::recompute_focus(const openvr_controller & con
 
     if (box_result.r.hit)
     {
-        std::cout << "Box hit: " << box_result.e << std::endl;
-
         // Refine if hit the mesh
         const entity_hit_result mesh_result = env->collision_system->raycast(controller_ray, raycast_type::mesh);
         if (mesh_result.r.hit)
         {
+            std::cout << "(Focus) Mesh Hit: " << mesh_result.e << std::endl;
             return { controller_ray, mesh_result };
         }
         else
