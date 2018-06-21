@@ -25,7 +25,7 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
         glfwSwapInterval(0);
 
         orchestrator.reset(new entity_orchestrator());
-        load_required_renderer_assets("../../assets/", shaderMonitor);
+        load_required_renderer_assets("../../assets", shaderMonitor);
 
         shaderMonitor.watch("textured",
             "../../assets/shaders/renderer/renderer_vert.glsl",
@@ -53,9 +53,6 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
         scene.identifier_system = orchestrator->create_system<identifier_system>(orchestrator.get());
         scene.render_system = orchestrator->create_system<render_system>(settings, orchestrator.get());
 
-        vr_imgui.reset(new vr_imgui_surface(orchestrator.get(), &scene, hmd.get(), input_processor.get(), { 256, 256 }, window));
-        gui::make_light_theme();
-
         // Only need to set the skybox on the |render_payload| once (unless we clear the payload)
         payload.skybox = scene.render_system->get_skybox();
         payload.sunlight = scene.render_system->get_implicit_sunlight();
@@ -76,6 +73,8 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
         input_processor.reset(new vr_input_processor(orchestrator.get(), &scene, hmd.get()));
         controller_system.reset(new vr_controller_system(orchestrator.get(), &scene, hmd.get(), input_processor.get()));
         gizmo_system.reset(new vr_gizmo(orchestrator.get(), &scene, hmd.get(), input_processor.get()));
+        vr_imgui.reset(new vr_imgui_surface(orchestrator.get(), &scene, hmd.get(), input_processor.get(), { 256, 256 }, window));
+        gui::make_light_theme();
     }
     catch (const std::exception & e)
     {
@@ -105,31 +104,22 @@ void sample_vr_app::on_input(const app_input_event & event)
 
 void sample_vr_app::on_update(const app_update_event & e)
 {
-    frame_count++;
-
     shaderMonitor.handle_recompile();
 
     hmd->update();
+    scene.event_manager->process();
+
     input_processor->process(e.timestep_ms);
     controller_system->process(e.timestep_ms);
     gizmo_system->process(e.timestep_ms);
-    scene.event_manager->process();
-    
-    //std::vector<openvr_controller::button_state> triggerStates = {
-    //    hmd->get_controller(vr::TrackedControllerRole_LeftHand)->trigger,
-    //    hmd->get_controller(vr::TrackedControllerRole_RightHand)->trigger
-    //};
-    //
-    //// Billboard is on left hand
-    //auto lct = hmd->get_controller(vr::TrackedControllerRole_LeftHand)->get_pose(hmd->get_world_pose());
-    //lct = lct * transform(float4(0, 0, 0, 1), float3(0, 0, -.1f));
-    //lct = lct * transform(make_rotation_quat_axis_angle({ 1, 0, 0 }, (float) POLYMER_PI / 2.f), float3());
-    //lct = lct * transform(make_rotation_quat_axis_angle({ 0, 1, 0 }, (float) -POLYMER_PI), float3());
-    //
-    //auto rct = hmd->get_controller(vr::TrackedControllerRole_RightHand)->get_pose(hmd->get_world_pose());
-    //
-    //// Imgui needs the location of the pointer (controller), the billboard, and the click state.
-    //vr_imgui->update(&scene, rct, lct, triggerStates[1].pressed);
+    vr_imgui->process(e.timestep_ms);
+
+    // ImGui surface/billboard is attached to left controller
+    auto left_controller_xform = hmd->get_controller(vr::TrackedControllerRole_LeftHand).t;
+    left_controller_xform = left_controller_xform * transform(float4(0, 0, 0, 1), float3(0, 0, -.25f));
+    left_controller_xform = left_controller_xform * transform(make_rotation_quat_axis_angle({ 1, 0, 0 }, (float) POLYMER_PI / 2.f), float3());
+    left_controller_xform = left_controller_xform * transform(make_rotation_quat_axis_angle({ 0, 1, 0 }, (float) -POLYMER_PI), float3());
+    vr_imgui->set_surface_transform(left_controller_xform);
 }
 
 void sample_vr_app::on_draw()
@@ -203,7 +193,7 @@ void sample_vr_app::on_draw()
     vr_imgui->end_frame();
 
     glfwSwapBuffers(window);
-
+    frame_count++;
     gl_check_error(__FILE__, __LINE__);
 }
 
