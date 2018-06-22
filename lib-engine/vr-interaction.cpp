@@ -11,27 +11,23 @@
 vr_input_focus vr_input_processor::recompute_focus(const openvr_controller & controller)
 {
     const ray controller_ray = ray(controller.t.position, -qzdir(controller.t.orientation));
-    //const entity_hit_result box_result = env->collision_system->raycast(controller_ray, raycast_type::box);
+    const entity_hit_result box_result = env->collision_system->raycast(controller_ray, raycast_type::box);
 
-    const entity_hit_result mesh_result = env->collision_system->raycast(controller_ray, raycast_type::mesh);
-    return { controller_ray, mesh_result };
-
-    //if (box_result.r.hit)
-    //{
-    //    // Refine if hit the mesh
-    //    const entity_hit_result mesh_result = env->collision_system->raycast(controller_ray, raycast_type::mesh);
-    //    if (mesh_result.r.hit)
-    //    {
-    //        std::cout << "(Focus) Mesh Hit: " << mesh_result.e << std::endl;
-    //        return { controller_ray, mesh_result };
-    //    }
-    //    else
-    //    {
-    //        // Otherwise hitting the outer bounding box is still considered "in focus"
-    //        return { controller_ray, box_result };
-    //    }
-    //}
-    //return { controller_ray, {} };
+    if (box_result.r.hit)
+    {
+        // Refine if hit the mesh
+        const entity_hit_result mesh_result = env->collision_system->raycast(controller_ray, raycast_type::mesh);
+        if (mesh_result.r.hit)
+        {
+            return { controller_ray, mesh_result };
+        }
+        else
+        {
+            // Otherwise hitting the outer bounding box is still considered "in focus"
+            return { controller_ray, box_result };
+        }
+    }
+    return { controller_ray, {} };
 }
 
 vr_input_processor::vr_input_processor(entity_orchestrator * orch, environment * env, openvr_hmd * hmd) : env(env), hmd(hmd) 
@@ -182,8 +178,6 @@ vr_controller_system::~vr_controller_system()
 
 std::vector<entity> vr_controller_system::get_renderables() const
 {
-    std::cout << "Renderable Size: " << render_styles.size() << std::endl;
-
     if (render_styles.size())
     {
         return { pointer, left_controller, right_controller };
