@@ -16,6 +16,8 @@
 #include "system-identifier.hpp"
 #include "system-render.hpp"
 
+#include <stack>
+
 namespace polymer
 {
     enum class vr_event_t : uint32_t
@@ -115,10 +117,9 @@ namespace polymer
         arc_pointer_data arc_pointer;
         std::vector<float3> arc_curve;
         float3 target_location;
-        controller_render_style_t style{ controller_render_style_t::laser };
-        bool should_draw_pointer{ false };
+
+        std::stack<controller_render_style_t> render_styles;
         bool need_controller_render_data{ true };
-        void set_visual_style(const controller_render_style_t new_style) { style = new_style; }
 
         polymer::event_manager_sync::connection input_handler_connection;
         void handle_event(const vr_input_event & event);

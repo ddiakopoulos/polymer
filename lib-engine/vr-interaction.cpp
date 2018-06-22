@@ -11,24 +11,27 @@
 vr_input_focus vr_input_processor::recompute_focus(const openvr_controller & controller)
 {
     const ray controller_ray = ray(controller.t.position, -qzdir(controller.t.orientation));
-    const entity_hit_result box_result = env->collision_system->raycast(controller_ray, raycast_type::box);
+    //const entity_hit_result box_result = env->collision_system->raycast(controller_ray, raycast_type::box);
 
-    if (box_result.r.hit)
-    {
-        // Refine if hit the mesh
-        const entity_hit_result mesh_result = env->collision_system->raycast(controller_ray, raycast_type::mesh);
-        if (mesh_result.r.hit)
-        {
-            std::cout << "(Focus) Mesh Hit: " << mesh_result.e << std::endl;
-            return { controller_ray, mesh_result };
-        }
-        else
-        {
-            // Otherwise hitting the outer bounding box is still considered "in focus"
-            return { controller_ray, box_result };
-        }
-    }
-    return { controller_ray, {} };
+    const entity_hit_result mesh_result = env->collision_system->raycast(controller_ray, raycast_type::mesh);
+    return { controller_ray, mesh_result };
+
+    //if (box_result.r.hit)
+    //{
+    //    // Refine if hit the mesh
+    //    const entity_hit_result mesh_result = env->collision_system->raycast(controller_ray, raycast_type::mesh);
+    //    if (mesh_result.r.hit)
+    //    {
+    //        std::cout << "(Focus) Mesh Hit: " << mesh_result.e << std::endl;
+    //        return { controller_ray, mesh_result };
+    //    }
+    //    else
+    //    {
+    //        // Otherwise hitting the outer bounding box is still considered "in focus"
+    //        return { controller_ray, box_result };
+    //    }
+    //}
+    //return { controller_ray, {} };
 }
 
 vr_input_processor::vr_input_processor(entity_orchestrator * orch, environment * env, openvr_hmd * hmd) : env(env), hmd(hmd) 
@@ -179,24 +182,27 @@ vr_controller_system::~vr_controller_system()
 
 std::vector<entity> vr_controller_system::get_renderables() const
 {
-    if (style != controller_render_style_t::invisible && should_draw_pointer) return { pointer, left_controller, right_controller };
+    std::cout << "Renderable Size: " << render_styles.size() << std::endl;
+
+    if (render_styles.size())
+    {
+        return { pointer, left_controller, right_controller };
+    }
     return { left_controller, right_controller };
 }
 
 void vr_controller_system::handle_event(const vr_input_event & event)
 {
-    // can this entity be pointed at? (list)
+    // todo - can this entity be pointed at? (list for system)
 
-    // Draw laser on focus
+    // Draw laser on focus of any type
     if (event.type == vr_event_t::focus_begin)
     {
-        set_visual_style(controller_render_style_t::laser);
-        should_draw_pointer = true;
+        render_styles.push(controller_render_style_t::laser);
     }
     else if (event.type == vr_event_t::focus_end)
     {
-        set_visual_style(controller_render_style_t::invisible);
-        should_draw_pointer = false;
+        while (!render_styles.empty()) render_styles.pop();
     }
 }
 
@@ -214,22 +220,27 @@ void vr_controller_system::process(const float dt)
         hmd->get_controller(vr::TrackedControllerRole_RightHand).buttons[vr::k_EButton_SteamVR_Touchpad]
     };
 
-    if (should_draw_pointer)
+    if (render_styles.size() && render_styles.top() == controller_render_style_t::laser)
     {
         const vr_input_focus focus = processor->get_focus();
         if (focus.result.e != kInvalidEntity)
         {
             const float hit_distance = focus.result.r.distance;
-            auto & m = pointer_mesh_component->mesh.get();
-            m = make_mesh_from_geometry(make_plane(0.010f, hit_distance, 24, 24), GL_STREAM_DRAW);
 
-            if (auto * tc = env->xform_system->get_local_transform(pointer))
+            // Ensure the distance is long enough to generate valid drawable geometry
+            if (hit_distance >= 0.01f)
             {
-                // The mesh is in local space so we massage it through a transform 
-                auto t = hmd->get_controller(processor->get_dominant_hand()).t;
-                t = t * transform(make_rotation_quat_axis_angle({ 1, 0, 0 }, (float)POLYMER_PI / 2.f)); // coordinate
-                t = t * transform(float4(0, 0, 0, 1), float3(0, -(hit_distance * 0.5f), 0)); // translation
-                env->xform_system->set_local_transform(pointer, t);
+                auto & m = pointer_mesh_component->mesh.get();
+                m = make_mesh_from_geometry(make_plane(0.010f, hit_distance, 24, 24), GL_STREAM_DRAW);
+
+                if (auto * tc = env->xform_system->get_local_transform(pointer))
+                {
+                    // The mesh is in local space so we massage it through a transform 
+                    auto t = hmd->get_controller(processor->get_dominant_hand()).t;
+                    t = t * transform(make_rotation_quat_axis_angle({ 1, 0, 0 }, (float)POLYMER_PI / 2.f)); // coordinate
+                    t = t * transform(float4(0, 0, 0, 1), float3(0, -(hit_distance * 0.5f), 0)); // translation
+                    env->xform_system->set_local_transform(pointer, t);
+                }
             }
         }
     }
@@ -245,8 +256,17 @@ void vr_controller_system::process(const float dt)
 
             if (make_pointer_arc(arc_pointer, arc_curve))
             {
-                set_visual_style(controller_render_style_t::arc);
-                should_draw_pointer = true;
+                // Push arc style
+                if (render_styles.empty())
+                {
+                    // From zero to one style
+                    render_styles.push(controller_render_style_t::arc);
+                }
+                else if (render_styles.top() != controller_render_style_t::arc)
+                {
+                    // If we're already laser pointering, only add if the top isn't already an arc
+                    render_styles.push(controller_render_style_t::arc);
+                }
 
                 auto & m = pointer_mesh_component->mesh.get();
                 m = make_mesh_from_geometry(make_parabolic_geometry(arc_curve, arc_pointer.forward, 0.1f, arc_pointer.lineThickness), GL_STREAM_DRAW);
@@ -261,21 +281,25 @@ void vr_controller_system::process(const float dt)
         // Teleport on touchpad up
         else if (touchpad_button_states[i].released)
         {
-            set_visual_style(controller_render_style_t::invisible);
-            should_draw_pointer = false;
+            // Pop arc style. This check also prevents on-release behavior for 
+            // scenarios where make_arc_pointer returns in invalid solution
+            if (render_styles.size() && render_styles.top() == controller_render_style_t::arc)
+            {
+                render_styles.pop();
 
-            // Target location is on the xz plane because of a linecast, so we re-add the current height of the player
-            target_location.y = hmd->get_hmd_pose().position.y;
-            const transform target_pose = { hmd->get_hmd_pose().orientation, target_location };
+                // Target location is on the xz plane because of a linecast, so we re-add the current height of the player
+                target_location.y = hmd->get_hmd_pose().position.y;
+                const transform target_pose = { hmd->get_hmd_pose().orientation, target_location };
 
-            hmd->set_world_pose({}); // reset world pose
-            const transform hmd_pose = hmd->get_hmd_pose(); // hmd_pose is now in the HMD's own coordinate system
-            hmd->set_world_pose(target_pose * hmd_pose.inverse()); // set the new world pose
+                hmd->set_world_pose({}); // reset world pose
+                const transform hmd_pose = hmd->get_hmd_pose(); // hmd_pose is now in the HMD's own coordinate system
+                hmd->set_world_pose(target_pose * hmd_pose.inverse()); // set the new world pose
 
-            vr_teleport_event teleport_event;
-            teleport_event.world_position = target_pose.position;
-            teleport_event.timestamp = system_time_ns();
-            env->event_manager->send(teleport_event);
+                vr_teleport_event teleport_event;
+                teleport_event.world_position = target_pose.position;
+                teleport_event.timestamp = system_time_ns();
+                env->event_manager->send(teleport_event);
+            }
         }
     }
 }
