@@ -112,14 +112,14 @@ void sample_vr_app::on_update(const app_update_event & e)
     input_processor->process(e.timestep_ms);
     controller_system->process(e.timestep_ms);
     gizmo_system->process(e.timestep_ms);
-    //vr_imgui->process(e.timestep_ms);
+    vr_imgui->process(e.timestep_ms);
 
     // ImGui surface/billboard is attached to left controller
-    //auto left_controller_xform = hmd->get_controller(vr::TrackedControllerRole_LeftHand).t;
-    //left_controller_xform = left_controller_xform * transform(float4(0, 0, 0, 1), float3(0, 0, -.25f));
-    //left_controller_xform = left_controller_xform * transform(make_rotation_quat_axis_angle({ 1, 0, 0 }, (float) POLYMER_PI / 2.f), float3());
-    //left_controller_xform = left_controller_xform * transform(make_rotation_quat_axis_angle({ 0, 1, 0 }, (float) -POLYMER_PI), float3());
-    //vr_imgui->set_surface_transform(left_controller_xform);
+    auto left_controller_xform = hmd->get_controller(vr::TrackedControllerRole_LeftHand).t;
+    left_controller_xform = left_controller_xform * transform(float4(0, 0, 0, 1), float3(0, 0, -.25f));
+    left_controller_xform = left_controller_xform * transform(make_rotation_quat_axis_angle({ 1, 0, 0 }, (float) POLYMER_PI / 2.f), float3());
+    left_controller_xform = left_controller_xform * transform(make_rotation_quat_axis_angle({ 0, 1, 0 }, (float) -POLYMER_PI), float3());
+    vr_imgui->set_surface_transform(left_controller_xform);
 }
 
 void sample_vr_app::on_draw()
@@ -130,7 +130,8 @@ void sample_vr_app::on_draw()
     glfwGetWindowSize(window, &width, &height);
     glViewport(0, 0, width, height);
 
-    // Collect eye data for the render payload
+    // Collect eye data for the render payload, always remembering to clear the payload first
+    payload.views.clear();
     for (auto eye : { vr::Hmd_Eye::Eye_Left, vr::Hmd_Eye::Eye_Right })
     {
         const auto eye_pose = hmd->get_eye_pose(eye);
@@ -151,10 +152,10 @@ void sample_vr_app::on_draw()
     const uint32_t left_eye_texture = scene.render_system->get_renderer()->get_color_texture(0);
     const uint32_t right_eye_texture = scene.render_system->get_renderer()->get_color_texture(1);
 
-    // Render to the HMD
+    // Submit to the HMD for presentation
     hmd->submit(left_eye_texture, right_eye_texture);
-    payload.views.clear();
 
+    // Draw eye textures to the desktop window in left/right configuration
     const aabb_2d rect{ { 0.f, 0.f },{ (float)width,(float)height } }; // Desktop window size
     const float mid = (rect.min().x + rect.max().x) / 2.f;
     const viewport_t leftViewport = { rect.min(),{ mid - 2.f, rect.max().y }, left_eye_texture };
@@ -170,7 +171,6 @@ void sample_vr_app::on_draw()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
 
-    // Draw to the desktop window
     for (int i = 0; i < viewports.size(); ++i)
     {
         const auto & v = viewports[i];
@@ -178,12 +178,13 @@ void sample_vr_app::on_draw()
         eye_views[i].draw(v.texture);
     }
     
+    // Setup desktop imgui
     const auto headPose = hmd->get_hmd_pose();
-
     desktop_imgui->begin_frame();
     ImGui::Text("Head Pose: %f, %f, %f", headPose.position.x, headPose.position.y, headPose.position.z);
     desktop_imgui->end_frame();
 
+    // Setup vr imgui
     vr_imgui->begin_frame();
     gui::imgui_fixed_window_begin("controls", ui_rect{ {0, 0,}, {256, 256} });
     ImGui::Text("Head Pose: %f, %f, %f", headPose.position.x, headPose.position.y, headPose.position.z);
