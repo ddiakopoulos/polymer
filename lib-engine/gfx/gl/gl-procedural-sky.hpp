@@ -9,6 +9,7 @@
 
 #include "../../shader.hpp"
 #include "../../asset-handle-utils.hpp"
+#include "../../serialization.hpp"
 
 #include <functional>
 
