@@ -29,7 +29,7 @@ Polymer is designed as a collection of static libraries. `lib-polymer` is a base
 
 ## Building
 
-This repository hosts maintained project files for Visual Studio 2017. Most dependencies are included in source form without the use of submodules. Use of the FBX 2017 SDK is controlled through an environment variable (`SYSTEM_HAS_FBX_SDK`). The extracted SDK itself must be moved to `polymer\lib-model-io\third-party\fbxsdk`. 
+Polymer requires a recent version of Windows 10 alongside a graphics driver capable of supporting an OpenGL 4.5 context. This repository hosts maintained project files for Visual Studio 2017. Most dependencies are included in source form without the use of submodules. Use of the FBX 2017 SDK is gated by an environment variable (`SYSTEM_HAS_FBX_SDK`); the extracted FBX SDK itself must be located in `polymer\lib-model-io\third-party\fbxsdk`. 
 
 ## Samples & Documentation
 
