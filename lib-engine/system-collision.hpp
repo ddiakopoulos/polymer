@@ -90,25 +90,23 @@ namespace polymer
 
             float best_t = std::numeric_limits<float>::max();
             entity hit_entity = kInvalidEntity;
-            raycast_result result;
+            raycast_result out_result;
 
+            // fixme - we really need an environment-wide spatial data structure for this
             if (type == raycast_type::mesh)
             {
-                // Okay, we really need a spatial data structure for this
                 for (const auto & mesh : meshes)
                 {
-                    std::cout << "Raycast (Mesh) Check " << mesh.first << std::endl;
-
                     if (mesh.first == kInvalidEntity) continue;
 
-                    result = raycast_mesh(mesh.first);
-                    if (result.hit)
+                    raycast_result res = raycast_mesh(mesh.first);
+                    if (res.hit)
                     {
-                        std::cout << "Raycast (Mesh) HIT " << mesh.first << std::endl;
-                        if (result.distance < best_t)
+                        if (res.distance < best_t)
                         {
-                            best_t = result.distance;
+                            best_t = res.distance;
                             hit_entity = mesh.first;
+                            out_result = res;
                         }
                     }
                 }
@@ -117,25 +115,22 @@ namespace polymer
             {
                 for (const auto & mesh : meshes)
                 {
-                    std::cout << "Raycast (Box) Check " << mesh.first << std::endl;
-
                     if (mesh.first == kInvalidEntity) continue;
 
-                    result = raycast_box(mesh.first);
-                    if (result.hit)
+                    raycast_result res = raycast_box(mesh.first);
+                    if (res.hit)
                     {
-                        std::cout << "Raycast (Box) HIT " << mesh.first << std::endl;
-
-                        if (result.distance < best_t)
+                        if (res.distance < best_t)
                         {
-                            best_t = result.distance;
+                            best_t = res.distance;
                             hit_entity = mesh.first;
+                            out_result = res;
                         }
                     }
                 }
             }
 
-            if (result.hit) { return { hit_entity, result }; }
+            if (out_result.hit) { return { hit_entity, out_result }; }
             else return { kInvalidEntity, raycast_result() };
         }
 
