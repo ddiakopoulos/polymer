@@ -126,7 +126,7 @@ gl_shader preprocess(const std::string & vertexShader,
 gl_shader_asset::gl_shader_asset(const std::string & n, const std::string & v, const std::string & f, const std::string & g, const std::string & inc) 
     : name(n), vertexPath(v), fragmentPath(f), geomPath(g), includePath(inc) {}
 
-uint64_t gl_shader_asset::hash(const std::vector<std::string> defines)
+uint64_t gl_shader_asset::hash(const std::vector<std::string> & defines)
 {
     uint64_t sumOfHashes = 0;
     for (auto & define : defines) sumOfHashes += poly_hash_fnv1a(define);
@@ -151,7 +151,7 @@ std::shared_ptr<shader_variant> gl_shader_asset::get_variant(const std::vector<s
     return newVariant;
 }
 
-gl_shader & gl_shader_asset::default()
+gl_shader & gl_shader_asset::get()
 {
     std::shared_ptr<shader_variant> theDefault;
     if (shaders.size() == 0) theDefault = get_variant();
