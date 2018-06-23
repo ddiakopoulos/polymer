@@ -21,6 +21,8 @@
 namespace polymer {
 namespace xr {
 
+    // enable/disable
+
     enum class vr_event_t : uint32_t
     {
         focus_begin,    // (dominant hand) when a hand enters the focus region of an entity
@@ -69,6 +71,8 @@ namespace xr {
     /// This system dispatches vr_input_events through the environment's event manager
     /// with respect to button presses, releases, and focus events. Entity focus is presently 
     /// expensive because there is no scene-wide acceleration structure used for raycasting. 
+    /// This is also an abstraction over all of the input of the `openvr_hmd` class and should
+    /// be used instead of an openvr_hmd instance directly.
 
     // todo - triple buffer xr_input_event state
     class xr_input_processor
@@ -86,6 +90,7 @@ namespace xr {
         xr_input_processor(entity_orchestrator * orch, environment * env, openvr_hmd * hmd);
         ~xr_input_processor();
         vr::ETrackedControllerRole get_dominant_hand() const;
+        openvr_controller get_controller(const vr::ETrackedControllerRole hand);
         xr_input_focus get_focus() const;
         void process(const float dt);
     };
@@ -121,7 +126,7 @@ namespace xr {
         std::stack<controller_render_style_t> render_styles;
         bool need_controller_render_data{ true };
 
-        polymer::event_manager_sync::connection input_handler_connection;
+        polymer::event_manager_sync::connection xr_input;
         void handle_event(const xr_input_event & event);
 
     public:
@@ -145,8 +150,9 @@ namespace xr {
         entity imgui_billboard;
         std::shared_ptr<polymer_fx_material> imgui_material;
         bool focused{ false };
+
+        polymer::event_manager_sync::connection xr_input;
         void handle_event(const xr_input_event & event);
-        polymer::event_manager_sync::connection input_handler_connection;
 
     public:
 
@@ -174,8 +180,9 @@ namespace xr {
         geometry transient_gizmo_geom;
 
         bool focused{ false };
+
         void handle_event(const xr_input_event & event);
-        polymer::event_manager_sync::connection input_handler_connection;
+        polymer::event_manager_sync::connection xr_input;
 
     public:
 

@@ -42,6 +42,11 @@ xr_input_processor::~xr_input_processor()
 
 }
 
+openvr_controller xr_input_processor::get_controller(const vr::ETrackedControllerRole hand)
+{
+    return hmd->get_controller(hand);
+}
+
 vr::ETrackedControllerRole xr_input_processor::get_dominant_hand() const 
 { 
     return dominant_hand; 
@@ -167,7 +172,7 @@ xr_controller_system::xr_controller_system(entity_orchestrator * orch, environme
         }
     });
 
-    input_handler_connection = env->event_manager->connect(this, [this](const xr_input_event & event)
+    xr_input = env->event_manager->connect(this, [this](const xr_input_event & event)
     {
         handle_event(event);
     });
@@ -175,7 +180,7 @@ xr_controller_system::xr_controller_system(entity_orchestrator * orch, environme
 
 xr_controller_system::~xr_controller_system()
 {
-    // todo - input_handler_connection disconnect
+    // todo - xr_input disconnect
 }
 
 std::vector<entity> xr_controller_system::get_renderables() const
@@ -325,7 +330,7 @@ xr_imgui_system::xr_imgui_system(entity_orchestrator * orch, environment * env, 
     imgui_material->shader = shader_handle("textured");
     env->mat_library->create_material("imgui", imgui_material);
 
-    input_handler_connection = env->event_manager->connect(this, [this](const xr_input_event & event)
+    xr_input = env->event_manager->connect(this, [this](const xr_input_event & event)
     {
         handle_event(event);
     });
@@ -333,18 +338,15 @@ xr_imgui_system::xr_imgui_system(entity_orchestrator * orch, environment * env, 
 
 xr_imgui_system::~xr_imgui_system()
 {
-
+    // fixme - xr_input must be disconnected
 }
 
 void xr_imgui_system::handle_event(const xr_input_event & event)
 {
-    if (event.type == vr_event_t::focus_begin && event.focus.result.e == imgui_billboard)
+    if (event.focus.result.e == imgui_billboard)
     {
-        focused = true;
-    }
-    else if (event.type == vr_event_t::focus_end && event.focus.result.e == imgui_billboard)
-    {
-        focused = false;
+        if (event.type == vr_event_t::focus_begin) focused = true;
+        else if (event.type == vr_event_t::focus_end) focused = false;
     }
 }
 
@@ -359,6 +361,8 @@ void xr_imgui_system::set_surface_transform(const transform & t)
 
 void xr_imgui_system::process(const float dt)
 {
+    // Here we shim/translate controller data into an `app_input_event` since imgui
+    // is designed for mouse + keyboard-based interaction
     if (focused)
     {
         const xr_input_focus focus = processor->get_focus();
@@ -371,9 +375,11 @@ void xr_imgui_system::process(const float dt)
         controller_event.action = trigger_state;
         controller_event.value = { 0, 0 };
         controller_event.cursor = pixel_coord;
+
         imgui->update_input(controller_event);
     }
 
+    // Update material uniforms
     imgui_material->use();
     auto & imgui_shader = imgui_material->compiled_shader->shader;
     imgui_shader.texture("s_texture", 0, get_render_texture(), GL_TEXTURE_2D);
@@ -444,7 +450,7 @@ xr_gizmo_system::xr_gizmo_system(entity_orchestrator * orch, environment * env, 
         }
     };
 
-    input_handler_connection = env->event_manager->connect(this, [this](const xr_input_event & event)
+    xr_input = env->event_manager->connect(this, [this](const xr_input_event & event)
     {
         handle_event(event);
     });
@@ -452,18 +458,15 @@ xr_gizmo_system::xr_gizmo_system(entity_orchestrator * orch, environment * env, 
 
 xr_gizmo_system::~xr_gizmo_system()
 {
-    // fixme - input_handler_connection must be disconnected
+    // fixme - xr_input must be disconnected
 }
 
 void xr_gizmo_system::handle_event(const xr_input_event & event)
 {
-    if (event.type == vr_event_t::focus_begin && event.focus.result.e == gizmo_entity)
+    if (event.focus.result.e == gizmo_entity)
     {
-        focused = true;
-    }
-    else if (event.type == vr_event_t::focus_end && event.focus.result.e == gizmo_entity)
-    {
-        focused = false;
+        if (event.type == vr_event_t::focus_begin) focused = true;
+        else if (event.type == vr_event_t::focus_end) focused = false;
     }
 }
 
