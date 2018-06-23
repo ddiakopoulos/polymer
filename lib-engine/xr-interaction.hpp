@@ -107,7 +107,8 @@ namespace xr {
     enum class controller_render_style_t : uint32_t
     {
         invisible,
-        laser,
+        laser_to_entity,
+        laser_infinite,
         arc
     };
 

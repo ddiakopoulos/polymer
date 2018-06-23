@@ -74,6 +74,7 @@ void xr_input_processor::process(const float dt)
                 const xr_input_focus focus = recompute_focus(controller);
                 xr_input_event press = make_event(vr_event_t::press, src, focus, controller);
                 env->event_manager->send(press);
+                log::get()->assetLog->info("xr_input_processor vr_event_t::press for entity {}", focus.result.e);
 
                 // Swap dominant hand based on last activated trigger button
                 if (b.first == vr::EVRButtonId::k_EButton_SteamVR_Trigger)
@@ -86,6 +87,7 @@ void xr_input_processor::process(const float dt)
                 const xr_input_focus focus = recompute_focus(controller);
                 xr_input_event release = make_event(vr_event_t::release, src, focus, controller);
                 env->event_manager->send(release);
+                log::get()->assetLog->info("xr_input_processor vr_event_t::release for entity {}", focus.result.e);
             }
         }
     }
@@ -101,8 +103,9 @@ void xr_input_processor::process(const float dt)
         {
             xr_input_event focus_gained = make_event(vr_event_t::focus_begin, src, active_focus, controller);
             env->event_manager->send(focus_gained);
-            std::cout << "dispatching vr_event_t::focus_begin for entity " << active_focus.result.e << std::endl;
             // todo - focus_end on old entity
+
+            log::get()->assetLog->info("xr_input_processor vr_event_t::focus_begin for entity {}", active_focus.result.e);
         }
 
         // Last one valid, new one invalid
@@ -110,7 +113,8 @@ void xr_input_processor::process(const float dt)
         {
             xr_input_event focus_lost = make_event(vr_event_t::focus_end, src, last_focus, controller);
             env->event_manager->send(focus_lost);
-            std::cout << "dispatching vr_event_t::focus_end for entity " << last_focus.result.e << std::endl;
+
+            log::get()->assetLog->info("xr_input_processor vr_event_t::focus_end for entity {}", last_focus.result.e);
         }
 
         last_focus = active_focus;
@@ -203,7 +207,7 @@ void xr_controller_system::handle_event(const xr_input_event & event)
     // Draw laser on focus of any type
     if (event.type == vr_event_t::focus_begin)
     {
-        render_styles.push(controller_render_style_t::laser);
+        render_styles.push(controller_render_style_t::laser_to_entity);
         animator.cancel_all();
         tween_event & fade_in = animator.add_tween(&laser_alpha, 1.0f, laser_fade_seconds, tween::linear::ease_in_out);
         fade_in.on_finish = [this]() {};
@@ -214,8 +218,7 @@ void xr_controller_system::handle_event(const xr_input_event & event)
         tween_event & fade_out = animator.add_tween(&laser_alpha, 0.0f, laser_fade_seconds, tween::linear::ease_in_out);
         fade_out.on_update = [this](const float t)
         {
-            // keep drawing laser until it's faded out.
-            update_laser_geometry(laser_fixed_draw_distance);
+            update_laser_geometry(laser_fixed_draw_distance); // keep drawing laser until it's faded out.
         };
 
         fade_out.on_finish = [this]()
@@ -256,7 +259,7 @@ void xr_controller_system::process(const float dt)
         hmd->get_controller(vr::TrackedControllerRole_RightHand).buttons[vr::k_EButton_SteamVR_Touchpad]
     };
 
-    if (render_styles.size() && render_styles.top() == controller_render_style_t::laser)
+    if (render_styles.size() && render_styles.top() == controller_render_style_t::laser_to_entity)
     {
         const xr_input_focus focus = processor->get_focus();
         if (focus.result.e != kInvalidEntity)

@@ -19,12 +19,15 @@ namespace polymer
         const size_t qSize = 256;
         std::vector<spdlog::sink_ptr> sinks;
         LogT assetLog;
+        LogT interactionLog;
 
         log()
         {
             spdlog::set_async_mode(qSize);
-            sinks.push_back(std::make_shared<spdlog::sinks::simple_file_sink_mt>("polymer-engine-log.txt"));
-            assetLog = std::make_shared<spdlog::logger>("polymer-engine-log", std::begin(sinks), std::end(sinks));
+            sinks.push_back(std::make_shared<spdlog::sinks::simple_file_sink_mt>("polymer-engine-log.txt", true));
+            sinks.push_back(std::make_shared<spdlog::sinks::simple_file_sink_mt>("polymer-input-log.txt", true));
+            assetLog = std::make_shared<spdlog::logger>("polymer-engine-log", sinks[0]);
+            interactionLog = std::make_shared<spdlog::logger>("polymer-input-log", sinks[1]);
         }
 
         void replace_sink(spdlog::sink_ptr sink)
