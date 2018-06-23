@@ -204,32 +204,20 @@ namespace polymer
         return g;
     }
 
-    struct pointer_data
+    struct arc_pointer_data
     {
-        aabb_3d navMeshBounds;
+        aabb_3d xz_plane_bounds;
         float3 position{ 0, 0, 0 };
         float3 forward{ 0, 0, 0 };
-        float3 lineThickness{ 0.025f };
         float pointSpacing{ 0.1f };
         uint32_t pointCount{ 128 }; // pointSpacing * pointCount is maximum travel distance in meters
     };
 
-    inline bool make_parabolic_pointer(const pointer_data & params, geometry & pointer, float3 & worldHit)
+    inline bool make_pointer_arc(arc_pointer_data & params, std::vector<float3> & out_points)
     {
-        float3 velocity_fwd = params.forward * float3(10.0);
-        const float currentAngleDegrees = clamp_initial_velocity(50.f, params.position, velocity_fwd);
-
-        std::vector<float3> out_points;
-        const bool solution = compute_parabolic_curve(params.position, velocity_fwd, float3(0, -25.f, 0), params.pointSpacing, params.pointCount, params.navMeshBounds, out_points);
-
-        if (solution)
-        {
-            pointer = make_parabolic_geometry(out_points, velocity_fwd, 0.1f, params.lineThickness);
-            worldHit = out_points[out_points.size() - 1];
-            return true;
-        }
-
-        return false;
+        params.forward = params.forward * float3(10.0);
+        const float currentAngleDegrees = clamp_initial_velocity(50.f, params.position, params.forward);
+        return compute_parabolic_curve(params.position, params.forward, float3(0, -25.f, 0), params.pointSpacing, params.pointCount, params.xz_plane_bounds, out_points);
     }
 
 } // end namespace polymer

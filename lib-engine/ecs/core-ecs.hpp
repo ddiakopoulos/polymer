@@ -46,10 +46,9 @@ namespace polymer
     //   Base System   //
     /////////////////////
 
-    // Systems are responsible for storing the component data instances associated with entities.
-    // They also perform all the logic for manipulating and processing their Components.
-    // This base class provides an API for an entity_orchestrator to associate components with entities in a data-driven manner.
-
+    /// Systems are responsible for storing the component data instances associated with entities.
+    /// They also perform all the logic for manipulating and processing their Components.
+    /// This base class provides an API for an entity_orchestrator to associate components with entities in a data-driven manner.
     class entity_orchestrator;
     struct base_system : public non_copyable
     {
@@ -58,14 +57,14 @@ namespace polymer
         explicit base_system(entity_orchestrator * o) : orchestrator(o) {}
         virtual ~base_system() {}
 
-        // Associates component with the Entity using serialized data. The void pointer 
+        // Associates component with the entity using serialized data. The void pointer 
         // and hash type is to subvert the need for a heavily templated component system. 
-        virtual bool create(entity e, poly_typeid hash, void * data) = 0;
+        virtual bool create(entity e, poly_typeid hash, void * data) { return false; };
 
         // Destroys all of an entity's associated components
-        virtual void destroy(entity e) = 0;
+        virtual void destroy(entity e) {};
 
-        // Helper function to signal to the entity manager that this system operates on these types of components
+        // Helper function to signal to the entity orchestrator that this system operates on these types of components
         template <typename S>
         void register_system_for_type(S * system, poly_typeid component_type) { register_system_for_type(get_typeid<S>(), component_type); }
         void register_system_for_type(poly_typeid system_type, poly_typeid component_type);

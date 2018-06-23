@@ -9,6 +9,7 @@
 
 #include "../../shader.hpp"
 #include "../../asset-handle-utils.hpp"
+#include "../../serialization.hpp"
 
 #include <functional>
 
@@ -240,7 +241,7 @@ namespace polymer
     
         virtual void render_internal(float4x4 viewProj, float3 sunDir, float4x4 world) override
         {
-            gl_shader & shader = sky.get()->default();
+            gl_shader & shader = sky.get()->get();
 
             shader.bind();
             shader.uniform("ViewProjection", viewProj);
@@ -288,7 +289,7 @@ namespace polymer
     
         virtual void render_internal(float4x4 viewProj, float3 sunDir, float4x4 world) override
         {
-            gl_shader & shader = sky.get()->default();
+            gl_shader & shader = sky.get()->get();
 
             shader.bind();
             shader.uniform("ViewProjection", viewProj);

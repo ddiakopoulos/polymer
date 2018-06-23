@@ -90,8 +90,8 @@
     <ClInclude Include="..\third_party\nanovg\nanovg.h" />
     <ClInclude Include="..\third_party\nanovg\nanovg_gl.h" />
     <ClInclude Include="..\third_party\nanovg\nanovg_gl_utils.h" />
-    <ClInclude Include="..\third_party\tiny-gizmo.hpp" />
     <ClInclude Include="..\third_party\tinyexr\tinyexr.h" />
+    <ClInclude Include="..\third_party\tinygizmo\tiny-gizmo.hpp" />
     <ClInclude Include="asset-handle-utils.hpp" />
     <ClInclude Include="asset-handle.hpp" />
     <ClInclude Include="asset-import.hpp" />
@@ -138,14 +138,14 @@
     <ClInclude Include="system-transform.hpp" />
     <ClInclude Include="system-util.hpp" />
     <ClInclude Include="uniforms.hpp" />
-    <ClInclude Include="vr-interaction.hpp" />
+    <ClInclude Include="xr-interaction.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\third_party\imgui\imgui.cpp" />
     <ClCompile Include="..\third_party\imgui\imgui_draw.cpp" />
     <ClCompile Include="..\third_party\nanovg\nanovg.c" />
-    <ClCompile Include="..\third_party\tiny-gizmo.cpp" />
     <ClCompile Include="..\third_party\tinyexr\tinyexr.cc" />
+    <ClCompile Include="..\third_party\tinygizmo\tiny-gizmo.cpp" />
     <ClCompile Include="ecs\core-events.cpp" />
     <ClCompile Include="environment.cpp" />
     <ClCompile Include="openvr-camera.cpp" />
@@ -158,7 +158,7 @@
     <ClCompile Include="shader-library.cpp" />
     <ClCompile Include="shader.cpp" />
     <ClCompile Include="renderer-pbr.cpp" />
-    <ClCompile Include="vr-interaction.cpp" />
+    <ClCompile Include="xr-interaction.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\lib-polymer\lib-polymer.vcxproj">

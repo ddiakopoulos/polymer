@@ -26,36 +26,27 @@ struct cached_controller_render_data
     bool loaded = false;
 };
 
-class openvr_controller
+struct input_button_state
 {
-    transform p;
+    bool prev_down{ false };    // do not use directly, for state tracking only
+    bool down{ false };         // query if the button is currently down
+    bool pressed{ false };      // query if the button was pressed for a single frame
+    bool released{ false };     // query if the button was released for a single frame
+};
 
-public:
+inline void update_button_state(input_button_state & state, const bool value)
+{
+    state.prev_down = state.down;
+    state.down = value;
+    state.pressed = !state.prev_down && value;
+    state.released = state.prev_down && !value;
+}
 
-    struct button_state
-    {
-        bool down = false;
-        bool lastDown = false;
-        bool pressed = false;
-        bool released = false;
-
-        void update(bool state)
-        {
-            lastDown = down;
-            down = state;
-            pressed = (!lastDown) && state;
-            released = lastDown && (!state);
-        }
-    };
-
-    button_state pad;
-    button_state trigger;
-
-    float2 touchpad = float2(0.0f, 0.0f);
-
-    void set_pose(const transform & newPose) { p = newPose; }
-    const transform get_pose(const transform & worldPose) const { return worldPose * p; }
-    ray forward_ray() const { return ray(p.position, p.transform_vector(float3(0.0f, 0.0f, -1.0f))); }
+struct openvr_controller
+{
+    transform t;
+    float2 axis_values{ 0.f, 0.f };
+    std::unordered_map<vr::EVRButtonId, input_button_state> buttons;
 };
 
 class openvr_hmd 
@@ -103,7 +94,7 @@ public:
     void get_optical_properties(vr::Hmd_Eye eye, float & aspectRatio, float & vfov);
 
     // Returns current controller state.
-    const openvr_controller * get_controller(const vr::ETrackedControllerRole controller);
+    openvr_controller get_controller(const vr::ETrackedControllerRole controller);
 
     void controller_render_data_callback(std::function<void(cached_controller_render_data & data)> callback);
 

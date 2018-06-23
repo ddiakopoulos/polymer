@@ -35,16 +35,16 @@
     <ClCompile Include="..\third_party\nanovg\nanovg.c">
       <Filter>third-party\nanovg</Filter>
     </ClCompile>
-    <ClCompile Include="..\third_party\tiny-gizmo.cpp">
-      <Filter>third-party\tinygizmo</Filter>
-    </ClCompile>
     <ClCompile Include="..\third_party\imgui\imgui.cpp">
       <Filter>third-party\imgui</Filter>
     </ClCompile>
     <ClCompile Include="..\third_party\imgui\imgui_draw.cpp">
       <Filter>third-party\imgui</Filter>
     </ClCompile>
-    <ClCompile Include="vr-interaction.cpp" />
+    <ClCompile Include="..\third_party\tinygizmo\tiny-gizmo.cpp">
+      <Filter>third-party\tinygizmo</Filter>
+    </ClCompile>
+    <ClCompile Include="xr-interaction.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="gfx\gl\gl-api.hpp">
@@ -168,9 +168,6 @@
     <ClInclude Include="..\third_party\nanovg\nanovg_gl_utils.h">
       <Filter>third-party\nanovg</Filter>
     </ClInclude>
-    <ClInclude Include="..\third_party\tiny-gizmo.hpp">
-      <Filter>third-party\tinygizmo</Filter>
-    </ClInclude>
     <ClInclude Include="..\third_party\imgui\imconfig.h">
       <Filter>third-party\imgui</Filter>
     </ClInclude>
@@ -180,7 +177,10 @@
     <ClInclude Include="..\third_party\imgui\imgui_internal.h">
       <Filter>third-party\imgui</Filter>
     </ClInclude>
-    <ClInclude Include="vr-interaction.hpp" />
+    <ClInclude Include="..\third_party\tinygizmo\tiny-gizmo.hpp">
+      <Filter>third-party\tinygizmo</Filter>
+    </ClInclude>
+    <ClInclude Include="xr-interaction.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="gfx">

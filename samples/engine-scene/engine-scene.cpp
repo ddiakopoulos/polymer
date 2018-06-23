@@ -19,7 +19,6 @@ struct sample_engine_scene final : public polymer_app
     std::unique_ptr<gl_shader_monitor> shaderMonitor;
     std::unique_ptr<entity_orchestrator> orchestrator;
     std::unique_ptr<asset_resolver> resolver;
-    std::unique_ptr<pbr_renderer> renderer;
     std::unique_ptr<simple_texture_view> fullscreen_surface;
 
     render_payload payload;
@@ -60,6 +59,7 @@ sample_engine_scene::sample_engine_scene() : polymer_app(1280, 720, "sample-engi
     scene.identifier_system = orchestrator->create_system<identifier_system>(orchestrator.get());
     scene.render_system = orchestrator->create_system<render_system>(settings, orchestrator.get());
     scene.mat_library.reset(new polymer::material_library("../../assets/sample-material.json"));
+    scene.event_manager.reset(new polymer::event_manager_async());
 
     auto radianceBinary = read_file_binary("../../assets/textures/envmaps/wells_radiance.dds");
     auto irradianceBinary = read_file_binary("../../assets/textures/envmaps/wells_irradiance.dds");
@@ -145,14 +145,12 @@ void sample_engine_scene::on_draw()
     int width, height;
     glfwGetWindowSize(window, &width, &height);
 
-    glEnable(GL_CULL_FACE);
-    glEnable(GL_DEPTH_TEST);
-
     const uint32_t viewIndex = 0;
     const float4x4 projectionMatrix = cam.get_projection_matrix(float(width) / float(height));
     const float4x4 viewMatrix = cam.get_view_matrix();
     const float4x4 viewProjectionMatrix = mul(projectionMatrix, viewMatrix);
 
+    payload.views.clear();
     payload.views.emplace_back(view_data(viewIndex, cam.pose, projectionMatrix));
     scene.render_system->get_renderer()->render_frame(payload);
 
@@ -160,9 +158,10 @@ void sample_engine_scene::on_draw()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, width, height);
     glClearColor(1.f, 0.25f, 0.25f, 1.0f);
+    glEnable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST);
 
     fullscreen_surface->draw(scene.render_system->get_renderer()->get_color_texture(viewIndex));
-    payload.views.clear();
 
     gl_check_error(__FILE__, __LINE__);
 

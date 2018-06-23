@@ -179,7 +179,7 @@ namespace polymer
     size_t event_manager_sync::num_handlers_type(poly_typeid type) const { return handlers->handler_count(type); }
 
     ////////////////////////////////////////////
-    //   event_manager_async Implementation   //
+    //   event_manager_async implementation   //
     ////////////////////////////////////////////
 
     bool event_manager_async::send_internal(const event_wrapper & event_w)

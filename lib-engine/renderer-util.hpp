@@ -13,28 +13,28 @@ namespace polymer
     {
         try
         {
+            monitor.watch("sky-hosek",
+                base_path + "/shaders/sky_vert.glsl",
+                base_path + "/shaders/sky_hosek_frag.glsl");
+
             monitor.watch("ibl",
                 base_path + "/shaders/ibl_vert.glsl",
                 base_path + "/shaders/ibl_frag.glsl",
                 base_path + "/shaders/renderer");
 
+            monitor.watch("default-shader",
+                base_path + "/shaders/renderer/renderer_vert.glsl",
+                base_path + "/shaders/renderer/default_material_frag.glsl",
+                base_path + "/shaders/renderer");
+
             monitor.watch("renderer-wireframe",
-                base_path + "/shaders/renderer/forward_lighting_vert.glsl",
+                base_path + "/shaders/renderer/renderer_vert.glsl",
                 base_path + "/shaders/renderer/wireframe_frag.glsl",
                 base_path + "/shaders/renderer/wireframe_geom.glsl",
                 base_path + "/shaders/renderer");
 
-            monitor.watch("default-shader",
-                base_path + "/shaders/renderer/forward_lighting_vert.glsl",
-                base_path + "/shaders/renderer/default_material_frag.glsl",
-                base_path + "/shaders/renderer");
-
-            monitor.watch("sky-hosek",
-                base_path + "/shaders/sky_vert.glsl",
-                base_path + "/shaders/sky_hosek_frag.glsl");
-
             monitor.watch("depth-prepass",
-                base_path + "/shaders/renderer/depth_prepass_vert.glsl",
+                base_path + "/shaders/renderer/renderer_vert.glsl",
                 base_path + "/shaders/renderer/depth_prepass_frag.glsl",
                 base_path + "/shaders/renderer");
 
@@ -44,9 +44,14 @@ namespace polymer
                 base_path + "/shaders/renderer/shadowcascade_geom.glsl",
                 base_path + "/shaders/renderer");
 
+            monitor.watch("phong-forward-lighting",
+                base_path + "/shaders/renderer/renderer_vert.glsl",
+                base_path + "/shaders/renderer/phong_material_frag.glsl",
+                base_path + "/shaders/renderer");
+
             monitor.watch("pbr-forward-lighting",
-                base_path + "/shaders/renderer/forward_lighting_vert.glsl",
-                base_path + "/shaders/renderer/forward_lighting_frag.glsl",
+                base_path + "/shaders/renderer/renderer_vert.glsl",
+                base_path + "/shaders/renderer/pbr_material_frag.glsl",
                 base_path + "/shaders/renderer");
 
             monitor.watch("post-tonemap",

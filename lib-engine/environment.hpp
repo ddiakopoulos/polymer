@@ -17,7 +17,7 @@
 
 #include "ecs/typeid.hpp"
 #include "ecs/core-ecs.hpp"
-#include <string>
+#include "ecs/core-events.hpp"
 
 #include "json.hpp"
 
@@ -146,6 +146,7 @@ namespace polymer
         gpu_mesh_handle mesh;
         mesh_component() {};
         mesh_component(entity e) : base_component(e) {}
+        mesh_component(entity e, gpu_mesh_handle handle) : base_component(e), mesh(handle) {}
         void set_mesh_render_mode(const GLenum mode) { if (mode != GL_TRIANGLE_STRIP) mesh.get().set_non_indexed(mode); }
         void draw() const { mesh.get().draw_elements(); }
     };
@@ -176,6 +177,7 @@ namespace polymer
         bool cast_shadow{ true };
         material_component() {};
         material_component(entity e) : base_component(e) {}
+        material_component(entity e, material_handle handle) : base_component(e), material(handle) {}
     };
     POLYMER_SETUP_TYPEID(material_component);
 
@@ -205,6 +207,7 @@ namespace polymer
         cpu_mesh_handle geom;
         geometry_component() {};
         geometry_component(entity e) : base_component(e) {}
+        geometry_component(entity e, cpu_mesh_handle handle) : base_component(e), geom(handle) {}
     };
     POLYMER_SETUP_TYPEID(geometry_component);
 
@@ -328,6 +331,7 @@ namespace polymer
     //   environment   //
     /////////////////////
 
+    // fixme - should be an ad-hoc render_component
     struct renderable
     {
         entity e{ kInvalidEntity };
@@ -349,7 +353,8 @@ namespace polymer
 
     public:
 
-        std::shared_ptr<polymer::material_library> mat_library;
+        std::unique_ptr<polymer::material_library> mat_library;
+        std::unique_ptr<polymer::event_manager_async> event_manager;
 
         polymer::render_system * render_system;
         polymer::collision_system * collision_system;
@@ -358,6 +363,7 @@ namespace polymer
 
         void import_environment(const std::string & path, entity_orchestrator & o);
         void export_environment(const std::string & path);
+
         entity track_entity(entity e);        
         const std::vector<entity> & entity_list();
         void copy(entity src, entity dest);
