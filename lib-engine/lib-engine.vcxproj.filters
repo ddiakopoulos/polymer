@@ -41,10 +41,10 @@
     <ClCompile Include="..\third_party\imgui\imgui_draw.cpp">
       <Filter>third-party\imgui</Filter>
     </ClCompile>
-    <ClCompile Include="vr-interaction.cpp" />
     <ClCompile Include="..\third_party\tinygizmo\tiny-gizmo.cpp">
       <Filter>third-party\tinygizmo</Filter>
     </ClCompile>
+    <ClCompile Include="xr-interaction.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="gfx\gl\gl-api.hpp">
@@ -177,10 +177,10 @@
     <ClInclude Include="..\third_party\imgui\imgui_internal.h">
       <Filter>third-party\imgui</Filter>
     </ClInclude>
-    <ClInclude Include="vr-interaction.hpp" />
     <ClInclude Include="..\third_party\tinygizmo\tiny-gizmo.hpp">
       <Filter>third-party\tinygizmo</Filter>
     </ClInclude>
+    <ClInclude Include="xr-interaction.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="gfx">
