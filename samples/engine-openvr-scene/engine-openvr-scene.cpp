@@ -1,5 +1,7 @@
 #include "engine-openvr-scene.hpp"
 
+using namespace polymer::xr;
+
 renderable sample_vr_app::assemble_renderable(const entity e)
 {
     renderable r;
@@ -70,10 +72,10 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
             scene.render_system->create(floor, mesh_component(floor, gpu_mesh_handle("floor-mesh")));
         }
 
-        input_processor.reset(new vr_input_processor(orchestrator.get(), &scene, hmd.get()));
-        controller_system.reset(new vr_controller_system(orchestrator.get(), &scene, hmd.get(), input_processor.get()));
-        gizmo_system.reset(new vr_gizmo(orchestrator.get(), &scene, hmd.get(), input_processor.get()));
-        vr_imgui.reset(new vr_imgui_surface(orchestrator.get(), &scene, hmd.get(), input_processor.get(), { 256, 256 }, window));
+        input_processor.reset(new xr_input_processor(orchestrator.get(), &scene, hmd.get()));
+        controller_system.reset(new xr_controller_system(orchestrator.get(), &scene, hmd.get(), input_processor.get()));
+        gizmo_system.reset(new xr_gizmo_system(orchestrator.get(), &scene, hmd.get(), input_processor.get()));
+        vr_imgui.reset(new xr_imgui_system(orchestrator.get(), &scene, hmd.get(), input_processor.get(), { 256, 256 }, window));
         gui::make_light_theme();
     }
     catch (const std::exception & e)

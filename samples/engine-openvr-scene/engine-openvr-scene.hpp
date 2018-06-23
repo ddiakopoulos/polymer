@@ -19,10 +19,11 @@ struct sample_vr_app : public polymer_app
     std::unique_ptr<openvr_hmd> hmd;
     std::unique_ptr<gui::imgui_instance> desktop_imgui;
     std::unique_ptr<entity_orchestrator> orchestrator;
-    std::unique_ptr<vr_input_processor> input_processor;
-    std::unique_ptr<vr_controller_system> controller_system;
-    std::unique_ptr<vr_imgui_surface> vr_imgui;
-    std::unique_ptr<vr_gizmo> gizmo_system;
+
+    std::unique_ptr<polymer::xr::xr_input_processor> input_processor;
+    std::unique_ptr<polymer::xr::xr_controller_system> controller_system;
+    std::unique_ptr<polymer::xr::xr_imgui_system> vr_imgui;
+    std::unique_ptr<polymer::xr::xr_gizmo_system> gizmo_system;
 
     std::vector<viewport_t> viewports;
     std::vector<simple_texture_view> eye_views;

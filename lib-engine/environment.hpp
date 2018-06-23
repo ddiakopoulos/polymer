@@ -331,6 +331,7 @@ namespace polymer
     //   environment   //
     /////////////////////
 
+    // fixme - should be an ad-hoc render_component
     struct renderable
     {
         entity e{ kInvalidEntity };
@@ -362,6 +363,7 @@ namespace polymer
 
         void import_environment(const std::string & path, entity_orchestrator & o);
         void export_environment(const std::string & path);
+
         entity track_entity(entity e);        
         const std::vector<entity> & entity_list();
         void copy(entity src, entity dest);

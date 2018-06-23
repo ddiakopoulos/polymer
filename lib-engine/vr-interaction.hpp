@@ -18,50 +18,51 @@
 
 #include <stack>
 
-namespace polymer
-{
+namespace polymer {
+namespace xr {
+
     enum class vr_event_t : uint32_t
     {
-        focus_begin,
-        focus_end,
-        press,
-        release,
-        cancel
+        focus_begin,    // (dominant hand) when a hand enters the focus region of an entity
+        focus_end,      // (dominant hand) leaving the focus region
+        press,          // (either hand) for all button press events
+        release,        // (either hand) for all button release events
+        cancel          // (either hand) unimplemented
     };
 
     enum class vr_input_source_t : uint32_t
     {
         left_controller,
         right_controller,
-        left_hand,
-        right_hand,
         tracker
     };
 
-    struct vr_input_focus { ray r; entity_hit_result result; };
-    inline bool operator != (const vr_input_focus & a, const vr_input_focus & b) { return (a.result.e != b.result.e); }
-    inline bool operator == (const vr_input_focus & a, const vr_input_focus & b) { return (a.result.e == b.result.e); }
+    struct xr_input_focus { ray r; entity_hit_result result; };
+    inline bool operator != (const xr_input_focus & a, const xr_input_focus & b) { return (a.result.e != b.result.e); }
+    inline bool operator == (const xr_input_focus & a, const xr_input_focus & b) { return (a.result.e == b.result.e); }
 
-    struct vr_input_event
+    struct xr_input_event
     {
         vr_event_t type;
         vr_input_source_t source;
-        vr_input_focus focus;
+        xr_input_focus focus;
         uint64_t timestamp;
         openvr_controller controller;
     };
-    POLYMER_SETUP_TYPEID(vr_input_event);
 
-    struct vr_teleport_event { float3 world_position; uint64_t timestamp; };
-    POLYMER_SETUP_TYPEID(vr_teleport_event);
+    struct xr_teleport_event 
+    {
+        float3 world_position; 
+        uint64_t timestamp; 
+    };
 
-    inline vr_input_event make_event(vr_event_t t, vr_input_source_t s, vr_input_focus f, openvr_controller c)
+    inline xr_input_event make_event(vr_event_t t, vr_input_source_t s, const xr_input_focus & f, const openvr_controller & c)
     {
         return { t, s, f, system_time_ns(), c };
     }
 
     ////////////////////////////
-    //   vr_input_processor   //
+    //   xr_input_processor   //
     ////////////////////////////
 
     /// The input processor polls the openvr system directly for updated controller input.
@@ -69,29 +70,28 @@ namespace polymer
     /// with respect to button presses, releases, and focus events. Entity focus is presently 
     /// expensive because there is no scene-wide acceleration structure used for raycasting. 
 
-    // todo - triple buffer vr_input_event state
-    class vr_input_processor
+    // todo - triple buffer xr_input_event state
+    class xr_input_processor
     {
         environment * env{ nullptr };
         openvr_hmd * hmd{ nullptr };
 
         vr::ETrackedControllerRole dominant_hand{ vr::TrackedControllerRole_RightHand };
 
-        vr_input_focus last_focus;
-        vr_input_focus recompute_focus(const openvr_controller & controller);
+        xr_input_focus last_focus;
+        xr_input_focus recompute_focus(const openvr_controller & controller);
 
     public:
 
-        vr_input_processor(entity_orchestrator * orch, environment * env, openvr_hmd * hmd);
-        ~vr_input_processor();
+        xr_input_processor(entity_orchestrator * orch, environment * env, openvr_hmd * hmd);
+        ~xr_input_processor();
         vr::ETrackedControllerRole get_dominant_hand() const;
-        vr_input_focus get_focus() const;
+        xr_input_focus get_focus() const;
         void process(const float dt);
     };
-    POLYMER_SETUP_TYPEID(vr_input_processor);
 
     //////////////////////////////
-    //   vr_controller_system   //
+    //   xr_controller_system   //
     //////////////////////////////
 
     /// The controller system is responsible for creating, updating, and drawing the
@@ -106,11 +106,11 @@ namespace polymer
         arc
     };
 
-    class vr_controller_system
+    class xr_controller_system
     {
         environment * env{ nullptr };
         openvr_hmd * hmd{ nullptr };
-        vr_input_processor * processor{ nullptr };
+        xr_input_processor * processor{ nullptr };
 
         mesh_component * pointer_mesh_component{ nullptr };
         entity pointer, left_controller, right_controller;
@@ -122,52 +122,50 @@ namespace polymer
         bool need_controller_render_data{ true };
 
         polymer::event_manager_sync::connection input_handler_connection;
-        void handle_event(const vr_input_event & event);
+        void handle_event(const xr_input_event & event);
 
     public:
 
-        vr_controller_system(entity_orchestrator * orch, environment * env, openvr_hmd * hmd, vr_input_processor * processor);
-        ~vr_controller_system();
+        xr_controller_system(entity_orchestrator * orch, environment * env, openvr_hmd * hmd, xr_input_processor * processor);
+        ~xr_controller_system();
         std::vector<entity> get_renderables() const;
         void process(const float dt);
     };
-    POLYMER_SETUP_TYPEID(vr_controller_system);
 
-    //////////////////////////
-    //   vr_imgui_surface   //
-    //////////////////////////
+    /////////////////////////
+    //   xr_imgui_system   //
+    /////////////////////////
 
-    class vr_imgui_surface : public gui::imgui_surface
+    class xr_imgui_system : public gui::imgui_surface
     {
         environment * env{ nullptr };
         openvr_hmd * hmd{ nullptr };
-        vr_input_processor * processor{ nullptr };
+        xr_input_processor * processor{ nullptr };
 
         entity imgui_billboard;
         std::shared_ptr<polymer_fx_material> imgui_material;
         bool focused{ false };
-        void handle_event(const vr_input_event & event);
+        void handle_event(const xr_input_event & event);
         polymer::event_manager_sync::connection input_handler_connection;
 
     public:
 
-        vr_imgui_surface(entity_orchestrator * orch, environment * env, openvr_hmd * hmd, vr_input_processor * processor, const uint2 size, GLFWwindow * window);
-        ~vr_imgui_surface();
+        xr_imgui_system(entity_orchestrator * orch, environment * env, openvr_hmd * hmd, xr_input_processor * processor, const uint2 size, GLFWwindow * window);
+        ~xr_imgui_system();
         void set_surface_transform(const transform & t);
         std::vector<entity> get_renderables() const;
         void process(const float dt);
     };
-    POLYMER_SETUP_TYPEID(vr_imgui_surface);
 
-    //////////////////
-    //   vr_gizmo   //
-    //////////////////
+    /////////////////////////
+    //   xr_gizmo_system   //
+    /////////////////////////
 
-    class vr_gizmo
+    class xr_gizmo_system
     {
         environment * env{ nullptr };
         openvr_hmd * hmd{ nullptr };
-        vr_input_processor * processor{ nullptr };
+        xr_input_processor * processor{ nullptr };
 
         entity gizmo_entity;
         tinygizmo::gizmo_application_state gizmo_state;
@@ -176,17 +174,26 @@ namespace polymer
         geometry transient_gizmo_geom;
 
         bool focused{ false };
-        void handle_event(const vr_input_event & event);
+        void handle_event(const xr_input_event & event);
         polymer::event_manager_sync::connection input_handler_connection;
 
     public:
 
-        vr_gizmo(entity_orchestrator * orch, environment * env, openvr_hmd * hmd, vr_input_processor * processor);
-        ~vr_gizmo();
+        xr_gizmo_system(entity_orchestrator * orch, environment * env, openvr_hmd * hmd, xr_input_processor * processor);
+        ~xr_gizmo_system();
         std::vector<entity> get_renderables() const;
         void process(const float dt);
     };
-    POLYMER_SETUP_TYPEID(vr_gizmo);
+
+} // end namespace xr
+
+POLYMER_SETUP_TYPEID(polymer::xr::xr_input_processor);
+POLYMER_SETUP_TYPEID(polymer::xr::xr_gizmo_system);
+POLYMER_SETUP_TYPEID(polymer::xr::xr_imgui_system);
+POLYMER_SETUP_TYPEID(polymer::xr::xr_controller_system);
+POLYMER_SETUP_TYPEID(polymer::xr::xr_input_event);
+POLYMER_SETUP_TYPEID(polymer::xr::xr_teleport_event);
+POLYMER_SETUP_TYPEID(polymer::xr::xr_input_focus);
 
 } // end namespace polymer
 

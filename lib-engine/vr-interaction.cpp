@@ -4,11 +4,13 @@
 #include "system-render.hpp"
 #include "system-collision.hpp"
 
+using namespace polymer::xr;
+
 ///////////////////////////////////////////
-//   vr_input_processor implementation   //
+//   xr_input_processor implementation   //
 ///////////////////////////////////////////
 
-vr_input_focus vr_input_processor::recompute_focus(const openvr_controller & controller)
+xr_input_focus xr_input_processor::recompute_focus(const openvr_controller & controller)
 {
     const ray controller_ray = ray(controller.t.position, -qzdir(controller.t.orientation));
     const entity_hit_result box_result = env->collision_system->raycast(controller_ray, raycast_type::box);
@@ -30,29 +32,29 @@ vr_input_focus vr_input_processor::recompute_focus(const openvr_controller & con
     return { controller_ray, {} };
 }
 
-vr_input_processor::vr_input_processor(entity_orchestrator * orch, environment * env, openvr_hmd * hmd) : env(env), hmd(hmd) 
+xr_input_processor::xr_input_processor(entity_orchestrator * orch, environment * env, openvr_hmd * hmd) : env(env), hmd(hmd) 
 { 
 
 }
 
-vr_input_processor::~vr_input_processor()
+xr_input_processor::~xr_input_processor()
 {
 
 }
 
-vr::ETrackedControllerRole vr_input_processor::get_dominant_hand() const 
+vr::ETrackedControllerRole xr_input_processor::get_dominant_hand() const 
 { 
     return dominant_hand; 
 }
 
-vr_input_focus vr_input_processor::get_focus() const 
+xr_input_focus xr_input_processor::get_focus() const 
 {
     return last_focus; 
 }
 
-void vr_input_processor::process(const float dt)
+void xr_input_processor::process(const float dt)
 {
-    //scoped_timer t("vr_input_processor::process()");
+    //scoped_timer t("xr_input_processor::process()");
 
     // Generate button events
     for (auto hand : { vr::TrackedControllerRole_LeftHand, vr::TrackedControllerRole_RightHand })
@@ -64,8 +66,8 @@ void vr_input_processor::process(const float dt)
         {
             if (b.second.pressed)
             {
-                const vr_input_focus focus = recompute_focus(controller);
-                vr_input_event press = make_event(vr_event_t::press, src, focus, controller);
+                const xr_input_focus focus = recompute_focus(controller);
+                xr_input_event press = make_event(vr_event_t::press, src, focus, controller);
                 env->event_manager->send(press);
 
                 // Swap dominant hand based on last activated trigger button
@@ -76,23 +78,23 @@ void vr_input_processor::process(const float dt)
             }
             else if (b.second.released)
             {
-                const vr_input_focus focus = recompute_focus(controller);
-                vr_input_event release = make_event(vr_event_t::release, src, focus, controller);
+                const xr_input_focus focus = recompute_focus(controller);
+                xr_input_event release = make_event(vr_event_t::release, src, focus, controller);
                 env->event_manager->send(release);
             }
         }
     }
 
-    // Generate focus events for the dominant hand. todo: this can be rate-limited
+    // Generate focus events for the dominant hand. todo - this can be rate-limited
     {
         const openvr_controller controller = hmd->get_controller(dominant_hand);
         const vr_input_source_t src = (dominant_hand == vr::TrackedControllerRole_LeftHand) ? vr_input_source_t::left_controller : vr_input_source_t::right_controller;
-        const vr_input_focus active_focus = recompute_focus(controller);
+        const xr_input_focus active_focus = recompute_focus(controller);
 
         // New focus, not invalid
         if (active_focus != last_focus && active_focus.result.e != kInvalidEntity)
         {
-            vr_input_event focus_gained = make_event(vr_event_t::focus_begin, src, active_focus, controller);
+            xr_input_event focus_gained = make_event(vr_event_t::focus_begin, src, active_focus, controller);
             env->event_manager->send(focus_gained);
             std::cout << "dispatching vr_event_t::focus_begin for entity " << active_focus.result.e << std::endl;
             // todo - focus_end on old entity
@@ -101,7 +103,7 @@ void vr_input_processor::process(const float dt)
         // Last one valid, new one invalid
         if (last_focus.result.e != kInvalidEntity && active_focus.result.e == kInvalidEntity)
         {
-            vr_input_event focus_lost = make_event(vr_event_t::focus_end, src, last_focus, controller);
+            xr_input_event focus_lost = make_event(vr_event_t::focus_end, src, last_focus, controller);
             env->event_manager->send(focus_lost);
             std::cout << "dispatching vr_event_t::focus_end for entity " << last_focus.result.e << std::endl;
         }
@@ -111,10 +113,10 @@ void vr_input_processor::process(const float dt)
 }
 
 /////////////////////////////////////////////
-//   vr_controller_system implementation   //
+//   xr_controller_system implementation   //
 /////////////////////////////////////////////
 
-vr_controller_system::vr_controller_system(entity_orchestrator * orch, environment * env, openvr_hmd * hmd, vr_input_processor * processor)
+xr_controller_system::xr_controller_system(entity_orchestrator * orch, environment * env, openvr_hmd * hmd, xr_input_processor * processor)
     : env(env), hmd(hmd), processor(processor)
 {
     // fixme - the min/max teleportation bounds in world space are defined by this bounding box. 
@@ -165,18 +167,18 @@ vr_controller_system::vr_controller_system(entity_orchestrator * orch, environme
         }
     });
 
-    input_handler_connection = env->event_manager->connect(this, [this](const vr_input_event & event)
+    input_handler_connection = env->event_manager->connect(this, [this](const xr_input_event & event)
     {
         handle_event(event);
     });
 }
 
-vr_controller_system::~vr_controller_system()
+xr_controller_system::~xr_controller_system()
 {
     // todo - input_handler_connection disconnect
 }
 
-std::vector<entity> vr_controller_system::get_renderables() const
+std::vector<entity> xr_controller_system::get_renderables() const
 {
     if (render_styles.size())
     {
@@ -185,7 +187,7 @@ std::vector<entity> vr_controller_system::get_renderables() const
     return { left_controller, right_controller };
 }
 
-void vr_controller_system::handle_event(const vr_input_event & event)
+void xr_controller_system::handle_event(const xr_input_event & event)
 {
     // todo - can this entity be pointed at? (list for system)
 
@@ -200,7 +202,7 @@ void vr_controller_system::handle_event(const vr_input_event & event)
     }
 }
 
-void vr_controller_system::process(const float dt)
+void xr_controller_system::process(const float dt)
 {
     // update left/right controller positions
     const transform lct = hmd->get_controller(vr::TrackedControllerRole_LeftHand).t;
@@ -216,7 +218,7 @@ void vr_controller_system::process(const float dt)
 
     if (render_styles.size() && render_styles.top() == controller_render_style_t::laser)
     {
-        const vr_input_focus focus = processor->get_focus();
+        const xr_input_focus focus = processor->get_focus();
         if (focus.result.e != kInvalidEntity)
         {
             const float hit_distance = focus.result.r.distance;
@@ -289,7 +291,7 @@ void vr_controller_system::process(const float dt)
                 const transform hmd_pose = hmd->get_hmd_pose(); // hmd_pose is now in the HMD's own coordinate system
                 hmd->set_world_pose(target_pose * hmd_pose.inverse()); // set the new world pose
 
-                vr_teleport_event teleport_event;
+                xr_teleport_event teleport_event;
                 teleport_event.world_position = target_pose.position;
                 teleport_event.timestamp = system_time_ns();
                 env->event_manager->send(teleport_event);
@@ -298,11 +300,11 @@ void vr_controller_system::process(const float dt)
     }
 }
 
-/////////////////////////////////////////
-//   vr_imgui_surface implementation   //
-/////////////////////////////////////////
+////////////////////////////////////////
+//   xr_imgui_system implementation   //
+////////////////////////////////////////
 
-vr_imgui_surface::vr_imgui_surface(entity_orchestrator * orch, environment * env, openvr_hmd * hmd, vr_input_processor * processor, const uint2 size, GLFWwindow * window)
+xr_imgui_system::xr_imgui_system(entity_orchestrator * orch, environment * env, openvr_hmd * hmd, xr_input_processor * processor, const uint2 size, GLFWwindow * window)
     : env(env), hmd(hmd), processor(processor), imgui_surface(size, window)
 {
     // Setup the billboard entity
@@ -323,18 +325,18 @@ vr_imgui_surface::vr_imgui_surface(entity_orchestrator * orch, environment * env
     imgui_material->shader = shader_handle("textured");
     env->mat_library->create_material("imgui", imgui_material);
 
-    input_handler_connection = env->event_manager->connect(this, [this](const vr_input_event & event)
+    input_handler_connection = env->event_manager->connect(this, [this](const xr_input_event & event)
     {
         handle_event(event);
     });
 }
 
-vr_imgui_surface::~vr_imgui_surface()
+xr_imgui_system::~xr_imgui_system()
 {
 
 }
 
-void vr_imgui_surface::handle_event(const vr_input_event & event)
+void xr_imgui_system::handle_event(const xr_input_event & event)
 {
     if (event.type == vr_event_t::focus_begin && event.focus.result.e == imgui_billboard)
     {
@@ -346,7 +348,7 @@ void vr_imgui_surface::handle_event(const vr_input_event & event)
     }
 }
 
-void vr_imgui_surface::set_surface_transform(const transform & t)
+void xr_imgui_system::set_surface_transform(const transform & t)
 {
     // Update surface/billboard position
     if (auto * tc = env->xform_system->get_local_transform(imgui_billboard))
@@ -355,11 +357,11 @@ void vr_imgui_surface::set_surface_transform(const transform & t)
     }
 }
 
-void vr_imgui_surface::process(const float dt)
+void xr_imgui_system::process(const float dt)
 {
     if (focused)
     {
-        const vr_input_focus focus = processor->get_focus();
+        const xr_input_focus focus = processor->get_focus();
         const uint2 imgui_framebuffer_size = get_size();
         const float2 pixel_coord = { (1 - focus.result.r.uv.x) * imgui_framebuffer_size.x, focus.result.r.uv.y * imgui_framebuffer_size.y };
 
@@ -378,16 +380,16 @@ void vr_imgui_surface::process(const float dt)
     imgui_shader.unbind();
 }
 
-std::vector<entity> vr_imgui_surface::get_renderables() const
+std::vector<entity> xr_imgui_system::get_renderables() const
 {
     return { imgui_billboard };
 }
 
-/////////////////////////////////
-//   vr_gizmo implementation   //
-/////////////////////////////////
+////////////////////////////////////////
+//   xr_gizmo_system implementation   //
+////////////////////////////////////////
 
-vr_gizmo::vr_gizmo(entity_orchestrator * orch, environment * env, openvr_hmd * hmd, vr_input_processor * processor)
+xr_gizmo_system::xr_gizmo_system(entity_orchestrator * orch, environment * env, openvr_hmd * hmd, xr_input_processor * processor)
     : env(env), hmd(hmd), processor(processor)
 {
     auto unlit_material = std::make_shared<polymer_fx_material>();
@@ -442,18 +444,18 @@ vr_gizmo::vr_gizmo(entity_orchestrator * orch, environment * env, openvr_hmd * h
         }
     };
 
-    input_handler_connection = env->event_manager->connect(this, [this](const vr_input_event & event)
+    input_handler_connection = env->event_manager->connect(this, [this](const xr_input_event & event)
     {
         handle_event(event);
     });
 }
 
-vr_gizmo::~vr_gizmo()
+xr_gizmo_system::~xr_gizmo_system()
 {
     // fixme - input_handler_connection must be disconnected
 }
 
-void vr_gizmo::handle_event(const vr_input_event & event)
+void xr_gizmo_system::handle_event(const xr_input_event & event)
 {
     if (event.type == vr_event_t::focus_begin && event.focus.result.e == gizmo_entity)
     {
@@ -465,7 +467,7 @@ void vr_gizmo::handle_event(const vr_input_event & event)
     }
 }
 
-void vr_gizmo::process(const float dt)
+void xr_gizmo_system::process(const float dt)
 {
     const auto view = view_data(0, hmd->get_eye_pose(vr::Hmd_Eye::Eye_Left), hmd->get_proj_matrix(vr::Hmd_Eye::Eye_Left, 0.075f, 64.f));
     const auto vfov = vfov_from_projection(view.projectionMatrix);
@@ -478,7 +480,7 @@ void vr_gizmo::process(const float dt)
     
     if (focused)
     {   
-        const vr_input_focus focus = processor->get_focus();
+        const xr_input_focus focus = processor->get_focus();
         gizmo_state.ray_origin = minalg::float3(focus.r.origin.x, focus.r.origin.y, focus.r.origin.z);
         gizmo_state.ray_direction = minalg::float3(focus.r.direction.x, focus.r.direction.y, focus.r.direction.z);
         gizmo_state.mouse_left = hmd->get_controller(processor->get_dominant_hand()).buttons[vr::EVRButtonId::k_EButton_SteamVR_Trigger].down;
@@ -494,7 +496,7 @@ void vr_gizmo::process(const float dt)
     gizmo_ctx.draw();
 }
 
-std::vector<entity> vr_gizmo::get_renderables() const
+std::vector<entity> xr_gizmo_system::get_renderables() const
 {
     return { gizmo_entity };
 }
