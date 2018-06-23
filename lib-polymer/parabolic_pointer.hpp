@@ -209,7 +209,6 @@ namespace polymer
         aabb_3d xz_plane_bounds;
         float3 position{ 0, 0, 0 };
         float3 forward{ 0, 0, 0 };
-        float3 lineThickness{ 0.025f };
         float pointSpacing{ 0.1f };
         uint32_t pointCount{ 128 }; // pointSpacing * pointCount is maximum travel distance in meters
     };

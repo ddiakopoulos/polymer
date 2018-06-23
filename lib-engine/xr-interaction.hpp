@@ -39,7 +39,7 @@ namespace xr {
         tracker
     };
 
-    struct xr_input_focus { ray r; entity_hit_result result; };
+    struct xr_input_focus { ray r; entity_hit_result result; bool soft{ false }; };
     inline bool operator != (const xr_input_focus & a, const xr_input_focus & b) { return (a.result.e != b.result.e); }
     inline bool operator == (const xr_input_focus & a, const xr_input_focus & b) { return (a.result.e == b.result.e); }
 
@@ -68,11 +68,11 @@ namespace xr {
     ////////////////////////////
 
     /// The input processor polls the openvr system directly for updated controller input.
-    /// This system dispatches vr_input_events through the environment's event manager
+    /// This system dispatches `vr_input_events` through the environment's event manager
     /// with respect to button presses, releases, and focus events. Entity focus is presently 
     /// expensive because there is no scene-wide acceleration structure used for raycasting. 
-    /// This is also an abstraction over all of the input of the `openvr_hmd` class and should
-    /// be used instead of an openvr_hmd instance directly.
+    /// This class is also an abstraction over all input handling in `openvr_hmd` and should
+    /// be used instead of an `openvr_hmd` instance directly.
 
     // todo - triple buffer xr_input_event state
     class xr_input_processor
@@ -117,12 +117,19 @@ namespace xr {
         openvr_hmd * hmd{ nullptr };
         xr_input_processor * processor{ nullptr };
 
+        std::shared_ptr<polymer_fx_material> laser_pointer_material;
+        simple_animator animator;
         mesh_component * pointer_mesh_component{ nullptr };
         entity pointer, left_controller, right_controller;
         arc_pointer_data arc_pointer;
         std::vector<float3> arc_curve;
         float3 target_location;
-
+        float laser_line_thickness{ 0.010f };
+        float laser_fade_seconds{ 0.20f };
+        float laser_alpha{ 0.f };
+        float laser_alpha_on_teleport{ 0.f };
+        float laser_fixed_draw_distance{ 2.f };
+        void update_laser_geometry(const float distance);
         std::stack<controller_render_style_t> render_styles;
         bool need_controller_render_data{ true };
 
@@ -181,8 +188,8 @@ namespace xr {
 
         bool focused{ false };
 
-        void handle_event(const xr_input_event & event);
         polymer::event_manager_sync::connection xr_input;
+        void handle_event(const xr_input_event & event);
 
     public:
 

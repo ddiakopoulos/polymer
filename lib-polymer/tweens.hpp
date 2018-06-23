@@ -11,12 +11,12 @@
 
 namespace tween
 {
-    struct Linear
+    struct linear
     {
         inline static float ease_in_out(const float t) { return t; }
     };
 
-    struct Sine
+    struct sine
     {
         inline static float ease_in_out(float t)
         {
@@ -24,7 +24,7 @@ namespace tween
         }
     };
 
-    struct Smoothstep
+    struct smoothstep
     {
         inline static float ease_in_out(const float t)
         {
@@ -33,7 +33,7 @@ namespace tween
         }
     };
 
-    struct Circular
+    struct circular
     {
         inline static float ease_in_out(float t)
         {
@@ -47,7 +47,7 @@ namespace tween
         }
     };
 
-    struct Exponential
+    struct exp
     {
         inline static float ease_in_out(float t)
         {
@@ -59,7 +59,7 @@ namespace tween
         }
     };
 
-    struct Cubic
+    struct cubic
     {
         inline static float ease_in_out(float t)
         {
@@ -70,7 +70,7 @@ namespace tween
         }
     };
 
-    struct Quartic
+    struct quartic
     {
         inline static float ease_in_out(float t)
         {
@@ -90,50 +90,62 @@ namespace tween
 // todo - explore threaded approach, on_start callback & delay
 namespace polymer
 {
+    class tween_event
+    {
+        void * variable;
+        float t0, t1;
+        std::function<void(float t)> update_impl;
+        friend class simple_animator;
+    public:
+        tween_event(void * v, float t0, float t1, std::function<void(float t)> update)
+            : variable(v), t0(t0), t1(t1), update_impl(update) {}
+        std::function<void()> on_finish;
+        std::function<void(float t)> on_update;
+    };
+
     class simple_animator
     {
-        struct Tween
-        {
-            void * variable;
-            float t0, t1;
-            std::function<void(float t)> on_update;
-            std::function<void()> on_finish;
-        };
-
-        std::list<Tween> tweens;
-        float now = 0.0f;
-
+        std::list<tween_event> tweens;
+        float now_seconds = 0.0f;
     public:
 
-        void update(float timestep)
+        void update(const float dt)
         {
-            now += timestep;
+            now_seconds += dt;
             for (auto it = begin(tweens); it != end(tweens);)
             {
-                if (now < it->t1)
+                if (now_seconds < it->t1)
                 {
-                    it->on_update(static_cast<float>((now - it->t0) / (it->t1 - it->t0)));
+                    const float dx = static_cast<float>((now_seconds - it->t0) / (it->t1 - it->t0));
+                    if (it->on_update) it->on_update(dx);
+                    it->update_impl(dx);
                     ++it;
                 }
                 else
                 {
-                    it->on_update(1.0f);
+                    it->update_impl(1.f);
+                    if (it->on_update) it->on_update(1.f);
                     if (it->on_finish) it->on_finish();
                     it = tweens.erase(it);
                 }
             }
         }
 
+        void cancel_all()
+        {
+            tweens.clear();
+        }
+
         template<class VariableType, class EasingFunc>
-        Tween & add_tween(VariableType * variable, VariableType targetValue, float seconds, EasingFunc ease)
+        tween_event & add_tween(VariableType * variable, VariableType targetValue, float duration_seconds, EasingFunc ease)
         {
             VariableType initialValue = *variable;
-            auto updateFunction = [variable, initialValue, targetValue, ease](float t)
+            auto update = [initialValue, variable, targetValue, ease](float t)
             {
-                *variable = static_cast<VariableType>(initialValue * (1 - ease(t)) + targetValue * ease(t));
+                *variable = static_cast<VariableType>(initialValue * (1.f - ease(t)) + targetValue * ease(t));
             };
 
-            tweens.push_back({ variable, now, now + seconds, updateFunction });
+            tweens.emplace_back(variable, now_seconds, now_seconds + duration_seconds, update);
             return tweens.back();
         }
 

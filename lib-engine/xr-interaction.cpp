@@ -21,12 +21,12 @@ xr_input_focus xr_input_processor::recompute_focus(const openvr_controller & con
         const entity_hit_result mesh_result = env->collision_system->raycast(controller_ray, raycast_type::mesh);
         if (mesh_result.r.hit)
         {
-            return { controller_ray, mesh_result };
+            return { controller_ray, mesh_result, false }; // "hard focus"
         }
         else
         {
-            // Otherwise hitting the outer bounding box is still considered "in focus"
-            return { controller_ray, box_result };
+            // Otherwise hitting an outer bounding box is still considered focus
+            return { controller_ray, box_result, true }; // "soft focus"
         }
     }
     return { controller_ray, {} };
@@ -127,11 +127,15 @@ xr_controller_system::xr_controller_system(entity_orchestrator * orch, environme
     // fixme - the min/max teleportation bounds in world space are defined by this bounding box. 
     arc_pointer.xz_plane_bounds = aabb_3d({ -24.f, -0.01f, -24.f }, { +24.f, +0.01f, +24.f });
 
+    laser_pointer_material = std::make_shared<polymer_fx_material>();
+    laser_pointer_material->shader = shader_handle("xr-laser");
+    env->mat_library->create_material("laser-pointer-mat", laser_pointer_material);
+
     // Setup the pointer entity (which is re-used between laser/arc styles)
     pointer = env->track_entity(orch->create_entity());
     env->identifier_system->create(pointer, "vr-pointer");
     env->xform_system->create(pointer, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
-    env->render_system->create(pointer, material_component(pointer, material_handle(material_library::kDefaultMaterialId)));
+    env->render_system->create(pointer, material_component(pointer, material_handle("laser-pointer-mat")));
     pointer_mesh_component = env->render_system->create(pointer, polymer::mesh_component(pointer, gpu_mesh_handle("vr-pointer")));
 
     // Setup left controller
@@ -200,15 +204,46 @@ void xr_controller_system::handle_event(const xr_input_event & event)
     if (event.type == vr_event_t::focus_begin)
     {
         render_styles.push(controller_render_style_t::laser);
+        animator.cancel_all();
+        tween_event & fade_in = animator.add_tween(&laser_alpha, 1.0f, laser_fade_seconds, tween::linear::ease_in_out);
+        fade_in.on_finish = [this]() {};
     }
     else if (event.type == vr_event_t::focus_end)
     {
-        while (!render_styles.empty()) render_styles.pop();
+        animator.cancel_all();
+        tween_event & fade_out = animator.add_tween(&laser_alpha, 0.0f, laser_fade_seconds, tween::linear::ease_in_out);
+        fade_out.on_update = [this](const float t)
+        {
+            // keep drawing laser until it's faded out.
+            update_laser_geometry(laser_fixed_draw_distance);
+        };
+
+        fade_out.on_finish = [this]()
+        {
+            while (!render_styles.empty()) render_styles.pop();
+        };
+    }
+}
+
+void xr::xr_controller_system::update_laser_geometry(const float distance)
+{
+    auto & m = pointer_mesh_component->mesh.get();
+    m = make_mesh_from_geometry(make_plane(laser_line_thickness, distance, 4, 24, true), GL_STREAM_DRAW);
+
+    if (auto * tc = env->xform_system->get_local_transform(pointer))
+    {
+        // The mesh is in local space so we massage it through a transform 
+        auto t = hmd->get_controller(processor->get_dominant_hand()).t;
+        t = t * transform(make_rotation_quat_axis_angle({ 1, 0, 0 }, (float)POLYMER_PI / 2.f)); // coordinate 
+        t = t * transform(float4(0, 0, 0, 1), float3(0, -(distance * 0.5f), 0)); // translation
+        env->xform_system->set_local_transform(pointer, t);
     }
 }
 
 void xr_controller_system::process(const float dt)
 {
+    animator.update(dt);
+
     // update left/right controller positions
     const transform lct = hmd->get_controller(vr::TrackedControllerRole_LeftHand).t;
     env->xform_system->set_local_transform(left_controller, lct);
@@ -226,22 +261,18 @@ void xr_controller_system::process(const float dt)
         const xr_input_focus focus = processor->get_focus();
         if (focus.result.e != kInvalidEntity)
         {
-            const float hit_distance = focus.result.r.distance;
-
-            // Ensure the distance is long enough to generate valid drawable geometry
-            if (hit_distance >= 0.01f)
+            // Hard focus ends on the object hit
+            if (focus.soft == false)
             {
-                auto & m = pointer_mesh_component->mesh.get();
-                m = make_mesh_from_geometry(make_plane(0.010f, hit_distance, 24, 24), GL_STREAM_DRAW);
+                const float hit_distance = focus.result.r.distance;
 
-                if (auto * tc = env->xform_system->get_local_transform(pointer))
-                {
-                    // The mesh is in local space so we massage it through a transform 
-                    auto t = hmd->get_controller(processor->get_dominant_hand()).t;
-                    t = t * transform(make_rotation_quat_axis_angle({ 1, 0, 0 }, (float)POLYMER_PI / 2.f)); // coordinate
-                    t = t * transform(float4(0, 0, 0, 1), float3(0, -(hit_distance * 0.5f), 0)); // translation
-                    env->xform_system->set_local_transform(pointer, t);
-                }
+                // Ensure the distance is long enough to generate valid drawable geometry
+                if (hit_distance >= 0.01f) update_laser_geometry(hit_distance);
+            }
+            else if (focus.soft == true)
+            {
+                // Soft focus has a fixed draw distance
+                update_laser_geometry(laser_fixed_draw_distance);
             }
         }
     }
@@ -269,8 +300,12 @@ void xr_controller_system::process(const float dt)
                     render_styles.push(controller_render_style_t::arc);
                 }
 
+                // Cache alpha
+                laser_alpha_on_teleport = laser_alpha;
+                if (laser_alpha_on_teleport < 1.f) laser_alpha = 1.0;
+
                 auto & m = pointer_mesh_component->mesh.get();
-                m = make_mesh_from_geometry(make_parabolic_geometry(arc_curve, arc_pointer.forward, 0.1f, arc_pointer.lineThickness), GL_STREAM_DRAW);
+                m = make_mesh_from_geometry(make_parabolic_geometry(arc_curve, arc_pointer.forward, 0.1f, float3(laser_line_thickness)), GL_STREAM_DRAW);
                 target_location = arc_curve.back(); // world-space hit point
                 if (auto * tc = env->xform_system->get_local_transform(pointer))
                 {
@@ -287,6 +322,7 @@ void xr_controller_system::process(const float dt)
             if (render_styles.size() && render_styles.top() == controller_render_style_t::arc)
             {
                 render_styles.pop();
+                laser_alpha = laser_alpha_on_teleport; // restore cached alpha
 
                 // Target location is on the xz plane because of a linecast, so we re-add the current height of the player
                 target_location.y = hmd->get_hmd_pose().position.y;
@@ -303,6 +339,12 @@ void xr_controller_system::process(const float dt)
             }
         }
     }
+
+    // Update uniforms
+    laser_pointer_material->use();
+    auto & laser_shader = laser_pointer_material->compiled_shader->shader;
+    laser_shader.uniform("u_alpha", laser_alpha);
+    laser_shader.unbind();
 }
 
 ////////////////////////////////////////
@@ -327,7 +369,7 @@ xr_imgui_system::xr_imgui_system(entity_orchestrator * orch, environment * env, 
     env->collision_system->create(imgui_billboard, geometry_component(imgui_billboard, cpu_mesh_handle("imgui-billboard")));
 
     imgui_material = std::make_shared<polymer_fx_material>();
-    imgui_material->shader = shader_handle("textured");
+    imgui_material->shader = shader_handle("unlit-texture");
     env->mat_library->create_material("imgui", imgui_material);
 
     xr_input = env->event_manager->connect(this, [this](const xr_input_event & event)

@@ -29,14 +29,19 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
         orchestrator.reset(new entity_orchestrator());
         load_required_renderer_assets("../../assets", shaderMonitor);
 
-        shaderMonitor.watch("textured",
+        shaderMonitor.watch("unlit-texture",
             "../../assets/shaders/renderer/renderer_vert.glsl",
-            "../../assets/shaders/renderer/textured_frag.glsl",
+            "../../assets/shaders/renderer/unlit_texture_frag.glsl",
             "../../assets/shaders/renderer");
 
         shaderMonitor.watch("unlit-vertex-color",
             "../../assets/shaders/renderer/renderer_vert.glsl",
             "../../assets/shaders/renderer/unlit_vertex_color_frag.glsl",
+            "../../assets/shaders/renderer");
+
+        shaderMonitor.watch("xr-laser",
+            "../../assets/shaders/renderer/renderer_vert.glsl",
+            "../../assets/shaders/renderer/xr_laser_frag.glsl",
             "../../assets/shaders/renderer");
 
         // Create required environment utilities
@@ -131,6 +136,9 @@ void sample_vr_app::on_draw()
     int width, height;
     glfwGetWindowSize(window, &width, &height);
     glViewport(0, 0, width, height);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // Collect eye data for the render payload, always remembering to clear the payload first
     payload.views.clear();
