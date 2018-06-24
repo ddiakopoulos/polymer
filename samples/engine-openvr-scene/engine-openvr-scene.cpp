@@ -44,6 +44,11 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
             "../../assets/shaders/renderer/xr_laser_frag.glsl",
             "../../assets/shaders/renderer");
 
+        shaderMonitor.watch("no-op",
+            "../../assets/shaders/renderer/no_op_vert.glsl",
+            "../../assets/shaders/renderer/no_op_frag.glsl",
+            "../../assets/shaders/renderer");
+
         // Create required environment utilities
         scene.mat_library.reset(new polymer::material_library("../../assets/materials/"));
         scene.event_manager.reset(new polymer::event_manager_async());
@@ -53,12 +58,17 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
         renderer_settings settings;
         settings.renderSize = int2(eye_target_size.x, eye_target_size.y);
         settings.cameraCount = 2;
+        settings.performanceProfiling = true;
 
         // Create required systems
         scene.collision_system = orchestrator->create_system<collision_system>(orchestrator.get());
         scene.xform_system = orchestrator->create_system<transform_system>(orchestrator.get());
         scene.identifier_system = orchestrator->create_system<identifier_system>(orchestrator.get());
         scene.render_system = orchestrator->create_system<render_system>(settings, orchestrator.get());
+
+        // Setup hidden area mesh
+        scene.render_system->get_renderer()->set_stencil_mask(0, hmd->get_stencil_mask(vr::Hmd_Eye::Eye_Left));
+        scene.render_system->get_renderer()->set_stencil_mask(1, hmd->get_stencil_mask(vr::Hmd_Eye::Eye_Right));
 
         // Only need to set the skybox on the |render_payload| once (unless we clear the payload)
         payload.skybox = scene.render_system->get_skybox();
@@ -192,13 +202,16 @@ void sample_vr_app::on_draw()
     const auto headPose = hmd->get_hmd_pose();
     desktop_imgui->begin_frame();
     ImGui::Text("Head Pose: %f, %f, %f", headPose.position.x, headPose.position.y, headPose.position.z);
+    if (scene.render_system->get_renderer()->settings.performanceProfiling)
+    {
+        for (auto & t : scene.render_system->get_renderer()->gpuProfiler.get_data()) ImGui::Text("[Renderer GPU] %s %f ms", t.first.c_str(), t.second);
+    }
     desktop_imgui->end_frame();
 
     // Setup vr imgui
     vr_imgui->begin_frame();
     gui::imgui_fixed_window_begin("controls", ui_rect{ {0, 0,}, {256, 256} });
     ImGui::Text("Head Pose: %f, %f, %f", headPose.position.x, headPose.position.y, headPose.position.z);
-    ImGui::Text("Hit UV %f, %f", debug_pt.x, debug_pt.y);
     if (ImGui::Button("ImGui VR Button")) std::cout << "Click!" << std::endl;
     gui::imgui_fixed_window_end();
     vr_imgui->end_frame();

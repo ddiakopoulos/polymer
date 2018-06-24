@@ -155,6 +155,51 @@ void pbr_renderer::update_per_object_uniform_buffer(const transform & p, const f
     perObject.set_buffer_data(sizeof(object), &object, GL_STREAM_DRAW);
 }
 
+void pbr_renderer::run_stencil_prepass(const view_data & view, const render_payload & scene)
+{
+    gl_check_error(__FILE__, __LINE__);
+
+    glColorMask(0, 0, 0, 0);                                // do not write color
+    glDepthMask(GL_FALSE);                                  // do not write depth
+    glStencilMask(GL_TRUE);                                 // only write stencil
+
+    glDisable(GL_BLEND);                                    // 0 into alpha
+    glDisable(GL_DEPTH_TEST);                               // disable depth
+    glEnable(GL_STENCIL_TEST);                              // enable stencil
+
+    glStencilFunc(GL_ALWAYS, 1, 1);                         // set stencil func
+    glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);        // set stencil op (GL_REPLACE, GL_REPLACE, GL_REPLACE)
+
+    glDisable(GL_CULL_FACE);                                // do not cull since winding will might be flipped per-eye
+    
+    auto & shader = no_op.get()->get_variant()->shader;
+    shader.bind();
+    if (view.index == 0) left_stencil_mask.draw_elements();
+    else if (view.index == 1) right_stencil_mask.draw_elements();
+    shader.unbind();
+
+    glEnable(GL_CULL_FACE);                                 // resume culling faces
+
+    glColorMask(1, 1, 1, 1);                                // it's ok to write color
+    glDepthMask(GL_TRUE);                                   // it's ok to write depth
+    glStencilMask(GL_FALSE);                                // no other passes should write to stencil
+
+    glStencilFunc(GL_EQUAL, 0, 1);                          // reset stencil func
+    glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);                 // reset stencil op
+    glEnable(GL_BLEND);                                     // reset blend
+    glEnable(GL_DEPTH_TEST);                                // reset depth
+
+    gl_check_error(__FILE__, __LINE__);
+}
+
+void pbr_renderer::set_stencil_mask(const uint32_t idx, gl_mesh && m)
+{
+    if (idx == 0) left_stencil_mask = std::move(m);
+    else if (idx == 1) right_stencil_mask = std::move(m);
+    else throw std::invalid_argument("invalid index");
+    using_stencil_mask = true;
+}
+
 uint32_t pbr_renderer::get_color_texture(const uint32_t idx) const
 {
     assert(idx <= settings.cameraCount);
@@ -332,20 +377,24 @@ pbr_renderer::pbr_renderer(const renderer_settings settings) : settings(settings
     // Generate multisample render buffers for color and depth, attach to multi-sampled framebuffer target
     glNamedRenderbufferStorageMultisampleEXT(multisampleRenderbuffers[0], settings.msaaSamples, GL_RGBA, settings.renderSize.x, settings.renderSize.y);
     glNamedFramebufferRenderbufferEXT(multisampleFramebuffer, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, multisampleRenderbuffers[0]);
-    glNamedRenderbufferStorageMultisampleEXT(multisampleRenderbuffers[1], settings.msaaSamples, GL_DEPTH_COMPONENT, settings.renderSize.x, settings.renderSize.y);
-    glNamedFramebufferRenderbufferEXT(multisampleFramebuffer, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, multisampleRenderbuffers[1]);
+    glNamedRenderbufferStorageMultisampleEXT(multisampleRenderbuffers[1], settings.msaaSamples, GL_DEPTH24_STENCIL8, settings.renderSize.x, settings.renderSize.y);
+    glNamedFramebufferRenderbufferEXT(multisampleFramebuffer, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, multisampleRenderbuffers[1]);
+
     multisampleFramebuffer.check_complete();
 
     // Generate textures and framebuffers for |settings.cameraCount|
     for (uint32_t camIdx = 0; camIdx < settings.cameraCount; ++camIdx)
     {
+        // Depth
+        eyeDepthTextures[camIdx].setup(settings.renderSize.x, settings.renderSize.y, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+
+        // Color
         eyeTextures[camIdx].setup(settings.renderSize.x, settings.renderSize.y, GL_RGBA, GL_RGBA, GL_FLOAT, nullptr, false);
         glTextureParameteriEXT(eyeTextures[camIdx], GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTextureParameteriEXT(eyeTextures[camIdx], GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTextureParameteriEXT(eyeTextures[camIdx], GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
 
-        // Depth tex
-        eyeDepthTextures[camIdx].setup(settings.renderSize.x, settings.renderSize.y, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+        // Attachments
         glNamedFramebufferTexture2DEXT(eyeFramebuffers[camIdx], GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, eyeTextures[camIdx], 0);
         glNamedFramebufferTexture2DEXT(eyeFramebuffers[camIdx], GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, eyeDepthTextures[camIdx], 0);
 
@@ -431,6 +480,7 @@ void pbr_renderer::render_frame(const render_payload & scene)
 
     GLfloat defaultColor[] = { scene.clear_color.x, scene.clear_color.y, scene.clear_color.z, scene.clear_color.w };
     GLfloat defaultDepth = 1.f;
+    GLuint  defaultStencil = 0;
 
     view_data shadowAndCullingView = scene.views[0];
 
@@ -534,29 +584,38 @@ void pbr_renderer::render_frame(const render_payload & scene)
         glViewport(0, 0, settings.renderSize.x, settings.renderSize.y);
         glClearNamedFramebufferfv(multisampleFramebuffer, GL_COLOR, 0, &defaultColor[0]);
         glClearNamedFramebufferfv(multisampleFramebuffer, GL_DEPTH, 0, &defaultDepth);
+        if (using_stencil_mask) glClearNamedFramebufferuiv(multisampleFramebuffer, GL_STENCIL, 0, &defaultStencil);
 
         // Execute the forward passes
         if (settings.useDepthPrepass)
         {
-            gpuProfiler.begin("depth-prepass");
+            gpuProfiler.begin("depth-prepass-" + std::to_string(camIdx));
             run_depth_prepass(scene.views[camIdx], scene);
-            gpuProfiler.end("depth-prepass");
+            gpuProfiler.end("depth-prepass-" + std::to_string(camIdx));
         }
 
-        gpuProfiler.begin("forward-pass");
-        cpuProfiler.begin("skybox");
+        // Hidden area mesh for stereo rendering with openvr
+        if (using_stencil_mask)
+        {
+            gpuProfiler.begin("stencil-prepass-" + std::to_string(camIdx));
+            run_stencil_prepass(scene.views[camIdx], scene);
+            gpuProfiler.end("stencil-prepass-" + std::to_string(camIdx));
+        }
+
+        gpuProfiler.begin("forward-pass-" + std::to_string(camIdx));
+        cpuProfiler.begin("skybox-" + std::to_string(camIdx));
         run_skybox_pass(scene.views[camIdx], scene);
-        cpuProfiler.end("skybox");
-        cpuProfiler.begin("forward");
+        cpuProfiler.end("skybox-" + std::to_string(camIdx));
+        cpuProfiler.begin("forward-" + std::to_string(camIdx));
         run_forward_pass(materialRenderList, scene.views[camIdx], scene);
-        cpuProfiler.end("forward");
-        gpuProfiler.end("forward-pass");
+        cpuProfiler.end("forward-" + std::to_string(camIdx));
+        gpuProfiler.end("forward-pass-" + std::to_string(camIdx));
 
         glDisable(GL_MULTISAMPLE);
 
         // Resolve multisample into per-view framebuffer
         {
-            gpuProfiler.begin("blit");
+            gpuProfiler.begin("blit-" + std::to_string(camIdx));
 
             // blit color 
             glBlitNamedFramebuffer(multisampleFramebuffer, eyeFramebuffers[camIdx],
@@ -568,7 +627,7 @@ void pbr_renderer::render_frame(const render_payload & scene)
                 0, 0, settings.renderSize.x, settings.renderSize.y, 0, 0,
                 settings.renderSize.x, settings.renderSize.y, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 
-            gpuProfiler.end("blit");
+            gpuProfiler.end("blit-" + std::to_string(camIdx));
         }
     }
 

@@ -124,21 +124,25 @@ namespace polymer
         gl_buffer perObject;
 
         // MSAA Targets
-        gl_renderbuffer multisampleRenderbuffers[2]; 
+        gl_renderbuffer multisampleRenderbuffers[2]; // color, depth/stencil
         gl_framebuffer multisampleFramebuffer;
 
         // Non-MSAA Targets
         std::vector<gl_framebuffer> eyeFramebuffers;
-        std::vector<gl_texture_2d> eyeTextures;
-        std::vector<gl_texture_2d> eyeDepthTextures;
+        std::vector<gl_texture_2d> eyeTextures, eyeDepthTextures;
 
         std::unique_ptr<stable_cascaded_shadows> shadow;
         gl_mesh post_quad;
 
+        gl_mesh left_stencil_mask, right_stencil_mask;
+        bool using_stencil_mask{ false };
+
         shader_handle renderPassEarlyZ = { "depth-prepass" };
         shader_handle renderPassTonemap = { "post-tonemap" };
+        shader_handle no_op = { "no-op" };
 
         void update_per_object_uniform_buffer(const transform & p, const float3 & scale, const bool receiveShadow, const view_data & d);
+        void run_stencil_prepass(const view_data & view, const render_payload & scene);
         void run_depth_prepass(const view_data & view, const render_payload & scene);
         void run_skybox_pass(const view_data & view, const render_payload & scene);
         void run_shadow_pass(const view_data & view, const render_payload & scene);
@@ -161,6 +165,7 @@ namespace polymer
 
         uint32_t get_color_texture(const uint32_t idx = 0) const;
         uint32_t get_depth_texture(const uint32_t idx = 0) const;
+        void set_stencil_mask(const uint32_t idx, gl_mesh && m);
 
         stable_cascaded_shadows * get_shadow_pass() const;
     };

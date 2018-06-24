@@ -54,6 +54,26 @@ void openvr_hmd::controller_render_data_callback(std::function<void(cached_contr
     async_data_cb = callback;
 }
 
+gl_mesh openvr_hmd::get_stencil_mask(vr::Hmd_Eye eye)
+{
+    gl_mesh mesh;
+
+    auto ham =  hmd->GetHiddenAreaMesh(eye, vr::k_eHiddenAreaMesh_Standard); // k_eHiddenAreaMesh_Standard k_eHiddenAreaMesh_Inverse
+    assert(ham.unTriangleCount > 0);
+    std::vector<float2> hidden_vertices;
+
+    for (uint32_t i = 0; i < ham.unTriangleCount * 3; ++i)
+    {
+        auto v = ham.pVertexData[i].v;
+        hidden_vertices.push_back(float2(v[0] * 2.f - 1.f, 1.f - 2.f * v[1]));
+    }
+
+    mesh.set_vertices(hidden_vertices.size(), hidden_vertices.data(), GL_STATIC_DRAW);
+    mesh.set_attribute(0, 2, GL_FLOAT, GL_FALSE, sizeof(float2), ((float*)0));
+
+    return std::move(mesh);
+}
+
 void openvr_hmd::set_world_pose(const transform & p) 
 {
     worldPose = p; 
