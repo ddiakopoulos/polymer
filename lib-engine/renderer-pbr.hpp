@@ -135,6 +135,7 @@ namespace polymer
         gl_mesh post_quad;
 
         gl_mesh left_stencil_mask, right_stencil_mask;
+        bool using_stencil_mask{ false };
 
         shader_handle renderPassEarlyZ = { "depth-prepass" };
         shader_handle renderPassTonemap = { "post-tonemap" };

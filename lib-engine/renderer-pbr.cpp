@@ -159,7 +159,7 @@ void pbr_renderer::run_stencil_prepass(const view_data & view, const render_payl
 {
     gl_check_error(__FILE__, __LINE__);
 
-    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);    // do not write color
+    glColorMask(0, 0, 0, 0);                                // do not write color
     glDepthMask(GL_FALSE);                                  // do not write depth
     glStencilMask(GL_TRUE);                                 // only write stencil
 
@@ -167,13 +167,10 @@ void pbr_renderer::run_stencil_prepass(const view_data & view, const render_payl
     glDisable(GL_DEPTH_TEST);                               // disable depth
     glEnable(GL_STENCIL_TEST);                              // enable stencil
 
-    GLint clear_value = 0;
-    glClearBufferiv(GL_STENCIL, 0, &clear_value);           // clear stencil
+    glStencilFunc(GL_ALWAYS, 1, 1);                         // set stencil func
+    glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);        // set stencil op (GL_REPLACE, GL_REPLACE, GL_REPLACE)
 
-    glStencilFunc(GL_ALWAYS, 1, 0xff);                      // set stencil func
-    glStencilOp(GL_KEEP, GL_ZERO, GL_REPLACE);              // set stencil op (GL_REPLACE, GL_REPLACE, GL_REPLACE)
-
-    glDisable(GL_CULL_FACE);                                // do not cull stencil mesh faces
+    glDisable(GL_CULL_FACE);                                // do not cull since winding will might be flipped per-eye
     
     auto & shader = no_op.get()->get_variant()->shader;
     shader.bind();
@@ -183,13 +180,14 @@ void pbr_renderer::run_stencil_prepass(const view_data & view, const render_payl
 
     glEnable(GL_CULL_FACE);                                 // resume culling faces
 
-    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);        // it's ok to write color
+    glColorMask(1, 1, 1, 1);                                // it's ok to write color
     glDepthMask(GL_TRUE);                                   // it's ok to write depth
-    glStencilMask(GL_FALSE);                                // no other passes should weritr to stencil
+    glStencilMask(GL_FALSE);                                // no other passes should write to stencil
 
-    glStencilFunc(GL_EQUAL, 0, 0xff);                       // reset stencil func
+    glStencilFunc(GL_EQUAL, 0, 1);                          // reset stencil func
     glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);                 // reset stencil op
     glEnable(GL_BLEND);                                     // reset blend
+    glEnable(GL_DEPTH_TEST);                                // reset depth
 
     gl_check_error(__FILE__, __LINE__);
 }
@@ -199,6 +197,7 @@ void pbr_renderer::set_stencil_mask(const uint32_t idx, gl_mesh && m)
     if (idx == 0) left_stencil_mask = std::move(m);
     else if (idx == 1) right_stencil_mask = std::move(m);
     else throw std::invalid_argument("invalid index");
+    using_stencil_mask = true;
 }
 
 uint32_t pbr_renderer::get_color_texture(const uint32_t idx) const
@@ -481,6 +480,7 @@ void pbr_renderer::render_frame(const render_payload & scene)
 
     GLfloat defaultColor[] = { scene.clear_color.x, scene.clear_color.y, scene.clear_color.z, scene.clear_color.w };
     GLfloat defaultDepth = 1.f;
+    GLuint  defaultStencil = 0;
 
     view_data shadowAndCullingView = scene.views[0];
 
@@ -584,32 +584,38 @@ void pbr_renderer::render_frame(const render_payload & scene)
         glViewport(0, 0, settings.renderSize.x, settings.renderSize.y);
         glClearNamedFramebufferfv(multisampleFramebuffer, GL_COLOR, 0, &defaultColor[0]);
         glClearNamedFramebufferfv(multisampleFramebuffer, GL_DEPTH, 0, &defaultDepth);
+        if (using_stencil_mask) glClearNamedFramebufferuiv(multisampleFramebuffer, GL_STENCIL, 0, &defaultStencil);
 
         // Execute the forward passes
         if (settings.useDepthPrepass)
         {
-            gpuProfiler.begin("depth-prepass");
+            gpuProfiler.begin("depth-prepass-" + std::to_string(camIdx));
             run_depth_prepass(scene.views[camIdx], scene);
-            gpuProfiler.end("depth-prepass");
+            gpuProfiler.end("depth-prepass-" + std::to_string(camIdx));
         }
 
-        // Debugging
-        run_stencil_prepass(scene.views[camIdx], scene);
+        // Hidden area mesh for stereo rendering with openvr
+        if (using_stencil_mask)
+        {
+            gpuProfiler.begin("stencil-prepass-" + std::to_string(camIdx));
+            run_stencil_prepass(scene.views[camIdx], scene);
+            gpuProfiler.end("stencil-prepass-" + std::to_string(camIdx));
+        }
 
-        gpuProfiler.begin("forward-pass");
-        cpuProfiler.begin("skybox");
+        gpuProfiler.begin("forward-pass-" + std::to_string(camIdx));
+        cpuProfiler.begin("skybox-" + std::to_string(camIdx));
         run_skybox_pass(scene.views[camIdx], scene);
-        cpuProfiler.end("skybox");
-        cpuProfiler.begin("forward");
+        cpuProfiler.end("skybox-" + std::to_string(camIdx));
+        cpuProfiler.begin("forward-" + std::to_string(camIdx));
         run_forward_pass(materialRenderList, scene.views[camIdx], scene);
-        cpuProfiler.end("forward");
-        gpuProfiler.end("forward-pass");
+        cpuProfiler.end("forward-" + std::to_string(camIdx));
+        gpuProfiler.end("forward-pass-" + std::to_string(camIdx));
 
         glDisable(GL_MULTISAMPLE);
 
         // Resolve multisample into per-view framebuffer
         {
-            gpuProfiler.begin("blit eye");
+            gpuProfiler.begin("blit-" + std::to_string(camIdx));
 
             // blit color 
             glBlitNamedFramebuffer(multisampleFramebuffer, eyeFramebuffers[camIdx],
@@ -621,7 +627,7 @@ void pbr_renderer::render_frame(const render_payload & scene)
                 0, 0, settings.renderSize.x, settings.renderSize.y, 0, 0,
                 settings.renderSize.x, settings.renderSize.y, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 
-            gpuProfiler.end("blit eye");
+            gpuProfiler.end("blit-" + std::to_string(camIdx));
         }
     }
 

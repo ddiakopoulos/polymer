@@ -29,7 +29,6 @@ struct sample_vr_app : public polymer_app
     std::vector<simple_texture_view> eye_views;
 
     uint64_t frame_count{ 0 };
-    float2 debug_pt;
     entity floor;
 
     render_payload payload;
