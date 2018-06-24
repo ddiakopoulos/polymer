@@ -159,35 +159,39 @@ void pbr_renderer::run_stencil_prepass(const view_data & view, const render_payl
 {
     gl_check_error(__FILE__, __LINE__);
 
+    GLboolean colorMask[4];
+    glGetBooleanv(GL_COLOR_WRITEMASK, &colorMask[0]);
+    GLboolean wasCullingEnabled = glIsEnabled(GL_CULL_FACE);
+    GLboolean wasDepthTestingEnabled = glIsEnabled(GL_DEPTH_TEST);
+    GLboolean wasBlendingEnabled = glIsEnabled(GL_BLEND);
+
     glColorMask(0, 0, 0, 0);                                // do not write color
     glDepthMask(GL_FALSE);                                  // do not write depth
     glStencilMask(GL_TRUE);                                 // only write stencil
 
     glDisable(GL_BLEND);                                    // 0 into alpha
     glDisable(GL_DEPTH_TEST);                               // disable depth
-    glEnable(GL_STENCIL_TEST);                              // enable stencil
+    glDisable(GL_CULL_FACE);                                // do not cull since winding will might be flipped per-eye
+    glEnable(GL_STENCIL_TEST);                              // enable stencil test
 
     glStencilFunc(GL_ALWAYS, 1, 1);                         // set stencil func
     glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);        // set stencil op (GL_REPLACE, GL_REPLACE, GL_REPLACE)
 
-    glDisable(GL_CULL_FACE);                                // do not cull since winding will might be flipped per-eye
-    
     auto & shader = no_op.get()->get_variant()->shader;
     shader.bind();
     if (view.index == 0) left_stencil_mask.draw_elements();
     else if (view.index == 1) right_stencil_mask.draw_elements();
     shader.unbind();
 
-    glEnable(GL_CULL_FACE);                                 // resume culling faces
-
-    glColorMask(1, 1, 1, 1);                                // it's ok to write color
-    glDepthMask(GL_TRUE);                                   // it's ok to write depth
-    glStencilMask(GL_FALSE);                                // no other passes should write to stencil
-
     glStencilFunc(GL_EQUAL, 0, 1);                          // reset stencil func
     glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);                 // reset stencil op
-    glEnable(GL_BLEND);                                     // reset blend
-    glEnable(GL_DEPTH_TEST);                                // reset depth
+
+    glDepthMask(GL_TRUE);                                   // it's ok to write depth
+    glStencilMask(GL_FALSE);                                // no other passes should write to stencil
+    glColorMask(colorMask[0], colorMask[1], colorMask[2], colorMask[3]); // Restore color mask state
+    if (wasCullingEnabled) glEnable(GL_CULL_FACE);
+    if (wasDepthTestingEnabled) glEnable(GL_DEPTH_TEST);
+    if (wasBlendingEnabled) glEnable(GL_BLEND);
 
     gl_check_error(__FILE__, __LINE__);
 }
