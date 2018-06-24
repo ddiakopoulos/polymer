@@ -35,7 +35,7 @@ namespace polymer
 
             monitor.watch("depth-prepass",
                 base_path + "/shaders/renderer/renderer_vert.glsl",
-                base_path + "/shaders/renderer/depth_prepass_frag.glsl",
+                base_path + "/shaders/renderer/no_op_frag.glsl",
                 base_path + "/shaders/renderer");
 
             monitor.watch("cascaded-shadows",

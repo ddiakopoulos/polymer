@@ -96,6 +96,8 @@ public:
     // Returns current controller state.
     openvr_controller get_controller(const vr::ETrackedControllerRole controller);
 
+    gl_mesh get_stencil_mask(vr::Hmd_Eye eye);
+
     void controller_render_data_callback(std::function<void(cached_controller_render_data & data)> callback);
 
     // Must be called per-frame in the update loop

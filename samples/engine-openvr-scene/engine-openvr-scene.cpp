@@ -44,6 +44,11 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
             "../../assets/shaders/renderer/xr_laser_frag.glsl",
             "../../assets/shaders/renderer");
 
+        shaderMonitor.watch("no-op",
+            "../../assets/shaders/renderer/no_op_vert.glsl",
+            "../../assets/shaders/renderer/no_op_frag.glsl",
+            "../../assets/shaders/renderer");
+
         // Create required environment utilities
         scene.mat_library.reset(new polymer::material_library("../../assets/materials/"));
         scene.event_manager.reset(new polymer::event_manager_async());
@@ -59,6 +64,10 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
         scene.xform_system = orchestrator->create_system<transform_system>(orchestrator.get());
         scene.identifier_system = orchestrator->create_system<identifier_system>(orchestrator.get());
         scene.render_system = orchestrator->create_system<render_system>(settings, orchestrator.get());
+
+        // Setup hidden area mesh
+        scene.render_system->get_renderer()->set_stencil_mask(0, hmd->get_stencil_mask(vr::Hmd_Eye::Eye_Left));
+        scene.render_system->get_renderer()->set_stencil_mask(1, hmd->get_stencil_mask(vr::Hmd_Eye::Eye_Right));
 
         // Only need to set the skybox on the |render_payload| once (unless we clear the payload)
         payload.skybox = scene.render_system->get_skybox();
