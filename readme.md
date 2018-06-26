@@ -29,7 +29,19 @@ Polymer is designed as a collection of static libraries. `lib-polymer` is a base
 
 ## Building
 
-Polymer requires a recent version of Windows 10 alongside a graphics driver capable of supporting an OpenGL 4.5 context. This repository hosts maintained project files for Visual Studio 2017. Most dependencies are included in source form without the use of submodules. Use of the FBX 2017 SDK is gated by an environment variable (`SYSTEM_HAS_FBX_SDK`); the extracted FBX SDK itself must be located in `polymer\lib-model-io\third-party\fbxsdk`. 
+Polymer requires a recent version of Windows 10 alongside a graphics driver capable of supporting an OpenGL 4.5 context. This repository hosts maintained project files for Visual Studio 2017. Most dependencies are included in source form without the use of submodules. 
+
+### Prerequisites
+
+Windows SDK is required to build the project. You can download it [here](https://developer.microsoft.com/en-us/windows/downloads/windows-10-sdk)
+
+Use of the FBX 2017 SDK is gated by an environment variable (`SYSTEM_HAS_FBX_SDK`); the extracted FBX SDK itself must be located in `polymer\lib-model-io\third-party\fbxsdk`. You can download the FBX SDK from [here](https://www.autodesk.com/developer-network/platform-technologies/fbx-sdk-2019-0)
+
+### Building the projects
+
+Open the solution file in VS 2017 and build it. It will automatically build all the projects.
+
+**Note:** If the build fails with the message _Windows SDK version 10.0.16299.0 not found_ and you have installed the Windows SDK correctly, you might need to change the Windows SDK version in each project properties and select the one you've installed.
 
 ## Samples & Documentation
 
