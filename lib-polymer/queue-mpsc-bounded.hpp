@@ -9,63 +9,61 @@
 
 namespace polymer
 {
-    template<typename T>
+
+    // logic inspired by https://github.com/dbittman/waitfree-mpsc-queue/blob/master/mpsc.c
+    // https://github.com/meshula/LabCmd/blob/master/include/LabCmd/Queue.h
+    template <typename T, size_t N>
     class mpsc_queue_bounded
     {
+        std::array<T, N> buffer;
+        std::array<std::atomic<T*>, N> ready_buffer;
 
-        struct buffer_node_t { T data; std::atomic<buffer_node_t*> next; };
-        typedef typename std::aligned_storage<sizeof(buffer_node_t), std::alignment_of<buffer_node_t>::value>::type buffer_node_aligned_t;
-        std::atomic<buffer_node_t*> head;
-        std::atomic<buffer_node_t*> tail;
-        mpsc_queue_bounded(const mpsc_queue_bounded &) {}
-        void operator= (const mpsc_queue_bounded &) {}
+        std::atomic<size_t> count{ 0 };
+        std::atomic<size_t> head{ 0 };
+        size_t tail{ 0 };
 
     public:
 
-        mpsc_queue_bounded() : head(reinterpret_cast<buffer_node_t*>(new buffer_node_aligned_t)), tail(head.load(std::memory_order_relaxed))
-        {
-            buffer_node_t * front = head.load(std::memory_order_relaxed);
-            front->next.store(nullptr, std::memory_order_relaxed);
-        }
+        mpsc_bounded_queue() = default;
 
-        ~mpsc_queue_bounded()
+        // Thread safe
+        bool emplace_back(T const& val)
         {
-            T output;
-            while (this->consume(output)) {}
-            buffer_node_t* front = head.load(std::memory_order_relaxed);
-            delete front;
-        }
+            size_t count = count.fetch_add(1, std::memory_order_acquire);
+            if (count >= buffer.size())
+            {
+                count.fetch_sub(1, std::memory_order_release);
+                return false; // queue is full
+            }
 
-        bool produce(const T & input)
-        {
-            buffer_node_t* node = reinterpret_cast<buffer_node_t*>(new buffer_node_aligned_t);
-            node->data = input;
-            node->next.store(nullptr, std::memory_order_relaxed);
+            // Exclusive access to head, relying on unsigned int wrap around to keep head increment atomic
+            size_t h = head.fetch_add(1, std::memory_order_acquire) % buffer.size();
+            buffer[h] = val;
 
-            buffer_node_t* prevhead = head.exchange(node, std::memory_order_acq_rel);
-            prevhead->next.store(node, std::memory_order_release);
+            // Using a pointer to the element as a flag that the value is consumable
+            ready_buffer[h].store(&buffer[h], std::memory_order_release);
             return true;
         }
 
-        bool consume(T & output)
+        // Safe from one thread only
+        std::pair<bool, T> pop_front()
         {
-            buffer_node_t * tail = tail.load(std::memory_order_relaxed);
-            buffer_node_t * next = tail->next.load(std::memory_order_acquire);
-            if (next == nullptr) return false;
-            output = next->data;
-            tail.store(next, std::memory_order_release);
-            delete tail;
-            return true;
+            T * result = ready_buffer[tail].exchange(nullptr, std::memory_order_acquire);
+
+            // result will be null if `emplace_back` is writing, or if the queue is empty
+            if (!result) return { false, T{} };
+
+            tail = (tail + 1) % buffer.size();
+            size_t count = count.fetch_sub(1, std::memory_order_acquire);
+
+            return { true, *result };
         }
 
-        bool available()
-        {
-            buffer_node_t * tail = tail.load(std::memory_order_relaxed);
-            buffer_node_t * next = tail->next.load(std::memory_order_acquire);
-            return next != nullptr;
-        }
+        size_t size() const { return count; }
 
+        bool empty() const { return !count; }
     };
+
 
 } // end namespace polymer
 
