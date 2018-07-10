@@ -50,9 +50,9 @@ namespace polymer
     inline bool operator != (const transform & a, const transform & b) { return (a.position != b.position) || (a.orientation != b.orientation); }
     inline std::ostream & operator << (std::ostream & o, const transform & r) { return o << "{" << r.position << ", " << r.orientation << "}"; }
 
-    ////////////////////////////////////
-    // Construct rotation quaternions //
-    ////////////////////////////////////
+    //////////////////////////////////////////
+    //   rotation quaternion construction   //
+    //////////////////////////////////////////
     
     inline float4 make_rotation_quat_axis_angle(const float3 & axis, float angle)
     {
@@ -126,13 +126,13 @@ namespace polymer
         return {1.0f, 0.f, 0.f, w};
     }
     
-    //////////////////////////
-    // Quaternion Utilities //
-    //////////////////////////
+    /////////////////////////////
+    //   quaternion utilities  //
+    /////////////////////////////
     
     // Quaternion <=> Euler ref: http://www.swarthmore.edu/NatSci/mzucker1/e27/diebel2006attitude.pdf
     // ZYX is probably the most common standard: yaw, pitch, roll (YPR)
-    // XYZ Somewhat less common: roll, pitch, yaw (RPY)
+    // XYZ is somewhat less common: roll, pitch, yaw (RPY)
 
     inline float4 make_quat_from_euler_zyx(float y, float p, float r)
     {
@@ -216,11 +216,14 @@ namespace polymer
         return{ k0 * a.x + k1 * b2.x, k0 * a.y + k1 * b2.y, k0 * a.z + k1 * b2.z, k0 * a.w + k1 * b2.w };
     }
 
+    // https://fgiesen.wordpress.com/2013/01/07/small-note-on-quaternion-distance-metrics/
     inline float compute_quat_closeness(const float4 & a, const float4 & b)
     {
         return std::acos((2.f * pow(dot(a, b), 2.f))  - 1.f);
     }
 
+    // Returns an arbitrary unit-length vector orthogonal to v, ensuring
+    // non-colinearity.
     inline float3 orth(const float3 & v)
     {
         auto argmaxIdx = [](const float * a, int count)
@@ -236,35 +239,36 @@ namespace polymer
     }
 
     // Shortest arc quat from Game Programming Gems 1 (Section 2.10)
+    // Given two vectors, v0 and v1, this function returns a quat
+    // where q * v0 = v1. v0 and v1 must be normalized, unit-length vectors.
     inline float4 make_quat_from_to(const float3 & v0, const float3 & v1)
     {
-        auto  c = cross(v0, v1);
-        auto  d = dot(v0, v1);
+        const float3 c = cross(v0, v1);
+        const float d = dot(v0, v1);
         if (d <= -1.0f) 
         { 
-            float3 a = orth(v0);
-            return float4(a.x, a.y, a.z, 0.0f); 
+            const float3 a = orth(v0);
+            return float4(a.x, a.y, a.z, 0.0f); // 180 degrees around any orthogonal axis
         }
-        auto s = std::sqrtf((1 + d) * 2.0f);
+        const float s = std::sqrt((1.f + d) * 2.0f);
         return{ c.x / s, c.y / s, c.z / s, s / 2.0f };
     }
 
-    inline float4 squad(const float4 & a, const float4 & b, const float4 & c, const float4 & d, float mu)
+    // Spherical Spline Quaternion Interpolation
+    // Reference: http://run.usc.edu/cs520-s13/assign2/p245-shoemake.pdf
+    inline float4 squad(const float4 & a, const float4 & b, const float4 & c, const float4 & d, const float mu)
     {
         return slerp(slerp(a, d, mu), slerp(b, c, mu), 2 * (1 - mu) * mu);
     }
-    
-    //////////////////////////////////////////////
-    // Construct affine transformation matrices //
-    //////////////////////////////////////////////
-    
-    inline float4x4 remove_scale(float4x4 transform)
+
+    inline float3 transform_vector(const float4 & quat, const float3 & v)
     {
-        transform.row(0) = normalize(transform.row(0));
-        transform.row(1) = normalize(transform.row(1));
-        transform.row(2) = normalize(transform.row(2));
-        return transform;
+        return qmul(quat, float4(v, 1)).xyz();
     }
+    
+    ////////////////////////////////////
+    //   affine matrix construction   //
+    ////////////////////////////////////
 
     inline float4x4 make_scaling_matrix(float scaling)
     {
@@ -294,26 +298,6 @@ namespace polymer
     inline float4x4 make_rigid_transformation_matrix(const float4 & rotation, const float3 & translation)
     {
         return {{qxdir(rotation),0},{qydir(rotation),0},{qzdir(rotation),0},{translation,1}};
-    }
-
-    inline float3x3 get_rotation_submatrix(const float4x4 & transform)
-    {
-        return {transform.x.xyz(), transform.y.xyz(), transform.z.xyz()};
-    }
-
-    inline float3 transform_coord(const float4x4 & transform, const float3 & coord)
-    {
-        auto r = mul(transform, float4(coord,1)); return (r.xyz() / r.w);
-    }
-
-    inline float3 transform_vector(const float4x4 & transform, const float3 & vector)
-    {
-        return mul(transform, float4(vector,0)).xyz();
-    }
-    
-    inline float3 transform_vector(const float4 & b, const float3 & a)
-    {
-        return qmul(b, float4(a, 1)).xyz();
     }
 
     //     | 1-2Nx^2   -2NxNy  -2NxNz  -2NxD |
@@ -350,31 +334,36 @@ namespace polymer
         return reflectionMat;
     }
 
-    // http://math.stackexchange.com/questions/64430/find-extra-arbitrary-two-points-for-a-plane-given-the-normal-and-a-point-that-l
-    inline void make_basis_vectors(const float3 & plane_normal, float3 & u, float3 & v)
+    //////////////////////////////////////////
+    //   general transformation utilities   //
+    //////////////////////////////////////////
+
+    inline float4x4 remove_scale(float4x4 transform)
     {
-        const float3 N = normalize(plane_normal);
-
-        // Compute mirror vector where w = (Nx + 1, Ny, Nz).
-        const float3 w = float3(N.x + 1.f, N.y, N.z);
-
-        // Compute the householder matrix where H = I - 2(wwT/wTw)
-        float4x4  wwT; // multiply by transpose
-        wwT[0][0] = w.x * w.x; wwT[1][0] = w.y * w.x; wwT[2][0] = w.z * w.x;
-        wwT[0][1] = w.x * w.y; wwT[1][1] = w.y * w.y; wwT[2][1] = w.z * w.y;
-        wwT[0][2] = w.x * w.z; wwT[1][2] = w.y * w.z; wwT[2][2] = w.z * w.z;
-
-        const float wTw = dot(w, w);
-        const float4x4 householder_mat = transpose(Identity4x4 - 2.f * (wwT / wTw));
-
-        // The first of row will be a unit vector parallel to N. The next rows will be unit vectors orthogonal to N and each other.
-        u = householder_mat[1].xyz();
-        v = householder_mat[2].xyz();
+        transform.row(0) = normalize(transform.row(0));
+        transform.row(1) = normalize(transform.row(1));
+        transform.row(2) = normalize(transform.row(2));
+        return transform;
     }
 
-    //////////////////////////
-    // Construct Transforms //
-    //////////////////////////
+    inline float3x3 get_rotation_submatrix(const float4x4 & transform)
+    {
+        return { transform.x.xyz(), transform.y.xyz(), transform.z.xyz() };
+    }
+
+    inline float3 transform_coord(const float4x4 & transform, const float3 & coord)
+    {
+        auto r = mul(transform, float4(coord, 1)); return (r.xyz() / r.w);
+    }
+
+    inline float3 transform_vector(const float4x4 & transform, const float3 & vector)
+    {
+        return mul(transform, float4(vector, 0)).xyz();
+    }
+
+    /////////////////////////////////////
+    //   transformation construction   //
+    /////////////////////////////////////
 
     // The long form of (a.inverse() * b) 
     inline transform make_transform_from_to(const transform & a, const transform & b)
@@ -417,9 +406,9 @@ namespace polymer
         return p;
     }
 
-    /////////////////////////////////////////////////
-    // Coordinate System Conversions and Utilities //
-    /////////////////////////////////////////////////
+    /////////////////////////////////////
+    //   coordinate system utilities   //
+    /////////////////////////////////////
 
     // A value type representing an abstract direction vector in 3D space, independent of any coordinate system
     enum class coord_axis { forward, back, left, right, up, down };
@@ -454,9 +443,9 @@ namespace polymer
         };
     }
 
-    ///////////////////////////////////////
-    // Sphereical, Cartesian Coordinates //
-    ///////////////////////////////////////
+    ///////////////////////////////////////////
+    //   spherical & cartesian coordinates   //
+    ///////////////////////////////////////////
 
     // These functions adopt the physics convention (ISO):
     // * (rho) r defined as the radial distance, 

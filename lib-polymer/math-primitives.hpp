@@ -15,9 +15,9 @@
 
 namespace polymer
 {
-    /////////////////////////////////
-    // Axis-Aligned Bounding Boxes //
-    /////////////////////////////////
+    /////////////////////////////////////
+    //   axis-aligned bounding boxes   //
+    /////////////////////////////////////
 
     struct aabb_2d
     {
@@ -147,7 +147,7 @@ namespace polymer
     }
    
     ////////////////
-    //   Sphere   //
+    //   sphere   //
     ////////////////
 
     static const float SPHERE_EPSILON = 0.0001f;
@@ -258,9 +258,33 @@ namespace polymer
         return o << "{" << b.equation << "}";
     }
 
-    ////////////////////////////
-    //   Lines and Segments   //
-    ////////////////////////////
+    // Find an orthonormal basis of a plane
+    // http://math.stackexchange.com/questions/64430/find-extra-arbitrary-two-points-for-a-plane-given-the-normal-and-a-point-that-l
+    inline void make_basis_vectors(const float3 & plane_normal, float3 & u, float3 & v)
+    {
+        const float3 N = normalize(plane_normal);
+
+        // Compute mirror vector where w = (Nx + 1, Ny, Nz).
+        const float3 w = float3(N.x + 1.f, N.y, N.z);
+
+        // Compute the householder matrix where H = I - 2(wwT/wTw)
+        float4x4  wwT; // multiply by transpose
+        wwT[0][0] = w.x * w.x; wwT[1][0] = w.y * w.x; wwT[2][0] = w.z * w.x;
+        wwT[0][1] = w.x * w.y; wwT[1][1] = w.y * w.y; wwT[2][1] = w.z * w.y;
+        wwT[0][2] = w.x * w.z; wwT[1][2] = w.y * w.z; wwT[2][2] = w.z * w.z;
+
+        const float wTw = dot(w, w);
+        const float4x4 householder_mat = transpose(Identity4x4 - 2.f * (wwT / wTw));
+
+        // The first of row will be a unit vector parallel to N. 
+        // The next rows will be unit vectors orthogonal to N and each other.
+        u = householder_mat[1].xyz();
+        v = householder_mat[2].xyz();
+    }
+
+    //////////////////////////
+    //   lines & segments   //
+    //////////////////////////
     
     struct segment
     {
@@ -304,9 +328,9 @@ namespace polymer
         return line((c1 * p1.get_normal()) + (c2 * p2.get_normal()), normalize(cross(p1.get_normal(), p2.get_normal())));
     }
 
-    /////////////////////////////////
-    // Object-Object intersections //
-    /////////////////////////////////
+    ////////////////////////////////////////
+    //   object-to-object intersections   //
+    ////////////////////////////////////////
     
     inline float3 intersect_line_plane(const line & l, const plane & p)
     {
@@ -315,9 +339,9 @@ namespace polymer
         return (l.origin - (distance * l.direction));
     }
 
-    /////////////
-    // Frustum //
-    /////////////
+    /////////////////
+    //   frustum   //
+    /////////////////
 
     enum FrustumPlane { RIGHT, LEFT, BOTTOM, TOP, NEAR, FAR };
 
