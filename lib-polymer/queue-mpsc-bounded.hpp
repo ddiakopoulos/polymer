@@ -24,10 +24,10 @@ namespace polymer
 
     public:
 
-        mpsc_bounded_queue() = default;
+        mpsc_queue_bounded() = default;
 
         // Thread safe
-        bool emplace_back(T const& val)
+        bool emplace_back(T && val)
         {
             size_t count = count.fetch_add(1, std::memory_order_acquire);
             if (count >= buffer.size())
@@ -41,6 +41,25 @@ namespace polymer
             buffer[h] = val;
 
             // Using a pointer to the element as a flag that the value is consumable
+            ready_buffer[h].store(&buffer[h], std::memory_order_release);
+            return true;
+        }
+
+        bool push_back(T const & val)
+        {
+            size_t count = count.fetch_add(1, std::memory_order_acquire);
+            if (count >= buffer.size())
+            {
+                count.fetch_sub(1, std::memory_order_release);
+                return false; // queue is full
+            }
+
+            // get exclusive access to head
+            // relying on unsigned int wrap around to keep head increment atomic
+            size_t h = head.fetch_add(1, std::memory_order_acquire) % buffer.size();
+            buffer[h] = val;
+
+            // using a pointer to the element as a flag that the value is consumable
             ready_buffer[h].store(&buffer[h], std::memory_order_release);
             return true;
         }
