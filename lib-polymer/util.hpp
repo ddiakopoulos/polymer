@@ -98,6 +98,7 @@ namespace polymer
     public:
         void start() { t0 = std::chrono::high_resolution_clock::now(); }
         void stop() { timestamp = std::chrono::duration<float>(std::chrono::high_resolution_clock::now() - t0).count() * 1000; }
+        const double running() { return std::chrono::duration<float>(std::chrono::high_resolution_clock::now() - t0).count() * 1000; }
         const double & get() { return timestamp; }
     };
 

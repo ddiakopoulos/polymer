@@ -209,36 +209,6 @@ TEST_CASE("unifom random number generation")
     }
 }
 
-TEST_CASE("primitive (analytic sphere)")
-{
-
-}
-
-TEST_CASE("primitive (analytic plane)")
-{
-
-}
-
-TEST_CASE("primitive (analytic lines & segments)")
-{
-
-}
-
-TEST_CASE("simple raycasting")
-{
-
-}
-
-TEST_CASE("primitive (analytic frustum)")
-{
-
-}
-
-TEST_CASE("polynomial root solvers")
-{
-
-}
-
 TEST_CASE("timers")
 {
     // Manual timers are helpful to debug large sections of code
@@ -307,9 +277,4 @@ TEST_CASE("loading & saving binary files")
     REQUIRE(inData.z == false);
 
     REQUIRE_THROWS(read_file_binary("binary-sample-does-not-exist.bin"));
-}
-
-TEST_CASE("loading & saving ascii files")
-{
-
 }

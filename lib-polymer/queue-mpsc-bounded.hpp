@@ -45,10 +45,10 @@ namespace polymer
             return true;
         }
 
-        bool push_back(T const & val)
+        bool emplace_back(T const & val)
         {
-            size_t count = count.fetch_add(1, std::memory_order_acquire);
-            if (count >= buffer.size())
+            size_t cnt = count.fetch_add(1, std::memory_order_acquire);
+            if (cnt >= buffer.size())
             {
                 count.fetch_sub(1, std::memory_order_release);
                 return false; // queue is full
@@ -73,7 +73,7 @@ namespace polymer
             if (!result) return { false, T{} };
 
             tail = (tail + 1) % buffer.size();
-            size_t count = count.fetch_sub(1, std::memory_order_acquire);
+            const size_t cnt = count.fetch_sub(1, std::memory_order_acquire);
 
             return { true, *result };
         }
@@ -82,7 +82,6 @@ namespace polymer
 
         bool empty() const { return !count; }
     };
-
 
 } // end namespace polymer
 
