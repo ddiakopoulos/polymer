@@ -198,6 +198,8 @@ namespace xr {
         ~xr_gizmo_system();
         std::vector<entity> get_renderables() const;
         void process(const float dt);
+
+        transform get_transform() const;
     };
 
 } // end namespace xr
