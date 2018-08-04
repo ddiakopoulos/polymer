@@ -45,90 +45,82 @@ constexpr const char textured_frag[] = R"(#version 330
     }
 )";
 
-struct interaction_state
+
+// orbit camera controller
+// min, max for all values
+// set target
+// inertia
+// auto rotate around target
+// theta, phi rename
+// speed factors
+
+class orbit_camera
 {
-    float3 origin{ 0, 0, 0 };
+    float3 make_direction_vector(const float yaw, const float pitch) const
+    {
+        return { cos(pitch) * cos(yaw), sin(pitch), cos(pitch) * sin(yaw) };
+    }
 
-    float zoom{ 0.f };
+    struct interaction_state
+    {
+        float zoom{ 0.f };
 
-    float d_theta{ 0.f };
-    float d_phi{ 0.f };
+        float d_theta{ 0.f };
+        float d_phi{ 0.f };
 
-    float pan_x{ 0.f };
-    float pan_y{ 0.f };
-    float pan_z{ 0.f };
+        float pan_x{ 0.f };
+        float pan_y{ 0.f };
 
-    float yaw{ 0.f };
-    float pitch{ 0.f };
-};
+        float yaw{ 0.f };
+        float pitch{ 0.f };
+    };
 
-struct frame
-{
-    float3 zDir;
-    float3 xDir;
-    float3 yDir;
-};
+    struct frame_rh
+    {
+        float3 zDir;
+        float3 xDir;
+        float3 yDir;
+        frame_rh() = default;
+        frame_rh(const float3 & eyePoint, const float3 & target, const float3 & worldUp = { 0,1,0 })
+        {
+            zDir = normalize(eyePoint - target);
+            xDir = normalize(cross(worldUp, zDir));
+            yDir = cross(zDir, xDir);
+        }
+    };
 
-inline frame make_frame(float3 eyePoint, float3 target, float3 worldUp = { 0,1,0 })
-{
-    frame f;
-    f.zDir = normalize(eyePoint - target);
-    f.xDir = normalize(cross(worldUp, f.zDir));
-    f.yDir = cross(f.zDir, f.xDir);
-    return f;
-}
-
-struct orbit_camera
-{
     float yfov{ 1.f }, near_clip{ 0.01f }, far_clip{ 128.f };
 
     float3 eye{ 0, 10, 10 };
     float3 target{ 0, 0.01f, 0.01f };
-
-    interaction_state current_state;
-    interaction_state last_state;
+    frame_rh f;
 
     bool ml = 0, mr = 0;
+    interaction_state current_state;
+    interaction_state last_state;
     float2 last_cursor{ 0.f, 0.f };
-    float2 cursor_location{ 0.f, 0.f }; // mouseX, mouseY
-    float focus = 1.f;
 
-    frame f;
-
-    // orbit camera controller
-    // min, max for all values
-    // set target
-    // inertia
-    // auto rotate around target
-    // theta, phi rename
-    // speed factors
+public:
 
     orbit_camera()
     {
-        float3 dir = normalize(eye - target);
-        current_state.pitch = asinf(dir.y);
-        current_state.yaw = acosf(dir.x); // Note the - signs
-
-        std::cout << "Initial Direction: " << dir << std::endl;
-
-        std::cout << "Setting Initial Yaw: " << current_state.yaw << std::endl;
-        std::cout << "Setting Initial Pitch: " << current_state.pitch << std::endl;
-        const float3 direction_vec = normalize(vector_from_yaw_pitch(current_state.yaw, -current_state.pitch));
-
-        f = make_frame(eye, target);
+        set_target(target);
     }
 
-    float3 vector_from_yaw_pitch(float yaw, float pitch)
+    void set_target(const float3 & new_target)
     {
-        return { cos(pitch) * cos(yaw), sin(pitch), cos(pitch) * sin(yaw) };
+        target = new_target;
+        const float3 lookat = normalize(eye - target);
+        current_state.pitch = asinf(lookat.y);
+        current_state.yaw = acosf(lookat.x);
+        f = frame_rh(eye, target);
     }
 
     void handle_input(const app_input_event & e)
     {
         if (e.type == app_input_event::Type::SCROLL)
         {
-            current_state.zoom = (-e.value[1]) * 0.5; // deltas
-            cursor_location = e.cursor;
+            current_state.zoom = (-e.value[1]) * 0.5;
             eye += (f.zDir * current_state.zoom);
         }
         else if (e.type == app_input_event::MOUSE)
@@ -143,7 +135,7 @@ struct orbit_camera
             {
                 if (e.mods & GLFW_MOD_SHIFT)
                 {
-                    float scaleFactor = (10.f * std::tan(yfov * 0.5f) * 2.0f) * 0.005;
+                    float scaleFactor = 0.005f;
                     current_state.pan_x += delta_cursor.x * scaleFactor;
                     current_state.pan_y += delta_cursor.y * scaleFactor;
 
@@ -166,37 +158,36 @@ struct orbit_camera
                     current_state.pitch = clamp(current_state.pitch, float(-POLYMER_PI / 2.f) + 0.01f, float(POLYMER_PI / 2.f) - 0.01f);
                     current_state.yaw = fmodf(current_state.yaw, float(POLYMER_TAU));
 
-                    // the lookat vector
-                    // right = normalize(cross(lookat, up));
-                    const float3 direction_vec = normalize(vector_from_yaw_pitch(current_state.yaw, current_state.pitch));
-                    auto new_target = (direction_vec);
-                    std::cout << "New Decomposed Vec: " << direction_vec << std::endl;
-                    //std::cout << "new target: " << new_target << std::endl;
-                    //target = new_target;
-
-                    f = make_frame(new_target, target);
+                    // Recompose frame
+                    const float3 lookat_vec = normalize(make_direction_vector(current_state.yaw, current_state.pitch));
+                    f = frame_rh(lookat_vec, target);
                 }
             }
-
             last_cursor = e.cursor;
         }
     }
 
-    float4x4 get_view_matrix()
+    void update(const float timestep)
+    {
+        last_state = current_state;
+    }
+
+    float4x4 get_view_matrix() const
     {
         transform view;
         view.position = eye;
         view.orientation = normalize(make_rotation_quat_from_rotation_matrix({ f.xDir, f.yDir, f.zDir }));
-
         return view.view_matrix();
     }
 
-    float4x4 get_projection_matrix(const float aspect) { return linalg::perspective_matrix(yfov, aspect, near_clip, far_clip); }
-    float4x4 get_viewproj_matrix(const float aspect) { return mul(get_projection_matrix(aspect), get_view_matrix()); }
+    float4x4 get_projection_matrix(const float aspect) const
+    { 
+        return linalg::perspective_matrix(yfov, aspect, near_clip, far_clip); 
+    }
 
-    void update(const float timestep)
-    {
-        last_state = current_state;
+    float4x4 get_viewproj_matrix(const float aspect) const
+    { 
+        return mul(get_projection_matrix(aspect), get_view_matrix()); 
     }
 };
 
