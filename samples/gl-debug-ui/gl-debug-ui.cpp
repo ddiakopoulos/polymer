@@ -48,7 +48,6 @@ constexpr const char textured_frag[] = R"(#version 330
 
 // orbit camera controller
 // min, max for all values
-// set target
 // inertia
 // auto rotate around target
 // theta, phi rename
@@ -63,16 +62,15 @@ class orbit_camera
 
     struct interaction_state
     {
-        float zoom{ 0.f };
+        float delta_zoom{ 0.f };
 
-        float d_theta{ 0.f };
-        float d_phi{ 0.f };
-
-        float pan_x{ 0.f };
-        float pan_y{ 0.f };
+        float delta_pan_x{ 0.f };
+        float delta_pan_y{ 0.f };
 
         float yaw{ 0.f };
         float pitch{ 0.f };
+        float delta_yaw{ 0.f };
+        float delta_pitch{ 0.f };
     };
 
     struct frame_rh
@@ -97,7 +95,6 @@ class orbit_camera
 
     bool ml = 0, mr = 0;
     interaction_state current_state;
-    interaction_state last_state;
     float2 last_cursor{ 0.f, 0.f };
 
 public:
@@ -118,10 +115,11 @@ public:
 
     void handle_input(const app_input_event & e)
     {
+        float scaleFactor = 0.005f;
+
         if (e.type == app_input_event::Type::SCROLL)
         {
-            current_state.zoom = (-e.value[1]) * 0.5;
-            eye += (f.zDir * current_state.zoom);
+            current_state.delta_zoom += (-e.value[1]) * 0.5;
         }
         else if (e.type == app_input_event::MOUSE)
         {
@@ -131,36 +129,18 @@ public:
         else if (e.type == app_input_event::CURSOR)
         {
             const float2 delta_cursor = e.cursor - last_cursor;
+
             if (mr)
             {
                 if (e.mods & GLFW_MOD_SHIFT)
                 {
-                    float scaleFactor = 0.005f;
-                    current_state.pan_x += delta_cursor.x * scaleFactor;
-                    current_state.pan_y += delta_cursor.y * scaleFactor;
-
-                    const float3 flat_z = normalize(f.zDir * float3(1, 0, 1));
-                    const float3 flat_x = normalize(f.xDir * float3(1, 0, 1));
-
-                    eye += (flat_x * (delta_cursor.x * scaleFactor)) + (flat_z * (delta_cursor.y * scaleFactor));
+                    current_state.delta_pan_x += delta_cursor.x * scaleFactor;
+                    current_state.delta_pan_y += delta_cursor.y * scaleFactor;
                 }
                 else
                 {
-                    // Delta with scale
-                    auto delta_x = delta_cursor.x * 0.005f;
-                    auto delta_y = delta_cursor.y * 0.005f;
-
-                    // Accumulate
-                    current_state.yaw += delta_x;
-                    current_state.pitch += delta_y;
-
-                    // Clamp
-                    current_state.pitch = clamp(current_state.pitch, float(-POLYMER_PI / 2.f) + 0.01f, float(POLYMER_PI / 2.f) - 0.01f);
-                    current_state.yaw = fmodf(current_state.yaw, float(POLYMER_TAU));
-
-                    // Recompose frame
-                    const float3 lookat_vec = normalize(make_direction_vector(current_state.yaw, current_state.pitch));
-                    f = frame_rh(lookat_vec, target);
+                    current_state.delta_yaw += delta_cursor.x * scaleFactor;
+                    current_state.delta_pitch += delta_cursor.y * scaleFactor;
                 }
             }
             last_cursor = e.cursor;
@@ -169,7 +149,61 @@ public:
 
     void update(const float timestep)
     {
-        last_state = current_state;
+        if (should_update())
+        {
+            // Rotate
+            {
+                // Accumulate
+                current_state.yaw += current_state.delta_yaw;
+                current_state.pitch += current_state.delta_pitch;
+
+                // Clamp
+                current_state.pitch = clamp(current_state.pitch, float(-POLYMER_PI / 2.f) + 0.01f, float(POLYMER_PI / 2.f) - 0.01f);
+                current_state.yaw = fmodf(current_state.yaw, float(POLYMER_TAU));
+
+                // Recompose frame
+                const float3 lookat = normalize(make_direction_vector(current_state.yaw, current_state.pitch));
+                f = frame_rh(lookat, target);
+            }
+
+            // Pan
+            {
+                const float3 flat_z = normalize(f.zDir * float3(1, 0, 1));
+                const float3 flat_x = normalize(f.xDir * float3(1, 0, 1));
+                eye += (flat_x * -current_state.delta_pan_x) + (flat_z * -current_state.delta_pan_y);
+            }
+
+            // Zoom
+            {
+                eye += (f.zDir * current_state.delta_zoom);
+            }
+        }
+
+        apply_decay(timestep);
+    }
+
+    void apply_decay(const float dt)
+    {
+        const float rotation_decay = std::exp(-dt / .075f / POLYMER_LN_2);
+        current_state.delta_yaw *= rotation_decay;
+        current_state.delta_pitch *= rotation_decay;
+
+        const float pan_decay = std::exp(-dt / .075f / POLYMER_LN_2);
+        current_state.delta_pan_x *= pan_decay;
+        current_state.delta_pan_y *= pan_decay;
+
+        const float zoom_decay = std::exp(-dt / .2f / POLYMER_LN_2);
+        current_state.delta_zoom *= zoom_decay;
+    }
+
+    bool should_update(const float threshhold = 1e-3)
+    {
+        if (std::abs(current_state.delta_yaw) > threshhold) return true;
+        if (std::abs(current_state.delta_pitch) > threshhold) return true;
+        if (std::abs(current_state.delta_pan_x) > threshhold) return true;
+        if (std::abs(current_state.delta_pan_y) > threshhold) return true;
+        if (std::abs(current_state.delta_zoom) > threshhold) return true;
+        return false;
     }
 
     float4x4 get_view_matrix() const
