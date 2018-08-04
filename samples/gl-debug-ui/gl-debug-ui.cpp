@@ -45,14 +45,6 @@ constexpr const char textured_frag[] = R"(#version 330
     }
 )";
 
-
-// orbit camera controller
-// min, max for all values
-// inertia
-// auto rotate around target
-// theta, phi rename
-// speed factors
-
 class orbit_camera
 {
     float3 make_direction_vector(const float yaw, const float pitch) const
@@ -60,15 +52,11 @@ class orbit_camera
         return { cos(pitch) * cos(yaw), sin(pitch), cos(pitch) * sin(yaw) };
     }
 
-    struct interaction_state
+    struct delta_state
     {
         float delta_zoom{ 0.f };
-
         float delta_pan_x{ 0.f };
         float delta_pan_y{ 0.f };
-
-        float yaw{ 0.f };
-        float pitch{ 0.f };
         float delta_yaw{ 0.f };
         float delta_pitch{ 0.f };
     };
@@ -89,13 +77,26 @@ class orbit_camera
 
     float yfov{ 1.f }, near_clip{ 0.01f }, far_clip{ 128.f };
 
+    float yaw{ 0.f };
+    float pitch{ 0.f };
     float3 eye{ 0, 10, 10 };
     float3 target{ 0, 0.01f, 0.01f };
     frame_rh f;
 
     bool ml = 0, mr = 0;
-    interaction_state current_state;
+    delta_state delta;
     float2 last_cursor{ 0.f, 0.f };
+
+    float zoom_scale = 0.25f;
+    float pan_scale = 0.005f;
+    float rotate_scale = 0.0025f;
+
+    float zoom_inertia = 0.2f;
+    float pan_inertia = 0.075f;
+    float rotation_inertia = 0.075f;
+
+    float focus = 0.f;
+    float3 pan_offset;
 
 public:
 
@@ -108,18 +109,17 @@ public:
     {
         target = new_target;
         const float3 lookat = normalize(eye - target);
-        current_state.pitch = asinf(lookat.y);
-        current_state.yaw = acosf(lookat.x);
+        pitch = asinf(lookat.y);
+        yaw = acosf(lookat.x);
         f = frame_rh(eye, target);
+        focus = distance(eye, target);
     }
 
     void handle_input(const app_input_event & e)
     {
-        float scaleFactor = 0.005f;
-
         if (e.type == app_input_event::Type::SCROLL)
         {
-            current_state.delta_zoom += (-e.value[1]) * 0.5;
+            delta.delta_zoom += (-e.value[1]) * zoom_scale;
         }
         else if (e.type == app_input_event::MOUSE)
         {
@@ -134,13 +134,13 @@ public:
             {
                 if (e.mods & GLFW_MOD_SHIFT)
                 {
-                    current_state.delta_pan_x += delta_cursor.x * scaleFactor;
-                    current_state.delta_pan_y += delta_cursor.y * scaleFactor;
+                    delta.delta_pan_x += delta_cursor.x * pan_scale;
+                    delta.delta_pan_y += delta_cursor.y * pan_scale;
                 }
                 else
                 {
-                    current_state.delta_yaw += delta_cursor.x * scaleFactor;
-                    current_state.delta_pitch += delta_cursor.y * scaleFactor;
+                    delta.delta_yaw += delta_cursor.x * rotate_scale;
+                    delta.delta_pitch += delta_cursor.y * rotate_scale;
                 }
             }
             last_cursor = e.cursor;
@@ -153,30 +153,28 @@ public:
         {
             // Rotate
             {
-                // Accumulate
-                current_state.yaw += current_state.delta_yaw;
-                current_state.pitch += current_state.delta_pitch;
+                yaw += delta.delta_yaw;
+                pitch += delta.delta_pitch;
 
-                // Clamp
-                current_state.pitch = clamp(current_state.pitch, float(-POLYMER_PI / 2.f) + 0.01f, float(POLYMER_PI / 2.f) - 0.01f);
-                current_state.yaw = fmodf(current_state.yaw, float(POLYMER_TAU));
+                pitch = clamp(pitch, float(-POLYMER_PI / 2.f) + 0.1f, float(POLYMER_PI / 2.f) - 0.1f);
+                yaw = fmodf(yaw, float(POLYMER_TAU));
 
-                // Recompose frame
-                const float3 lookat = normalize(make_direction_vector(current_state.yaw, current_state.pitch));
-                f = frame_rh(lookat, target);
+                const float3 lookvec = normalize(make_direction_vector(yaw, pitch));
+                const float3 new_eye = lookvec * focus;
+
+                eye = new_eye + pan_offset;
+                f = frame_rh(new_eye, target);
             }
 
             // Pan
             {
                 const float3 flat_z = normalize(f.zDir * float3(1, 0, 1));
                 const float3 flat_x = normalize(f.xDir * float3(1, 0, 1));
-                eye += (flat_x * -current_state.delta_pan_x) + (flat_z * -current_state.delta_pan_y);
+                pan_offset += (flat_x * -delta.delta_pan_x) + (flat_z * -delta.delta_pan_y);
             }
 
             // Zoom
-            {
-                eye += (f.zDir * current_state.delta_zoom);
-            }
+            focus += (delta.delta_zoom);
         }
 
         apply_decay(timestep);
@@ -184,25 +182,25 @@ public:
 
     void apply_decay(const float dt)
     {
-        const float rotation_decay = std::exp(-dt / .075f / POLYMER_LN_2);
-        current_state.delta_yaw *= rotation_decay;
-        current_state.delta_pitch *= rotation_decay;
+        const float rotation_decay = rotation_inertia ? std::exp(-dt / rotation_inertia / POLYMER_LN_2) : 0.f;
+        delta.delta_yaw *= rotation_decay;
+        delta.delta_pitch *= rotation_decay;
 
-        const float pan_decay = std::exp(-dt / .075f / POLYMER_LN_2);
-        current_state.delta_pan_x *= pan_decay;
-        current_state.delta_pan_y *= pan_decay;
+        const float pan_decay = pan_inertia ? std::exp(-dt / pan_inertia / POLYMER_LN_2) : 0.f;
+        delta.delta_pan_x *= pan_decay;
+        delta.delta_pan_y *= pan_decay;
 
-        const float zoom_decay = std::exp(-dt / .2f / POLYMER_LN_2);
-        current_state.delta_zoom *= zoom_decay;
+        const float zoom_decay = zoom_inertia ? std::exp(-dt / zoom_inertia / POLYMER_LN_2) : 0.f;
+        delta.delta_zoom *= zoom_decay;
     }
 
     bool should_update(const float threshhold = 1e-3)
     {
-        if (std::abs(current_state.delta_yaw) > threshhold) return true;
-        if (std::abs(current_state.delta_pitch) > threshhold) return true;
-        if (std::abs(current_state.delta_pan_x) > threshhold) return true;
-        if (std::abs(current_state.delta_pan_y) > threshhold) return true;
-        if (std::abs(current_state.delta_zoom) > threshhold) return true;
+        if (std::abs(delta.delta_yaw) > threshhold) return true;
+        if (std::abs(delta.delta_pitch) > threshhold) return true;
+        if (std::abs(delta.delta_pan_x) > threshhold) return true;
+        if (std::abs(delta.delta_pan_y) > threshhold) return true;
+        if (std::abs(delta.delta_zoom) > threshhold) return true;
         return false;
     }
 
