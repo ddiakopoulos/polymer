@@ -115,6 +115,20 @@ public:
         focus = distance(eye, target);
     }
 
+    void set_eye_position(const float3 & new_eye)
+    {
+        eye = new_eye;
+        f = frame_rh(eye, target);
+        focus = distance(eye, target);
+    }
+
+    void set_camera_parameters(const float new_yfov_radians, float new_near_clip, float new_far_clip)
+    {
+        yfov = new_yfov_radians;
+        near_clip = new_near_clip;
+        far_clip = new_far_clip;
+    }
+
     void handle_input(const app_input_event & e)
     {
         if (e.type == app_input_event::Type::SCROLL)
@@ -157,7 +171,7 @@ public:
                 pitch += delta.delta_pitch;
 
                 pitch = clamp(pitch, float(-POLYMER_PI / 2.f) + 0.1f, float(POLYMER_PI / 2.f) - 0.1f);
-                yaw = fmodf(yaw, float(POLYMER_TAU));
+                yaw = std::fmod(yaw, float(POLYMER_TAU));
 
                 const float3 lookvec = normalize(make_direction_vector(yaw, pitch));
                 const float3 new_eye = lookvec * focus;
@@ -175,6 +189,7 @@ public:
 
             // Zoom
             focus += (delta.delta_zoom);
+            focus = std::max(0.1f, std::min(focus, 128.f));
         }
 
         apply_decay(timestep);
@@ -182,15 +197,15 @@ public:
 
     void apply_decay(const float dt)
     {
-        const float rotation_decay = rotation_inertia ? std::exp(-dt / rotation_inertia / POLYMER_LN_2) : 0.f;
+        const float rotation_decay = rotation_inertia ? std::exp(-dt / rotation_inertia / (float) POLYMER_LN_2) : 0.f;
         delta.delta_yaw *= rotation_decay;
         delta.delta_pitch *= rotation_decay;
 
-        const float pan_decay = pan_inertia ? std::exp(-dt / pan_inertia / POLYMER_LN_2) : 0.f;
+        const float pan_decay = pan_inertia ? std::exp(-dt / pan_inertia / (float) POLYMER_LN_2) : 0.f;
         delta.delta_pan_x *= pan_decay;
         delta.delta_pan_y *= pan_decay;
 
-        const float zoom_decay = zoom_inertia ? std::exp(-dt / zoom_inertia / POLYMER_LN_2) : 0.f;
+        const float zoom_decay = zoom_inertia ? std::exp(-dt / zoom_inertia / (float) POLYMER_LN_2) : 0.f;
         delta.delta_zoom *= zoom_decay;
     }
 
