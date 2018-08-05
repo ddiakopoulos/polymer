@@ -75,8 +75,6 @@ class orbit_camera
         }
     };
 
-    float yfov{ 1.f }, near_clip{ 0.01f }, far_clip{ 128.f };
-
     float yaw{ 0.f };
     float pitch{ 0.f };
     float3 eye{ 0, 10, 10 };
@@ -100,6 +98,8 @@ class orbit_camera
 
 public:
 
+    float yfov{ 1.f }, near_clip{ 0.01f }, far_clip{ 128.f };
+
     orbit_camera()
     {
         set_target(target);
@@ -120,13 +120,6 @@ public:
         eye = new_eye;
         f = frame_rh(eye, target);
         focus = distance(eye, target);
-    }
-
-    void set_camera_parameters(const float new_yfov_radians, float new_near_clip, float new_far_clip)
-    {
-        yfov = new_yfov_radians;
-        near_clip = new_near_clip;
-        far_clip = new_far_clip;
     }
 
     void handle_input(const app_input_event & e)
@@ -219,11 +212,17 @@ public:
         return false;
     }
 
+    transform get_transform() const
+    {
+        transform t;
+        t.position = eye;
+        t.orientation = normalize(make_rotation_quat_from_rotation_matrix({ f.xDir, f.yDir, f.zDir }));
+        return t;
+    }
+
     float4x4 get_view_matrix() const
     {
-        transform view;
-        view.position = eye;
-        view.orientation = normalize(make_rotation_quat_from_rotation_matrix({ f.xDir, f.yDir, f.zDir }));
+        transform view = get_transform();
         return view.view_matrix();
     }
 
@@ -282,9 +281,7 @@ struct sample_gl_debug_ui final : public polymer_app
 {
     orbit_camera cam;
 
-    //perspective_camera cam;
-    //fps_camera_controller flycam;
-    gl_renderable_grid grid{ 1.f, 24, 24 };
+    gl_renderable_grid grid{ 0.5f, 24, 24 };
     int which_cookie = 0;
 
     gl_mesh box_mesh;
@@ -347,9 +344,6 @@ sample_gl_debug_ui::sample_gl_debug_ui() : polymer_app(1280, 720, "sample-gl-deb
     projector.set_shader(std::move(projector_shader));
 
     gizmo_selection.position = { 0, 6, -2 };
-
-    //cam.look_at({ 0, 5, 5 }, { 0, 0.1f, -0.1f });
-    ///flycam.set_camera(&cam);
 }
 
 sample_gl_debug_ui::~sample_gl_debug_ui() {}
@@ -370,7 +364,16 @@ void sample_gl_debug_ui::on_update(const app_update_event & e)
     int width, height;
     glfwGetWindowSize(window, &width, &height);
     cam.update(e.timestep_ms);
-    //gizmo->update(cam, { static_cast<float>(width), static_cast<float>(height) });
+
+    // Update tinygizmo, but wrap orbit camera in a regular perspective camera
+    {
+        perspective_camera persp_cam;
+        persp_cam.nearclip = cam.near_clip;
+        persp_cam.farclip = cam.far_clip;
+        persp_cam.vfov = cam.yfov;
+        persp_cam.pose = cam.get_transform();
+        gizmo->update(persp_cam, { static_cast<float>(width), static_cast<float>(height) });
+    }
 }
 
 void sample_gl_debug_ui::on_draw()
@@ -480,7 +483,7 @@ void sample_gl_debug_ui::on_draw()
     imgui->end_frame();
 
     // Render the gizmo
-    //gizmo->draw();
+    gizmo->draw();
 
     gl_check_error(__FILE__, __LINE__);
 
