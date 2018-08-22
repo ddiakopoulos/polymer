@@ -200,6 +200,7 @@ namespace xr {
         void process(const float dt);
 
         transform get_transform() const;
+		void set_render_scale(const float scale = 1.f);
     };
 
 } // end namespace xr

@@ -554,6 +554,11 @@ transform xr_gizmo_system::get_transform() const
     transform t;
     t.position = float3(xform.position.x, xform.position.y, xform.position.z);
     t.orientation = float4(xform.orientation.x, xform.orientation.y, xform.orientation.z, xform.orientation.w);
-    // todo - transforms do not carry scale (yet)
+    // @todo - transforms do not carry scale (yet)
     return t;
+}
+
+void xr_gizmo_system::set_render_scale(const float scale)
+{
+	// @todo
 }
