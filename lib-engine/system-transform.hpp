@@ -46,6 +46,9 @@ namespace polymer
 
         void destroy_recursive(entity child)
         {
+            // Remove parent assocations first
+            remove_parent_from_child(child);
+
             auto node = scene_graph_transforms.get(child);
             if (node) for (auto & n : node->children) destroy_recursive(n);
 
@@ -153,7 +156,7 @@ namespace polymer
             return kInvalidEntity;
         }
 
-        void remove_parent(entity child)
+        void remove_parent_from_child(entity child)
         {
             if (child == kInvalidEntity) throw std::invalid_argument("entity was invalid");
             auto child_node = scene_graph_transforms.get(child);

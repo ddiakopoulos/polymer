@@ -275,7 +275,7 @@ namespace polymer
         REQUIRE(system->get_parent(child1) == root);
         REQUIRE(system->get_parent(child2) == root);
 
-        system->remove_parent(child1);
+        system->remove_parent_from_child(child1);
         REQUIRE(system->get_parent(child1) == kInvalidEntity);
     }
 

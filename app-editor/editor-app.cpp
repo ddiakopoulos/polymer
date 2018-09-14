@@ -244,6 +244,11 @@ void scene_editor_app::on_update(const app_update_event & e)
 
 void scene_editor_app::draw_entity_scenegraph(const entity e)
 {
+    if (e == kInvalidEntity || !scene.xform_system->has_transform(e))
+    {
+        throw std::invalid_argument("this entity is invalid or someone deleted its transform");
+    }
+
     bool open = false;
 
     ImGui::PushID(static_cast<int>(e));
