@@ -13,7 +13,7 @@
 #include "imgui/imgui_internal.h"
 
 ///////////////////////////////////////////////
-//   ImGui generators for object properties  //
+//   imgui generators for object properties  //
 ///////////////////////////////////////////////
 
 template<class... A>
@@ -93,7 +93,7 @@ inline bool build_imgui(const char * label, int4 & v, const A & ... metadata)
     return ImGui::InputInt4(label, &v.x); 
 }
 
-template<class... A>
+template<class... A> 
 inline bool build_imgui(const char * label, float2 & v, const A & ... metadata)
 { 
     if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
@@ -114,14 +114,14 @@ inline bool build_imgui(const char * label, float4 & v, const A & ... metadata)
     return ImGui::InputFloat4(label, &v.x); 
 }
 
-template<class... A>
+template<class... A> 
 inline bool build_imgui(const char * label, entity & e, const A & ... metadata)
 {
     if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
     return ImGui::InputInt(label, (int *) &e);
 }
 
-template<class... A>
+template<class... A> 
 inline bool build_imgui(const char * label, std::vector<entity> & e, const A & ... metadata)
 {
     if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
@@ -130,7 +130,7 @@ inline bool build_imgui(const char * label, std::vector<entity> & e, const A & .
 }
 
 template<class T, class ... A> 
-bool build_imgui(const char * label, asset_handle<T> & h, const A & ... metadata)
+inline bool build_imgui(const char * label, asset_handle<T> & h, const A & ... metadata)
 {
     if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
 
@@ -165,7 +165,7 @@ bool build_imgui(const char * label, asset_handle<T> & h, const A & ... metadata
     else return false;
 }
 
-template<class T> std::enable_if_t<std::is_class<T>::value, bool>
+template<class T> inline std::enable_if_t<std::is_class<T>::value, bool>
 build_imgui(const char * label, T & object)
 {
     bool r = false;
@@ -177,7 +177,7 @@ build_imgui(const char * label, T & object)
 }
 
 // todo - we should be using component pools to make this logic easer
-bool inspect_entity(const char * label, entity e, environment & env)
+inline bool inspect_entity(const char * label, entity e, environment & env)
 {
     bool r = false;
     
@@ -205,7 +205,7 @@ bool inspect_entity(const char * label, entity e, environment & env)
     return r;
 }
 
-bool inspect_material(material_interface * material)
+inline bool inspect_material(material_interface * material)
 {
     bool r = false;
     visit_subclasses(material, [&r](const char * name, auto * material_pointer)
@@ -219,9 +219,7 @@ bool inspect_material(material_interface * material)
     return r;
 }
 
-/////////////////////////////////////////////////////////////////
-//   Additional ImGui Utilities used in the Scene Editor only  //
-/////////////////////////////////////////////////////////////////
+// Additional imgui Utilities used in Polymer's scene editor only
 
 namespace ImGui
 {
