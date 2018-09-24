@@ -181,6 +181,7 @@
       <Filter>third-party\tinygizmo</Filter>
     </ClInclude>
     <ClInclude Include="xr-interaction.hpp" />
+    <ClInclude Include="ui-actions.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="gfx">

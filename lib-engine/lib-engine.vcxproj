@@ -137,6 +137,7 @@
     <ClInclude Include="system-render.hpp" />
     <ClInclude Include="system-transform.hpp" />
     <ClInclude Include="system-util.hpp" />
+    <ClInclude Include="ui-actions.hpp" />
     <ClInclude Include="uniforms.hpp" />
     <ClInclude Include="xr-interaction.hpp" />
   </ItemGroup>

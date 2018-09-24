@@ -21,15 +21,15 @@
 namespace polymer {
 namespace xr {
 
-    // enable/disable
+    // todo - enable/disable
 
     enum class vr_event_t : uint32_t
     {
-        focus_begin,    // (dominant hand) when a hand enters the focus region of an entity
-        focus_end,      // (dominant hand) leaving the focus region
-        press,          // (either hand) for all button press events
-        release,        // (either hand) for all button release events
-        cancel          // (either hand) unimplemented
+        focus_begin, // (dominant hand) when a hand enters the focus region of an entity
+        focus_end,   // (dominant hand) leaving the focus region
+        press,       // (either hand) for all button press events
+        release,     // (either hand) for all button release events
+        cancel       // (either hand) unimplemented
     };
 
     enum class vr_input_source_t : uint32_t

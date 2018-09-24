@@ -28,10 +28,10 @@ struct cached_controller_render_data
 
 struct input_button_state
 {
-    bool prev_down{ false };    // do not use directly, for state tracking only
-    bool down{ false };         // query if the button is currently down
-    bool pressed{ false };      // query if the button was pressed for a single frame
-    bool released{ false };     // query if the button was released for a single frame
+    bool prev_down{ false }; // do not use directly, for state tracking only
+    bool down{ false };      // query if the button is currently down
+    bool pressed{ false };   // query if the button was pressed for a single frame
+    bool released{ false };  // query if the button was released for a single frame
 };
 
 inline void update_button_state(input_button_state & state, const bool value)
