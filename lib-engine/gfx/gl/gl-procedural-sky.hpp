@@ -175,7 +175,7 @@ namespace polymer
     protected:
 
         gl_mesh skyMesh;
-        virtual void render_internal(float4x4 viewProj, float3 sunDir, float4x4 world) = 0;
+        virtual void render_internal(const float4x4 & viewProjection, const float3 & sunDir, const float4x4 & modelToWorld) = 0;
 
     public:
     
@@ -192,7 +192,7 @@ namespace polymer
             set_sun_position(50, 110);
         }
 
-        void render(float4x4 viewProj, float3 eyepoint, float farClip)
+        void render(const float4x4 & viewProj, const float3 & eyepoint, const float farClip)
         {
             GLboolean blendEnabled;
             glGetBooleanv(GL_BLEND, &blendEnabled);
@@ -239,13 +239,13 @@ namespace polymer
 
         ::detail::HosekSkyRadianceData data;
     
-        virtual void render_internal(float4x4 viewProj, float3 sunDir, float4x4 world) override
+        virtual void render_internal(const float4x4 & viewProjection, const float3 & sunDir, const float4x4 & modelToWorld) override
         {
             gl_shader & shader = sky.get()->get();
 
             shader.bind();
-            shader.uniform("ViewProjection", viewProj);
-            shader.uniform("World", world);
+            shader.uniform("ViewProjection", viewProjection);
+            shader.uniform("World", modelToWorld);
             shader.uniform("A", data.A);
             shader.uniform("B", data.B);
             shader.uniform("C", data.C);
@@ -287,13 +287,13 @@ namespace polymer
         shader_handle sky { "sky-preetham" };
         ::detail::PreethamSkyRadianceData data;
     
-        virtual void render_internal(float4x4 viewProj, float3 sunDir, float4x4 world) override
+        virtual void render_internal(const float4x4 & viewProjection, const float3 & sunDir, const float4x4 & modelToWorld) override
         {
             gl_shader & shader = sky.get()->get();
 
             shader.bind();
-            shader.uniform("ViewProjection", viewProj);
-            shader.uniform("World", world);
+            shader.uniform("ViewProjection", viewProjection);
+            shader.uniform("World", modelToWorld);
             shader.uniform("A", data.A);
             shader.uniform("B", data.B);
             shader.uniform("C", data.C);
