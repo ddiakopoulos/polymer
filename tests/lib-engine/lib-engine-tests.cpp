@@ -6,6 +6,7 @@
 #include "ecs/core-events.hpp"
 #include "system-transform.hpp"
 #include "system-identifier.hpp"
+#include "ui-actions.hpp"
 
 /// Quick reference for doctest macros
 /// REQUIRE, REQUIRE_FALSE, CHECK, WARN, CHECK_THROWS_AS(func(), std::exception)
@@ -514,6 +515,157 @@ namespace polymer
         // Modify name of e2
         REQUIRE(system->set_name(e2, "second-entity-modified"));
         REQUIRE(system->find_entity("second-entity-modified") == e2);
+    }
+
+    ///////////////////////////////////////
+    //   Property + Undo Manager Tests   //
+    ///////////////////////////////////////
+
+    TEST_CASE("undo_manager max stack size")
+    {
+        undo_manager manager;
+        polymer::property<uint32_t> val(0);
+
+        // Default stack size is 64. Load up slots all the way up to 64+32.  
+        for (uint32_t i = 0; i <= manager.get_max_stack_size() + 32; ++i)
+        {
+            auto edit = make_action<action_edit_property>(val, i);
+            manager.execute(std::move(edit));
+        }
+
+        // Execute `get_max_stack_size()`  undos. Our last value should be 32. 
+        for (uint32_t i = 0; i < manager.get_max_stack_size(); ++i)
+        {
+            manager.undo();
+        }
+
+        REQUIRE(val.value() == 32u);
+    }
+
+
+    TEST_CASE("undo_manager can undo/redo")
+    {
+        undo_manager manager;
+        polymer::property<uint32_t> val(0);
+
+        for (uint32_t i = 0; i < 32; ++i)
+        {
+            auto edit = make_action<action_edit_property>(val, i);
+            manager.execute(std::move(edit));
+        }
+
+        REQUIRE(manager.can_undo() == true);
+
+        REQUIRE(manager.can_redo() == false);
+        manager.undo();
+
+        REQUIRE(manager.can_redo() == true);
+        manager.redo();
+
+        REQUIRE(manager.can_redo() == false);
+
+        manager.clear();
+
+        REQUIRE(manager.can_undo() == false);
+        REQUIRE(manager.can_redo() == false);
+    }
+
+    TEST_CASE("action_edit_property ... with undo")
+    {
+        undo_manager manager;
+
+        polymer::property<float> v(0.5f);
+        REQUIRE(v.value() == 0.5f);
+
+        auto edit = make_action<action_edit_property>(v, 2.f);
+        manager.execute(std::move(edit));
+        REQUIRE(v.value() == 2.f);
+
+        manager.undo();
+        REQUIRE(v.value() == 0.5f);
+
+        manager.redo();
+        REQUIRE(v.value() == 2.0f);
+    }
+
+    TEST_CASE("action_edit_property ... with multi-undo")
+    {
+        undo_manager manager;
+
+        polymer::property<uint32_t> v(10u);
+        REQUIRE(v.value() == 10);
+
+        auto edit1 = make_action<action_edit_property>(v, 20u);
+        manager.execute(std::move(edit1));
+        REQUIRE(v.value() == 20u);
+
+        auto edit2 = make_action<action_edit_property>(v, 30u);
+        manager.execute(std::move(edit2));
+        REQUIRE(v.value() == 30u);
+
+        auto edit3 = make_action<action_edit_property>(v, 40u);
+        manager.execute(std::move(edit3));
+        REQUIRE(v.value() == 40u);
+
+        manager.undo();
+        REQUIRE(v.value() == 30u);
+
+        manager.undo();
+        REQUIRE(v.value() == 20u);
+
+        manager.undo();
+        REQUIRE(v.value() == 10u);
+
+        manager.redo();
+        manager.redo();
+        manager.redo();
+
+        REQUIRE(v.value() == 40u);
+    }
+
+    TEST_CASE("polymer::property construct")
+    {
+        polymer::property<float> step_size;
+        auto edit_action = make_action<action>(step_size, step_size.value());
+        REQUIRE(edit_action != nullptr);
+    }
+
+    TEST_CASE("polymer::property operators")
+    {
+        polymer::property<float> property_a(0.5f);
+        polymer::property<float> property_b(0.5f);
+        polymer::property<float> property_c(1.0f);
+
+        REQUIRE(property_a == property_b);
+        REQUIRE(property_a != property_c);
+        REQUIRE_FALSE(property_a == property_c);
+
+        std::cout << "property a: " << property_a << std::endl;
+        std::cout << "property c: " << property_c << std::endl;
+    }
+
+    TEST_CASE("poly_property kernel_set")
+    {
+        struct sky
+        {
+            void recompute_parameters()
+            {
+                std::cout << "Recomputing sky parameters..." << std::endl;
+            }
+        };
+
+        sky scene_sky;
+        polymer::property<uint32_t> sky_turbidity;
+
+        sky_turbidity.kernel_set([&scene_sky](uint32_t v) -> uint32_t
+        {
+            scene_sky.recompute_parameters();
+            return v + 10;
+        });
+
+        sky_turbidity.set(5);
+
+        REQUIRE(sky_turbidity == 15);
     }
 
 } // end namespace polymer
