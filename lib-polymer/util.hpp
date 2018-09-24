@@ -78,6 +78,22 @@ inline void polymer_aligned_free(void * ptr)
 
 namespace polymer
 {
+    // 32 bit Fowler–Noll–Vo Hash
+    uint32_t poly_hash_fnv1a(const std::string & str)
+    {
+        static const uint32_t fnv1aBase32 = 0x811C9DC5u;
+        static const uint32_t fnv1aPrime32 = 0x01000193u;
+
+        uint32_t result = fnv1aBase32;
+
+        for (auto & c : str)
+        {
+            result ^= static_cast<uint32_t>(c);
+            result *= fnv1aPrime32;
+        }
+        return result;
+    }
+
     static inline uint64_t system_time_ns()
     {
         return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();

@@ -6,22 +6,6 @@ using namespace polymer;
 //   Shader Preprocessing Functions   //
 ////////////////////////////////////////
 
-// 32 bit Fowler–Noll–Vo Hash
-uint32_t poly_hash_fnv1a(const std::string & str)
-{
-    static const uint32_t fnv1aBase32 = 0x811C9DC5u;
-    static const uint32_t fnv1aPrime32 = 0x01000193u;
-
-    uint32_t result = fnv1aBase32;
-
-    for (auto & c : str)
-    {
-        result ^= static_cast<uint32_t>(c);
-        result *= fnv1aPrime32;
-    }
-    return result;
-}
-
 std::string process_includes_recursive(const std::string & source, const std::string & includeSearchPath, std::vector<std::string> & includes, int depth)
 {
     if (depth > 4) throw std::runtime_error("exceeded max include recursion depth");
