@@ -3,15 +3,17 @@
 #ifndef polymer_ui_actions_hpp
 #define polymer_ui_actions_hpp
 
+#include "util.hpp"
 #include "any.hpp"
 #include "property.hpp"
 #include <deque>
-#include <memory>
-#include <vector>
-#include <string>
 
 namespace polymer
 {
+    ///////////////////////////////
+    //   action + undo_manager   //
+    ///////////////////////////////
+
     template <typename T, typename... Args>
     std::unique_ptr<T> make_action(Args &&... args)
     {
@@ -95,6 +97,30 @@ namespace polymer
             return descriptions;
         }
     };
+
+    //////////////////////////////
+    //   action_edit_property   //
+    //////////////////////////////
+
+    class action_edit_property : public action
+    {
+        property_action_interface & prop;
+        polymer::any value_new, value_old;
+        uint64_t timestamp;
+
+    public:
+
+        action_edit_property(property_action_interface & prop, polymer::any new_value) 
+            : value_new(new_value), timestamp(system_time_ns()), prop(prop)
+        {
+            value_old = prop.get_value(); 
+        }
+
+        virtual void undo() override final { prop.set_value(value_old); }
+        virtual void redo() override final { prop.set_value(value_new); }
+        virtual void execute() override final { prop.set_value(value_new); }
+    };
+
 
 } // end namespace polymer
 
