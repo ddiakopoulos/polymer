@@ -12,6 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="algo_misc.hpp" />
+    <ClInclude Include="any.hpp" />
     <ClInclude Include="arcball.hpp" />
     <ClInclude Include="bit_mask.hpp" />
     <ClInclude Include="camera.hpp" />
