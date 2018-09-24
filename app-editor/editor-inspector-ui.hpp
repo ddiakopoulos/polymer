@@ -16,8 +16,13 @@
 //   imgui generators for object properties  //
 ///////////////////////////////////////////////
 
+struct imgui_ui_context
+{
+
+};
+
 template<class... A>
-inline bool build_imgui(const char * label, std::string & s, const A & ... metadata)
+inline bool build_imgui(imgui_ui_context & ctx, const char * label, std::string & s, const A & ... metadata)
 {
     if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
     char buffer[2048];
@@ -32,14 +37,14 @@ inline bool build_imgui(const char * label, std::string & s, const A & ... metad
 }
 
 template<class... A>
-inline bool build_imgui(const char * label, bool & v, const A & ... metadata)
+inline bool build_imgui(imgui_ui_context & ctx, const char * label, bool & v, const A & ... metadata)
 { 
     if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
     return ImGui::Checkbox(label, &v); 
 }
 
 template<class... A>
-inline bool build_imgui(const char * label, float & v, const A & ... metadata)
+inline bool build_imgui(imgui_ui_context & ctx, const char * label, float & v, const A & ... metadata)
 { 
     if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
     auto * rangeData = unpack<range_metadata<float>>(metadata...);
@@ -48,7 +53,7 @@ inline bool build_imgui(const char * label, float & v, const A & ... metadata)
 }
 
 template<class... A>
-inline bool build_imgui(const char * label, int & v, const A & ... metadata)
+inline bool build_imgui(imgui_ui_context & ctx, const char * label, int & v, const A & ... metadata)
 { 
     if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
     auto * rangeData = unpack<range_metadata<int>>(metadata...);
@@ -59,7 +64,7 @@ inline bool build_imgui(const char * label, int & v, const A & ... metadata)
 }
 
 template<class... A>
-inline bool build_imgui(const char * label, uint32_t & v, const A & ... metadata)
+inline bool build_imgui(imgui_ui_context & ctx, const char * label, uint32_t & v, const A & ... metadata)
 {
     if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
     auto * rangeData = unpack<range_metadata<int>>(metadata...);
@@ -70,7 +75,7 @@ inline bool build_imgui(const char * label, uint32_t & v, const A & ... metadata
 }
 
 template<class... A>
-inline bool build_imgui(const char * label, int2 & v, const A & ... metadata)
+inline bool build_imgui(imgui_ui_context & ctx, const char * label, int2 & v, const A & ... metadata)
 { 
     if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
     auto * intRange = unpack<range_metadata<int>>(metadata...);
@@ -80,49 +85,49 @@ inline bool build_imgui(const char * label, int2 & v, const A & ... metadata)
 }
 
 template<class... A>
-inline bool build_imgui(const char * label, int3 & v, const A & ... metadata)
+inline bool build_imgui(imgui_ui_context & ctx, const char * label, int3 & v, const A & ... metadata)
 { 
     if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
     return ImGui::InputInt3(label, &v.x); 
 }
 
 template<class... A>
-inline bool build_imgui(const char * label, int4 & v, const A & ... metadata)
+inline bool build_imgui(imgui_ui_context & ctx, const char * label, int4 & v, const A & ... metadata)
 { 
     if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
     return ImGui::InputInt4(label, &v.x); 
 }
 
 template<class... A> 
-inline bool build_imgui(const char * label, float2 & v, const A & ... metadata)
+inline bool build_imgui(imgui_ui_context & ctx, const char * label, float2 & v, const A & ... metadata)
 { 
     if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
     return ImGui::InputFloat2(label, &v.x); 
 }
 
 template<class... A>
-inline bool build_imgui(const char * label, float3 & v, const A & ... metadata)
+inline bool build_imgui(imgui_ui_context & ctx, const char * label, float3 & v, const A & ... metadata)
 { 
     if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
     return ImGui::InputFloat3(label, &v.x);
 }
 
 template<class... A>
-inline bool build_imgui(const char * label, float4 & v, const A & ... metadata)
+inline bool build_imgui(imgui_ui_context & ctx, const char * label, float4 & v, const A & ... metadata)
 { 
     if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
     return ImGui::InputFloat4(label, &v.x); 
 }
 
 template<class... A> 
-inline bool build_imgui(const char * label, entity & e, const A & ... metadata)
+inline bool build_imgui(imgui_ui_context & ctx, const char * label, entity & e, const A & ... metadata)
 {
     if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
     return ImGui::InputInt(label, (int *) &e);
 }
 
 template<class... A> 
-inline bool build_imgui(const char * label, std::vector<entity> & e, const A & ... metadata)
+inline bool build_imgui(imgui_ui_context & ctx, const char * label, std::vector<entity> & e, const A & ... metadata)
 {
     if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
     // todo - how to edit this? 
@@ -130,7 +135,7 @@ inline bool build_imgui(const char * label, std::vector<entity> & e, const A & .
 }
 
 template<class T, class ... A> 
-inline bool build_imgui(const char * label, asset_handle<T> & h, const A & ... metadata)
+inline bool build_imgui(imgui_ui_context & ctx, const char * label, asset_handle<T> & h, const A & ... metadata)
 {
     if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
 
@@ -166,12 +171,12 @@ inline bool build_imgui(const char * label, asset_handle<T> & h, const A & ... m
 }
 
 template<class T> inline std::enable_if_t<std::is_class<T>::value, bool>
-build_imgui(const char * label, T & object)
+build_imgui(imgui_ui_context & ctx, const char * label, T & object)
 {
     bool r = false;
-    visit_fields(object, [&r](const char * name, auto & field, auto... metadata)
+    visit_fields(object, [&r, &ctx](const char * name, auto & field, auto... metadata)
     {   
-        r |= build_imgui(name, field, metadata...);
+        r |= build_imgui(ctx, name, field, metadata...);
     });
     return r;
 }
@@ -181,19 +186,21 @@ inline bool inspect_entity(const char * label, entity e, environment & env)
 {
     bool r = false;
     
-    visit_systems(&env, [e, &r](const char * name, auto * system_pointer)
+    imgui_ui_context ctx;
+
+    visit_systems(&env, [e, &r, &ctx](const char * name, auto * system_pointer)
     {
         if (system_pointer)
         {
-            visit_components(e, system_pointer, [&r](const char * component_name, auto & component_ref, auto... component_metadata)
+            visit_components(e, system_pointer, [&r, &ctx](const char * component_name, auto & component_ref, auto... component_metadata)
             {
                 if (auto * hidden = unpack<editor_hidden>(component_metadata...)) return;
 
                 if (ImGui::TreeNode(component_name))
                 {
-                    visit_fields(component_ref, [&](const char * field_name, auto & field, auto... field_metadata)
+                    visit_fields(component_ref, [&r, &ctx](const char * field_name, auto & field, auto... field_metadata)
                     {
-                        r |= build_imgui(field_name, field, field_metadata...);
+                        r |= build_imgui(ctx, field_name, field, field_metadata...);
                     });
 
                     ImGui::TreePop();
@@ -208,11 +215,13 @@ inline bool inspect_entity(const char * label, entity e, environment & env)
 inline bool inspect_material(material_interface * material)
 {
     bool r = false;
-    visit_subclasses(material, [&r](const char * name, auto * material_pointer)
+    imgui_ui_context ctx;
+
+    visit_subclasses(material, [&r, &ctx](const char * name, auto * material_pointer)
     {
         if (material_pointer)
         {
-            r |= build_imgui(name, *material_pointer);
+            r |= build_imgui(ctx, name, *material_pointer);
         }
     });
 

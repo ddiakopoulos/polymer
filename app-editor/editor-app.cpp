@@ -625,12 +625,14 @@ void scene_editor_app::on_draw()
         {
             ImGui::Dummy({ 0, 10 });
 
+            imgui_ui_context ctx; 
+
             if (ImGui::TreeNode("Rendering"))
             {
                 ImGui::Checkbox("Show Floor Grid", &show_grid);
 
                 renderer_settings lastSettings = scene.render_system->get_renderer()->settings;
-                if (build_imgui("Renderer", *scene.render_system->get_renderer()))
+                if (build_imgui(ctx, "Renderer", *scene.render_system->get_renderer()))
                 {
                     scene.render_system->get_renderer()->gpuProfiler.set_enabled(scene.render_system->get_renderer()->settings.performanceProfiling);
                     scene.render_system->get_renderer()->cpuProfiler.set_enabled(scene.render_system->get_renderer()->settings.performanceProfiling);
@@ -640,7 +642,7 @@ void scene_editor_app::on_draw()
 
                 if (ImGui::TreeNode("Procedural Sky") && the_render_payload.skybox)
                 {
-                    build_imgui("skybox", *the_render_payload.skybox);
+                    build_imgui(ctx, "skybox", *the_render_payload.skybox);
                     ImGui::TreePop();
                 }
 
@@ -650,7 +652,7 @@ void scene_editor_app::on_draw()
                 {
                     if (ImGui::TreeNode("Shadow Mapping"))
                     {
-                        build_imgui("shadows", *shadows);
+                        build_imgui(ctx, "shadows", *shadows);
                         ImGui::TreePop();
                     }
                 }
@@ -662,8 +664,8 @@ void scene_editor_app::on_draw()
 
             if (ImGui::TreeNode("Scene"))
             {
-                build_imgui("Radiance IBL", the_render_payload.ibl_radianceCubemap);
-                build_imgui("Irradiance IBL", the_render_payload.ibl_irradianceCubemap);
+                build_imgui(ctx, "Radiance IBL", the_render_payload.ibl_radianceCubemap);
+                build_imgui(ctx, "Irradiance IBL", the_render_payload.ibl_irradianceCubemap);
                 ImGui::TreePop();
             }
 

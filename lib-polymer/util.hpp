@@ -79,7 +79,7 @@ inline void polymer_aligned_free(void * ptr)
 namespace polymer
 {
     // 32 bit Fowler–Noll–Vo Hash
-    uint32_t poly_hash_fnv1a(const std::string & str)
+    inline uint32_t poly_hash_fnv1a(const std::string & str)
     {
         static const uint32_t fnv1aBase32 = 0x811C9DC5u;
         static const uint32_t fnv1aPrime32 = 0x01000193u;
