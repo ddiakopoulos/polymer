@@ -78,6 +78,10 @@ inline void polymer_aligned_free(void * ptr)
 
 namespace polymer
 {
+    static inline uint64_t system_time_ns()
+    {
+        return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+    }
 
     class scoped_timer
     {

@@ -15,6 +15,7 @@
 #include "bit_mask.hpp"
 #include "arcball.hpp"
 #include "any.hpp"
+#include "property.hpp"
 
 #include "tweens.hpp"
 #include "trajectory.hpp"
