@@ -33,9 +33,14 @@ namespace polymer
         mutable T _cached_value;
         mutable bool cache_dirty {true};
 
+        // @todo - in the future, maybe we can also provide the old value 
+        // alongside the new one
         void notify_listeners()
         {
-            for (auto & l : listeners) l(_cached_value);
+            for (auto & listener : listeners) 
+            {
+                listener(_cached_value);
+            }
         }
 
     public:
