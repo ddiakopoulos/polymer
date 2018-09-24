@@ -141,6 +141,9 @@
     <ClInclude Include="any.hpp">
       <Filter>src\tools</Filter>
     </ClInclude>
+    <ClInclude Include="property.hpp">
+      <Filter>src\tools</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="lib-polymer.cpp">

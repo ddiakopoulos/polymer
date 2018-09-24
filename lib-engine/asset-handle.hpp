@@ -12,10 +12,6 @@
 
 namespace polymer
 {
-    static inline uint64_t system_time_ns()
-    {
-        return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
-    }
 
     // Note that the asset of `polymer_unique_asset` must be default constructable.
     template<typename T>

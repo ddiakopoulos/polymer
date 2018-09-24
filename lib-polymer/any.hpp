@@ -141,7 +141,7 @@ namespace polymer
 
     namespace any_internal
     {
-        [[noreturn]] void ThrowBadAnyCast() { throw bad_any_cast(); }
+        [[noreturn]] inline void ThrowBadAnyCast() { throw bad_any_cast(); }
     }
 
 }  // namespace polymer
