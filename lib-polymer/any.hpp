@@ -160,12 +160,10 @@ namespace polymer
         constexpr char TypeTag<Type>::dummy_var;
 
         /// FastTypeId<Type>() evaluates at compile/link-time to a unique pointer for the
-        /// passed in type. These are meant to be good match for keys into maps or
-        /// straight up comparisons.
+        /// passed in type. These are meant to be good match for keys into maps or straight up comparisons.
         template <typename Type>
         constexpr inline const void * FastTypeId() { return &TypeTag<Type>::dummy_var; }
-
-    }  // namespace any_internal
+    }
 
     class any;
 
@@ -389,7 +387,7 @@ namespace polymer
 
     private:
 
-        // Tagged type-erased abstraction for holding a cloneable object.
+        /// Tagged type-erased abstraction for holding a cloneable object.
         struct ObjInterface
         {
             virtual ~ObjInterface() = default;
@@ -398,7 +396,7 @@ namespace polymer
             virtual const std::type_info & Type() const noexcept = 0;
         };
 
-        // Hold a value of some queryable type, with an ability to Clone it.
+        /// Hold a value of some queryable type, with an ability to Clone it.
         template <typename T>
         struct Obj : public ObjInterface
         {
@@ -475,15 +473,10 @@ namespace polymer
     template <typename ValueType>
     ValueType any_cast(const any & operand)
     {
-        using U = typename std::remove_cv<
-            typename std::remove_reference<ValueType>::type>::type;
-        static_assert(std::is_constructible<ValueType, const U &>::value,
-                      "Invalid ValueType");
+        using U = typename std::remove_cv< typename std::remove_reference<ValueType>::type>::type;
+        static_assert(std::is_constructible<ValueType, const U &>::value, "Invalid ValueType");
         auto * const result = (any_cast<U>) (&operand);
-        if (result == nullptr)
-        {
-            any_internal::ThrowBadAnyCast();
-        }
+        if (result == nullptr) { any_internal::ThrowBadAnyCast(); }
         return static_cast<ValueType>(*result);
     }
 
@@ -492,13 +485,8 @@ namespace polymer
     {  
         using U = typename std::remove_cv<typename std::remove_reference<ValueType>::type>::type;
         static_assert(std::is_constructible<ValueType, U &>::value, "Invalid ValueType");
-
         auto * result = (any_cast<U>) (&operand);
-        if (result == nullptr)
-        {
-            any_internal::ThrowBadAnyCast();
-        }
-
+        if (result == nullptr) { any_internal::ThrowBadAnyCast(); }
         return static_cast<ValueType>(*result);
     }
 
