@@ -1,4 +1,5 @@
 #include "lib-polymer.hpp"
+
 #include "gl-gizmo.hpp"
 #include "gl-imgui.hpp"
 #include "gl-texture-view.hpp"
@@ -19,11 +20,12 @@
 #include "asset-handle-utils.hpp"
 #include "environment.hpp"
 #include "arcball.hpp"
-#include "gizmo-controller.hpp"
 #include "asset-resolver.hpp"
+#include "ui-actions.hpp"
 
 #include "material-editor.hpp"
 #include "asset-browser.hpp"
+#include "gizmo-controller.hpp"
 
 struct scene_editor_app final : public polymer_app
 {
@@ -32,6 +34,9 @@ struct scene_editor_app final : public polymer_app
     profiler<simple_cpu_timer> editorProfiler;
     gl_shader_monitor shaderMonitor { "../assets/" };
     gl_renderable_grid grid{ 1.f, 512, 512 };
+
+    imgui_ui_context im_ui_ctx;
+    undo_manager undo_mgr;
 
     ImGui::editor_app_log log;
     bool show_imgui = true;

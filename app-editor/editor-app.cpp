@@ -536,7 +536,7 @@ void scene_editor_app::on_draw()
             ImGui::Dummy({ 0, 8 });
 
             gizmo->refresh(); // selector only stores data, not pointers, so we need to recalc new xform.
-            inspect_entity(nullptr, gizmo->get_selection()[0], scene);
+            inspect_entity(im_ui_ctx, nullptr, gizmo->get_selection()[0], scene);
 
             if (ImGui::BeginPopupModal("Create Component", NULL, ImGuiWindowFlags_AlwaysAutoResize))
             {
@@ -625,14 +625,12 @@ void scene_editor_app::on_draw()
         {
             ImGui::Dummy({ 0, 10 });
 
-            imgui_ui_context ctx; 
-
             if (ImGui::TreeNode("Rendering"))
             {
                 ImGui::Checkbox("Show Floor Grid", &show_grid);
 
                 renderer_settings lastSettings = scene.render_system->get_renderer()->settings;
-                if (build_imgui(ctx, "Renderer", *scene.render_system->get_renderer()))
+                if (build_imgui(im_ui_ctx, "Renderer", *scene.render_system->get_renderer()))
                 {
                     scene.render_system->get_renderer()->gpuProfiler.set_enabled(scene.render_system->get_renderer()->settings.performanceProfiling);
                     scene.render_system->get_renderer()->cpuProfiler.set_enabled(scene.render_system->get_renderer()->settings.performanceProfiling);
@@ -642,7 +640,7 @@ void scene_editor_app::on_draw()
 
                 if (ImGui::TreeNode("Procedural Sky") && the_render_payload.skybox)
                 {
-                    build_imgui(ctx, "skybox", *the_render_payload.skybox);
+                    build_imgui(im_ui_ctx, "skybox", *the_render_payload.skybox);
                     ImGui::TreePop();
                 }
 
@@ -652,7 +650,7 @@ void scene_editor_app::on_draw()
                 {
                     if (ImGui::TreeNode("Shadow Mapping"))
                     {
-                        build_imgui(ctx, "shadows", *shadows);
+                        build_imgui(im_ui_ctx, "shadows", *shadows);
                         ImGui::TreePop();
                     }
                 }
@@ -664,8 +662,8 @@ void scene_editor_app::on_draw()
 
             if (ImGui::TreeNode("Scene"))
             {
-                build_imgui(ctx, "Radiance IBL", the_render_payload.ibl_radianceCubemap);
-                build_imgui(ctx, "Irradiance IBL", the_render_payload.ibl_irradianceCubemap);
+                build_imgui(im_ui_ctx, "Radiance IBL", the_render_payload.ibl_radianceCubemap);
+                build_imgui(im_ui_ctx, "Irradiance IBL", the_render_payload.ibl_irradianceCubemap);
                 ImGui::TreePop();
             }
 

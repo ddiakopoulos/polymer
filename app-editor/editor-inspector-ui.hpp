@@ -182,11 +182,9 @@ build_imgui(imgui_ui_context & ctx, const char * label, T & object)
 }
 
 // todo - we should be using component pools to make this logic easer
-inline bool inspect_entity(const char * label, entity e, environment & env)
+inline bool inspect_entity(imgui_ui_context & ctx, const char * label, entity e, environment & env)
 {
     bool r = false;
-    
-    imgui_ui_context ctx;
 
     visit_systems(&env, [e, &r, &ctx](const char * name, auto * system_pointer)
     {
@@ -212,10 +210,9 @@ inline bool inspect_entity(const char * label, entity e, environment & env)
     return r;
 }
 
-inline bool inspect_material(material_interface * material)
+inline bool inspect_material(imgui_ui_context & ctx, material_interface * material)
 {
     bool r = false;
-    imgui_ui_context ctx;
 
     visit_subclasses(material, [&r, &ctx](const char * name, auto * material_pointer)
     {

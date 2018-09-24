@@ -65,6 +65,8 @@ struct material_editor_window final : public glfw_window
     entity inspected_entity{ kInvalidEntity };
     entity debug_sphere{ kInvalidEntity };
 
+    imgui_ui_context mat_im_ui_ctx; // fixme
+
     material_editor_window(gl_context * context,
         int w, int h,
         const std::string & title,
@@ -325,7 +327,7 @@ struct material_editor_window final : public glfw_window
                 ImGui::Dummy({ 0, 12 });
 
                 // Inspect
-                inspect_material(mat.get());
+                inspect_material(mat_im_ui_ctx, mat.get());
 
                 ImGui::Dummy({ 0, 12 });
 
