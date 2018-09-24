@@ -24,6 +24,7 @@ namespace polymer
     struct action
     {
         std::string description;
+        uint64_t timestamp;
         virtual ~action()      = default;
         virtual void undo()    = 0;
         virtual void redo()    = 0;
@@ -106,13 +107,13 @@ namespace polymer
     {
         property_action_interface & prop;
         polymer::any value_new, value_old;
-        uint64_t timestamp;
 
     public:
 
         action_edit_property(property_action_interface & prop, polymer::any new_value) 
-            : value_new(new_value), timestamp(system_time_ns()), prop(prop)
+            : value_new(new_value), prop(prop)
         {
+            timestamp = system_time_ns();
             value_old = prop.get_value(); 
         }
 
@@ -121,6 +122,59 @@ namespace polymer
         virtual void execute() override final { prop.set_value(value_new); }
     };
 
+    class action_create_entity : public action
+    {
+    public:
+        action_create_entity() { timestamp = system_time_ns();}
+        virtual void undo() override final {}
+        virtual void redo() override final {}
+        virtual void execute() override final {}
+    };
+
+    class action_delete_entity : public action
+    {
+    public:
+        action_delete_entity() { timestamp = system_time_ns();}
+        virtual void undo() override final {}
+        virtual void redo() override final {}
+        virtual void execute() override final {}
+    };
+
+    class action_clone_entity : public action
+    {
+    public:
+        action_clone_entity() { timestamp = system_time_ns();}
+        virtual void undo() override final {}
+        virtual void redo() override final {}
+        virtual void execute() override final {}
+    };
+
+    class action_select_entity : public action
+    {
+    public:
+        action_select_entity() { timestamp = system_time_ns();}
+        virtual void undo() override final {}
+        virtual void redo() override final {}
+        virtual void execute() override final {}
+    };
+
+    class action_deselect_entity : public action
+    {
+    public:
+        action_deselect_entity() { timestamp = system_time_ns();}
+        virtual void undo() override final {}
+        virtual void redo() override final {}
+        virtual void execute() override final {}
+    };
+
+    class action_transform_entity : public action
+    {
+    public:
+        action_transform_entity() { timestamp = system_time_ns();}
+        virtual void undo() override final {}
+        virtual void redo() override final {}
+        virtual void execute() override final {}
+    };
 
 } // end namespace polymer
 
