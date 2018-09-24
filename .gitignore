@@ -41,10 +41,14 @@ xcuserdata
 DerivedData
 *.xcuserstate
 
+# Polymer specific
 imgui.ini
-
 intermediate/
-
 render_*.png
-
 assets/nonfree
+assets/images/
+assets/models/
+loc.exe
+*.material
+*-log.txt
+*.bin
