@@ -45,13 +45,10 @@ Copyright (C) Soyoyo Fujita
 https://github.com/bulletphysics/bullet3 (zlib)
 Copyright (C) Erwin Coumans and Bullet contributors 
 
-https://github.com/fsole/brokkr (MIT)
-Copyright (C) Ferran Sole, 2017
-
-https://github.com/gabime/spdlog/ (MIT)
+https://github.com/gabime/spdlog (MIT)
 Copyright (C) Gabi Melman, 2016
 
-http://www.glfw.org/ (zlib/libpng)
+https://github.com/glfw/glfw (zlib/libpng)
 Copyright (C) Camilla Berglund, 2006+
 
 http://www.geometrictools.com/ (Boost)
@@ -78,22 +75,19 @@ Copyright (C) Stan Melax, 2014
 https://github.com/dmsovetov/Nimble (MIT)
 Copyright (C) Dmitry Sovetov, 2015
 
-https://github.com/memononen/nanovg/ (zlib/libpng)
+https://github.com/memononen/nanovg (zlib/libpng)
 Copyright (C) Mikko Mononen, 2015
 
 https://github.com/caseman/noise (MIT)
 Copyright (C) Casey Duncan, 2008
 
-https://hal.inria.fr/hal-00670496/ (One Euro Filter) (Boost)
+https://hal.inria.fr/hal-00670496 (One Euro Filter) (Boost)
 Copyright (C) Reviatech, 2012
 
 https://github.com/spite/THREE.MeshLine (MIT)
 Copyright (C) Jaume Sanchez Elias, 2015
 
 https://github.com/simongeilfus/PoissonDiskDistribution (MIT)
-Copyright (C) Simon Geilfus, 2015
-
-https://github.com/simongeilfus/Cinder-Experiments (BSD 2-Clause)
 Copyright (C) Simon Geilfus, 2015
 
 https://github.com/simongeilfus/SimplexNoise (BSD 2-Clause)
@@ -108,17 +102,17 @@ Copyright (C) Edward Kmett, 2015
 https://github.com/facebookincubator/FBX2glTF (BSD 3-Clause)
 Copyright (C) Facebook, Inc., 2017+
 
-https://github.com/google/lullaby (Apache 2.0)
-Copyright (C) Google, 2018 
-
-https://github.com/papaboo/Cogwheel (BSD 3-Clause)
-Copyright (C), Cogwheel, 2017
-
 https://github.com/ValveSoftware/steamvr_unity_plugin (BSD 3-Clause)
 Copyright (C) Valve Corporation, 2015+ 
 
 https://github.com/ValveSoftware/openvr (BSD 3-Clause)
 Copyright (C) Valve Corporation, 2015+ 
+
+https://github.com/google/lullaby (Apache 2.0)
+Copyright (C) Google, 2018 
+
+https://github.com/abseil/abseil-cpp (Apache 2.0)
+Copyright (C) Google, 2018
 
 ///////////////////////////////
 //   Academic Publications   //
