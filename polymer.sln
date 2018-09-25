@@ -48,6 +48,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gl-camera-trajectory", "sam
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bullet3", "third_party\bullet3\bullet3.vcxproj", "{915353E9-42AC-4EA0-92C8-9FBB0E8E747A}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rhi-render", "samples\rhi-render\rhi-render.vcxproj", "{CD22CB80-729E-45C0-8FE4-065EADE463AA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -122,6 +124,10 @@ Global
 		{915353E9-42AC-4EA0-92C8-9FBB0E8E747A}.Debug|x64.Build.0 = Debug|x64
 		{915353E9-42AC-4EA0-92C8-9FBB0E8E747A}.Release|x64.ActiveCfg = Release|x64
 		{915353E9-42AC-4EA0-92C8-9FBB0E8E747A}.Release|x64.Build.0 = Release|x64
+		{CD22CB80-729E-45C0-8FE4-065EADE463AA}.Debug|x64.ActiveCfg = Debug|x64
+		{CD22CB80-729E-45C0-8FE4-065EADE463AA}.Debug|x64.Build.0 = Debug|x64
+		{CD22CB80-729E-45C0-8FE4-065EADE463AA}.Release|x64.ActiveCfg = Release|x64
+		{CD22CB80-729E-45C0-8FE4-065EADE463AA}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -144,6 +150,7 @@ Global
 		{A8D05388-ADE2-4C6A-A5E5-A83F34616325} = {0B054E41-2F3E-4230-8488-B44C3643F315}
 		{8CA04023-9EA3-4AF0-89EF-C0E6568E377E} = {0B054E41-2F3E-4230-8488-B44C3643F315}
 		{915353E9-42AC-4EA0-92C8-9FBB0E8E747A} = {25969120-2DC7-47EA-827F-41616989B284}
+		{CD22CB80-729E-45C0-8FE4-065EADE463AA} = {0B054E41-2F3E-4230-8488-B44C3643F315}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {E2D0793D-BD41-4F42-A6AA-DAB3D17A46BE}
