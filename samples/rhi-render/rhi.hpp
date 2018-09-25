@@ -9,6 +9,20 @@
 
 struct GLFWwindow;
 
+/* rhi - todo
+ * [ ] instancing
+ * [ ] blits
+ * [ ] async
+ * [ ] draw indirect buffers
+ * [ ] compute indirect buffers
+ * [ ] compressed texture formats
+ * [ ] occlusion queries
+ * [ ] draw call sorting?
+ * [ ] device capabilities (memory, etc)
+ * [ ] profile begin/end
+ * [ ] threading strategy
+ */
+
 namespace polymer { 
 namespace rhi {
     
@@ -78,9 +92,10 @@ namespace rhi {
     {
         image_shape shape;
         int3 dimensions;
-        int mip_levels;
+        uint32_t mip_levels;
         image_format format;
         image_flags flags;
+        uint32_t size_bytes;
         /* todo - multisampling, arrays */
     };
 
@@ -94,7 +109,8 @@ namespace rhi {
     struct framebuffer_attachment_desc 
     { 
         rhi_ptr<image> image; 
-        int mip, layer; 
+        uint32_t mip; 
+        uint32_t layer; //cubemap side or depth layer
     };
 
     struct framebuffer_desc
@@ -190,11 +206,13 @@ namespace rhi {
         std::variant<dont_care, clear_color, load> load_op;
         std::variant<dont_care, store> store_op;
     };
+
     struct depth_attachment_desc 
     {
         std::variant<dont_care, clear_depth, load> load_op;
         std::variant<dont_care, store> store_op;
     };
+
     struct render_pass_desc 
     {
         std::vector<color_attachment_desc> color_attachments;
@@ -332,7 +350,8 @@ namespace rhi {
         opengl_33,  // OpenGL 3.3 Core
         opengl_45,  // OpenGL 4.5 Core
         d3d11,      // Direct3D 11.1
-        d3d12       // Direct3D 12.0
+        d3d12,      // Direct3D 12.0
+        api_max     // Max enum value
     };
 
     enum buffer_flag : buffer_flags
