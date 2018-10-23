@@ -88,6 +88,12 @@ namespace rhi {
         buffer_flags flags;
     };
 
+    struct multisample_config
+    {
+        bool enable_multisample;
+        bool enable_alpha_to_coverage; 
+    };
+
     struct image_desc
     {
         image_shape shape;
@@ -96,6 +102,7 @@ namespace rhi {
         image_format format;
         image_flags flags;
         uint32_t size_bytes;
+        multisample_config multisample;
         /* todo - multisampling, arrays */
     };
 
