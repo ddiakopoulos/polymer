@@ -109,8 +109,8 @@ namespace rhi {
     struct framebuffer_attachment_desc 
     { 
         rhi_ptr<image> image; 
-        uint32_t mip; 
-        uint32_t layer; //cubemap side or depth layer
+        int32_t mip; 
+        int32_t layer; //cubemap side or depth layer
     };
 
     struct framebuffer_desc
@@ -122,9 +122,9 @@ namespace rhi {
 
     struct descriptor_binding 
     { 
-        int index; 
+        int32_t index; 
         descriptor_type type;
-        int count; 
+        int32_t count; 
     };
 
     struct shader_desc 
@@ -133,24 +133,32 @@ namespace rhi {
         std::vector<uint32_t> spirv;
     };
 
+    enum vertex_input_rate : int32_t
+    {
+        input_per_vertex,
+        input_per_instance
+    };
+
     struct vertex_attribute_desc 
     {
-        int index;
+        int32_t index;
+        int32_t offset;
         attribute_format type;
-        int offset;
     };
 
     struct vertex_binding_desc 
     {
-        int index, stride;
+        int32_t index;          // index of this binding
+        int32_t stride;         // bytes inbetween consecutive attribute values
+        vertex_input_rate rate; // specifies if attributes change per vertex or instance
         std::vector<vertex_attribute_desc> attributes;
         /* todo - per_vertex/per_instance */
     };
 
     struct blend_equation 
     {
-        blend_factor source_factor;
         blend_op op;
+        blend_factor source_factor;
         blend_factor dest_factor;
     };
 
@@ -344,14 +352,14 @@ namespace rhi {
     //   enumerated types   //
     //////////////////////////
 
-    enum class client_api : int
+    enum class client_api : int32_t
     {
-        vulkan,     // Vulkan 1.1
-        opengl_33,  // OpenGL 3.3 Core
-        opengl_45,  // OpenGL 4.5 Core
-        d3d11,      // Direct3D 11.1
-        d3d12,      // Direct3D 12.0
-        api_max     // Max enum value
+        vulkan,    // Vulkan 1.x
+        opengl_33, // OpenGL 3.3 Core
+        opengl_45, // OpenGL 4.5 Core
+        d3d11,     // Direct3D 11.1
+        d3d12,     // Direct3D 12.0
+        api_max    // max enum value
     };
 
     enum buffer_flag : buffer_flags
@@ -370,7 +378,7 @@ namespace rhi {
         depth_attachment_bit = 1<<2, // Image can be bound to a framebuffer as the depth/stencil attachment
     };
 
-    enum class shader_stage : int
+    enum class shader_stage : int32_t
     {
         vertex,                
         tessellation_control,   
@@ -482,8 +490,8 @@ namespace rhi {
 
     enum class front_face 
     { 
-        counter_clockwise, 
-        clockwise,
+        counter_clockwise, // CCW is front-facing
+        clockwise,         // CW is front-facing
     };
 
     enum class cull_mode
