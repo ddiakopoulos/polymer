@@ -88,7 +88,7 @@ namespace rhi {
         buffer_flags flags;
     };
 
-    struct multisample_config
+    struct multisample_state
     {
         bool enable_multisample;
         bool enable_alpha_to_coverage; 
@@ -102,7 +102,6 @@ namespace rhi {
         image_format format;
         image_flags flags;
         uint32_t size_bytes;
-        multisample_config multisample;
         /* todo - multisampling, arrays */
     };
 
@@ -208,6 +207,7 @@ namespace rhi {
         std::optional<depth_state> depth;           // If non-null, parameters for depth test, if null, no depth test or writes are performed
         std::optional<stencil_state> stencil;       // If non-null, parameters for stencil test, if null, no stencil test or writes are performed
         std::vector<blend_state> blend;             // blending state
+        multisample_state multisample;              // multisampling state
     };
 
     struct dont_care {};
@@ -461,8 +461,10 @@ namespace rhi {
 
     enum class filter 
     { 
-        nearest, 
-        linear 
+        nearest,               // no filtering, no mipmaps
+        linear,                // bilinear filtering, no mipmaps
+        linear_mipmap_nearest, // bilinear filtering with mipmaps
+        linear_mipmap_linear   // trilinear filtering with mipmaps
     };
 
     enum class address_mode 
