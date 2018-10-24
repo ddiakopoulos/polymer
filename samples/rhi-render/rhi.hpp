@@ -11,6 +11,7 @@ struct GLFWwindow;
 
 /* rhi - todo
  * [ ] instancing
+ * [ ] swapchain
  * [ ] blits
  * [ ] async
  * [ ] draw indirect buffers
@@ -19,13 +20,13 @@ struct GLFWwindow;
  * [ ] occlusion queries
  * [ ] draw call sorting?
  * [ ] device capabilities (memory, etc)
- * [ ] profile begin/end
+ * [ ] profile begin/end (like bgfx)
  * [ ] threading strategy
  */
 
-namespace polymer { 
+namespace polymer {
 namespace rhi {
-    
+
     // forward declarations
     struct object;
     struct device;
@@ -82,16 +83,16 @@ namespace rhi {
         T * operator -> () const { return p; }
     };
 
-    struct buffer_desc 
-    { 
-        size_t size; 
+    struct buffer_desc
+    {
+        size_t size;
         buffer_flags flags;
     };
 
     struct multisample_state
     {
         bool enable_multisample;
-        bool enable_alpha_to_coverage; 
+        bool enable_alpha_to_coverage;
     };
 
     struct image_desc
@@ -110,13 +111,14 @@ namespace rhi {
         filter min_filter, mag_filter;
         std::optional<filter> mip_filter;
         address_mode wrap_s, wrap_t, wrap_r;
+        /* todo - lod min/max/bias, border color */
     };
 
-    struct framebuffer_attachment_desc 
-    { 
-        rhi_ptr<image> image; 
-        int32_t mip; 
-        int32_t layer; //cubemap side or depth layer
+    struct framebuffer_attachment_desc
+    {
+        rhi_ptr<image> image;
+        int32_t mip;    // mip index
+        int32_t layer;  // cubemap side or depth layer
     };
 
     struct framebuffer_desc
@@ -126,15 +128,15 @@ namespace rhi {
         std::optional<framebuffer_attachment_desc> depth_attachment;
     };
 
-    struct descriptor_binding 
-    { 
-        int32_t index; 
+    struct descriptor_binding
+    {
+        int32_t index;
         descriptor_type type;
-        int32_t count; 
+        int32_t count;
     };
 
-    struct shader_desc 
-    { 
+    struct shader_desc
+    {
         shader_stage stage;
         std::vector<uint32_t> spirv;
     };
@@ -145,14 +147,14 @@ namespace rhi {
         input_per_instance
     };
 
-    struct vertex_attribute_desc 
+    struct vertex_attribute_desc
     {
         int32_t index;
         int32_t offset;
         attribute_format type;
     };
 
-    struct vertex_binding_desc 
+    struct vertex_binding_desc
     {
         int32_t index;          // index of this binding
         int32_t stride;         // bytes inbetween consecutive attribute values
@@ -161,14 +163,14 @@ namespace rhi {
         /* todo - per_vertex/per_instance */
     };
 
-    struct blend_equation 
+    struct blend_equation
     {
         blend_op op;
         blend_factor source_factor;
         blend_factor dest_factor;
     };
 
-    struct blend_state 
+    struct blend_state
     {
         bool write_mask;
         bool enable;
@@ -202,7 +204,7 @@ namespace rhi {
         std::vector<vertex_binding_desc> input;     // input state
         std::vector<rhi_ptr<const shader>> stages;  // programmable stages
         primitive_topology topology;                // rasterizer state
-        front_face front_face;       
+        front_face front_face;
         cull_mode cull_mode;
         std::optional<depth_state> depth;           // If non-null, parameters for depth test, if null, no depth test or writes are performed
         std::optional<stencil_state> stencil;       // If non-null, parameters for stencil test, if null, no stencil test or writes are performed
@@ -216,25 +218,25 @@ namespace rhi {
     struct load { layout initial_layout; };
     struct store { layout final_layout; };
 
-    struct color_attachment_desc 
+    struct color_attachment_desc
     {
         std::variant<dont_care, clear_color, load> load_op;
         std::variant<dont_care, store> store_op;
     };
 
-    struct depth_attachment_desc 
+    struct depth_attachment_desc
     {
         std::variant<dont_care, clear_depth, load> load_op;
         std::variant<dont_care, store> store_op;
     };
 
-    struct render_pass_desc 
+    struct render_pass_desc
     {
         std::vector<color_attachment_desc> color_attachments;
         std::optional<depth_attachment_desc> depth_attachment;
     };
 
-    struct device_info 
+    struct device_info
     {
         linalg::z_range z_range;
         bool inverted_framebuffers;
@@ -242,7 +244,7 @@ namespace rhi {
 
     using debug_callback = std::function<void(const char *)>;
 
-    struct client_info 
+    struct client_info
     {
         std::string name;
         client_api api;
@@ -288,15 +290,15 @@ namespace rhi {
     struct descriptor_set_layout : object {};
     struct shader : object {};
 
-    struct buffer : object 
-    { 
+    struct buffer : object
+    {
         virtual size_t get_offset_alignment() = 0;
-        virtual char * get_mapped_memory() = 0; 
+        virtual char * get_mapped_memory() = 0;
     };
 
-    struct framebuffer : object 
+    struct framebuffer : object
     {
-        virtual coord_system get_ndc_coords() const = 0; 
+        virtual coord_system get_ndc_coords() const = 0;
     };
 
     struct window : object
@@ -305,34 +307,34 @@ namespace rhi {
         virtual framebuffer & get_swapchain_framebuffer() = 0;
     };
 
-    struct pipeline_layout : object 
+    struct pipeline_layout : object
     {
         virtual int get_descriptor_set_count() const = 0;
         virtual const descriptor_set_layout & get_descriptor_set_layout(int index) const = 0;
     };
 
-    struct pipeline : object 
+    struct pipeline : object
     {
         virtual const pipeline_layout & get_layout() const = 0;
     };
 
-    struct buffer_range 
-    { 
-        buffer & buffer; 
-        size_t offset, size; 
+    struct buffer_range
+    {
+        buffer & buffer;
+        size_t offset, size;
     };
 
-    struct descriptor_set : object 
+    struct descriptor_set : object
     {
         virtual void write(int binding, buffer_range range) = 0;
-        virtual void write(int binding, sampler & sampler, image & image) = 0;    
+        virtual void write(int binding, sampler & sampler, image & image) = 0;
     };
 
-    struct descriptor_pool : object 
+    struct descriptor_pool : object
     {
         virtual void reset() = 0;
         virtual rhi_ptr<descriptor_set> alloc(const descriptor_set_layout & layout) = 0;
-    };    
+    };
 
     struct command_buffer : object
     {
@@ -387,41 +389,43 @@ namespace rhi {
 
     enum class shader_stage : int32_t
     {
-        vertex,                
-        tessellation_control,   
+        vertex,
+        tessellation_control,
         tessellation_evaluation,
-        geometry,              
-        fragment,              
+        geometry,
+        fragment,
         compute,
     };
 
     enum class image_shape
-    { 
+    {
         _1d,
         _2d,
         _3d,
         cube
     };
 
-    enum class image_format 
+    enum class image_format
     {
-        /* todo - compressed types */
+        /* four channels */
         rgba_unorm8,
         rgba_srgb8,
         rgba_norm8,
         rgba_uint8,
         rgba_int8,
         rgba_unorm16,
-        rgba_norm16, 
+        rgba_norm16,
         rgba_uint16,
-        rgba_int16,  
+        rgba_int16,
         rgba_float16,
         rgba_uint32,
-        rgba_int32,  
+        rgba_int32,
         rgba_float32,
-        rgb_uint32, 
+        /* three channels */
+        rgb_uint32,
         rgb_int32,
         rgb_float32,
+        /* two channels */
         rg_unorm8,
         rg_norm8,
         rg_uint8,
@@ -434,6 +438,7 @@ namespace rhi {
         rg_uint32,
         rg_int32,
         rg_float32,
+        /* one channel */
         r_unorm8,
         r_norm8,
         r_uint8,
@@ -443,31 +448,33 @@ namespace rhi {
         r_uint16,
         r_int16,
         r_float16,
-        r_uint32,    
+        r_uint32,
         r_int32,
         r_float32,
+        /* depth and stencil  */
         depth_unorm16,
         depth_unorm24_stencil8,
         depth_float32,
         depth_float32_stencil8,
+        /* todo - compressed types */
     };
 
-    enum class layout 
+    enum class layout
     {
         attachment_optimal,
         shader_read_only_optimal,
         present_source
     };
 
-    enum class filter 
-    { 
+    enum class filter
+    {
         nearest,               // no filtering, no mipmaps
         linear,                // bilinear filtering, no mipmaps
         linear_mipmap_nearest, // bilinear filtering with mipmaps
         linear_mipmap_linear   // trilinear filtering with mipmaps
     };
 
-    enum class address_mode 
+    enum class address_mode
     {
         repeat,
         mirrored_repeat,
@@ -476,42 +483,43 @@ namespace rhi {
         clamp_to_border,
     };
 
-    enum class descriptor_type 
-    { 
-        combined_image_sampler, 
-        uniform_buffer 
+    enum class descriptor_type
+    {
+        combined_image_sampler,
+        uniform_buffer
     };
 
-    enum class attribute_format 
-    { 
-        float1, 
+    enum class attribute_format
+    {
+        float1,
         float2,
-        float3, 
-        float4 
+        float3,
+        float4
     };
 
-    enum class primitive_topology 
+    enum class primitive_topology
     {
         points,
         lines,
         triangles,
     };
 
-    enum class front_face 
-    { 
-        counter_clockwise, // CCW is front-facing
-        clockwise,         // CW is front-facing
+    enum class front_face
+    {
+        counter_clockwise, // ccw is front-facing
+        clockwise,         // cw is front-facing
     };
 
     enum class cull_mode
-    { 
+    {
         none,  // front face visible, back face visible
         back,  // front face visible, back face culled
         front, // front face culled, back face visible
+        both,  // front face culled, back face culled
     };
 
-    enum class compare_op 
-    { 
+    enum class compare_op
+    {
         never,            // false
         less,             // a < b
         equal,            // a == b
@@ -522,8 +530,8 @@ namespace rhi {
         always,           // true
     };
 
-    enum class blend_op 
-    { 
+    enum class blend_op
+    {
         add,              // src + dst
         subtract,         // src - dst
         reverse_subtract, // dst - src
@@ -549,17 +557,17 @@ namespace rhi {
 
     enum class stencil_op
     {
-        keep,               
-        zero,               
-        replace,            
-        invert,              
-        increment_and_wrap, 
+        keep,
+        zero,
+        replace,
+        invert,
+        increment_and_wrap,
         increment_and_clamp,
-        decrement_and_wrap, 
+        decrement_and_wrap,
         decrement_and_clamp,
     };
 
 } // end namespace rhi
 } // end namespace polymer
 
-#endif 
+#endif
