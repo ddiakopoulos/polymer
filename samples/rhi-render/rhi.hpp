@@ -6,6 +6,8 @@
 #include <util.hpp>
 #include "math-core.hpp"
 #include "any.hpp"
+#include "nonstd/optional.hpp"
+#include "nonstd/variant.hpp"
 
 struct GLFWwindow;
 
@@ -125,7 +127,7 @@ namespace rhi {
     {
         int2 dimensions;
         std::vector<framebuffer_attachment_desc> color_attachments;
-        std::optional<framebuffer_attachment_desc> depth_attachment;
+        nonstd::optional<framebuffer_attachment_desc> depth_attachment;
     };
 
     struct descriptor_binding
@@ -200,16 +202,16 @@ namespace rhi {
 
     struct pipeline_desc
     {
-        rhi_ptr<const pipeline_layout> layout;      // descriptors
-        std::vector<vertex_binding_desc> input;     // input state
-        std::vector<rhi_ptr<const shader>> stages;  // programmable stages
-        primitive_topology topology;                // rasterizer state
-        front_face front_face;
-        cull_mode cull_mode;
-        std::optional<depth_state> depth;           // If non-null, parameters for depth test, if null, no depth test or writes are performed
-        std::optional<stencil_state> stencil;       // If non-null, parameters for stencil test, if null, no stencil test or writes are performed
-        std::vector<blend_state> blend;             // blending state
-        multisample_state multisample;              // multisampling state
+        rhi_ptr<const pipeline_layout> layout;     // descriptors
+        std::vector<vertex_binding_desc> input;    // input state
+        std::vector<rhi_ptr<const shader>> stages; // programmable stages
+        primitive_topology topology;               // rasterizer state
+        front_face front_face;                     
+        cull_mode cull_mode;                       
+        nonstd::optional<depth_state> depth;       // If non-null, parameters for depth test, if null, no depth test or writes are performed
+        nonstd::optional<stencil_state> stencil;   // If non-null, parameters for stencil test, if null, no stencil test or writes are performed
+        std::vector<blend_state> blend;            // blending state
+        multisample_state multisample;             // multisampling state
     };
 
     struct dont_care {};
@@ -220,20 +222,20 @@ namespace rhi {
 
     struct color_attachment_desc
     {
-        std::variant<dont_care, clear_color, load> load_op;
-        std::variant<dont_care, store> store_op;
+        nonstd::variant<dont_care, clear_color, load> load_op;
+        nonstd::variant<dont_care, store> store_op;
     };
 
     struct depth_attachment_desc
     {
-        std::variant<dont_care, clear_depth, load> load_op;
-        std::variant<dont_care, store> store_op;
+        nonstd::variant<dont_care, clear_depth, load> load_op;
+        nonstd::variant<dont_care, store> store_op;
     };
 
     struct render_pass_desc
     {
         std::vector<color_attachment_desc> color_attachments;
-        std::optional<depth_attachment_desc> depth_attachment;
+        nonstd::optional<depth_attachment_desc> depth_attachment;
     };
 
     struct device_info

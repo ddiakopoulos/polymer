@@ -62,7 +62,7 @@ void draw_mesh_matcap(gl_shader & shader, gl_mesh & mesh, const gl_texture_2d & 
     shader.unbind();
 }
 
-sample_rhi_render::sample_rhi_render() : polymer_app(1280, 720, "sample-gl-render")
+sample_rhi_render::sample_rhi_render() : polymer_app(1280, 720, "sample-rhi-render")
 {
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
