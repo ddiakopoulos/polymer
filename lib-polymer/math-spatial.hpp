@@ -23,15 +23,15 @@ namespace polymer
     // Rigid transformation value-type
     struct transform
     {
-        float4      orientation;    // Orientation of an object, expressed as a rotation quaternion from the base orientation
+        quatf       orientation;    // Orientation of an object, expressed as a rotation quaternion from the base orientation
         float3      position;       // Position of an object, expressed as a translation vector from the base position
 
         transform() : transform({ 0,0,0,1 }, { 0,0,0 }) {}
-        transform(const float4 & orientation, const float3 & position) : orientation(orientation), position(position) {}
-        explicit    transform(const float4 & orientation) : transform(orientation, { 0,0,0 }) {}
+        transform(const quatf & orientation, const float3 & position) : orientation(orientation), position(position) {}
+        explicit    transform(const quatf & orientation) : transform(orientation, { 0,0,0 }) {}
         explicit    transform(const float3 & position) : transform({ 0,0,0,1 }, position) {}
 
-        transform   inverse() const { auto invOri = qinv(orientation); return{ invOri, qrot(invOri, -position) }; }
+        transform   inverse() const { auto invOri = linalg::inverse(orientation); return { invOri, qrot(invOri, -position) }; }
         float4x4    matrix() const { return { { qxdir(orientation),0 },{ qydir(orientation),0 },{ qzdir(orientation),0 },{ position,1 } }; }
         float4x4    view_matrix() const { return inverse().matrix(); }
         float3      xdir() const { return qxdir(orientation); } // Equivalent to transform_vector({1,0,0})
@@ -41,9 +41,9 @@ namespace polymer
         float3      transform_vector(const float3 & vec) const { return qrot(orientation, vec); }
         float3      transform_coord(const float3 & coord) const { return position + transform_vector(coord); }
         float3      detransform_coord(const float3 & coord) const { return detransform_vector(coord - position); }    // Equivalent to inverse().transform_coord(coord), but faster
-        float3      detransform_vector(const float3 & vec) const { return qrot(qinv(orientation), vec); }             // Equivalent to inverse().transform_vector(vec), but faster
+        float3      detransform_vector(const float3 & vec) const { return qrot(linalg::inverse(orientation), vec); }             // Equivalent to inverse().transform_vector(vec), but faster
 
-        transform   operator * (const transform & pose) const { return{ qmul(orientation,pose.orientation), transform_coord(pose.position) }; }
+        transform   operator * (const transform & pose) const { return{ orientation * pose.orientation, transform_coord(pose.position) }; }
     };
 
     inline bool operator == (const transform & a, const transform & b) { return (a.position == b.position) && (a.orientation == b.orientation); }
@@ -54,34 +54,34 @@ namespace polymer
     //   rotation quaternion construction   //
     //////////////////////////////////////////
     
-    inline float4 make_rotation_quat_axis_angle(const float3 & axis, float angle)
+    inline quatf make_rotation_quat_axis_angle(const float3 & axis, float angle)
     {
         return {axis * std::sin(angle/2), std::cos(angle/2)};
     }
     
-    inline float4 make_rotation_quat_around_x(float angle)
+    inline quatf make_rotation_quat_around_x(float angle)
     {
         return make_rotation_quat_axis_angle({1,0,0}, angle);
     }
     
-    inline float4 make_rotation_quat_around_y(float angle)
+    inline quatf make_rotation_quat_around_y(float angle)
     {
         return make_rotation_quat_axis_angle({0,1,0}, angle);
     }
     
-    inline float4 make_rotation_quat_around_z(float angle)
+    inline quatf make_rotation_quat_around_z(float angle)
     {
         return make_rotation_quat_axis_angle({0,0,1}, angle);
     }
     
     // http://lolengine.net/blog/2013/09/18/beautiful-maths-quaternion-from-vectors
-    inline float4 make_rotation_quat_between_vectors(const float3 & from, const float3 & to)
+    inline quatf make_rotation_quat_between_vectors(const float3 & from, const float3 & to)
     {
         auto a = safe_normalize(from), b = safe_normalize(to);
         return make_rotation_quat_axis_angle(safe_normalize(cross(a,b)), std::acos(dot(a,b)));
     }
     
-    inline float4 make_rotation_quat_between_vectors_snapped(const float3 & from, const float3 & to, const float angle)
+    inline quatf make_rotation_quat_between_vectors_snapped(const float3 & from, const float3 & to, const float angle)
     {
         auto a = safe_normalize(from);
         auto b = safe_normalize(to);
@@ -89,36 +89,35 @@ namespace polymer
         return make_rotation_quat_axis_angle(safe_normalize(cross(a,b)), snappedAcos);
     }
     
-    inline float4 make_rotation_quat_from_rotation_matrix(const float3x3 & m)
+    inline quatf make_rotation_quat_from_rotation_matrix(const float3x3 & m)
     {
-        const float magw =  m[0][0] + m[1][1] + m[2][2];
-        
-        const bool wvsz = magw  > m[2][2];
+        const float magw   = m[0][0] + m[1][1] + m[2][2];
+        const bool wvsz    = magw  > m[2][2];
         const float magzw  = wvsz ? magw : m[2][2];
-        const float3 prezw  = wvsz ? float3(1,1,1) : float3(-1,-1,1) ;
-        const float4 postzw = wvsz ? float4(0,0,0,1): float4(0,0,1,0);
+        const float3 prezw = wvsz ? float3(1,1,1)  : float3(-1,-1,1);
+        const quatf postzw = wvsz ? quatf(0,0,0,1) : quatf(0,0,1,0);
         
-        const bool xvsy = m[0][0] > m[1][1];
-        const float magxy = xvsy ? m[0][0] : m[1][1];
-        const float3 prexy = xvsy ? float3(1,-1,-1) : float3(-1,1,-1) ;
-        const float4 postxy = xvsy ? float4(1,0,0,0) : float4(0,1,0,0);
+        const bool xvsy    = m[0][0] > m[1][1];
+        const float magxy  = xvsy ? m[0][0] : m[1][1];
+        const float3 prexy = xvsy ? float3(1,-1,-1) : float3(-1,1,-1);
+        const quatf postxy = xvsy ? quatf(1,0,0,0)  : quatf(0,1,0,0);
         
         const bool zwvsxy = magzw > magxy;
-        const float3 pre  = zwvsxy ? prezw  : prexy ;
-        const float4 post = zwvsxy ? postzw : postxy;
+        const float3 pre  = zwvsxy ? prezw  : prexy;
+        const quatf post  = zwvsxy ? postzw : postxy;
         
-        const float t = pre.x * m[0][0] + pre.y * m[1][1] + pre.z * m[2][2] + 1;
-        const float s = 1.f / sqrt(t) / 2.f;
-        const float4 qp = float4(pre.y * m[1][2] - pre.z * m[2][1], pre.z * m[2][0] - pre.x * m[0][2], pre.x * m[0][1] - pre.y * m[1][0], t) * s;
-        return qmul(qp, post);
+        const float t  = pre.x * m[0][0] + pre.y * m[1][1] + pre.z * m[2][2] + 1;
+        const float s  = 1.f / sqrt(t) / 2.f;
+        const quatf qp = quatf(pre.y * m[1][2] - pre.z * m[2][1], pre.z * m[2][0] - pre.x * m[0][2], pre.x * m[0][1] - pre.y * m[1][0], t) * s;
+        return qp * post;
     }
     
-    inline float4 make_rotation_quat_from_pose_matrix(const float4x4 & m)
+    inline quatf make_rotation_quat_from_pose_matrix(const float4x4 & m)
     {
-        return make_rotation_quat_from_rotation_matrix({m.x.xyz(),m.y.xyz(),m.z.xyz()});
+        return make_rotation_quat_from_rotation_matrix({m[0].xyz(),m[1].xyz(),m[2].xyz()});
     }
     
-    inline float4 make_axis_angle_rotation_quat(const float4 & q)
+    inline float4 make_axis_angle_rotation_quat(const quatf & q)
     {
         float w = 2.0f * (float) acosf(std::max(-1.0f, std::min(q.w, 1.0f))); // angle
         float den = (float) sqrt(std::abs(1.0 - q.w * q.w));
@@ -178,12 +177,12 @@ namespace polymer
     // Twist is a rotation about vt, and swing is a rotation about a vector perpindicular to vt
     // http://www.alinenormoyle.com/weblog/?p=726.
     // A singularity exists when swing is close to 180 degrees.
-    inline void decompose_swing_twist(const float4 q, const float3 vt, float4 & swing, float4 & twist)
+    inline void decompose_swing_twist(const quatf q, const float3 vt, quatf & swing, quatf & twist)
     {
-        float3 p = vt * dot(vt, twist.xyz());
-        twist = safe_normalize(float4(p.x, p.y, p.z, q.w));
-        if (!twist.x && !twist.y && !twist.z && !twist.w) twist = float4(0, 0, 0, 1); // singularity
-        swing = q * qconj(twist);
+        const float3 p = vt * dot(vt, twist.xyz());
+        twist = safe_normalize(quatf(p.x, p.y, p.z, q.w));
+        if (!twist.x && !twist.y && !twist.z && !twist.w) twist = quatf(0, 0, 0, 1); // singularity
+        swing = q * conjugate(twist);
     }
 
     inline float4 interpolate_short(const float4 & a, const float4 & b, const float & t)
@@ -261,9 +260,9 @@ namespace polymer
         return slerp(slerp(a, d, mu), slerp(b, c, mu), 2 * (1 - mu) * mu);
     }
 
-    inline float3 transform_vector(const float4 & quat, const float3 & v)
+    inline float3 transform_vector(const quatf & quat, const float3 & v)
     {
-        return qmul(quat, float4(v, 1)).xyz();
+        return (quat * quatf(v, 1)).xyz();
     }
     
     ////////////////////////////////////
@@ -280,7 +279,7 @@ namespace polymer
         return {{scaling.x,0,0,0}, {0,scaling.y,0,0}, {0,0,scaling.z,0}, {0,0,0,1}};
     }
     
-    inline float4x4 make_rotation_matrix(const float4 & rotation)
+    inline float4x4 make_rotation_matrix(const quatf & rotation)
     {
         return {{qxdir(rotation),0},{qydir(rotation),0},{qzdir(rotation),0},{0,0,0,1}};
     }
@@ -295,7 +294,7 @@ namespace polymer
         return {{1,0,0,0}, {0,1,0,0}, {0,0,1,0}, {translation,1}};
     }
     
-    inline float4x4 make_rigid_transformation_matrix(const float4 & rotation, const float3 & translation)
+    inline float4x4 make_rigid_transformation_matrix(const quatf & rotation, const float3 & translation)
     {
         return {{qxdir(rotation),0},{qydir(rotation),0},{qzdir(rotation),0},{translation,1}};
     }
@@ -348,17 +347,17 @@ namespace polymer
 
     inline float3x3 get_rotation_submatrix(const float4x4 & transform)
     {
-        return { transform.x.xyz(), transform.y.xyz(), transform.z.xyz() };
+        return { transform[0].xyz, transform[1].xyz, transform[2].xyz };
     }
 
     inline float3 transform_coord(const float4x4 & transform, const float3 & coord)
     {
-        auto r = mul(transform, float4(coord, 1)); return (r.xyz() / r.w);
+        auto r = transform * float4(coord, 1); return (r.xyz / r.w);
     }
 
     inline float3 transform_vector(const float4x4 & transform, const float3 & vector)
     {
-        return mul(transform, float4(vector, 0)).xyz();
+        return (transform * float4(vector, 0)).xyz;
     }
 
     /////////////////////////////////////
@@ -369,8 +368,8 @@ namespace polymer
     inline transform make_transform_from_to(const transform & a, const transform & b)
     {
         transform ret;
-        const auto inv = qinv(a.orientation);
-        ret.orientation = qmul(inv, b.orientation);
+        const auto inv = inverse(a.orientation);
+        ret.orientation = inv * b.orientation;
         ret.position = qrot(inv, b.position - a.position);
         return ret;
     }
@@ -401,7 +400,7 @@ namespace polymer
     inline transform make_transform_from_matrix(const float4x4 & xform)
     {
         transform p;
-        p.position = xform[3].xyz();
+        p.position = xform[3].xyz;
         p.orientation = make_rotation_quat_from_rotation_matrix(get_rotation_submatrix(xform));
         return p;
     }

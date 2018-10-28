@@ -144,7 +144,7 @@ namespace polymer
                 }
             };
 
-            ContactCallback callback(*body.get(), src.w.xyz());
+            ContactCallback callback(*body.get(), src[3].xyz);
             world->convexSweepTest(reinterpret_cast<btConvexShape*>(body->getCollisionShape()), body->getWorldTransform(), to_bt(src), callback, 0);
             contact = callback.point;
             return callback.hit;

@@ -93,7 +93,7 @@ void gl_particle_system::draw(
 
     shader.uniform("u_modelMatrix", Identity4x4);
     shader.uniform("u_inverseViewMatrix", inverse(viewMat));
-    shader.uniform("u_viewProjMat", mul(projMat, viewMat));
+    shader.uniform("u_viewProjMat", projMat * viewMat);
     shader.uniform("u_time", time);
     shader.texture("s_particleTex", 0, particle_tex, GL_TEXTURE_2D);
 

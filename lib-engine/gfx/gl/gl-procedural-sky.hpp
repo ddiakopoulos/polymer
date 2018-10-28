@@ -204,7 +204,7 @@ namespace polymer
             glDisable(GL_CULL_FACE);
         
             // Largest non-clipped sphere
-            float4x4 world = mul(make_translation_matrix(eyepoint), make_scaling_matrix(farClip * .99));
+            float4x4 world = (make_translation_matrix(eyepoint) * make_scaling_matrix(farClip * .99));
         
             render_internal(viewProj, get_sun_direction(), world);
         
@@ -227,7 +227,8 @@ namespace polymer
         float3 get_sun_direction() const
         {
             // phi, theta
-            return qrot(rotation_quat(float3(0,1,0), sunPosition.y), qrot(rotation_quat(float3(-1,0,0), sunPosition.x), float3(0,0,1)));
+            return qrot(make_rotation_quat_axis_angle(float3(0,1,0), sunPosition.y), 
+                   qrot(make_rotation_quat_axis_angle(float3(-1,0,0), sunPosition.x), float3(0,0,1)));
         }
 
         virtual void recompute(float turbidity, float albedo, float normalizedSunY) = 0;

@@ -315,7 +315,7 @@ void scene_editor_app::on_draw()
 
     const float4x4 projectionMatrix = cam.get_projection_matrix(float(width) / float(height));
     const float4x4 viewMatrix = cam.get_view_matrix();
-    const float4x4 viewProjectionMatrix = mul(projectionMatrix, viewMatrix);
+    const float4x4 viewProjectionMatrix = (projectionMatrix * viewMatrix);
 
     {
         editorProfiler.begin("gather-scene");
@@ -399,7 +399,7 @@ void scene_editor_app::on_draw()
         {
             const transform p = scene.xform_system->get_world_transform(e)->world_pose;
             const float3 scale = scene.xform_system->get_local_transform(e)->local_scale;
-            const float4x4 modelMatrix = mul(p.matrix(), make_scaling_matrix(scale));
+            const float4x4 modelMatrix = (p.matrix() * make_scaling_matrix(scale));
             program.uniform("u_modelMatrix", modelMatrix);
             if (auto mesh = scene.render_system->get_mesh_component(e))
             {

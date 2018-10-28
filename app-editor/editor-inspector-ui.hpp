@@ -119,6 +119,13 @@ inline bool build_imgui(imgui_ui_context & ctx, const char * label, float4 & v, 
     return ImGui::InputFloat4(label, &v.x); 
 }
 
+template<class... A>
+inline bool build_imgui(imgui_ui_context & ctx, const char * label, quatf & v, const A & ... metadata)
+{
+    if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
+    return ImGui::InputFloat4(label, &v.x);
+}
+
 template<class... A> 
 inline bool build_imgui(imgui_ui_context & ctx, const char * label, entity & e, const A & ... metadata)
 {

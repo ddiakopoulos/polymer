@@ -100,7 +100,7 @@ sample_gl_octree_culling::sample_gl_octree_culling() : polymer_app(1280, 720, "s
         const float radius = gen.random_float(0.225f);
 
         debug_sphere s;
-        s.p = transform(float4(0, 0, 0, 1), position);
+        s.p = transform(quatf(linalg::identity), position);
         s.radius = radius;
 
         spheres.push_back(std::move(s));
@@ -157,7 +157,7 @@ void sample_gl_octree_culling::on_draw()
 
     const float4x4 projectionMatrix = cam.get_projection_matrix((float)width / (float)height);
     const float4x4 viewMatrix = cam.get_view_matrix();
-    const float4x4 viewProjectionMatrix = mul(projectionMatrix, viewMatrix);
+    const float4x4 viewProjectionMatrix = (projectionMatrix * viewMatrix);
 
     if (show_debug)
     {
@@ -180,9 +180,9 @@ void sample_gl_octree_culling::on_draw()
     // Debugging only
     for (auto & s : spheres)
     {
-        const auto sphereModel = mul(s.p.matrix(), make_scaling_matrix(s.radius));
+        const auto sphereModel = (s.p.matrix() * make_scaling_matrix(s.radius));
         shader->uniform("u_color", cullingFrustum.contains(s.p.position) ? float3(1, 0, 0) : float3(0, 0, 0));
-        shader->uniform("u_mvp", mul(viewProjectionMatrix, sphereModel));
+        shader->uniform("u_mvp", (viewProjectionMatrix * sphereModel));
         sphereMesh.draw_elements();
     }
     */
@@ -198,18 +198,18 @@ void sample_gl_octree_culling::on_draw()
     for (octant<debug_sphere> * node : visibleNodes)
     {
         // Draw bounding in white around this node
-        const float4x4 boxModelMatrix = mul(make_translation_matrix(node->box.center()), make_scaling_matrix(node->box.size() / 2.f));
+        const float4x4 boxModelMatrix = make_translation_matrix(node->box.center()) * make_scaling_matrix(node->box.size() / 2.f);
         shader->uniform("u_color", float3(1, 1, 1));
-        shader->uniform("u_mvp", mul(viewProjectionMatrix, boxModelMatrix));
+        shader->uniform("u_mvp", (viewProjectionMatrix * boxModelMatrix));
         boxMesh.draw_elements();
 
         // Draw the contents of the node as red spheres
         for (auto obj : node->objects)
         {
             const auto & object = obj.object;
-            const float4x4 sphereModelMatrix = mul(object.p.matrix(), make_scaling_matrix(object.radius));
+            const float4x4 sphereModelMatrix = (object.p.matrix() * make_scaling_matrix(object.radius));
             shader->uniform("u_color", float3(1, 0, 0));
-            shader->uniform("u_mvp", mul(viewProjectionMatrix, sphereModelMatrix));
+            shader->uniform("u_mvp", (viewProjectionMatrix * sphereModelMatrix));
             sphereMesh.draw_elements();
         }
 

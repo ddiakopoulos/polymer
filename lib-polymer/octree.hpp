@@ -271,17 +271,17 @@ namespace polymer
 
         shader->bind();
 
-        const auto boxModel = mul(make_translation_matrix(node->box.center()), make_scaling_matrix(node->box.size() / 2.f));
+        const auto boxModel = make_translation_matrix(node->box.center()) * make_scaling_matrix(node->box.size() / 2.f);
         shader->uniform("u_color", octantColor);
-        shader->uniform("u_mvp", mul(viewProj, boxModel));
+        shader->uniform("u_mvp", viewProj * boxModel);
         boxMesh->draw_elements();
 
         for (auto obj : node->objects)
         {
             const auto & object = obj.object;
-            const auto sphereModel = mul(object.p.matrix(), make_scaling_matrix(object.radius));
+            const auto sphereModel = object.p.matrix() * make_scaling_matrix(object.radius);
             shader->uniform("u_color", octantColor);
-            shader->uniform("u_mvp", mul(viewProj, sphereModel));
+            shader->uniform("u_mvp", viewProj * sphereModel);
             sphereMesh->draw_elements();
         }
 

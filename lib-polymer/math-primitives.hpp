@@ -12,6 +12,7 @@
 #define math_primitives_hpp
 
 #include "math-common.hpp"
+#include <array>
 
 namespace polymer
 {
@@ -216,11 +217,11 @@ namespace polymer
         plane(const float3 & normal, const float & distance) { equation = float4(normal.x, normal.y, normal.z, distance); }
         plane(const float3 & normal, const float3 & point) { equation = float4(normal.x, normal.y, normal.z, -dot(normal, point)); }
         float3 get_normal() const { return equation.xyz(); }
-        bool is_negative_half_space(const float3 & point) const { return (dot(get_normal(), point) < equation.w); }; // +eq.w?
-        bool is_positive_half_space(const float3 & point) const { return (dot(get_normal(), point) > equation.w); };
+        bool is_negative_half_space(const float3 & point) const { return (dot(get_normal(), point) < equation.w()); }; // +eq.w?
+        bool is_positive_half_space(const float3 & point) const { return (dot(get_normal(), point) > equation.w()); };
         void normalize() { float n = 1.0f / length(get_normal()); equation *= n; };
-        float get_distance() const { return equation.w; }
-        float distance_to(const float3 & point) const { return dot(get_normal(), point) + equation.w; };
+        float get_distance() const { return equation.w(); }
+        float distance_to(const float3 & point) const { return dot(get_normal(), point) + equation.w(); };
         bool contains(const float3 & point) const { return std::abs(distance_to(point)) < PLANE_EPSILON; };
         float3 reflect_coord(const float3 & c) const { return get_normal() * distance_to(c) * -2.f + c; }
         float3 reflect_vector(const float3 & v) const { return get_normal() * dot(get_normal(), v) * 2.f - v; }

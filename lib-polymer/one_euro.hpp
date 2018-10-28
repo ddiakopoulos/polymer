@@ -77,12 +77,12 @@ namespace impl
     template<typename T, int N>
     struct quaternion_filterable : public low_pass<T, N>
     {
-        static void set_dx_identity(vec<T, N> & dx) { dx = {0, 0, 0, 1}; }
+        static void set_dx_identity(linalg::aliases::quatf & dx) { dx = {0, 0, 0, 1}; }
 
-        static void compute_derivative(vec<T, 4> dx, vec<T, 4> prev, const vec<T, 4> current, float dt)
+        static void compute_derivative(linalg::aliases::quatf dx, linalg::aliases::quatf prev, const linalg::aliases::quatf current, float dt)
         {
             const float rate = 1.0f / dt;
-            dx = qmul(current, qinv(prev));
+            dx = current * qinv(prev);
 
             // nlerp instead of slerp
             dx.x *= rate;
@@ -93,7 +93,7 @@ namespace impl
             dx = linalg::normalize(dx);
         }
 
-        static float compute_derivative_mag(vec<T, N> const dx)
+        static float compute_derivative_mag(linalg::aliases::quatf const dx)
         {
             return 2.0f * acosf(static_cast<float>(dx.w)); // Should be safe since the quaternion we're given has been normalized.
         }
@@ -164,11 +164,11 @@ struct one_euro_filter_quat : public impl::one_euro_filter<impl::quaternion_filt
 {
     one_euro_filter_quat() : impl::one_euro_filter< impl::quaternion_filterable<T, 4> >(1.0f, 0.05f, 1.0f) { }
 
-    linalg::vec<T, 4> hatxPrev;
+    linalg::aliases::quatf hatxPrev;
 
-    const linalg::vec<T, 4> filter(float dt, const linalg::vec<T, 4> x)
+    const linalg::aliases::quatf filter(float dt, const linalg::aliases::quatf x)
     {
-        linalg::vec<T, 4> dx;
+        linalg::aliases::quatf dx;
 
         if (this->firstTime)
         {
@@ -184,7 +184,7 @@ struct one_euro_filter_quat : public impl::one_euro_filter<impl::quaternion_filt
         float derivMag = impl::quaternion_filterable<T, 4>::compute_derivative_mag(this->dxFilter.filter(dx, this->alpha(dt, this->derivCutoff)));
         float cutoff = this->minCutoff + this->betaCoeff * derivMag;
 
-        linalg::vec<T, 4> hatx = linalg::qslerp(hatxPrev, x, this->alpha(dt, cutoff));
+        linalg::aliases::quatf hatx = linalg::qslerp(hatxPrev, x, this->alpha(dt, cutoff));
         hatxPrev = hatx;
         return hatxPrev;
     }

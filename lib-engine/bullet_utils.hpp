@@ -23,7 +23,7 @@ namespace polymer
         return btVector3(static_cast<btScalar>(v.x), static_cast<btScalar>(v.y), static_cast<btScalar>(v.z));
     }
 
-    inline btQuaternion to_bt(const float4 & q)
+    inline btQuaternion to_bt(const quatf & q)
     {
         return btQuaternion(static_cast<btScalar>(q.x), static_cast<btScalar>(q.y), static_cast<btScalar>(q.z), static_cast<btScalar>(q.w));
     }
@@ -37,7 +37,7 @@ namespace polymer
     inline btTransform to_bt(const float4x4 & xform)
     {
         auto r = get_rotation_submatrix(xform);
-        auto t = xform.w.xyz();
+        auto t = xform[3].xyz;
         return btTransform(to_bt(r), to_bt(t));
     }
 
@@ -46,9 +46,9 @@ namespace polymer
         return float3(v.x(), v.y(), v.z());
     }
 
-    inline float4 from_bt(const btQuaternion & q)
+    inline quatf from_bt(const btQuaternion & q)
     {
-        return float4(q.x(), q.y(), q.z(), q.w());
+        return quatf(q.x(), q.y(), q.z(), q.w());
     }
 
     inline float3x3 from_bt(const btMatrix3x3 & m)
@@ -62,7 +62,7 @@ namespace polymer
     {
         auto tM = make_translation_matrix(from_bt(xform.getOrigin()));
         auto rM = make_rotation_matrix(from_bt(xform.getRotation()));
-        return mul(tM, rM);
+        return tM * rM;
     }
 
     inline transform make_pose(const btTransform & xform)

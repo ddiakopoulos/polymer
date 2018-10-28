@@ -228,12 +228,12 @@ public:
 
     float4x4 get_projection_matrix(const float aspect) const
     { 
-        return linalg::perspective_matrix(yfov, aspect, near_clip, far_clip); 
+        return matrix_xform::perspective(yfov, aspect, near_clip, far_clip);
     }
 
     float4x4 get_viewproj_matrix(const float aspect) const
     { 
-        return mul(get_projection_matrix(aspect), get_view_matrix()); 
+        return get_projection_matrix(aspect) * get_view_matrix(); 
     }
 };
 
@@ -253,9 +253,9 @@ public:
         if (isOrthographic)
         {
             constexpr float halfSize = 1.0 * 0.5f;
-            return mul(make_orthographic_matrix(-halfSize, halfSize, -halfSize, halfSize, -halfSize, halfSize), modelViewMatrix);
+            return (make_orthographic_matrix(-halfSize, halfSize, -halfSize, halfSize, -halfSize, halfSize) * modelViewMatrix);
         }
-        return mul(make_projection_matrix(to_radians(45.f), 1.0f, 0.1f, 16.f), modelViewMatrix);
+        return (make_projection_matrix(to_radians(45.f), 1.0f, 0.1f, 16.f) * modelViewMatrix);
     }
 
     // Transforms a position into projective texture space.
@@ -273,7 +273,7 @@ public:
             { 0.5f,  0.5f,  0.5f,  1.0f }
         };
 
-        return mul(biasMatrix, get_view_projection_matrix(modelViewMatrix, isOrthographic));
+        return biasMatrix * get_view_projection_matrix(modelViewMatrix, isOrthographic);
     }
 };
 
@@ -395,7 +395,7 @@ void sample_gl_debug_ui::on_draw()
 
     const float4x4 projectionMatrix = cam.get_projection_matrix(float(width) / float(height));
     const float4x4 viewMatrix = cam.get_view_matrix();
-    const float4x4 viewProjectionMatrix = mul(projectionMatrix, viewMatrix);
+    const float4x4 viewProjectionMatrix = (projectionMatrix * viewMatrix);
 
     // Render the offscreen nvg surface
     {
@@ -422,13 +422,13 @@ void sample_gl_debug_ui::on_draw()
     glViewport(0, 0, width, height);
     glEnable(GL_DEPTH_TEST);
 
-    const float4x4 boxModel = mul(make_translation_matrix({ 0, 6, -10 }), make_scaling_matrix(float3(8.f, 4.f, 0.1f)));
+    const float4x4 boxModel = (make_translation_matrix({ 0, 6, -10 }) * make_scaling_matrix(float3(8.f, 4.f, 0.1f)));
 
     // Render the offscreen nvg surface in the world as a small quad to the left
     {
-        const float4x4 nvgSurfaceModel = mul(make_translation_matrix({ -4, 2, 0 }), make_rotation_matrix({ 0, 1, 0 }, (float)POLYMER_PI / 2.f));
+        const float4x4 nvgSurfaceModel = (make_translation_matrix({ -4, 2, 0 }) * make_rotation_matrix({ 0, 1, 0 }, (float)POLYMER_PI / 2.f));
         nvg_surface_shader.bind();
-        nvg_surface_shader.uniform("u_mvp", mul(viewProjectionMatrix, nvgSurfaceModel));
+        nvg_surface_shader.uniform("u_mvp", (viewProjectionMatrix * nvgSurfaceModel));
         nvg_surface_shader.texture("s_texture", 0, surface->surface_texture(0), GL_TEXTURE_2D);
         quad_mesh.draw_elements();
         nvg_surface_shader.unbind();
@@ -447,7 +447,7 @@ void sample_gl_debug_ui::on_draw()
         glEnable(GL_POLYGON_OFFSET_FILL);
         glPolygonOffset(-1.0, -1.0);
 
-        const float4x4 projectorModelViewMatrix = mul(inverse(gizmo_pose.matrix()), boxModel);
+        const float4x4 projectorModelViewMatrix = (inverse(gizmo_pose.matrix()) * boxModel);
         const float4x4 projectorMatrix = projector.get_projector_matrix(projectorModelViewMatrix, false);
 
         shader.bind();

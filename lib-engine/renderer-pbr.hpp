@@ -93,7 +93,7 @@ namespace polymer
             pose = p;
             viewMatrix = p.view_matrix();
             projectionMatrix = projMat;
-            viewProjMatrix = mul(projMat, viewMatrix);
+            viewProjMatrix = projMat * viewMatrix;
             near_far_clip_from_projection(projectionMatrix, nearClip, farClip);
         }
     };

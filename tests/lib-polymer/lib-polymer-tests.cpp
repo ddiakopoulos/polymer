@@ -28,7 +28,7 @@ TEST_CASE("linalg.h linear algebra basic types")
     /// Polymer does not use a separate quaternion type
     const float4 quaternion = { 0, 0, 0, 1 };
     REQUIRE(quaternion.w == 1.f);
-    REQUIRE(quaternion.xyz() == float3(0.f));
+    REQUIRE(quaternion.xyz == float3(0.f));
 
     const float3 a_vector = { 0.55f, 1.45f, 0.88f };
     const float3 normalized_vector = normalize(a_vector);
@@ -62,15 +62,13 @@ TEST_CASE("linalg.h matrices & identities")
     const float4x4 rotation = make_rotation_matrix({ 0, 1, 0 }, (float) POLYMER_TAU);
     const float4x4 scale = make_scaling_matrix(0.5f);
 
-    /// >>>> operator * does NOT perform matrix multiplication <<<<
-    /// Linalg provides a mul(...) function for performing left-handed matrix multiplies. 
     /// In this instance, the translation is applied to the rotation, before being applied to the scale. 
     /// This is commonly notated (m = t*r*s)
-    const float4x4 combined_model_matrix_a = mul(translation, rotation, scale);
-    const float4x4 matrix_a_equivalent = mul(mul(translation, rotation), scale);
+    const float4x4 combined_model_matrix_a = (translation * rotation * scale);
+    const float4x4 matrix_a_equivalent = (translation * rotation) * scale;
     REQUIRE(combined_model_matrix_a == matrix_a_equivalent);
 
-    const float4x4 r_matrix = mul(translation, rotation);
+    const float4x4 r_matrix = (translation * rotation);
     REQUIRE(get_rotation_submatrix(r_matrix) == get_rotation_submatrix(rotation));
 
     /// todo - inverse, determinant, transpose
@@ -83,7 +81,7 @@ TEST_CASE("poses, matrices, and transformations")
     const float4x4 matrix_xform = make_translation_matrix({ -8, 0, 8 });
 
     const transform pose_a = make_transform_from_matrix(matrix_xform);
-    const transform pose_b = { float4(0, 0, 0, 1), float3(-8, 0, 8) };
+    const transform pose_b = { quatf(0, 0, 0, 1), float3(-8, 0, 8) };
 
     REQUIRE(pose_a.matrix() == matrix_xform);
     REQUIRE(pose_a == pose_b);
@@ -102,8 +100,8 @@ TEST_CASE("projection matrices")
     const float aspectRatio = width / height;
 
     const float4x4 projectionMatrix = make_projection_matrix(to_radians(90.f), aspectRatio, 0.1f, 100.f);
-    const float4x4 viewMatrix = Identity4x4;
-    const float4x4 viewProjectionMatrix = mul(projectionMatrix, viewMatrix);
+    const float4x4 viewMatrix = linalg::identity;
+    const float4x4 viewProjectionMatrix = projectionMatrix * viewMatrix;
 
     float outNear, outFar;
     near_far_clip_from_projection(projectionMatrix, outNear, outFar);

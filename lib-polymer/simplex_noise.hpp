@@ -2064,7 +2064,7 @@ inline float noise_iq_fb(const float2 & v, uint8_t octaves, const float2x2 & mat
         noiseAccum  += float2(n.y, n.z);
         sum += amp * n.x / (1.0 + dot(noiseAccum, noiseAccum));
         amp *= gain;
-        pos = mul(mat, pos);
+        pos = (mat * pos);
     }
     return sum;
 }

@@ -120,9 +120,9 @@ namespace polymer
         {
             const float4x4 projection = make_orthographic_matrix(0.0f, windowSize.x, windowSize.y, 0.0f, -1.0f, 1.0f);
             float4x4 model = make_scaling_matrix({ rect.width(), rect.height(), 0.f });
-            model = mul(make_translation_matrix({ rect.min().x, rect.min().y, 0.f }), model);
+            model = (make_translation_matrix({ rect.min().x, rect.min().y, 0.f }) * model);
             program.bind();
-            program.uniform("u_mvp", mul(projection, model));
+            program.uniform("u_mvp", (projection * model));
             if (hasDepth)
             {
                 program.uniform("u_zNear", nearFarDepth.x);
@@ -145,9 +145,9 @@ namespace polymer
         {
             const float4x4 projection = make_orthographic_matrix(0.0f, windowSize.x, windowSize.y, 0.0f, -1.0f, 1.0f);
             float4x4 model = make_scaling_matrix({ rect.width(), rect.height(), 0.f });
-            model = mul(make_translation_matrix({rect.min().x, rect.min().y, 0.f}), model);
+            model = (make_translation_matrix({rect.min().x, rect.min().y, 0.f}) * model);
             program.bind();
-            program.uniform("u_mvp", mul(projection, model));
+            program.uniform("u_mvp", projection * model);
             program.uniform("u_slice", slice);
             program.texture("u_texture", 0, tex, target);
             mesh.draw_elements();

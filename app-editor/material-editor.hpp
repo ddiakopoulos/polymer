@@ -135,7 +135,7 @@ struct material_editor_window final : public glfw_window
         else if (e.type == app_input_event::CURSOR && e.drag)
         {
             arcball->mouse_drag(e.cursor);
-            preview_renderable.t.orientation = safe_normalize(qmul(arcball->currentQuat, preview_renderable.t.orientation));
+            preview_renderable.t.orientation = safe_normalize(arcball->currentQuat * preview_renderable.t.orientation);
         }
     }
 

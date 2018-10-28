@@ -18,30 +18,32 @@
 #include <ostream>
 
 #include "linalg.h"
+#include "linalgx.h"
 
-#define POLYMER_PI            3.1415926535897931
-#define POLYMER_HALF_PI       1.5707963267948966
-#define POLYMER_QUARTER_PI    0.7853981633974483
-#define POLYMER_TWO_PI        6.2831853071795862
-#define POLYMER_TAU           POLYMER_TWO_PI
-#define POLYMER_INV_PI        0.3183098861837907
-#define POLYMER_INV_TWO_PI    0.1591549430918953
-#define POLYMER_INV_HALF_PI   0.6366197723675813
+#define POLYMER_PI          3.1415926535897931
+#define POLYMER_HALF_PI     1.5707963267948966
+#define POLYMER_QUARTER_PI  0.7853981633974483
+#define POLYMER_TWO_PI      6.2831853071795862
+#define POLYMER_TAU         6.2831853071795862
+#define POLYMER_INV_PI      0.3183098861837907
+#define POLYMER_INV_TWO_PI  0.1591549430918953
+#define POLYMER_INV_HALF_PI 0.6366197723675813
 
-#define POLYMER_DEG_TO_RAD    0.0174532925199433
-#define POLYMER_RAD_TO_DEG    57.295779513082321
+#define POLYMER_SQRT_2      1.4142135623730951
+#define POLYMER_INV_SQRT_2  0.7071067811865475
+#define POLYMER_LN_2        0.6931471805599453
+#define POLYMER_INV_LN_2    1.4426950408889634
+#define POLYMER_LN_10       2.3025850929940459
+#define POLYMER_INV_LN_10   0.4342944819032517
+                            
+#define POLYMER_GOLDEN      1.6180339887498948
 
-#define POLYMER_SQRT_2        1.4142135623730951
-#define POLYMER_INV_SQRT_2    0.7071067811865475
-#define POLYMER_LN_2          0.6931471805599453
-#define POLYMER_INV_LN_2      1.4426950408889634
-#define POLYMER_LN_10         2.3025850929940459
-#define POLYMER_INV_LN_10     0.43429448190325176
-
-#define POLYMER_GOLDEN        1.61803398874989484820
+#define POLYMER_DEG_TO_RAD  0.0174532925199433
+#define POLYMER_RAD_TO_DEG  57.295779513082321
 
 namespace polymer
 {
+    using matrix_xform = linalg::homogeneous_transformation<float, 3>;
     using namespace linalg::aliases;
 
     static const float4x4 Identity4x4 = {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};
@@ -55,6 +57,8 @@ namespace polymer
     template<class T> std::ostream & operator << (std::ostream & a, const linalg::vec<T, 2> & b) { return a << '{' << b.x << ", " << b.y << '}'; }
     template<class T> std::ostream & operator << (std::ostream & a, const linalg::vec<T, 3> & b) { return a << '{' << b.x << ", " << b.y << ", " << b.z << '}'; }
     template<class T> std::ostream & operator << (std::ostream & a, const linalg::vec<T, 4> & b) { return a << '{' << b.x << ", " << b.y << ", " << b.z << ", " << b.w << '}'; }
+
+    template<class T> std::ostream & operator << (std::ostream & a, const linalg::quat<T> & b) { return a << '{' << b.x << ", " << b.y << ", " << b.z << ", " << b.w << '}'; }
 
     template<class T, int N> std::ostream & operator << (std::ostream & a, const linalg::mat<T, 2, N> & b) { return a << '\n' << b.row(0) << '\n' << b.row(1) << '\n'; }
     template<class T, int N> std::ostream & operator << (std::ostream & a, const linalg::mat<T, 3, N> & b) { return a << '\n' << b.row(0) << '\n' << b.row(1) << '\n' << b.row(2) << '\n'; }
@@ -76,8 +80,14 @@ namespace polymer
     template<typename T> T sign(const T & a, const T & b) { return ((b) >= 0.0 ? std::abs(a) : -std::abs(a)); }
     template<typename T> T sign(const T & a) { return (a == 0) ? T(0) : ((a > 0.0) ? T(1) : T(-1)); }
     template<typename T> T rcp(T x) { return T(1) / x; }
+    template<typename T> T fract(const T & a) { return a - floor(a); }
 
     template<class T, int M> linalg::vec<T, M> safe_normalize(const linalg::vec<T, M> & a)
+    {
+        return a / std::max(T(1E-6), length(a));
+    }
+
+    template<class T> linalg::quat<T> safe_normalize(const linalg::quat<T> & a)
     {
         return a / std::max(T(1E-6), length(a));
     }

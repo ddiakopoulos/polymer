@@ -66,8 +66,8 @@ void draw_mesh_matcap(gl_shader & shader, gl_mesh & mesh, const gl_texture_2d & 
 {
     shader.bind();
     shader.uniform("u_modelMatrix", model);
-    shader.uniform("u_viewProj", mul(proj, view));
-    shader.uniform("u_modelViewMatrix", mul(view, model));
+    shader.uniform("u_viewProj", proj * view);
+    shader.uniform("u_modelViewMatrix", view * model);
     shader.uniform("u_modelMatrixIT", inverse(transpose(model)));
     shader.texture("u_matcapTexture", 0, tex, GL_TEXTURE_2D);
     mesh.draw_elements();
@@ -147,11 +147,11 @@ void sample_gl_render::on_draw()
     const transform cameraPose = cam.pose;
     const float4x4 projectionMatrix = cam.get_projection_matrix(float(width) / float(height));
     const float4x4 viewMatrix = cam.get_view_matrix();
-    const float4x4 viewProjectionMatrix = mul(projectionMatrix, viewMatrix);
+    const float4x4 viewProjectionMatrix = projectionMatrix * viewMatrix;
 
     if (lastEvent.drag && deltaMotion)
     {
-        modelPose.orientation = normalize(qmul(modelPose.orientation, arcball->currentQuat));
+        modelPose.orientation = safe_normalize(modelPose.orientation * arcball->currentQuat);
     }
 
     draw_mesh_matcap(matcapShader, model, matcapTexture, modelPose.matrix(), viewMatrix, projectionMatrix);

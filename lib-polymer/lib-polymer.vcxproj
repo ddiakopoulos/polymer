@@ -17,6 +17,7 @@
     <ClInclude Include="bit_mask.hpp" />
     <ClInclude Include="camera.hpp" />
     <ClInclude Include="image-buffer.hpp" />
+    <ClInclude Include="linalgx.h" />
     <ClInclude Include="memory-pool.hpp" />
     <ClInclude Include="parabolic_pointer.hpp" />
     <ClInclude Include="property.hpp" />

@@ -54,11 +54,11 @@ void stable_cascaded_shadows::update_cascades(const float4x4 & view, const float
 
         for (unsigned int j = 0; j < 8; ++j)
         {
-            splitFrustumVerts[j] = float4(transform_coord(inverse(mul(splitProjectionMatrix, view)), splitFrustumVerts[j].xyz()), 1);
+            splitFrustumVerts[j] = float4(transform_coord(inverse((splitProjectionMatrix * view)), splitFrustumVerts[j].xyz), 1);
         }
 
         float3 frustumCentroid = float3(0, 0, 0);
-        for (size_t i = 0; i < 8; ++i) frustumCentroid += splitFrustumVerts[i].xyz();
+        for (size_t i = 0; i < 8; ++i) frustumCentroid += splitFrustumVerts[i].xyz;
         frustumCentroid /= 8.0f;
 
         // Calculate the radius of a bounding sphere surrounding the frustum corners in worldspace
@@ -66,7 +66,7 @@ void stable_cascaded_shadows::update_cascades(const float4x4 & view, const float
         float sphereRadius = 0.0f;
         for (int i = 0; i < 8; ++i)
         {
-            const float dist = length(splitFrustumVerts[i].xyz() - frustumCentroid) * 1.0f;
+            const float dist = length(splitFrustumVerts[i].xyz - frustumCentroid) * 1.0f;
             sphereRadius = std::max(sphereRadius, dist);
         }
 
@@ -82,7 +82,7 @@ void stable_cascaded_shadows::update_cascades(const float4x4 & view, const float
         float4x4 shadowProjectionMatrix = make_orthographic_matrix(minExtents.x, maxExtents.x, minExtents.y, maxExtents.y, 0.0f, cascadeExtents.z);
 
         // Create a rounding matrix by projecting the world-space origin and determining the fractional offset in texel space
-        float3 shadowOrigin = transform_coord(mul(shadowProjectionMatrix, splitViewMatrix), float3(0, 0, 0));
+        float3 shadowOrigin = transform_coord((shadowProjectionMatrix * splitViewMatrix), float3(0, 0, 0));
         shadowOrigin *= (resolution * 0.5f);
 
         const float4 roundedOrigin = round(float4(shadowOrigin, 1));
@@ -92,7 +92,7 @@ void stable_cascaded_shadows::update_cascades(const float4x4 & view, const float
         roundOffset.w = 0;
         shadowProjectionMatrix[3] += roundOffset;
 
-        const float4x4 theShadowMatrix = mul(shadowProjectionMatrix, splitViewMatrix);
+        const float4x4 theShadowMatrix = (shadowProjectionMatrix * splitViewMatrix);
 
         viewMatrices.push_back(splitViewMatrix);
         projMatrices.push_back(shadowProjectionMatrix);
@@ -148,9 +148,9 @@ GLuint stable_cascaded_shadows::get_output_texture() const
 void pbr_renderer::update_per_object_uniform_buffer(const transform & p, const float3 & scale, const bool recieveShadow, const view_data & d)
 {
     uniforms::per_object object = {};
-    object.modelMatrix = mul(p.matrix(), make_scaling_matrix(scale));
+    object.modelMatrix = p.matrix() * make_scaling_matrix(scale);
     object.modelMatrixIT = inverse(transpose(object.modelMatrix));
-    object.modelViewMatrix = mul(d.viewMatrix, object.modelMatrix);
+    object.modelViewMatrix = d.viewMatrix * object.modelMatrix;
     object.receiveShadow = static_cast<float>(recieveShadow);
     perObject.set_buffer_data(sizeof(object), &object, GL_STREAM_DRAW);
 }
@@ -265,7 +265,7 @@ void pbr_renderer::run_skybox_pass(const view_data & view, const render_payload 
 
     //auto & program = shader_handle("ibl").get()->get_variant()->shader;
     //program.bind();
-    //program.uniform("u_mvp", mul(view.projectionMatrix, rotation_matrix(qconj(view.pose.orientation))));
+    //program.uniform("u_mvp", (view.projectionMatrix * rotation_matrix(qconj(view.pose.orientation))));
     //program.texture("sc_ibl", 0, texture_handle("wells-radiance-cubemap").get(), GL_TEXTURE_CUBE_MAP);
     //auto m = make_cube_mesh();
     //m.draw_elements();
@@ -294,7 +294,7 @@ void pbr_renderer::run_shadow_pass(const view_data & view, const render_payload 
     {
         if (r.material->cast_shadow)
         {
-            const float4x4 modelMatrix = mul(r.t.matrix(), make_scaling_matrix(r.scale));
+            const float4x4 modelMatrix = (r.t.matrix() * make_scaling_matrix(r.scale));
             shadow->update_shadow_matrix(modelMatrix);
             r.mesh->draw();
         }
@@ -504,7 +504,7 @@ void pbr_renderer::render_frame(const render_payload & scene)
         compute_center_view(scene.views[0].projectionMatrix, scene.views[1].projectionMatrix, interocularDistance.x, shadowAndCullingView.projectionMatrix, centerOffsetZ);
 
         // Regenerate the view matrix and near/far clip planes
-        shadowAndCullingView.viewMatrix = inverse(mul(shadowAndCullingView.pose.matrix(), make_translation_matrix(centerOffsetZ)));
+        shadowAndCullingView.viewMatrix = inverse((shadowAndCullingView.pose.matrix() * make_translation_matrix(centerOffsetZ)));
         near_far_clip_from_projection(shadowAndCullingView.projectionMatrix, shadowAndCullingView.nearClip, shadowAndCullingView.farClip);
         cpuProfiler.end("center-view");
     }

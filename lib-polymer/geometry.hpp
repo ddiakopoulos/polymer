@@ -180,7 +180,7 @@ namespace polymer
         float3 r = bounds.size() * 0.5f;
         float3 center = bounds.center();
 
-        float oldRadius = std::max(r.x, std::max(r.y, r.z));
+        float oldRadius = std::max(r.x(), std::max(r.y(), r.z()));
         float scale = radius / oldRadius;
 
         for (auto & v : g.vertices)

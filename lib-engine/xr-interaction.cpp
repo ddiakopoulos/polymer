@@ -238,7 +238,7 @@ void xr::xr_controller_system::update_laser_geometry(const float distance)
         // The mesh is in local space so we massage it through a transform 
         auto t = hmd->get_controller(processor->get_dominant_hand()).t;
         t = t * transform(make_rotation_quat_axis_angle({ 1, 0, 0 }, (float)POLYMER_PI / 2.f)); // coordinate 
-        t = t * transform(float4(0, 0, 0, 1), float3(0, -(distance * 0.5f), 0)); // translation
+        t = t * transform(quatf(0, 0, 0, 1), float3(0, -(distance * 0.5f), 0)); // translation
         env->xform_system->set_local_transform(pointer, t);
     }
 }
@@ -553,7 +553,7 @@ transform xr_gizmo_system::get_transform() const
 {
     transform t;
     t.position = float3(xform.position.x, xform.position.y, xform.position.z);
-    t.orientation = float4(xform.orientation.x, xform.orientation.y, xform.orientation.z, xform.orientation.w);
+    t.orientation = quatf(xform.orientation.x, xform.orientation.y, xform.orientation.z, xform.orientation.w);
     // @todo - transforms do not carry scale (yet)
     return t;
 }

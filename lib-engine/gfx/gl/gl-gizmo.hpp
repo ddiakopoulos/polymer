@@ -8,7 +8,7 @@
 
 static inline polymer::transform to_linalg(tinygizmo::rigid_transform & t)
 {
-    return{ reinterpret_cast<polymer::float4 &>(t.orientation), reinterpret_cast<polymer::float3 &>(t.position) };
+    return{ reinterpret_cast<polymer::quatf &>(t.orientation), reinterpret_cast<polymer::float3 &>(t.position) };
 }
 
 static inline tinygizmo::rigid_transform from_linalg(polymer::transform & p)
@@ -105,7 +105,7 @@ namespace polymer
         {
             const transform p = cam.pose;
             const auto r = cam.get_world_ray(lastCursorPosition, windowSize);
-            viewProjectionMatrix = mul(cam.get_projection_matrix(windowSize.x / windowSize.y), cam.get_view_matrix());
+            viewProjectionMatrix = (cam.get_projection_matrix(windowSize.x / windowSize.y) * cam.get_view_matrix());
             gizmo_state.viewport_size = minalg::float2(windowSize.x, windowSize.y);
             gizmo_state.cam.near_clip = cam.nearclip;
             gizmo_state.cam.far_clip = cam.farclip;

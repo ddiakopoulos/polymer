@@ -82,7 +82,7 @@ namespace polymer
             {
                 auto v = axis.vertices[i];
                 v = pose.transform_coord(v);
-                vertices.push_back({ v, axis.colors[i].xyz() });
+                vertices.push_back({ v, axis.colors[i].xyz });
             }
         }
 
@@ -94,7 +94,7 @@ namespace polymer
             payload.set_non_indexed(GL_LINES);
 
             shader.bind();
-            shader.uniform("u_mvp", mul(viewProjectionMatrix, Identity4x4));
+            shader.uniform("u_mvp", viewProjectionMatrix * Identity4x4);
             payload.draw_elements();
             shader.unbind();
         }

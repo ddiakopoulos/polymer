@@ -58,23 +58,26 @@ namespace linalg
     using json = nlohmann::json;
 
     // Linalg Types
-    inline void to_json(json & archive, const int2 & m)   { archive = json{ { "x", m.x },{ "y", m.y } }; }
+    inline void to_json(json & archive, const int2 & m)   { archive = json{ { "x", m.x() },{ "y", m.y() } }; }
     inline void from_json(const json & archive, int2 & p) { p.x = archive.at("x").get<int32_t>(); p.y = archive.at("y").get<int32_t>(); }
 
-    inline void to_json(json & archive, const int3 & m)   { archive = json{ { "x", m.x },{ "y", m.y },{ "z", m.z } }; }
+    inline void to_json(json & archive, const int3 & m)   { archive = json{ { "x", m.x() },{ "y", m.y() },{ "z", m.z() } }; }
     inline void from_json(const json & archive, int3 & p) { p.x = archive.at("x").get<int32_t>(); p.y = archive.at("y").get<int32_t>(); p.z = archive.at("z").get<int32_t>(); }
 
-    inline void to_json(json & archive, const int4 & m)   { archive = json{ { "x", m.x },{ "y", m.y },{ "z", m.z },{ "w", m.w } }; }
+    inline void to_json(json & archive, const int4 & m)   { archive = json{ { "x", m.x() },{ "y", m.y() },{ "z", m.z() },{ "w", m.w() } }; }
     inline void from_json(const json & archive, int4 & p) { p.x = archive.at("x").get<int32_t>(); p.y = archive.at("y").get<int32_t>(); p.z = archive.at("z").get<int32_t>(); p.w = archive.at("w").get<int32_t>(); }
 
-    inline void to_json(json & archive, const float2 & m) { archive = json{ { "x", m.x },{ "y", m.y } }; }
+    inline void to_json(json & archive, const float2 & m) { archive = json{ { "x", m.x() },{ "y", m.y() } }; }
     inline void from_json(const json & archive, float2 & p) { p.x = archive.at("x").get<float>(); p.y = archive.at("y").get<float>(); }
 
-    inline void to_json(json & archive, const float3 & m) { archive = json{ { "x", m.x },{ "y", m.y },{ "z", m.z } }; }
+    inline void to_json(json & archive, const float3 & m) { archive = json{ { "x", m.x() },{ "y", m.y() },{ "z", m.z() } }; }
     inline void from_json(const json & archive, float3 & p) { p.x = archive.at("x").get<float>(); p.y = archive.at("y").get<float>(); p.z = archive.at("z").get<float>(); }
 
-    inline void to_json(json & archive, const float4 & m) { archive = json{ { "x", m.x },{ "y", m.y },{ "z", m.z },{ "w", m.w } }; }
+    inline void to_json(json & archive, const float4 & m) { archive = json{ { "x", m.x() },{ "y", m.y() },{ "z", m.z() },{ "w", m.w() } }; }
     inline void from_json(const json & archive, float4 & p) { p.x = archive.at("x").get<float>(); p.y = archive.at("y").get<float>(); p.z = archive.at("z").get<float>(); p.w = archive.at("w").get<float>(); }
+
+    inline void to_json(json & archive, const quatf & m) { archive = json{ { "x", m.x },{ "y", m.y },{ "z", m.z },{ "w", m.w } }; }
+    inline void from_json(const json & archive, quatf & p) { p.x = archive.at("x").get<float>(); p.y = archive.at("y").get<float>(); p.z = archive.at("z").get<float>(); p.w = archive.at("w").get<float>(); }
 }
 
 namespace polymer
@@ -107,7 +110,7 @@ namespace polymer
     inline void from_json(const json & archive, aabb_3d & p) { p._min = archive.at("min").get<float3>(); p._max = archive.at("max").get<float3>(); }
 
     inline void to_json(json & archive, const transform & m) { archive = json{ { "position", m.position },{ "orientation", m.orientation } }; }
-    inline void from_json(const json & archive, transform & p) { p.position = archive.at("position").get<float3>(); p.orientation = archive.at("orientation").get<float4>(); }
+    inline void from_json(const json & archive, transform & p) { p.position = archive.at("position").get<float3>(); p.orientation = archive.at("orientation").get<quatf>(); }
 
     //////////////////////////////
     //   identifier_component   //

@@ -181,12 +181,12 @@ void sample_gl_particle_hull::on_draw()
 
     const float4x4 projectionMatrix = cam.get_projection_matrix(float(width) / float(height));
     const float4x4 viewMatrix = cam.get_view_matrix();
-    const float4x4 viewProjectionMatrix = mul(projectionMatrix, viewMatrix);
+    const float4x4 viewProjectionMatrix = projectionMatrix * viewMatrix;
 
     // Draw the sky
     glDisable(GL_DEPTH_TEST);
     {
-        const float4x4 world = mul(make_translation_matrix(cam.get_eye_point()), scaling_matrix(float3(cam.farclip * .99f)));
+        const float4x4 world = (make_translation_matrix(cam.get_eye_point()) * matrix_xform::scaling(float3(cam.farclip * .99f)));
         sky_shader.bind();
         sky_shader.uniform("u_viewProj", viewProjectionMatrix);
         sky_shader.uniform("u_modelMatrix", world);

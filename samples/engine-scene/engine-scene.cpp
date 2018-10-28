@@ -148,7 +148,7 @@ void sample_engine_scene::on_draw()
     const uint32_t viewIndex = 0;
     const float4x4 projectionMatrix = cam.get_projection_matrix(float(width) / float(height));
     const float4x4 viewMatrix = cam.get_view_matrix();
-    const float4x4 viewProjectionMatrix = mul(projectionMatrix, viewMatrix);
+    const float4x4 viewProjectionMatrix = projectionMatrix * viewMatrix;
 
     payload.views.clear();
     payload.views.emplace_back(view_data(viewIndex, cam.pose, projectionMatrix));

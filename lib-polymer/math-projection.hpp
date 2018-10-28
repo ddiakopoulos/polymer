@@ -41,7 +41,7 @@ namespace polymer
     // This is valid for both perspective and orthographic projections. `clip_plane` is defined in camera space.
     inline void calculate_oblique_matrix(float4x4 & projection, const float4 & clip_plane)
     {
-        const float4 q = mul(inverse(projection), float4(sign(clip_plane.x), sign(clip_plane.y), 1.f, 1.f));
+        const float4 q = (inverse(projection), float4(sign(clip_plane.x()), sign(clip_plane.y()), 1.f, 1.f));
         const float4 c = clip_plane * (2.f / (dot(clip_plane, q)));
         projection[0][2] = c.x - projection[0][3];
         projection[1][2] = c.y - projection[1][3];

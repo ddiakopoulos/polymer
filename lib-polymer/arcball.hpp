@@ -54,15 +54,15 @@ namespace polymer
 
     public:
 
-        float4 initialQuat, currentQuat;
+        quatf initialQuat, currentQuat;
         float3 constraintAxis = { 0, 0, 0 };
 
-		arcball_controller(float2 windowSize) : windowSize(windowSize) { initialQuat = currentQuat = float4(0, 0, 0, 1); }
+        arcball_controller(float2 windowSize) : windowSize(windowSize) { initialQuat = currentQuat = linalg::identity; }
 
 		void mouse_down(const float2 & mousePos)
 		{
 			initialMousePos = mousePos;
-			initialQuat = float4(0, 0, 0, 1);
+            initialQuat = linalg::identity;
 		}
 
 		void mouse_drag(const float2 & mousePos)
@@ -78,8 +78,8 @@ namespace polymer
 
 			if (distance(a, b) <= 0.0005) return;
 			
-			auto rotation = normalize(make_rotation_quat_between_vectors(a, b));
-			auto deltaRotation = normalize(qmul(rotation, qconj(initialQuat)));
+			auto rotation = safe_normalize(make_rotation_quat_between_vectors(a, b));
+			auto deltaRotation = safe_normalize(rotation * conjugate(initialQuat));
 			currentQuat = deltaRotation;
 			initialMousePos = mousePos;
 		}

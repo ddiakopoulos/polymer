@@ -79,17 +79,17 @@ namespace polymer
                     const float4x4 R = make_rotation_matrix(normalize(axis), r); // note the normalized axis
                     const float4x4 Tj = make_translation_matrix(points[i]);      // current point
                     const float4x4 Ti = make_translation_matrix(-points[i - 1]); // previous point
-                    frames[i] = mul(Tj, mul(R, mul(Ti, frames[i - 1])));
+                    frames[i] = (Tj *  (R * (Ti * frames[i - 1])));
                 }
                 else
                 {
                     const float4x4 t = make_translation_matrix(points[i] - points[i - 1]);
-                    frames[i] = mul(t, frames[i - 1]);
+                    frames[i] = t * frames[i - 1];
                 }
             }
 
             // Last frame
-            frames[num_points - 1] = mul(make_translation_matrix(points[num_points - 1] - points[num_points - 2]), frames[num_points - 2]);
+            frames[num_points - 1] = (make_translation_matrix(points[num_points - 1] - points[num_points - 2]) * frames[num_points - 2]);
         }
 
         return frames;

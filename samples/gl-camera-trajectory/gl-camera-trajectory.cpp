@@ -98,9 +98,9 @@ public:
         for (int i = 0; i < frames.size(); ++i)
         {
             const float4x4 m = get_transform(i);
-            const float3 xdir = normalize(mul(m, float4(1, 0, 0, 0)).xyz());
-            const float3 ydir = normalize(mul(m, float4(0, 1, 0, 0)).xyz());
-            const float3 zdir = normalize(mul(m, float4(0, 0, 1, 0)).xyz());
+            const float3 xdir = normalize(m * float4(1, 0, 0, 0)).xyz;
+            const float3 ydir = normalize(m * float4(0, 1, 0, 0)).xyz;
+            const float3 zdir = normalize(m * float4(0, 0, 1, 0)).xyz;
             axisMeshes.push_back(make_axis_mesh(xdir, ydir, zdir));
         }
         return axisMeshes;
@@ -205,7 +205,7 @@ void sample_gl_camera_trajectory::on_update(const app_update_event & e)
     gizmo->update(debug_cam, { static_cast<float>(width), static_cast<float>(height) });
 
     const auto frameMatrix = frames.get_transform(playback_index);
-    follow_cam.pose.position = frameMatrix[3].xyz();
+    follow_cam.pose.position = frameMatrix[3].xyz;
     follow_cam.pose.orientation = make_rotation_quat_from_pose_matrix(frameMatrix);
     playback_index = playback_index % (frames.get().size() - 1);
 }
@@ -222,11 +222,11 @@ void sample_gl_camera_trajectory::render_scene(const GLuint framebuffer, const p
 
     const float4x4 projectionMatrix = cam.get_projection_matrix(float(width) / float(height));
     const float4x4 viewMatrix = cam.get_view_matrix();
-    const float4x4 viewProjectionMatrix = mul(projectionMatrix, viewMatrix);
+    const float4x4 viewProjectionMatrix = projectionMatrix * viewMatrix;
 
     // Draw the sky
     glDisable(GL_DEPTH_TEST);
-    const float4x4 world = mul(make_translation_matrix(cam.get_eye_point()), scaling_matrix(float3(cam.farclip * .99f)));
+    const float4x4 world = (make_translation_matrix(cam.get_eye_point()) * matrix_xform::scaling(float3(cam.farclip * .99f)));
     sky_shader.bind();
     sky_shader.uniform("u_viewProj", viewProjectionMatrix);
     sky_shader.uniform("u_modelMatrix", world);
@@ -271,7 +271,7 @@ void sample_gl_camera_trajectory::on_draw()
         }
     }
 
-    const float4x4 viewProjectionMatrix = mul(debug_cam.get_projection_matrix(float(width) / float(height)), debug_cam.get_view_matrix());
+    const float4x4 viewProjectionMatrix = debug_cam.get_projection_matrix(float(width) / float(height)) * debug_cam.get_view_matrix();
 
     basic_shader.bind();
     if (frames.get().size() > 0)
@@ -280,7 +280,7 @@ void sample_gl_camera_trajectory::on_draw()
         for (int i = 0; i < frames.get().size(); ++i)
         {
             const auto frameMatrix = frames.get_transform(i);
-            basic_shader.uniform("u_mvp", mul(viewProjectionMatrix, make_translation_matrix(frameMatrix[3].xyz())));
+            basic_shader.uniform("u_mvp", viewProjectionMatrix * make_translation_matrix(frameMatrix[3].xyz));
             meshes[i].draw_elements(); // axes drawn directly from matrix
         }
     }

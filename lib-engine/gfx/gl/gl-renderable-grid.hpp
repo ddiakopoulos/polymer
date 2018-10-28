@@ -63,7 +63,7 @@ namespace polymer
         {
             gridShader.bind();
             gridShader.uniform("u_color", color);
-            gridShader.uniform("u_mvp", mul(viewProjectionMatrix, modelMatrix));
+            gridShader.uniform("u_mvp", (viewProjectionMatrix * modelMatrix));
             gridMesh.draw_elements();
             gridShader.unbind();
         }

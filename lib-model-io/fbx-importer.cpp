@@ -109,8 +109,8 @@ void polymer::gather_meshes(fbx_container & file, fbxsdk::FbxNode * node)
                     fbxsdk::FbxColor vertexColor = get_vertex_element(pVertexColors, controlPointIndex, t, v, fbxsdk::FbxColor(0, 0, 0, 0));
 
                     unique_vertex vertex;
-                    vertex.position = to_linalg(point).xyz();
-                    vertex.normal = to_linalg(normal).xyz();
+                    vertex.position = to_linalg(point).xyz;
+                    vertex.normal = to_linalg(normal).xyz;
                     vertex.texcoord = to_linalg(texcoord1);
 
                     auto it = uniqueVertexMap.find(vertex);

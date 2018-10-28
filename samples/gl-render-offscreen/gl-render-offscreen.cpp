@@ -178,7 +178,7 @@ void sample_gl_render_offscreen::on_draw()
 
         const float4x4 projectionMatrix = cam.get_projection_matrix(float(width) / float(height));
         const float4x4 viewMatrix = cam.get_view_matrix();
-        const float4x4 viewProjectionMatrix = mul(projectionMatrix, viewMatrix);
+        const float4x4 viewProjectionMatrix = projectionMatrix * viewMatrix;
 
         auto default_wireframe_variant = wireframe_handle.get()->get_variant();
         auto & wireframe_prog = default_wireframe_variant->shader;
@@ -186,7 +186,7 @@ void sample_gl_render_offscreen::on_draw()
         wireframe_prog.bind();
         for (auto & object : objects)
         {
-            const float4x4 modelMatrix = mul(object.t.matrix(), make_scaling_matrix(object.scale));
+            const float4x4 modelMatrix = object.t.matrix() * make_scaling_matrix(object.scale);
             wireframe_prog.uniform("u_color", selected_object == &object ? float4(1, 0, 0, 0.5f) : float4(1, 1, 1, 0.5));
             wireframe_prog.uniform("u_eyePos", cam.get_eye_point());
             wireframe_prog.uniform("u_viewProjMatrix", viewProjectionMatrix);

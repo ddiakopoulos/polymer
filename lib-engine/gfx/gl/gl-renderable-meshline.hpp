@@ -136,7 +136,7 @@ public:
         auto viewMat = camera.get_view_matrix();
         
         shader.uniform("u_projMat", projMat);
-        shader.uniform("u_modelViewMat", mul(viewMat, model));
+        shader.uniform("u_modelViewMat", (viewMat * model));
         
         shader.uniform("resolution", screenDims);
         shader.uniform("lineWidth", lineWidth);

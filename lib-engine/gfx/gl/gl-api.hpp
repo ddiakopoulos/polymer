@@ -362,18 +362,18 @@ public:
 
     void uniform(const std::string & name, int scalar) const { glProgramUniform1i(program, get_uniform_location(name), scalar); }
     void uniform(const std::string & name, float scalar) const { glProgramUniform1f(program, get_uniform_location(name), scalar); }
-    void uniform(const std::string & name, const linalg::aliases::float2 & vec) const { glProgramUniform2fv(program, get_uniform_location(name), 1, &vec.x); }
-    void uniform(const std::string & name, const linalg::aliases::float3 & vec) const { glProgramUniform3fv(program, get_uniform_location(name), 1, &vec.x); }
-    void uniform(const std::string & name, const linalg::aliases::float4 & vec) const { glProgramUniform4fv(program, get_uniform_location(name), 1, &vec.x); }
-    void uniform(const std::string & name, const linalg::aliases::float3x3 & mat) const { glProgramUniformMatrix3fv(program, get_uniform_location(name), 1, GL_FALSE, &mat.x.x); }
-    void uniform(const std::string & name, const linalg::aliases::float4x4 & mat) const { glProgramUniformMatrix4fv(program, get_uniform_location(name), 1, GL_FALSE, &mat.x.x); }
+    void uniform(const std::string & name, const linalg::aliases::float2 & vec) const { glProgramUniform2fv(program, get_uniform_location(name), 1, vec.data() ); }
+    void uniform(const std::string & name, const linalg::aliases::float3 & vec) const { glProgramUniform3fv(program, get_uniform_location(name), 1, vec.data() ); }
+    void uniform(const std::string & name, const linalg::aliases::float4 & vec) const { glProgramUniform4fv(program, get_uniform_location(name), 1, vec.data() ); }
+    void uniform(const std::string & name, const linalg::aliases::float3x3 & mat) const { glProgramUniformMatrix3fv(program, get_uniform_location(name), 1, GL_FALSE, mat.data()); }
+    void uniform(const std::string & name, const linalg::aliases::float4x4 & mat) const { glProgramUniformMatrix4fv(program, get_uniform_location(name), 1, GL_FALSE, mat.data()); }
 
     void uniform(const std::string & name, const int elements, const std::vector<int> & scalar) const { glProgramUniform1iv(program, get_uniform_location(name), elements, scalar.data()); }
     void uniform(const std::string & name, const int elements, const std::vector<float> & scalar) const { glProgramUniform1fv(program, get_uniform_location(name), elements, scalar.data()); }
-    void uniform(const std::string & name, const int elements, const std::vector<linalg::aliases::float2> & vec) const { glProgramUniform2fv(program, get_uniform_location(name), elements, &vec[0].x); }
-    void uniform(const std::string & name, const int elements, const std::vector<linalg::aliases::float3> & vec) const { glProgramUniform3fv(program, get_uniform_location(name), elements, &vec[0].x); }
-    void uniform(const std::string & name, const int elements, const std::vector<linalg::aliases::float3x3> & mat) const { glProgramUniformMatrix3fv(program, get_uniform_location(name), elements, GL_FALSE, &mat[0].x.x); }
-    void uniform(const std::string & name, const int elements, const std::vector<linalg::aliases::float4x4> & mat) const { glProgramUniformMatrix4fv(program, get_uniform_location(name), elements, GL_FALSE, &mat[0].x.x); }
+    void uniform(const std::string & name, const int elements, const std::vector<linalg::aliases::float2> & vec) const { glProgramUniform2fv(program, get_uniform_location(name), elements, vec[0].data()); }
+    void uniform(const std::string & name, const int elements, const std::vector<linalg::aliases::float3> & vec) const { glProgramUniform3fv(program, get_uniform_location(name), elements, vec[0].data()); }
+    void uniform(const std::string & name, const int elements, const std::vector<linalg::aliases::float3x3> & mat) const { glProgramUniformMatrix3fv(program, get_uniform_location(name), elements, GL_FALSE, mat[0].data()); }
+    void uniform(const std::string & name, const int elements, const std::vector<linalg::aliases::float4x4> & mat) const { glProgramUniformMatrix4fv(program, get_uniform_location(name), elements, GL_FALSE, mat[0].data()); }
 
     void texture(GLint loc, GLenum target, int unit, GLuint tex) const
     {
