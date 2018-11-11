@@ -1,4 +1,4 @@
-/*
+﻿/*
  * File: math-color.hpp
  */
 
@@ -11,11 +11,13 @@
 
 namespace polymer
 {
+    // https://en.wikipedia.org/wiki/Luminance
     inline float luminance(const float4 & color)
     {
         return 0.2126f * color.x + 0.7152f * color.y + 0.0722f;
     }
 
+    // https://en.wikipedia.org/wiki/YCoCg
     inline float4 rgba_to_ycocg(const float4 & c)
     {
         return { 0.25f * (c.x + 2.0f * c.y + c.z), c.x - c.z, c.y - 0.5f * (c.x + c.z), c.w };
@@ -73,6 +75,9 @@ namespace polymer
         return { l, a, b, c.w };
     }
 
+    // Compute perceptual ΔE using CIE1976
+    // https://en.wikipedia.org/wiki/Color_difference
+    // RGB->XYZ->CIELAB conversion is performed using D65 illuminant
     inline float compute_delta_e(const float4 & a, const float4 & b)
     {
         const auto lab_a = xyz_to_cielab(rgb_to_xyz(a));
