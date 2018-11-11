@@ -11,7 +11,7 @@
 
 namespace polymer
 {
-    inline float to_luminance(const float4 & color)
+    inline float luminance(const float4 & color)
     {
         return 0.2126f * color.x + 0.7152f * color.y + 0.0722f;
     }
@@ -30,22 +30,22 @@ namespace polymer
     {
         float x, y, z, r, g, b;
 
-        r = c.x / 255.0; g = c.y / 255.0; b = c.z / 255.0;
+        r = c.x / 255.0f; g = c.y / 255.0f; b = c.z / 255.0f;
 
-        if (r > 0.04045) r = std::powf(((r + 0.055) / 1.055), 2.4);
-        else r /= 12.92;
+        if (r > 0.04045f) r = std::powf(((r + 0.055f) / 1.055f), 2.4f);
+        else r /= 12.92f;
 
-        if (g > 0.04045) g = std::powf(((g + 0.055) / 1.055), 2.4);
-        else g /= 12.92;
+        if (g > 0.04045f) g = std::powf(((g + 0.055f) / 1.055f), 2.4f);
+        else g /= 12.92f;
 
-        if (b > 0.04045) b = std::powf(((b + 0.055) / 1.055), 2.4);
-        else b /= 12.92;
+        if (b > 0.04045f) b = std::powf(((b + 0.055f) / 1.055f), 2.4f);
+        else b /= 12.92f;
 
         r *= 100.f; g *= 100.f; b *= 100.f;
 
-        x = r * 0.4124 + g * 0.3576 + b * 0.1805;
-        y = r * 0.2126 + g * 0.7152 + b * 0.0722;
-        z = r * 0.0193 + g * 0.1192 + b * 0.9505;
+        x = r * 0.4124f + g * 0.3576f + b * 0.1805f;
+        y = r * 0.2126f + g * 0.7152f + b * 0.0722f;
+        z = r * 0.0193f + g * 0.1192f + b * 0.9505f;
 
         return { x, y, z, c.w };
     }
@@ -53,22 +53,22 @@ namespace polymer
     inline float4 xyz_to_cielab(const float4 & c)
     {
         float x, y, z, l, a, b;
-        const float refX = 95.047, refY = 100.0, refZ = 108.883;
+        const float refX = 95.047f, refY = 100.0f, refZ = 108.883f;
 
         x = c.x / refX; y = c.y / refY; z = c.z / refZ;
 
-        if (x > 0.008856) x = powf(x, 1 / 3.0);
-        else x = (7.787 * x) + (16.0 / 116.0);
+        if (x > 0.008856f) x = std::pow(x, 1.f / 3.0f);
+        else x = (7.787f * x) + (16.0f / 116.0f);
 
-        if (y > 0.008856) y = powf(y, 1 / 3.0);
-        else y = (7.787 * y) + (16.0 / 116.0);
+        if (y > 0.008856f) y = std::pow(y, 1.f / 3.0f);
+        else y = (7.787f * y) + (16.0f / 116.0f);
 
-        if (z > 0.008856) z = powf(z, 1 / 3.0);
-        else z = (7.787 * z) + (16.0 / 116.0);
+        if (z > 0.008856f) z = std::pow(z, 1.f / 3.0f);
+        else z = (7.787f * z) + (16.0f / 116.0f);
 
-        l = 116 * y - 16;
-        a = 500 * (x - y);
-        b = 200 * (y - z);
+        l = 116.f * y - 16.f;
+        a = 500.f * (x - y);
+        b = 200.f * (y - z);
 
         return { l, a, b, c.w };
     }
@@ -98,7 +98,7 @@ namespace polymer
         }
         else
         {
-            if (max == rd)  h = (gd - bd) / d + (gd < bd ? 6 : 0);
+            if (max == rd) h = (gd - bd) / d + (gd < bd ? 6 : 0);
             else if (max == gd) h = (bd - rd) / d + 2;
             else if (max == bd) h = (rd - gd) / d + 4;
             h /= 6;
@@ -189,6 +189,34 @@ namespace polymer
         const float b = hue_to_rgb(m1, m2, h - 1.0f / 3.0f);
 
         return float3(r, g, b);
+    }
+
+    inline color_hsl rgb_to_hsl(const float4 & rgb) 
+    {
+        float r = rgb.r / 255.f;
+        float g = rgb.g / 255.f;
+        float b = rgb.b / 255.f;
+
+        float max = std::max(r, std::max(g, b));
+        float min = std::min(r, std::min(g, b));
+        float delta = max - min;
+
+        float h = 0, s = 0, l = (max + min) / 2.0f;
+
+        if (max == min) 
+        {
+            h = s = 0; // achromatic
+        }
+        else 
+        {
+            if (l < 0.5f) s = delta / (max + min);
+            else s = delta / (2.0f - max - min);
+            if (r == max) h = (g - b) / delta + (g < b ? 6 : 0);
+            else if (g == max) h = (b - r) / delta + 2;
+            else if (b == max) h = (r - g) / delta + 4;
+        }
+
+        return { h / 6 * 360, s * 100, l * 100 };
     }
 
 }
