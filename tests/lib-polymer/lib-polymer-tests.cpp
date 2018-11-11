@@ -276,3 +276,16 @@ TEST_CASE("loading & saving binary files")
 
     REQUIRE_THROWS(read_file_binary("binary-sample-does-not-exist.bin"));
 }
+
+TEST_CASE("workgroup split")
+{
+    std::vector<uint32_t> even_items{ 0, 1, 2, 3, 4, 5, 6, 7 };
+    auto test_even_split = make_workgroup(even_items, 2);
+    REQUIRE(test_even_split[0] == std::vector<uint32_t>{0, 1, 2, 3});
+    REQUIRE(test_even_split[1] == std::vector<uint32_t>{4, 5, 6, 7});
+
+    std::vector<uint32_t> odd_items{ 10, 20, 30, 60, 70 };
+    auto test_odd_split = make_workgroup(odd_items, 2);
+    REQUIRE(test_odd_split[0] == std::vector<uint32_t>{10, 20, 30});
+    REQUIRE(test_odd_split[1] == std::vector<uint32_t>{60, 70});
+}

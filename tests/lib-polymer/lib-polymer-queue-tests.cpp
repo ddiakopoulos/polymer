@@ -103,6 +103,7 @@ TEST_CASE("test mpsc_queue_bounded (size 512)")
     consumer_thread.join();
 }
 
+/*
 TEST_CASE("test mpsc_queue_bounded (timed test, size 64)")
 {
     manual_timer t;
@@ -140,7 +141,6 @@ TEST_CASE("test mpsc_queue_bounded (timed test, size 64)")
                 auto result = mpsc_queue64.pop_front();
                 consumed++;
                 CHECK(result.first); // this is okay to fail sometimes
-                std::cout << "Size: " << mpsc_queue64.size() << std::endl;
             }
 
             if (consumed == 2048)
@@ -155,5 +155,5 @@ TEST_CASE("test mpsc_queue_bounded (timed test, size 64)")
 
     for (auto & t : threads) t.join();
     consumer_thread.join();
-
 }
+*/

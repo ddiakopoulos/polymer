@@ -181,6 +181,25 @@ namespace polymer
         bool is_locked() const { return locked; }
     };
 
+    // Evenly splits a vector of items into n buckets
+    template<typename T>
+    inline std::vector<std::vector<T>> make_workgroup(const std::vector<T> & work, const size_t n)
+    {
+        std::vector<std::vector<T>> result;
+
+        size_t length = work.size() / n;
+        size_t remain = work.size() % n;
+        size_t begin{ 0 }, end{ 0 };
+
+        for (size_t i = 0; i < std::min(n, work.size()); ++i)
+        {
+            end += (remain > 0) ? (length + !!(remain--)) : length;
+            result.push_back(std::vector<T>(work.begin() + begin, work.begin() + end));
+            begin = end;
+        }
+        return result;
+    }
+
     inline std::string codepoint_to_utf8(uint32_t codepoint)
     {
         int n = 0;
