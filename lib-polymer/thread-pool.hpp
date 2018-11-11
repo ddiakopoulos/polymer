@@ -73,6 +73,6 @@ namespace polymer
         }
     };
 
-}
+} // end namespace polymer
 
-#endif
+#endif // end polymer_thread_pool_hpp
