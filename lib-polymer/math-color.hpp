@@ -11,10 +11,23 @@
 
 namespace polymer
 {
+    #define POLYMER_GAMMA 2.2f
+
+    inline float4 premultiply_alpha(const float4 & color) { return { color.xyz() * color.w, color.w }; }
+    inline float4 unpremultiply_alpha(const float4 & color) { return { color.xyz() / color.w, color.w }; }
+
+    inline float srgb_to_linear(const float c) { return (c <= 0.04045f) ? c / 12.92f : std::pow((c + 0.055f) / 1.055f, POLYMER_GAMMA); }
+    inline float linear_to_srgb(const float c) { return (c <= 0.0031308f) ? c * 12.92f : 1.055f * std::pow(c, 1.0f / POLYMER_GAMMA) - 0.055f; }
+    inline float3 srgb_to_linear(const float3 & c) { return { srgb_to_linear(c.x), srgb_to_linear(c.y), srgb_to_linear(c.z) }; }
+    inline float3 linear_to_srgb(const float3 & c) { return { linear_to_srgb(c.x), linear_to_srgb(c.y), linear_to_srgb(c.z) }; }
+    inline float4 srgb_to_linear(const float4 & c) { return { srgb_to_linear(c.x), srgb_to_linear(c.y), srgb_to_linear(c.z), c.w}; }
+    inline float4 linear_to_srgb(const float4 & c) { return { linear_to_srgb(c.x), linear_to_srgb(c.y), linear_to_srgb(c.z), c.w}; }
+
     // https://en.wikipedia.org/wiki/Luminance
-    inline float luminance(const float4 & color)
+    // Only valid for linear RGB space (Rec. 709)
+    inline float luminance(const float4 & linear_rgb_color)
     {
-        return 0.2126f * color.x + 0.7152f * color.y + 0.0722f;
+        return 0.2126f * linear_rgb_color.x + 0.7152f * linear_rgb_color.y + 0.0722f * linear_rgb_color.z;
     }
 
     // https://en.wikipedia.org/wiki/YCoCg
