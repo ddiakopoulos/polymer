@@ -16,6 +16,7 @@
 #include "arcball.hpp"
 #include "any.hpp"
 #include "property.hpp"
+#include "thread-pool.hpp"
 
 #include "tweens.hpp"
 #include "trajectory.hpp"

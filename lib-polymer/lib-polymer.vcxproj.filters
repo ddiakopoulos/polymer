@@ -147,6 +147,9 @@
     <ClInclude Include="linalgx.h">
       <Filter>src\math-core</Filter>
     </ClInclude>
+    <ClInclude Include="thread-pool.hpp">
+      <Filter>src\tools</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="lib-polymer.cpp">

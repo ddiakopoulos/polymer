@@ -289,3 +289,45 @@ TEST_CASE("workgroup split")
     REQUIRE(test_odd_split[0] == std::vector<uint32_t>{10, 20, 30});
     REQUIRE(test_odd_split[1] == std::vector<uint32_t>{60, 70});
 }
+
+TEST_CASE("simple_thread_pool")
+{
+    simple_thread_pool thread_pool;
+    std::vector<std::future<uint32_t>> results;
+
+    for (uint32_t i = 0; i < 8; ++i) 
+    {
+        results.emplace_back(
+            thread_pool.enqueue([i] {
+                return i * i;
+            })
+        );
+    }
+
+    for (uint32_t i = 0; i < 8; ++i)
+    {
+        REQUIRE(results[i].get() == (i * i));
+    }
+}
+
+TEST_CASE("simple_thread_pool with workgroup")
+{
+    std::vector<uint32_t> items{ 0, 1, 2, 3, 4, 5, 6, 7 };
+    auto example_workgroup = make_workgroup(items, 2);
+
+    simple_thread_pool thread_pool;
+    std::vector<std::future<uint32_t>> results;
+
+    for (uint32_t i = 0; i < example_workgroup.size(); ++i)
+    {
+       auto future_result = thread_pool.enqueue([=] {
+            uint32_t sum_result{ 0 };
+            for (auto & value : example_workgroup[i]) sum_result += value;
+            return sum_result;
+       });
+       results.emplace_back(std::move(future_result));
+    }
+
+    REQUIRE(results[0].get() == 6);  // sum [0, 3]
+    REQUIRE(results[1].get() == 22); // sum [4, 7]
+}
