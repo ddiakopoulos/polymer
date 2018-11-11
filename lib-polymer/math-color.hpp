@@ -11,6 +11,75 @@
 
 namespace polymer
 {
+    inline float to_luminance(const float4 & color)
+    {
+        return 0.2126f * color.x + 0.7152f * color.y + 0.0722f;
+    }
+
+    inline float4 rgba_to_ycocg(const float4 & c)
+    {
+        return { 0.25f * (c.x + 2.0f * c.y + c.z), c.x - c.z, c.y - 0.5f * (c.x + c.z), c.w };
+    }
+
+    inline float4 ycocg_to_rgba(const float4 & c)
+    {
+        return { c.x + 0.5f * (c.y - c.z), c.x + 0.5f * c.z, c.x - 0.5f * (c.y + c.z), c.w };
+    }
+
+    inline float4 rgb_to_xyz(const float4 & c)
+    {
+        float x, y, z, r, g, b;
+
+        r = c.x / 255.0; g = c.y / 255.0; b = c.z / 255.0;
+
+        if (r > 0.04045) r = std::powf(((r + 0.055) / 1.055), 2.4);
+        else r /= 12.92;
+
+        if (g > 0.04045) g = std::powf(((g + 0.055) / 1.055), 2.4);
+        else g /= 12.92;
+
+        if (b > 0.04045) b = std::powf(((b + 0.055) / 1.055), 2.4);
+        else b /= 12.92;
+
+        r *= 100.f; g *= 100.f; b *= 100.f;
+
+        x = r * 0.4124 + g * 0.3576 + b * 0.1805;
+        y = r * 0.2126 + g * 0.7152 + b * 0.0722;
+        z = r * 0.0193 + g * 0.1192 + b * 0.9505;
+
+        return { x, y, z, c.w };
+    }
+
+    inline float4 xyz_to_cielab(const float4 & c)
+    {
+        float x, y, z, l, a, b;
+        const float refX = 95.047, refY = 100.0, refZ = 108.883;
+
+        x = c.x / refX; y = c.y / refY; z = c.z / refZ;
+
+        if (x > 0.008856) x = powf(x, 1 / 3.0);
+        else x = (7.787 * x) + (16.0 / 116.0);
+
+        if (y > 0.008856) y = powf(y, 1 / 3.0);
+        else y = (7.787 * y) + (16.0 / 116.0);
+
+        if (z > 0.008856) z = powf(z, 1 / 3.0);
+        else z = (7.787 * z) + (16.0 / 116.0);
+
+        l = 116 * y - 16;
+        a = 500 * (x - y);
+        b = 200 * (y - z);
+
+        return { l, a, b, c.w };
+    }
+
+    inline float compute_delta_e(const float4 & a, const float4 & b)
+    {
+        const auto lab_a = xyz_to_cielab(rgb_to_xyz(a));
+        const auto lab_b = xyz_to_cielab(rgb_to_xyz(b));
+        return std::sqrtf(std::powf(lab_a.x - lab_b.x, 2) + std::powf(lab_a.y - lab_b.y, 2) + std::powf(lab_a.z - lab_b.z, 2));
+    }
+
     inline float3 rgb_to_hsv(const float3 & rgb)
     {
         float rd = rgb.x / 255;
