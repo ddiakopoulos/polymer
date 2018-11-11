@@ -14,5 +14,6 @@
 #include "math-projection.hpp"
 #include "math-ray.hpp"
 #include "math-color.hpp"
+#include "math-sampling.hpp"
 
 #endif // end math_core_hpp
