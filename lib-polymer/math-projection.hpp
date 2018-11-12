@@ -37,6 +37,18 @@ namespace polymer
         return{ { 2 / (r - l),0,0,0 },{ 0,2 / (t - b),0,0 },{ 0,0,-2 / (f - n),0 },{ -(r + l) / (r - l),-(t + b) / (t - b),-(f + n) / (f - n),1 } };
     }
 
+    inline float aperture_fstop_to_radius(const float fstop, const float focal_length_mm, const float scene_scale_meters)
+    {
+        const float aperture_radius = 0.5f * focal_length_mm / fstop; 
+        return aperture_radius * 0.001f / scene_scale_meters;
+    }
+
+    inline float aperture_radius_to_fstop(const float radius, const float focal_length_mm, const float scene_scale_meters)
+    {
+        const float aperture_radius = radius * scene_scale_meters * 1000.f;
+        return 0.5f * focal_length_mm / aperture_radius;
+    }
+
     // Based on http://aras-p.info/texts/obliqueortho.html (http://www.terathon.com/lengyel/Lengyel-Oblique.pdf)
     // This is valid for both perspective and orthographic projections. `clip_plane` is defined in camera space.
     inline void calculate_oblique_matrix(float4x4 & projection, const float4 & clip_plane)
