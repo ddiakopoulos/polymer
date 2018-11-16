@@ -12,28 +12,28 @@ namespace spdlog { class log; };
 
 namespace polymer
 {
-    typedef std::shared_ptr<spdlog::logger> LogT;
+    typedef std::shared_ptr<spdlog::logger> spdlog_t;
 
     struct log : public polymer::singleton<log>
     {
         const size_t qSize = 256;
         std::vector<spdlog::sink_ptr> sinks;
-        LogT assetLog;
-        LogT interactionLog;
+        spdlog_t engine_log;
+        spdlog_t input_log;
 
         log()
         {
             spdlog::set_async_mode(qSize);
             sinks.push_back(std::make_shared<spdlog::sinks::simple_file_sink_mt>("polymer-engine-log.txt", true));
             sinks.push_back(std::make_shared<spdlog::sinks::simple_file_sink_mt>("polymer-input-log.txt", true));
-            assetLog = std::make_shared<spdlog::logger>("polymer-engine-log", sinks[0]);
-            interactionLog = std::make_shared<spdlog::logger>("polymer-input-log", sinks[1]);
+            engine_log = std::make_shared<spdlog::logger>("polymer-engine-log", sinks[0]);
+            input_log = std::make_shared<spdlog::logger>("polymer-input-log", sinks[1]);
         }
 
         void replace_sink(spdlog::sink_ptr sink)
         {
             sinks.push_back(sink);
-            assetLog = std::make_shared<spdlog::logger>("polymer-engine-log", std::begin(sinks), std::end(sinks));
+            engine_log = std::make_shared<spdlog::logger>("polymer-engine-log", std::begin(sinks), std::end(sinks));
         }
 
         friend class polymer::singleton<log>;

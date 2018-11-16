@@ -38,7 +38,7 @@ namespace polymer
         const auto itr = instances.find(name);
         if (itr != instances.end())
         {
-            log::get()->assetLog->info("material list already contains {}", name);
+            log::get()->engine_log->info("material list already contains {}", name);
             return;
         }
         create_handle_for_asset(name.c_str(), std::dynamic_pointer_cast<material_interface>(mat));

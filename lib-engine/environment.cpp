@@ -12,7 +12,7 @@ using namespace polymer;
 
 entity environment::track_entity(entity e) 
 { 
-    log::get()->assetLog->info("[environment] created tracked entity {}", e);
+    log::get()->engine_log->info("[environment] created tracked entity {}", e);
     active_entities.push_back(e); return e;
 }
 
@@ -38,7 +38,7 @@ void environment::copy(entity src, entity dest)
         }
     });
 
-    log::get()->assetLog->info("[environment] copied entity {} to {}", src, dest);
+    log::get()->engine_log->info("[environment] copied entity {} to {}", src, dest);
 
 }
 void environment::destroy(entity e)
@@ -56,7 +56,7 @@ void environment::destroy(entity e)
             });
         }
         active_entities.clear();
-        log::get()->assetLog->info("[environment] destroyed all entities");
+        log::get()->engine_log->info("[environment] destroyed all entities");
     }
     else
     {
@@ -68,7 +68,7 @@ void environment::destroy(entity e)
             if (system_pointer) system_pointer->destroy(e);
         });
 
-        log::get()->assetLog->info("[environment] destroyed single entity {}", e);
+        log::get()->engine_log->info("[environment] destroyed single entity {}", e);
     }
 }
 
@@ -176,7 +176,7 @@ void environment::import_environment(const std::string & import_path, entity_orc
     xform_system->refresh();
 
     t.stop();
-    log::get()->assetLog->info("importing {} took {}ms", import_path, t.get());
+    log::get()->engine_log->info("importing {} took {}ms", import_path, t.get());
 }
 
 void environment::export_environment(const std::string & export_path) 
@@ -221,5 +221,5 @@ void environment::export_environment(const std::string & export_path)
     write_file_text(export_path, environment.dump(4));
 
     t.stop();
-    log::get()->assetLog->info("exporting {} took {}ms", export_path, t.get());
+    log::get()->engine_log->info("exporting {} took {}ms", export_path, t.get());
 }

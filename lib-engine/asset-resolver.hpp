@@ -85,7 +85,7 @@ namespace polymer
                         if (name == filename_no_ext)
                         {
                             create_handle_for_asset(name.c_str(), load_image(path, false));
-                            log::get()->assetLog->info("resolved {} ({})", name, typeid(gl_texture_2d).name());
+                            log::get()->engine_log->info("resolved {} ({})", name, typeid(gl_texture_2d).name());
                         }
                     }
                 }
@@ -110,7 +110,7 @@ namespace polymer
                                 create_handle_for_asset(handle_id.c_str(), make_mesh_from_geometry(mesh));
                                 create_handle_for_asset(handle_id.c_str(), std::move(mesh));
 
-                                log::get()->assetLog->info("resolved {} ({})", handle_id, typeid(gl_mesh).name());
+                                log::get()->engine_log->info("resolved {} ({})", handle_id, typeid(gl_mesh).name());
                             }
                         }
                     }

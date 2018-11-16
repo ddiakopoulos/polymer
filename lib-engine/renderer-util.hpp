@@ -9,7 +9,7 @@
 namespace polymer
 {
 
-    void load_required_renderer_assets(const std::string base_path, gl_shader_monitor & monitor)
+    void load_required_renderer_assets(const std::string & base_path, gl_shader_monitor & monitor)
     {
         try
         {
@@ -60,7 +60,7 @@ namespace polymer
         }
         catch (const std::exception & e)
         {
-            std::cout << "Could not load required renderer asset: " << e.what() << std::endl;
+            log::get()->engine_log->info("load_required_renderer_assets() failed: {}", e.what());
         }
     }
 }

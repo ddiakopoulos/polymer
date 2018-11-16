@@ -78,7 +78,7 @@ namespace polymer
                     a = std::make_shared<polymer_unique_asset<T>>();
                     a->timestamp = system_time_ns();
                     a->assigned = false;
-                    log::get()->assetLog->info("asset type {} ({}) was default constructed", typeid(T).name(), name);
+                    log::get()->engine_log->info("asset type {} ({}) was default constructed", typeid(T).name(), name);
                 }
                 handle = a;
 
@@ -102,7 +102,7 @@ namespace polymer
             handle->assigned = name.empty() || name == "empty" ? false : true;
             handle->timestamp = system_time_ns();
 
-            log::get()->assetLog->info("asset type {} with id {} was assigned", typeid(T).name(), name);
+            log::get()->engine_log->info("asset type {} with id {} was assigned", typeid(T).name(), name);
 
             return handle->asset;
         }
@@ -137,7 +137,7 @@ namespace polymer
             auto iter = table.find(asset_id);
             if (iter != table.end())
             {
-                log::get()->assetLog->info("asset type {} with id {} was destroyed", typeid(T).name(), iter->first);
+                log::get()->engine_log->info("asset type {} with id {} was destroyed", typeid(T).name(), iter->first);
                 table.erase(iter);
                 return true;
             }

@@ -74,7 +74,7 @@ void xr_input_processor::process(const float dt)
                 const xr_input_focus focus = recompute_focus(controller);
                 xr_input_event press = make_event(vr_event_t::press, src, focus, controller);
                 env->event_manager->send(press);
-                log::get()->assetLog->info("xr_input_processor vr_event_t::press for entity {}", focus.result.e);
+                log::get()->engine_log->info("xr_input_processor vr_event_t::press for entity {}", focus.result.e);
 
                 // Swap dominant hand based on last activated trigger button
                 if (b.first == vr::EVRButtonId::k_EButton_SteamVR_Trigger)
@@ -87,7 +87,7 @@ void xr_input_processor::process(const float dt)
                 const xr_input_focus focus = recompute_focus(controller);
                 xr_input_event release = make_event(vr_event_t::release, src, focus, controller);
                 env->event_manager->send(release);
-                log::get()->assetLog->info("xr_input_processor vr_event_t::release for entity {}", focus.result.e);
+                log::get()->engine_log->info("xr_input_processor vr_event_t::release for entity {}", focus.result.e);
             }
         }
     }
@@ -105,7 +105,7 @@ void xr_input_processor::process(const float dt)
             env->event_manager->send(focus_gained);
             // todo - focus_end on old entity
 
-            log::get()->assetLog->info("xr_input_processor vr_event_t::focus_begin for entity {}", active_focus.result.e);
+            log::get()->engine_log->info("xr_input_processor vr_event_t::focus_begin for entity {}", active_focus.result.e);
         }
 
         // Last one valid, new one invalid
@@ -114,7 +114,7 @@ void xr_input_processor::process(const float dt)
             xr_input_event focus_lost = make_event(vr_event_t::focus_end, src, last_focus, controller);
             env->event_manager->send(focus_lost);
 
-            log::get()->assetLog->info("xr_input_processor vr_event_t::focus_end for entity {}", last_focus.result.e);
+            log::get()->engine_log->info("xr_input_processor vr_event_t::focus_end for entity {}", last_focus.result.e);
         }
 
         last_focus = active_focus;

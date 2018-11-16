@@ -120,10 +120,10 @@ void material_library::remove_material(const std::string & name)
     {
         instances.erase(itr);
         material_handle::destroy(name);
-        log::get()->assetLog->info("removing {} from the material list", name);
+        log::get()->engine_log->info("removing {} from the material list", name);
     }
     else
     {
-        log::get()->assetLog->info("{} was not found in the material list", name);
+        log::get()->engine_log->info("{} was not found in the material list", name);
     }
 }
