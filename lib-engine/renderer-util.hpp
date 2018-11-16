@@ -6,7 +6,7 @@
 #include "shader-library.hpp"
 #include "logging.hpp"
 
-#include "third_party/tinyexr/tinyexr.h"
+#include "tinyexr/tinyexr.h"
 
 namespace polymer
 {

@@ -623,13 +623,6 @@ namespace polymer
         REQUIRE(v.value() == 40u);
     }
 
-    TEST_CASE("polymer::property construct")
-    {
-        polymer::property<float> step_size;
-        auto edit_action = make_action<action>(step_size, step_size.value());
-        REQUIRE(edit_action != nullptr);
-    }
-
     TEST_CASE("polymer::property operators")
     {
         polymer::property<float> property_a(0.5f);
