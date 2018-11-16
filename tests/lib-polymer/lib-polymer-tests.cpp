@@ -331,3 +331,18 @@ TEST_CASE("simple_thread_pool with workgroup")
     REQUIRE(results[0].get() == 6);  // sum [0, 3]
     REQUIRE(results[1].get() == 22); // sum [4, 7]
 }
+
+TEST_CASE("integral and floating point radix sort")
+{
+    uniform_random_gen random_generator;
+
+    std::vector<uint32_t> int_list;
+    for (int i = 0; i < 1024; ++i) int_list.push_back(random_generator.random_int(4096));
+    
+    std::vector<float> float_list;
+    for (int i = 0; i < 1024; ++i) float_list.push_back(random_generator.random_float());
+
+    radix_sort radix_sorter;
+    radix_sorter.sort(int_list.data(), int_list.size());
+    radix_sorter.sort(float_list.data(), float_list.size());
+}

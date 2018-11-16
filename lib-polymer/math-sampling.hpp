@@ -12,6 +12,8 @@
 namespace polymer
 {
 
+    // Bit Reversal
+    // http://mathworld.wolfram.com/vanderCorputSequence.html
     inline float vdc_radical_inverse(uint32_t i)
     {
         i = (i & 0x55555555) << 1 | (i & 0xAAAAAAAA) >> 1;
@@ -22,21 +24,26 @@ namespace polymer
         return static_cast<float>(i) * 2.3283064365386963e-10f;
     }
 
+    inline float2 sample_hammersley_2d(const uint32_t i, const uint32_t n) 
+    {
+        return float2(i * (1.0f / n), vdc_radical_inverse(i));
+    }
+
     // Output coordinate is a sample in the +Z upper hemisphere
     inline float3 sample_hammersley_uniform(const uint32_t i, const uint32_t n)
     {
         float2 coord(static_cast<float>(i) / (static_cast<float>(n), vdc_radical_inverse(i)));
-        const float phi = coord.y * 2.0f * POLYMER_PI;
+        const float phi = coord.y * 2.0f * static_cast<float>(POLYMER_PI);
         const float t = 1.0f - coord.x;
-        const float s = sqrt(1.0f - t * t);
-        return float3(s * cos(phi), s * sin(phi), t);
+        const float s = std::sqrt(1.0f - t * t);
+        return float3(s * std::cos(phi), s * std::sin(phi), t);
     }
 
     // Output coordinate is a sample in the +Z upper hemisphere
     inline float3 sample_hammersley_cosine(const uint32_t i, const uint32_t n)
     {
         float2 coord(static_cast<float>(i) / (static_cast<float>(n), vdc_radical_inverse(i)));
-        const float phi = coord.y * 2.0f * POLYMER_PI;
+        const float phi = coord.y * 2.0f * static_cast<float>(POLYMER_PI);
         const float t = std::sqrt(1.0f - coord.x);
         const float s = std::sqrt(1.0f - t * t);
         return float3(s * std::cos(phi), s * std::sin(phi), t);

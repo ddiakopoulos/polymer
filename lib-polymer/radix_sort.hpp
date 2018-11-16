@@ -76,13 +76,13 @@ namespace polymer
 
     public:
 
-        template<typename T = typename std::enable_if<std::is_integral<T>::value, T>::type>
-        void sort(T * data, size_t size)
+        template <typename T, typename = std::enable_if <std::is_integral<T>::value>::type>
+        void sort(T * data, const size_t size)
         {
             radix_impl<T>(data, size);
         }
 
-        void sort(float * data, size_t size)
+        void sort(float * data, const size_t size)
         {
             for (size_t i = 0; i < size; i++) float_flip((uint32_t &)data[i]);
             radix_impl<uint32_t>((uint32_t *)data, size);
