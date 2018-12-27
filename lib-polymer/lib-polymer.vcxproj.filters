@@ -153,6 +153,9 @@
     <ClInclude Include="math-color.hpp">
       <Filter>src\math-core</Filter>
     </ClInclude>
+    <ClInclude Include="math-sampling.hpp">
+      <Filter>src\math-core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="lib-polymer.cpp">
