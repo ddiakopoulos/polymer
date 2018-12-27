@@ -28,7 +28,7 @@ namespace polymer
         image_buffer<uint8_t, 3> rawBytes;
     };
 
-    class OpenVR_TrackedCamera
+    class openvr_tracked_camera
     {
         vr::IVRSystem * hmd{ nullptr };
         vr::IVRTrackedCamera * trackedCamera{ nullptr };
