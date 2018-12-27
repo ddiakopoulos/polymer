@@ -43,7 +43,7 @@ std::unordered_map<std::string, runtime_mesh> polymer::import_model(const std::s
 
 std::unordered_map<std::string, runtime_mesh> polymer::import_fbx_model(const std::string & path)
 {
-#if (USING_FBX == 1)
+#ifdef SYSTEM_HAS_FBX_SDK
     
     std::unordered_map<std::string, runtime_mesh> results;
 

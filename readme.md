@@ -35,7 +35,7 @@ Polymer requires a recent version of Windows 10 alongside a graphics driver capa
 
 Windows SDK is required to build the project. You can download it [here](https://developer.microsoft.com/en-us/windows/downloads/windows-10-sdk)
 
-Use of the FBX 2017 SDK is gated by an environment variable (`SYSTEM_HAS_FBX_SDK`); the extracted FBX SDK itself must be located in `polymer\lib-model-io\third-party\fbxsdk`. You can download the FBX SDK from [here](https://www.autodesk.com/developer-network/platform-technologies/fbx-sdk-2019-0)
+Use of the FBX 2017 SDK is gated by an environment variable (`SYSTEM_HAS_FBX_SDK` which should be set to evaluate to an identical token, `SYSTEM_HAS_FBX_SDK`); the extracted FBX SDK itself must be located in `polymer\lib-model-io\third-party\fbxsdk`. You can download the FBX SDK from [here](https://www.autodesk.com/developer-network/platform-technologies/fbx-sdk-2019-0)
 
 ### Building the projects
 

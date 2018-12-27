@@ -6,12 +6,6 @@
 #include <memory>
 
 #ifdef SYSTEM_HAS_FBX_SDK
-    #define USING_FBX 1
-#else
-    #define USING_FBX 0
-#endif
-
-#if (USING_FBX == 1)
 
 #ifndef fbx_importer_hpp
 #define fbx_importer_hpp

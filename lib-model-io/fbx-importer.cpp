@@ -2,7 +2,7 @@
 
 using namespace polymer;
 
-#if (USING_FBX == 1)
+#ifdef SYSTEM_HAS_FBX_SDK
 
 #include <fbxsdk.h>
 #include <assert.h>
@@ -215,4 +215,4 @@ fbx_container polymer::import_fbx_file(const std::string & path)
     return container;
 }
 
-#endif // end USING_FBX
+#endif // end SYSTEM_HAS_FBX_SDK
