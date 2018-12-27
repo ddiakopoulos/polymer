@@ -51,6 +51,7 @@ namespace polymer
 
     // https://www.sebastiansylvan.com/post/importancesampling/
     // https://en.wikipedia.org/wiki/Stochastic_universal_sampling
+    // Discovered via https://twitter.com/guycalledfrank/status/1039273907239481351
     template<typename T>
     std::vector<T> resample(const std::vector<T> & input, const std::vector<T> & weights, const size_t out_n)
     {
