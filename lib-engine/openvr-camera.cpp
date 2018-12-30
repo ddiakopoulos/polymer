@@ -10,7 +10,7 @@ using namespace polymer;
 #undef near
 #undef far
 
-bool OpenVR_TrackedCamera::initialize(vr::IVRSystem * vr_system)
+bool openvr_tracked_camera::initialize(vr::IVRSystem * vr_system)
 {
     hmd = vr_system;
 
@@ -59,7 +59,7 @@ bool OpenVR_TrackedCamera::initialize(vr::IVRSystem * vr_system)
     return true;
 }
 
-bool OpenVR_TrackedCamera::start()
+bool openvr_tracked_camera::start()
 {
     uint32_t frameWidth = 0;
     uint32_t frameHeight = 0;
@@ -93,13 +93,13 @@ bool OpenVR_TrackedCamera::start()
     return true;
 }
 
-void OpenVR_TrackedCamera::stop()
+void openvr_tracked_camera::stop()
 {
     trackedCamera->ReleaseVideoStreamingService(trackedCameraHandle);
     trackedCameraHandle = INVALID_TRACKED_CAMERA_HANDLE;
 }
 
-void OpenVR_TrackedCamera::capture()
+void openvr_tracked_camera::capture()
 {
     if (!trackedCamera || !trackedCameraHandle) return;
 

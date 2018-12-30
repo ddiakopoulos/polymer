@@ -67,8 +67,8 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
         scene.render_system = orchestrator->create_system<render_system>(settings, orchestrator.get());
 
         // Setup hidden area mesh
-        scene.render_system->get_renderer()->set_stencil_mask(0, hmd->get_stencil_mask(vr::Hmd_Eye::Eye_Left));
-        scene.render_system->get_renderer()->set_stencil_mask(1, hmd->get_stencil_mask(vr::Hmd_Eye::Eye_Right));
+        scene.render_system->get_renderer()->set_stencil_mask(0, hmd->get_stencil_mask(vr_eye::left_eye));
+        scene.render_system->get_renderer()->set_stencil_mask(1, hmd->get_stencil_mask(vr_eye::right_eye));
 
         // Only need to set the skybox on the |render_payload| once (unless we clear the payload)
         payload.skybox = scene.render_system->get_skybox();
@@ -132,7 +132,7 @@ void sample_vr_app::on_update(const app_update_event & e)
     vr_imgui->process(e.timestep_ms);
 
     // ImGui surface/billboard is attached to left controller
-    auto left_controller_xform = hmd->get_controller(vr::TrackedControllerRole_LeftHand).t;
+    auto left_controller_xform = hmd->get_controller(vr_controller_role::left_hand).t;
     left_controller_xform = left_controller_xform * transform(quatf(0, 0, 0, 1), float3(0, 0, -.25f));
     left_controller_xform = left_controller_xform * transform(make_rotation_quat_axis_angle({ 1, 0, 0 }, (float) POLYMER_PI / 2.f), float3());
     left_controller_xform = left_controller_xform * transform(make_rotation_quat_axis_angle({ 0, 1, 0 }, (float) -POLYMER_PI), float3());
@@ -152,11 +152,11 @@ void sample_vr_app::on_draw()
 
     // Collect eye data for the render payload, always remembering to clear the payload first
     payload.views.clear();
-    for (auto eye : { vr::Hmd_Eye::Eye_Left, vr::Hmd_Eye::Eye_Right })
+    for (auto eye : { vr_eye::left_eye, vr_eye::right_eye })
     {
         const auto eye_pose = hmd->get_eye_pose(eye);
-        const auto eye_projection = hmd->get_proj_matrix(eye, 0.075f, 64.f);
-        payload.views.emplace_back(view_data(eye, eye_pose, eye_projection));
+        const auto eye_projection = hmd->get_proj_matrix(eye, 0.075f, 128.f);
+        payload.views.emplace_back(view_data(static_cast<uint32_t>(eye), eye_pose, eye_projection));
     }
 
     glDisable(GL_CULL_FACE);

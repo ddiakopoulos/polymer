@@ -41,10 +41,12 @@ openvr_hmd::~openvr_hmd()
     if (hmd) vr::VR_Shutdown();
 }
 
-openvr_controller openvr_hmd::get_controller(const vr::ETrackedControllerRole controller)
+vr_controller openvr_hmd::get_controller(vr_controller_role controller)
 {
-    if (controller == vr::TrackedControllerRole_LeftHand) return controllers[0];
-    else if (controller == vr::TrackedControllerRole_RightHand) return controllers[1];
+    auto openvr_controller = static_cast<vr::ETrackedControllerRole>(controller);
+
+    if (openvr_controller == vr::TrackedControllerRole_LeftHand) return controllers[0];
+    else if (openvr_controller == vr::TrackedControllerRole_RightHand) return controllers[1];
     else throw std::invalid_argument("invalid controller enum");
     return {};
 }
@@ -54,11 +56,13 @@ void openvr_hmd::controller_render_data_callback(std::function<void(cached_contr
     async_data_cb = callback;
 }
 
-gl_mesh openvr_hmd::get_stencil_mask(vr::Hmd_Eye eye)
+gl_mesh openvr_hmd::get_stencil_mask(vr_eye eye)
 {
+    auto openvr_eye = static_cast<vr::Hmd_Eye>(eye);
+
     gl_mesh mesh;
 
-    auto ham =  hmd->GetHiddenAreaMesh(eye, vr::k_eHiddenAreaMesh_Standard); // k_eHiddenAreaMesh_Standard k_eHiddenAreaMesh_Inverse
+    auto ham =  hmd->GetHiddenAreaMesh(openvr_eye, vr::k_eHiddenAreaMesh_Standard); // k_eHiddenAreaMesh_Standard k_eHiddenAreaMesh_Inverse
     assert(ham.unTriangleCount > 0);
     std::vector<float2> hidden_vertices;
 
@@ -94,9 +98,9 @@ void openvr_hmd::set_hmd_pose(const transform & p)
     hmdPose = p; 
 }
 
-transform openvr_hmd::get_eye_pose(vr::Hmd_Eye eye) 
+transform openvr_hmd::get_eye_pose(vr_eye eye)
 { 
-    return get_hmd_pose() * make_pose(hmd->GetEyeToHeadTransform(eye)); 
+    return get_hmd_pose() * make_pose(hmd->GetEyeToHeadTransform(static_cast<vr::Hmd_Eye>(eye)));
 }
 
 uint2 openvr_hmd::get_recommended_render_target_size()
@@ -104,12 +108,17 @@ uint2 openvr_hmd::get_recommended_render_target_size()
     return renderTargetSize;
 }
 
-float4x4  openvr_hmd::get_proj_matrix(vr::Hmd_Eye eye, float near_clip, float far_clip)
+float4x4 openvr_hmd::get_proj_matrix(vr_eye eye, float near_clip, float far_clip)
 {
-    return transpose(reinterpret_cast<const float4x4 &>(hmd->GetProjectionMatrix(eye, near_clip, far_clip)));
+    return transpose(reinterpret_cast<const float4x4 &>(hmd->GetProjectionMatrix(static_cast<vr::Hmd_Eye>(eye), near_clip, far_clip)));
 }
 
-void openvr_hmd::get_optical_properties(vr::Hmd_Eye eye, float & aspectRatio, float & vfov)
+vr_input_vendor openvr_hmd::get_input_vendor() 
+{ 
+    return vr_input_vendor::vive_wand; 
+}
+
+void openvr_hmd::get_optical_properties(vr_eye eye, float & aspectRatio, float & vfov)
 {
     float l_left = 0.0f, l_right = 0.0f, l_top = 0.0f, l_bottom = 0.0f;
     hmd->GetProjectionRaw(vr::Hmd_Eye::Eye_Left, &l_left, &l_right, &l_top, &l_bottom);
@@ -220,13 +229,13 @@ void openvr_hmd::update()
             {
                 if (hmd->GetControllerState(i, &controllerState, sizeof(controllerState)))
                 {
-                    update_button_state(controllers[0].buttons[vr::k_EButton_SteamVR_Trigger], 
+                    update_button_state(controllers[0].buttons[get_button_id_for_vendor(static_cast<uint32_t>(vr::k_EButton_SteamVR_Trigger), get_input_vendor())],
                         !!(controllerState.ulButtonPressed & vr::ButtonMaskFromId(vr::k_EButton_SteamVR_Trigger)));
 
-                    update_button_state(controllers[0].buttons[vr::k_EButton_SteamVR_Touchpad], 
+                    update_button_state(controllers[0].buttons[get_button_id_for_vendor(static_cast<uint32_t>(vr::k_EButton_SteamVR_Touchpad), get_input_vendor())],
                         !!(controllerState.ulButtonPressed & vr::ButtonMaskFromId(vr::k_EButton_SteamVR_Touchpad)));
 
-                    controllers[0].axis_values = { controllerState.rAxis[vr::k_eControllerAxis_TrackPad].x, controllerState.rAxis[vr::k_eControllerAxis_TrackPad].y };
+                    controllers[0].xy_values = { controllerState.rAxis[vr::k_eControllerAxis_TrackPad].x, controllerState.rAxis[vr::k_eControllerAxis_TrackPad].y };
                     controllers[0].t = (worldPose * make_pose(poses[i].mDeviceToAbsoluteTracking));
                 }
                 break;
@@ -235,13 +244,13 @@ void openvr_hmd::update()
             {
                 if (hmd->GetControllerState(i, &controllerState, sizeof(controllerState)))
                 {
-                    update_button_state(controllers[1].buttons[vr::k_EButton_SteamVR_Trigger],
+                    update_button_state(controllers[1].buttons[get_button_id_for_vendor(static_cast<uint32_t>(vr::k_EButton_SteamVR_Trigger), get_input_vendor())],
                         !!(controllerState.ulButtonPressed & vr::ButtonMaskFromId(vr::k_EButton_SteamVR_Trigger)));
 
-                    update_button_state(controllers[1].buttons[vr::k_EButton_SteamVR_Touchpad],
+                    update_button_state(controllers[1].buttons[get_button_id_for_vendor(static_cast<uint32_t>(vr::k_EButton_SteamVR_Touchpad), get_input_vendor())],
                         !!(controllerState.ulButtonPressed & vr::ButtonMaskFromId(vr::k_EButton_SteamVR_Touchpad)));
 
-                    controllers[1].axis_values = { controllerState.rAxis[vr::k_eControllerAxis_TrackPad].x, controllerState.rAxis[vr::k_eControllerAxis_TrackPad].y };
+                    controllers[1].xy_values = { controllerState.rAxis[vr::k_eControllerAxis_TrackPad].x, controllerState.rAxis[vr::k_eControllerAxis_TrackPad].y };
                     controllers[1].t = (worldPose * make_pose(poses[i].mDeviceToAbsoluteTracking));
                 }
                 break;

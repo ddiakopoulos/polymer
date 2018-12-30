@@ -45,6 +45,7 @@
       <Filter>third-party\tinygizmo</Filter>
     </ClCompile>
     <ClCompile Include="xr-interaction.cpp" />
+    <ClCompile Include="hmd-base.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="gfx\gl\gl-api.hpp">
@@ -182,6 +183,7 @@
     </ClInclude>
     <ClInclude Include="xr-interaction.hpp" />
     <ClInclude Include="ui-actions.hpp" />
+    <ClInclude Include="hmd-base.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="gfx">

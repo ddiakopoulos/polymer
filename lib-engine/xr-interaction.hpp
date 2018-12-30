@@ -7,7 +7,7 @@
 #include "gl-gizmo.hpp"
 #include "ecs/core-events.hpp"
 #include "material.hpp"
-#include "openvr-hmd.hpp"
+#include "hmd-base.hpp"
 #include "renderer-pbr.hpp"
 
 #include "environment.hpp"
@@ -23,7 +23,7 @@ namespace xr {
 
     // todo - enable/disable
 
-    enum class vr_event_t : uint32_t
+    enum class xr_button_event : uint32_t
     {
         focus_begin, // (dominant hand) when a hand enters the focus region of an entity
         focus_end,   // (dominant hand) leaving the focus region
@@ -32,6 +32,7 @@ namespace xr {
         cancel       // (either hand) unimplemented
     };
 
+    // todo - this is partially redundant with vr_controller_role
     enum class vr_input_source_t : uint32_t
     {
         left_controller,
@@ -45,11 +46,11 @@ namespace xr {
 
     struct xr_input_event
     {
-        vr_event_t type;
-        vr_input_source_t source;
+        xr_button_event type;
+        vr_input_source_t source; // todo - refactor for xr namespace
         xr_input_focus focus;
         uint64_t timestamp;
-        openvr_controller controller;
+        vr_controller controller;
     };
 
     struct xr_teleport_event 
@@ -58,7 +59,7 @@ namespace xr {
         uint64_t timestamp; 
     };
 
-    inline xr_input_event make_event(vr_event_t t, vr_input_source_t s, const xr_input_focus & f, const openvr_controller & c)
+    inline xr_input_event make_event(xr_button_event t, vr_input_source_t s, const xr_input_focus & f, const vr_controller & c)
     {
         return { t, s, f, system_time_ns(), c };
     }
@@ -74,23 +75,23 @@ namespace xr {
     /// This class is also an abstraction over all input handling in `openvr_hmd` and should
     /// be used instead of an `openvr_hmd` instance directly.
 
-    // todo - triple buffer xr_input_event state
+    // todo - double buffer xr_input_event state for safety
     class xr_input_processor
     {
         environment * env{ nullptr };
-        openvr_hmd * hmd{ nullptr };
+        hmd_base * hmd{ nullptr };
 
-        vr::ETrackedControllerRole dominant_hand{ vr::TrackedControllerRole_RightHand };
+        vr_controller_role dominant_hand{ vr_controller_role::right_hand };
 
         xr_input_focus last_focus;
-        xr_input_focus recompute_focus(const openvr_controller & controller);
+        xr_input_focus recompute_focus(const vr_controller & controller);
 
     public:
 
-        xr_input_processor(entity_orchestrator * orch, environment * env, openvr_hmd * hmd);
+        xr_input_processor(entity_orchestrator * orch, environment * env, hmd_base * hmd);
         ~xr_input_processor();
-        vr::ETrackedControllerRole get_dominant_hand() const;
-        openvr_controller get_controller(const vr::ETrackedControllerRole hand);
+        vr_controller_role get_dominant_hand() const;
+        vr_controller get_controller(const vr_controller_role hand);
         xr_input_focus get_focus() const;
         void process(const float dt);
     };
@@ -115,7 +116,7 @@ namespace xr {
     class xr_controller_system
     {
         environment * env{ nullptr };
-        openvr_hmd * hmd{ nullptr };
+        hmd_base * hmd{ nullptr };
         xr_input_processor * processor{ nullptr };
 
         std::shared_ptr<polymer_fx_material> laser_pointer_material;
@@ -139,7 +140,7 @@ namespace xr {
 
     public:
 
-        xr_controller_system(entity_orchestrator * orch, environment * env, openvr_hmd * hmd, xr_input_processor * processor);
+        xr_controller_system(entity_orchestrator * orch, environment * env, hmd_base * hmd, xr_input_processor * processor);
         ~xr_controller_system();
         std::vector<entity> get_renderables() const;
         void process(const float dt);
@@ -152,7 +153,7 @@ namespace xr {
     class xr_imgui_system : public gui::imgui_surface
     {
         environment * env{ nullptr };
-        openvr_hmd * hmd{ nullptr };
+        hmd_base * hmd{ nullptr };
         xr_input_processor * processor{ nullptr };
 
         entity imgui_billboard;
@@ -164,7 +165,7 @@ namespace xr {
 
     public:
 
-        xr_imgui_system(entity_orchestrator * orch, environment * env, openvr_hmd * hmd, xr_input_processor * processor, const uint2 size, GLFWwindow * window);
+        xr_imgui_system(entity_orchestrator * orch, environment * env, hmd_base * hmd, xr_input_processor * processor, const uint2 size, GLFWwindow * window);
         ~xr_imgui_system();
         void set_surface_transform(const transform & t);
         std::vector<entity> get_renderables() const;
@@ -178,7 +179,7 @@ namespace xr {
     class xr_gizmo_system
     {
         environment * env{ nullptr };
-        openvr_hmd * hmd{ nullptr };
+        hmd_base * hmd{ nullptr };
         xr_input_processor * processor{ nullptr };
 
         entity gizmo_entity;
@@ -194,7 +195,7 @@ namespace xr {
 
     public:
 
-        xr_gizmo_system(entity_orchestrator * orch, environment * env, openvr_hmd * hmd, xr_input_processor * processor);
+        xr_gizmo_system(entity_orchestrator * orch, environment * env, hmd_base * hmd, xr_input_processor * processor);
         ~xr_gizmo_system();
         std::vector<entity> get_renderables() const;
         void process(const float dt);

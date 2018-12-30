@@ -4,6 +4,7 @@
 #define polymer_openvr_camera_hpp
 
 #include "openvr/include/openvr.h"
+
 #include "math-core.hpp"
 #include "geometry.hpp"
 #include "gl-api.hpp"
