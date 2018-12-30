@@ -52,3 +52,5 @@ loc.exe
 *.material
 *-log.txt
 *.bin
+
+third_party/ovr
