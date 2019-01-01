@@ -71,4 +71,6 @@ struct scene_editor_app final : public polymer_app
     void on_update(const app_update_event & e) override;
     void on_draw() override;
     void on_drop(std::vector<std::string> filepaths) override;
+
+    void import_scene(const std::string & path);
 };

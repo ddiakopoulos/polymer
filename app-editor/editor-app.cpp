@@ -98,7 +98,15 @@ void scene_editor_app::on_drop(std::vector<std::string> filepaths)
 {
     for (auto path : filepaths)
     {
-        import_asset_runtime(path, scene, orchestrator);
+        const std::string ext = get_extension(path);
+        if (ext == "json")
+        {
+            import_scene(path);
+        }
+        else
+        {
+            import_asset_runtime(path, scene, orchestrator);
+        }
     }
 }
 
@@ -196,6 +204,23 @@ void scene_editor_app::on_input(const app_input_event & event)
             }
 
         }
+    }
+}
+
+void scene_editor_app::import_scene(const std::string & path)
+{
+    if (!path.empty())
+    {
+        scene.destroy(kAllEntities);
+        gizmo->clear();
+        the_render_payload.render_set.clear();
+        scene.import_environment(path, orchestrator);
+        resolver->resolve("../assets/", &scene, scene.mat_library.get());
+        glfwSetWindowTitle(window, path.c_str());
+    }
+    else
+    {
+        throw std::runtime_error("scene path was empty...");
     }
 }
 
@@ -424,15 +449,7 @@ void scene_editor_app::on_draw()
         {
             const auto import_path = windows_file_dialog("polymer scene", "json", true);
             set_working_directory(working_dir_on_launch); // required because the dialog resets the cwd
-            if (!import_path.empty())
-            {
-                scene.destroy(kAllEntities);
-                gizmo->clear();
-                the_render_payload.render_set.clear();
-                scene.import_environment(import_path, orchestrator);
-                resolver->resolve("../assets/", &scene, scene.mat_library.get());
-                glfwSetWindowTitle(window, import_path.c_str());
-            }
+            import_scene(import_path);
         }
 
         if (menu.item("Save Scene", GLFW_MOD_CONTROL, GLFW_KEY_S, mod_enabled))
