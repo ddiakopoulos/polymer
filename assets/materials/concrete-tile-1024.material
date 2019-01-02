@@ -1,0 +1,34 @@
+{
+    "@polymer_pbr_standard": {
+        "albedo_handle": "concrete_tile_basecolor",
+        "ambient_strength": 1.0,
+        "base_albedo": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+        },
+        "base_emissive": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+        },
+        "emissive_handle": "",
+        "emissive_strength": 0.0,
+        "height_handle": "",
+        "metallic_factor": 0.0,
+        "metallic_handle": "",
+        "normal_handle": "",
+        "occlusion_handle": "",
+        "occulusion_strength": 1.0,
+        "opacity": 1.0,
+        "program_handle": "pbr-forward-lighting",
+        "roughness_factor": 1.0,
+        "roughness_handle": "concrete_tile_roughness",
+        "shadow_opacity": 1.0,
+        "specularLevel": 0.0325700007379055,
+        "texcoord_scale": {
+            "x": 0.07500000298023224,
+            "y": 0.07500000298023224
+        }
+    }
+}
