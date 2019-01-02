@@ -79,8 +79,8 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
     the_render_payload.sunlight = scene.render_system->get_implicit_sunlight();
 
     // @fixme - to be resolved rather than hard-coded
-    auto radianceBinary = read_file_binary("../assets/textures/envmaps/wells_radiance.dds");
-    auto irradianceBinary = read_file_binary("../assets/textures/envmaps/wells_irradiance.dds");
+    auto radianceBinary = read_file_binary("../assets/textures/envmaps/studio_radiance.dds");
+    auto irradianceBinary = read_file_binary("../assets/textures/envmaps/studio_irradiance.dds");
     gli::texture_cube radianceHandle(gli::load_dds((char *)radianceBinary.data(), radianceBinary.size()));
     gli::texture_cube irradianceHandle(gli::load_dds((char *)irradianceBinary.data(), irradianceBinary.size()));
     create_handle_for_asset("wells-radiance-cubemap", load_cubemap(radianceHandle));

@@ -175,7 +175,15 @@ namespace polymer
     {
         if (auto ptr = system->get_mesh_component(e)) f("mesh component", *ptr);
         if (auto ptr = system->get_material_component(e)) f("material component", *ptr);
-        if (auto ptr = system->get_point_light_component(e)) f("point light component", *ptr);
+        if (auto ptr = system->get_point_light_component(e))
+        {
+            // hack hack
+            transform_system * transform_sys = dynamic_cast<transform_system *>(system->orchestrator->get_system(get_typeid<transform_system>()));
+            auto pt_light_xform = transform_sys->get_world_transform(e);
+            ptr->data.position = pt_light_xform->world_pose.position;
+
+            f("point light component", *ptr);
+        }
         if (auto ptr = system->get_directional_light_component(e)) f("directional light component", *ptr);
     }
 
