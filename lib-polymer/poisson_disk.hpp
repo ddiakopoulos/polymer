@@ -157,7 +157,7 @@ namespace poisson
             while (processingList.size())
             {
                 // pick a random point in the processing list
-                int randPoint = r.random_int(int(processingList.size()) - 1);
+                int randPoint = r.random_uint(int(processingList.size()) - 1);
                 float2 center = processingList[randPoint];
                 
                 // remove it
@@ -220,7 +220,7 @@ namespace poisson
             
             while (processingList.size())
             {
-                const uint32_t randPoint = r.random_int(int(processingList.size()) - 1);
+                const uint32_t randPoint = r.random_uint(int(processingList.size()) - 1);
                 const float3 center = processingList[randPoint];
                 
                 processingList.erase(processingList.begin() + randPoint);

@@ -1,6 +1,7 @@
 ﻿Original code licensed is released under the BSD 3-clause license (See LICENSE for more details). 
 
-This project *strictly* avoids the inclusion of *any* code under the the following licenses: GPL, LGPL, MPL, AGPL, CC-*-NC, and various restrictive academic variants.
+This project *strictly* avoids the inclusion of *any* code under the the following 
+licenses: GPL, LGPL, MPL, AGPL, CC-*-NC, and various restrictive academic variants.
 
 Other third party source-code components used in this repository are documented as follows:
 
@@ -40,7 +41,7 @@ https://github.com/nlohmann/json (MIT)
 Copyright (C) Niels Lohmann, 2013-2018
 
 https://github.com/syoyo/tinyexr (BSD 3-Clause)
-Copyright (C) Soyoyo Fujita
+Copyright (C) Syoyo Fujita
 
 https://github.com/bulletphysics/bullet3 (zlib)
 Copyright (C) Erwin Coumans and Bullet contributors 

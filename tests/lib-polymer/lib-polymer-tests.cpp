@@ -201,7 +201,7 @@ TEST_CASE("unifom random number generation")
     // Generate an unsigned integer between 0 and 1024
     for (int i = 0; i < 32768; ++i)
     {
-        const uint32_t rnd_int = gen.random_int(1024);
+        const uint32_t rnd_int = gen.random_uint(1024);
         REQUIRE(rnd_int >= 0);
         REQUIRE(rnd_int <= 1024);
     }
@@ -337,7 +337,7 @@ TEST_CASE("integral and floating point radix sort")
     uniform_random_gen random_generator;
 
     std::vector<uint32_t> int_list;
-    for (int i = 0; i < 1024; ++i) int_list.push_back(random_generator.random_int(4096));
+    for (int i = 0; i < 1024; ++i) int_list.push_back(random_generator.random_uint(4096));
     
     std::vector<float> float_list;
     for (int i = 0; i < 1024; ++i) float_list.push_back(random_generator.random_float());
