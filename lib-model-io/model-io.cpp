@@ -44,6 +44,12 @@ std::unordered_map<std::string, runtime_mesh> polymer::import_model(const std::s
         throw std::runtime_error("cannot import model format");
     }
 
+    // Compute tangents and bitangents...
+    for (auto & m : models)
+    {
+        compute_tangents(m.second);
+    }
+
     return models;
 }
 
