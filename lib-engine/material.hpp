@@ -99,7 +99,7 @@ namespace polymer
         virtual uint32_t id() override final;
         virtual void update_uniforms() override final;
 
-        int2 texcoordScale{ 1, 1 };
+        float2 texcoordScale{ 1.f, 1.f };
 
         texture_handle diffuse;
         texture_handle normal;
@@ -117,7 +117,7 @@ namespace polymer
         f("specular_color", o.specularColor);
         f("specular_shininess", o.specularShininess);
         f("specular_strength", o.specularStrength);
-        f("texcoord_scale", o.texcoordScale, range_metadata<int>{ -32, 32 });
+        f("texcoord_scale", o.texcoordScale, range_metadata<float>{ -16.f, 16.f });
         f("diffuse_handle", o.diffuse);
         f("normal_handle", o.normal);
         f("program_handle", o.shader, editor_hidden{}); // hidden because shaders are tied to materials
@@ -170,7 +170,7 @@ namespace polymer
 
         float opacity{ 1.f };
         float shadowOpacity{ 1.f };
-        int2 texcoordScale{ 1, 1 };
+        float2 texcoordScale{ 1.f, 1.f };
 
         texture_handle albedo;
         texture_handle normal;
@@ -195,7 +195,7 @@ namespace polymer
         f("occulusion_strength", o.occlusionStrength, range_metadata<float>{ 0.f, 1.f });
         f("ambient_strength", o.ambientStrength, range_metadata<float>{ 0.f, 1.f });
         f("shadow_opacity", o.shadowOpacity, range_metadata<float>{ 0.f, 1.f });
-        f("texcoord_scale", o.texcoordScale, range_metadata<int>{ -32, 32 });
+        f("texcoord_scale", o.texcoordScale, range_metadata<float>{ -16.f, 16.f });
         f("albedo_handle", o.albedo);
         f("normal_handle", o.normal);
         f("metallic_handle", o.metallic);

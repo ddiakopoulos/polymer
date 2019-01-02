@@ -78,7 +78,7 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
     the_render_payload.skybox = scene.render_system->get_skybox();
     the_render_payload.sunlight = scene.render_system->get_implicit_sunlight();
 
-    // fixme to be resolved
+    // @fixme - to be resolved rather than hard-coded
     auto radianceBinary = read_file_binary("../assets/textures/envmaps/wells_radiance.dds");
     auto irradianceBinary = read_file_binary("../assets/textures/envmaps/wells_irradiance.dds");
     gli::texture_cube radianceHandle(gli::load_dds((char *)radianceBinary.data(), radianceBinary.size()));
@@ -375,16 +375,20 @@ void scene_editor_app::on_draw()
             }
         }
 
-        // Gather directional lights
-        for (const auto e : scene.entity_list())
+        // Gather directional light. The sunlight is an implicit directional light created
+        // on the renderer (it is not tracked by the orchestrator so isn't in the scene.entity_list())
+        if (auto implicit_sun = scene.render_system->get_implicit_sunlight())
         {
-            if (auto dir_light_c = scene.render_system->get_directional_light_component(e)) the_render_payload.sunlight = dir_light_c;
+            the_render_payload.sunlight = implicit_sun;
         }
 
         // Gather point lights
         for (const auto e : scene.entity_list())
         {
-            if (auto pt_light_c = scene.render_system->get_point_light_component(e)) the_render_payload.point_lights.push_back(pt_light_c);
+            if (auto pt_light_c = scene.render_system->get_point_light_component(e))
+            {
+                the_render_payload.point_lights.push_back(pt_light_c);
+            }
         }
 
         // Add single-viewport camera

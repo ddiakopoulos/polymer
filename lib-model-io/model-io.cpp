@@ -16,21 +16,23 @@ using namespace polymer;
 std::unordered_map<std::string, runtime_mesh> polymer::import_model(const std::string & path)
 {
     std::unordered_map<std::string, runtime_mesh> models;
-    const std::string ext = get_extension(path);
 
-    if (ext == "FBX" || ext == "fbx")
+    std::string ext = get_extension(path);
+    std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+
+    if (ext == "fbx")
     {
         auto asset = import_fbx_model(path);
         for (auto & a : asset) models[a.first] = a.second;
     }
-    else if (ext == "OBJ" || ext == "obj")
+    else if (ext == "obj")
     {
         auto asset = import_obj_model(path);
         for (auto & a : asset) models[a.first] = a.second;
     }
-    else if (ext == "PLY" || ext == "ply")
+    else if (ext == "ply")
     {
-        // @todo - add tinyply support
+        // @todo - wire up tinyply support
     }
     else if (ext == "mesh")
     {

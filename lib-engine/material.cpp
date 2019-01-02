@@ -235,7 +235,7 @@ void polymer_pbr_standard::update_uniforms()
     program.uniform("u_ambientStrength", ambientStrength);
     program.uniform("u_emissiveStrength", emissiveStrength);
     program.uniform("u_shadowOpacity", shadowOpacity);
-    program.uniform("u_texCoordScale", float2(texcoordScale));
+    program.uniform("u_texCoordScale", texcoordScale);
 
     bindpoint = 0;
 

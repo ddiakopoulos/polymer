@@ -163,18 +163,10 @@ void environment::import_environment(const std::string & import_path, entity_orc
 
                             if (auto xform_system = dynamic_cast<transform_system*>(system_pointer))
                             {
-                                std::cout << "Parent is: " << c.parent << std::endl;
-
-                                for (const auto & child : c.children)
-                                {
-                                    std::cout << "\t child: " << child << std::endl;
-                                }
-
                                 if (xform_system->create(new_entity, c.local_pose, c.local_scale, c.parent, c.children))
                                 {
                                     std::cout << "Created " << type_name << " on " << system_name << std::endl;
                                 }
-
                             }
                         }
                         else

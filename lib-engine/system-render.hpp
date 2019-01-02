@@ -66,9 +66,9 @@ namespace polymer
             // Setup the skybox; link internal parameters to a directional light entity owned by the render system. 
             skybox->onParametersChanged = [this]
             {
-                directional_light_component dir_light;
+                directional_light_component dir_light(sunlight);
                 dir_light.data.direction = skybox->get_sun_direction();
-                dir_light.data.color = float3(1.f, 1.0f, 1.0f);
+                dir_light.data.color = float3(1.f, 1.f, 1.f);
                 dir_light.data.amount = 1.f;
                 create(sunlight, std::move(dir_light));
             };
