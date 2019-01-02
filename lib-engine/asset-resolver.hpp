@@ -33,7 +33,6 @@
 
 namespace polymer
 {
-    //, std::unordered_map<std::string, runtime_mesh> & mesh_assets
 
     template <typename T>
     inline void remove_duplicates(std::vector<T> & vec)
@@ -95,6 +94,8 @@ namespace polymer
                     // `mesh_names` contains both CPU and GPU geometry handle ids
                     for (const auto & name : mesh_names)
                     {
+                        std::cout << "Looking for: " << name << std::endl;
+
                         // "my_mesh/sub_component" should match to "my_mesh.obj" or similar
                         if (find_root(name) == filename_no_ext)
                         {
@@ -146,6 +147,7 @@ namespace polymer
                 if (auto * pbr = dynamic_cast<polymer_pbr_standard*>(mat.second.get()))
                 {
                     shader_names.push_back(pbr->shader.name);
+
                     texture_names.push_back(pbr->albedo.name);
                     texture_names.push_back(pbr->normal.name);
                     texture_names.push_back(pbr->metallic.name);
@@ -158,6 +160,7 @@ namespace polymer
                 if (auto * phong = dynamic_cast<polymer_blinn_phong_standard*>(mat.second.get()))
                 {
                     shader_names.push_back(phong->shader.name);
+
                     texture_names.push_back(phong->diffuse.name);
                     texture_names.push_back(phong->normal.name);
                 }

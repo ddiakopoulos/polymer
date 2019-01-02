@@ -271,7 +271,7 @@ void scene_editor_app::draw_entity_scenegraph(const entity e)
 {
     if (e == kInvalidEntity || !scene.xform_system->has_transform(e))
     {
-        throw std::invalid_argument("this entity is invalid or someone deleted its transform");
+        throw std::invalid_argument("this entity is invalid or someone deleted its transform (bad)");
     }
 
     bool open = false;

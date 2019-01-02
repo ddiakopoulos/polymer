@@ -59,6 +59,26 @@ namespace polymer
             scene_graph_transforms.destroy(child);
         }
 
+        // Resolve orphans. For instance, if we change the parent of an entity using the UI, it never gets added to
+        // the list of children of the parent. 
+        void fix_parent_child_orphans()
+        {
+            scene_graph_transforms.for_each([&](scene_graph_component & t)
+            {
+                const auto entity = t.get_entity();
+                auto parent = get_parent(entity);
+                if (parent != kInvalidEntity)
+                {
+                    // If we have a parent, check if its list of children has this entity
+                    if (!has_child(parent, entity))
+                    {
+                        std::cout << "Found orphan relationship: " << parent << ", " << entity << std::endl;
+                        add_child(parent, entity);
+                    }
+                }
+            });
+        }
+
         template<class F> friend void visit_components(entity e, transform_system * system, F f);
 
     public:
@@ -156,6 +176,25 @@ namespace polymer
             return kInvalidEntity;
         }
 
+        bool has_child(entity parent, entity child) const
+        {
+            if (parent == kInvalidEntity) return false;
+            if (child == kInvalidEntity) return false;
+
+            bool found_child = false;
+            if (auto * e = scene_graph_transforms.get(parent))
+            {
+                for (auto one_child : e->children)
+                {
+                    if (one_child == child)
+                    {
+                        found_child = true;
+                    }
+                }
+            }
+            return found_child;
+        }
+
         void remove_parent_from_child(entity child)
         {
             if (child == kInvalidEntity) throw std::invalid_argument("entity was invalid");
@@ -190,8 +229,11 @@ namespace polymer
     {
         scene_graph_component * component = system->scene_graph_transforms.get(e);
         if (component != nullptr) f("transform component", *component);
+
         // while inspecting, we need to continuously recalculate based on potentially changed data
+        system->fix_parent_child_orphans();
         system->recalculate_world_transform(e);
+
     }
 
     POLYMER_SETUP_TYPEID(transform_system);

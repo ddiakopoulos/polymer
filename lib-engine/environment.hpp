@@ -309,7 +309,7 @@ namespace polymer
         f("local_pose", o.local_pose);
         f("local_scale", o.local_scale);
         f("parent", o.parent);
-        f("children", o.children, editor_hidden{});
+        f("children", o.children); // editor_hidden{}
     }
 
     inline void to_json(json & j, const scene_graph_component & p) {

@@ -28,6 +28,10 @@ std::unordered_map<std::string, runtime_mesh> polymer::import_model(const std::s
         auto asset = import_obj_model(path);
         for (auto & a : asset) models[a.first] = a.second;
     }
+    else if (ext == "PLY" || ext == "ply")
+    {
+        // @todo - add tinyply support
+    }
     else if (ext == "mesh")
     {
         auto m = import_mesh_binary(path);
