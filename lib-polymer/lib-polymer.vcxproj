@@ -55,7 +55,7 @@
     <ClInclude Include="string_utils.hpp" />
     <ClInclude Include="thread-pool.hpp" />
     <ClInclude Include="trajectory.hpp" />
-    <ClInclude Include="tweens.hpp" />
+    <ClInclude Include="simple_animator.hpp" />
     <ClInclude Include="util.hpp" />
   </ItemGroup>
   <ItemGroup>

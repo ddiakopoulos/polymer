@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef simple_timer_hpp
-#define simple_timer_hpp
+#ifndef polymer_simple_timer_hpp
+#define polymer_simple_timer_hpp
 
 #include <iostream>
 #include <chrono>
@@ -58,4 +58,4 @@ namespace polymer
 
 } // end namespace polymer
 
-#endif // end simple_timer_hpp
+#endif // end polymer_simple_timer_hpp

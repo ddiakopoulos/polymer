@@ -36,9 +36,6 @@
     <ClInclude Include="algo_misc.hpp">
       <Filter>src\math</Filter>
     </ClInclude>
-    <ClInclude Include="tweens.hpp">
-      <Filter>src\math</Filter>
-    </ClInclude>
     <ClInclude Include="trajectory.hpp">
       <Filter>src\math</Filter>
     </ClInclude>
@@ -155,6 +152,9 @@
     </ClInclude>
     <ClInclude Include="math-sampling.hpp">
       <Filter>src\math-core</Filter>
+    </ClInclude>
+    <ClInclude Include="simple_animator.hpp">
+      <Filter>src\math</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

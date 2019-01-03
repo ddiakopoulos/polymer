@@ -64,7 +64,7 @@ namespace polymer
             std::future<return_type> task_future = task->get_future();
             {
                 std::unique_lock<std::mutex> lock(queue_mutex);
-                if (should_stop)  throw std::runtime_error("enqueue on a thread_pool scheduled to exit...");
+                if (should_stop) throw std::runtime_error("enqueue on a thread_pool scheduled to exit...");
                 tasks.emplace([task]() { (*task)(); });
             }
 

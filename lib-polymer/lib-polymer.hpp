@@ -3,6 +3,8 @@
 #ifndef lib_polymer_hpp
 #define lib_polymer_hpp
 
+#include "math-core.hpp"
+
 #include "util.hpp"
 #include "string_utils.hpp"
 #include "simple_timer.hpp"
@@ -18,7 +20,7 @@
 #include "property.hpp"
 #include "thread-pool.hpp"
 
-#include "tweens.hpp"
+#include "simple_animator.hpp"
 #include "trajectory.hpp"
 #include "splines.hpp"
 #include "simplex_noise.hpp"
@@ -39,7 +41,5 @@
 #include "queue-mpmc-bounded.hpp"
 #include "queue-mpmc-blocking.hpp"
 #include "queue-circular.hpp"
-
-#include "math-core.hpp"
 
 #endif // end lib_polymer_hpp

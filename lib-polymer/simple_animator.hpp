@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef animation_tweens_hpp
-#define animation_tweens_hpp
+#ifndef polymer_simple_animator_hpp
+#define polymer_simple_animator_hpp
 
 #include "util.hpp"
 #include "math-common.hpp"
@@ -86,8 +86,6 @@ namespace tween
 
 }
 
-// A simple playback manager for basic animation curves. 
-// todo - explore threaded approach, on_start callback & delay
 namespace polymer
 {
     class tween_event
@@ -103,6 +101,9 @@ namespace polymer
         std::function<void(float t)> on_update;
     };
 
+
+    // A simple playback manager for basic animation curves. 
+    // @todo - threading, on_start callback, trigger delay, polymer::property support
     class simple_animator
     {
         std::list<tween_event> tweens;
@@ -153,4 +154,4 @@ namespace polymer
 
 }
 
-#endif // end animation_tweens_hpp
+#endif // end polymer_simple_animator_hpp

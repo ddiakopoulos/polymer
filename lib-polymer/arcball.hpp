@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef arcball_h
-#define arcball_h
+#ifndef polymer_arcball_controller_hpp
+#define polymer_arcball_controller_hpp
 
 #include "math-core.hpp"
 #include "util.hpp"
@@ -88,4 +88,4 @@ namespace polymer
 
 }
 
-#endif // end arcball_h
+#endif // end polymer_arcball_controller_hpp
