@@ -137,7 +137,7 @@ namespace polymer
         float random_float_sphere() { return two_pi(gen); }
         float random_float_safe() { return safe(gen); }
         uint32_t random_uint(uint32_t max) { std::uniform_int_distribution<uint32_t> dInt(0, max); return dInt(gen); }
-        int32_t random_int(int32_t min, int32_t max) { std::uniform_int_distribution<uint32_t> dInt(min, max); return dInt(gen); }
+        int32_t random_int(int32_t min, int32_t max) { std::uniform_int_distribution<int32_t> dInt(min, max); return dInt(gen); }
     };
 
     class non_copyable

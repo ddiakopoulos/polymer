@@ -168,6 +168,12 @@ void sample_engine_ecs::on_draw()
 
     fullscreen_surface->draw(scene.render_system->get_renderer()->get_color_texture(viewIndex));
 
+    // Optional debug output
+    for (auto & t : scene.render_system->get_renderer()->cpuProfiler.get_data())
+    {
+        std::cout << "[render_system CPU] " << t.first.c_str() << " - " << t.second << "ms" << std::endl;
+    }
+
     gl_check_error(__FILE__, __LINE__);
 
     glfwSwapBuffers(window); 

@@ -4,6 +4,8 @@
 #include "geometry.hpp"
 #include "system-render.hpp"
 
+#include <execution>
+
 ////////////////////////////////////////////////
 //   stable_cascaded_shadows implementation   //
 ////////////////////////////////////////////////
@@ -305,7 +307,7 @@ void pbr_renderer::run_shadow_pass(const view_data & view, const render_payload 
     gl_check_error(__FILE__, __LINE__);
 }
 
-void pbr_renderer::run_forward_pass(std::vector<renderable> & renderQueueMaterial, const view_data & view, const render_payload & scene)
+void pbr_renderer::run_forward_pass(std::vector<const renderable *> & render_queue, const view_data & view, const render_payload & scene)
 {
     if (settings.useDepthPrepass)
     {
@@ -314,21 +316,21 @@ void pbr_renderer::run_forward_pass(std::vector<renderable> & renderQueueMateria
         glDepthMask(GL_FALSE); // depth already comes from the prepass
     }
 
-    for (const renderable & r : renderQueueMaterial)
+    for (const renderable * r : render_queue)
     {
-        update_per_object_uniform_buffer(r.t, r.scale, r.material->receive_shadow, view);
+        update_per_object_uniform_buffer(r->t, r->scale, r->material->receive_shadow, view);
 
         // Lookup the material component (materials[e]), .get() the asset_handle, and then .get() since 
         // materials instances are stored as shared pointers. 
-        material_interface * mat = r.material->material.get().get();
+        material_interface * mat = r->material->material.get().get();
         mat->update_uniforms();
 
-        // todo - handle other specific material requirements here
+        // @todo - handle other specific material requirements here
         if (auto * mr = dynamic_cast<polymer_pbr_standard*>(mat))
         {
             if (settings.shadowsEnabled)
             {
-                // todo - ideally compile this out from the shader if not using shadows
+                // @todo - ideally compile this out from the shader if not using shadows
                 mr->update_uniforms_shadow(shadow->get_output_texture());
             }
 
@@ -336,7 +338,7 @@ void pbr_renderer::run_forward_pass(std::vector<renderable> & renderQueueMateria
         }
         mat->use();
 
-        r.mesh->draw();
+        r->mesh->draw();
     }
 
     if (settings.useDepthPrepass)
@@ -446,7 +448,7 @@ void pbr_renderer::render_frame(const render_payload & scene)
 {
     assert(settings.cameraCount == scene.views.size());
 
-    cpuProfiler.begin("renderloop");
+    cpuProfiler.begin("render_frame");
 
     // Renderer default state
     glEnable(GL_CULL_FACE);
@@ -491,8 +493,6 @@ void pbr_renderer::render_frame(const render_payload & scene)
     // For stereo rendering, we project the shadows from a center view frustum combining both eyes
     if (settings.cameraCount == 2)
     {
-        cpuProfiler.begin("center-view");
-
         // Take the mid-point between the eyes
         shadowAndCullingView.pose = transform(scene.views[0].pose.orientation, (scene.views[0].pose.position + scene.views[1].pose.position) * 0.5f);
 
@@ -506,72 +506,54 @@ void pbr_renderer::render_frame(const render_payload & scene)
         // Regenerate the view matrix and near/far clip planes
         shadowAndCullingView.viewMatrix = inverse((shadowAndCullingView.pose.matrix() * make_translation_matrix(centerOffsetZ)));
         near_far_clip_from_projection(shadowAndCullingView.projectionMatrix, shadowAndCullingView.nearClip, shadowAndCullingView.farClip);
-        cpuProfiler.end("center-view");
     }
 
-    if (settings.shadowsEnabled)
+    // Shadow pass can only run if we've configured a directional sunlight
+
+    if (settings.shadowsEnabled && scene.sunlight)
     {
-        // Shadow pass can only run if we've configured a directional sunlight
-        if (scene.sunlight)
+        cpuProfiler.begin("run_shadow_pass");
+        gpuProfiler.begin("run_shadow_pass");
+        run_shadow_pass(shadowAndCullingView, scene);
+        gpuProfiler.end("run_shadow_pass");
+        cpuProfiler.end("run_shadow_pass");
+
+        for (int c = 0; c < uniforms::NUM_CASCADES; c++)
         {
-            gpuProfiler.begin("shadowpass");
-            run_shadow_pass(shadowAndCullingView, scene);
-            gpuProfiler.end("shadowpass");
-
-            for (int c = 0; c < uniforms::NUM_CASCADES; c++)
-            {
-                b.cascadesPlane[c] = float4(shadow->splitPlanes[c].x, shadow->splitPlanes[c].y, 0, 0);
-                b.cascadesMatrix[c] = shadow->shadowMatrices[c];
-                b.cascadesNear[c] = shadow->nearPlanes[c];
-                b.cascadesFar[c] = shadow->farPlanes[c];
-            }
+            b.cascadesPlane[c] = float4(shadow->splitPlanes[c].x, shadow->splitPlanes[c].y, 0, 0);
+            b.cascadesMatrix[c] = shadow->shadowMatrices[c];
+            b.cascadesNear[c] = shadow->nearPlanes[c];
+            b.cascadesFar[c] = shadow->farPlanes[c];
         }
-
-        gl_check_error(__FILE__, __LINE__);
     }
 
     // Per-scene can be uploaded now that the shadow pass has completed
     perScene.set_buffer_data(sizeof(b), &b, GL_STREAM_DRAW);
 
     // We follow the sorting strategy outlined here: http://realtimecollisiondetection.net/blog/?p=86
-    auto materialSortFunc = [this, scene, shadowAndCullingView](renderable lhs, renderable rhs)
+    auto materialSortFunc = [this, scene, shadowAndCullingView](const renderable * lhs, const renderable * rhs)
     {
-        const float lDist = distance(shadowAndCullingView.pose.position, lhs.t.position);
-        const float rDist = distance(shadowAndCullingView.pose.position, rhs.t.position);
-
         // Sort by material (expensive shader state change)
-        auto lid = lhs.material->material.get()->id();
-        auto rid = rhs.material->material.get()->id();
+        // @fixme - why is this so expensive? Adds an additional ~2ms to the sort
+        auto lid = lhs->material->material.get()->id();
+        auto rid = rhs->material->material.get()->id();
         if (lid != rid) return lid > rid;
+
+        const float lDist = distance(shadowAndCullingView.pose.position, lhs->t.position);
+        const float rDist = distance(shadowAndCullingView.pose.position, rhs->t.position);
 
         // Otherwise sort by distance
         return lDist < rDist;
     };
 
-    auto distanceSortFunc = [this, scene, shadowAndCullingView](renderable lhs, renderable rhs)
-    {
-        const float lDist = distance(shadowAndCullingView.pose.position, lhs.t.position);
-        const float rDist = distance(shadowAndCullingView.pose.position, rhs.t.position);
-        return lDist < rDist;
-    };
-
-    cpuProfiler.begin("push-queue");
-    std::priority_queue<renderable, std::vector<renderable>, decltype(materialSortFunc)> renderQueueMaterial(materialSortFunc);
-    for (const renderable & r: scene.render_set) { renderQueueMaterial.push(r); }
-
-    cpuProfiler.end("push-queue");
-
-    cpuProfiler.begin("flatten-queue");
-    // Resolve render queues into flat lists
-    std::vector<renderable> materialRenderList;
-    while (!renderQueueMaterial.empty())
-    {
-        renderable top = renderQueueMaterial.top();
-        renderQueueMaterial.pop();
-        materialRenderList.push_back(top);
+    cpuProfiler.begin("sort-render_queue_material");
+    std::vector<const renderable *> render_queue_material(scene.render_set.size());
+    for (int i = 0; i < scene.render_set.size(); ++i) 
+    { 
+        render_queue_material[i] = (&(scene.render_set[i]));
     }
-
-    cpuProfiler.end("flatten-queue");
+    std::sort(render_queue_material.begin(), render_queue_material.end(), materialSortFunc);
+    cpuProfiler.end("sort-render_queue_material");
 
     for (uint32_t camIdx = 0; camIdx < settings.cameraCount; ++camIdx)
     {
@@ -590,7 +572,6 @@ void pbr_renderer::render_frame(const render_payload & scene)
         glClearNamedFramebufferfv(multisampleFramebuffer, GL_DEPTH, 0, &defaultDepth);
         if (using_stencil_mask) glClearNamedFramebufferuiv(multisampleFramebuffer, GL_STENCIL, 0, &defaultStencil);
 
-        // Execute the forward passes
         if (settings.useDepthPrepass)
         {
             gpuProfiler.begin("depth-prepass-" + std::to_string(camIdx));
@@ -601,19 +582,25 @@ void pbr_renderer::render_frame(const render_payload & scene)
         // Hidden area mesh for stereo rendering with openvr
         if (using_stencil_mask)
         {
-            gpuProfiler.begin("stencil-prepass-" + std::to_string(camIdx));
+            cpuProfiler.begin("run_stencil_prepass-" + std::to_string(camIdx));
+            gpuProfiler.begin("run_stencil_prepass-" + std::to_string(camIdx));
             run_stencil_prepass(scene.views[camIdx], scene);
-            gpuProfiler.end("stencil-prepass-" + std::to_string(camIdx));
+            gpuProfiler.end("run_stencil_prepass-" + std::to_string(camIdx));
+            cpuProfiler.end("run_stencil_prepass-" + std::to_string(camIdx));
         }
 
-        gpuProfiler.begin("forward-pass-" + std::to_string(camIdx));
-        cpuProfiler.begin("skybox-" + std::to_string(camIdx));
+        // Execute the forward passes
+        gpuProfiler.begin("run_skybox_pass-" + std::to_string(camIdx));
+        cpuProfiler.begin("run_skybox_pass-" + std::to_string(camIdx));
         run_skybox_pass(scene.views[camIdx], scene);
-        cpuProfiler.end("skybox-" + std::to_string(camIdx));
-        cpuProfiler.begin("forward-" + std::to_string(camIdx));
-        run_forward_pass(materialRenderList, scene.views[camIdx], scene);
-        cpuProfiler.end("forward-" + std::to_string(camIdx));
-        gpuProfiler.end("forward-pass-" + std::to_string(camIdx));
+        cpuProfiler.end("run_skybox_pass-" + std::to_string(camIdx));
+        gpuProfiler.end("run_skybox_pass-" + std::to_string(camIdx));
+
+        gpuProfiler.begin("run_forward_pass-" + std::to_string(camIdx));
+        cpuProfiler.begin("run_forward_pass-" + std::to_string(camIdx));
+        run_forward_pass(render_queue_material, scene.views[camIdx], scene);
+        cpuProfiler.end("run_forward_pass-" + std::to_string(camIdx));
+        gpuProfiler.end("run_forward_pass-" + std::to_string(camIdx));
 
         glDisable(GL_MULTISAMPLE);
 
@@ -637,18 +624,18 @@ void pbr_renderer::render_frame(const render_payload & scene)
 
     // Execute the post passes after having resolved the multisample framebuffers
     {
-        gpuProfiler.begin("postprocess");
-        cpuProfiler.begin("post");
+        gpuProfiler.begin("run_post_pass");
+        cpuProfiler.begin("run_post_pass");
         for (uint32_t camIdx = 0; camIdx < settings.cameraCount; ++camIdx)
         {
             run_post_pass(scene.views[camIdx], scene);
         }
-        cpuProfiler.end("post");
-        gpuProfiler.end("postprocess");
+        cpuProfiler.end("run_post_pass");
+        gpuProfiler.end("run_post_pass");
     }
 
     glDisable(GL_FRAMEBUFFER_SRGB);
-    cpuProfiler.end("renderloop");
+    cpuProfiler.end("render_frame");
 
     gl_check_error(__FILE__, __LINE__);
 }

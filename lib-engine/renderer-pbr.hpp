@@ -146,7 +146,7 @@ namespace polymer
         void run_depth_prepass(const view_data & view, const render_payload & scene);
         void run_skybox_pass(const view_data & view, const render_payload & scene);
         void run_shadow_pass(const view_data & view, const render_payload & scene);
-        void run_forward_pass(std::vector<renderable> & render_queue, const view_data & view, const render_payload & scene);
+        void run_forward_pass(std::vector<const renderable *> & render_queue, const view_data & view, const render_payload & scene);
         void run_post_pass(const view_data & view, const render_payload & scene);
 
     public:
