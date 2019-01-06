@@ -102,7 +102,7 @@ namespace polymer
     struct render_payload
     {
         std::vector<view_data> views;
-        std::vector<renderable> render_set;
+        std::vector<render_component> render_components;
         std::vector<point_light_component *> point_lights;
         directional_light_component * sunlight;
         float4 clear_color{ 1, 0, 0, 1 };
@@ -146,7 +146,7 @@ namespace polymer
         void run_depth_prepass(const view_data & view, const render_payload & scene);
         void run_skybox_pass(const view_data & view, const render_payload & scene);
         void run_shadow_pass(const view_data & view, const render_payload & scene);
-        void run_forward_pass(std::vector<const renderable *> & render_queue, const view_data & view, const render_payload & scene);
+        void run_forward_pass(std::vector<const render_component *> & render_queue, const view_data & view, const render_payload & scene);
         void run_post_pass(const view_data & view, const render_payload & scene);
 
     public:

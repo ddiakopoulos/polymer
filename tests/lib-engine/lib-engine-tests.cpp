@@ -388,13 +388,13 @@ namespace polymer
 
     TEST_CASE("polymer_component_pool size is zero on creation")
     {
-        polymer_component_pool<scene_graph_component> scene_graph_pool(32);
+        polymer_component_pool<local_transform_component> scene_graph_pool(32);
         REQUIRE(scene_graph_pool.size() == 0);
     }
 
     TEST_CASE("polymer_component_pool add elements")
     {
-        polymer_component_pool<scene_graph_component> scene_graph_pool(32);
+        polymer_component_pool<local_transform_component> scene_graph_pool(32);
         auto obj = scene_graph_pool.emplace(55);
         REQUIRE(obj != nullptr);
         REQUIRE(obj->get_entity() == 55);
@@ -403,7 +403,7 @@ namespace polymer
 
     TEST_CASE("polymer_component_pool clear elements")
     {
-        polymer_component_pool<scene_graph_component> scene_graph_pool(32);
+        polymer_component_pool<local_transform_component> scene_graph_pool(32);
         scene_graph_pool.emplace(99);
         scene_graph_pool.clear();
         REQUIRE(static_cast<int>(scene_graph_pool.size()) == 0);
@@ -411,7 +411,7 @@ namespace polymer
 
     TEST_CASE("polymer_component_pool contains elements")
     {
-        polymer_component_pool<scene_graph_component> scene_graph_pool(32);
+        polymer_component_pool<local_transform_component> scene_graph_pool(32);
         bool result = scene_graph_pool.contains(88);
         REQUIRE_FALSE(result);
 
@@ -422,7 +422,7 @@ namespace polymer
 
     TEST_CASE("polymer_component_pool get elements")
     {
-        polymer_component_pool<scene_graph_component> scene_graph_pool(32);
+        polymer_component_pool<local_transform_component> scene_graph_pool(32);
 
         auto obj = scene_graph_pool.get(1);
         REQUIRE(obj == nullptr);
@@ -436,7 +436,7 @@ namespace polymer
 
     TEST_CASE("polymer_component_pool check duplicate elements")
     {
-        polymer_component_pool<scene_graph_component> scene_graph_pool(32);
+        polymer_component_pool<local_transform_component> scene_graph_pool(32);
 
         scene_graph_pool.emplace(5);
         scene_graph_pool.emplace(5);
@@ -445,7 +445,7 @@ namespace polymer
 
     TEST_CASE("polymer_component_pool add and remove")
     {
-        polymer_component_pool<scene_graph_component> scene_graph_pool(32);
+        polymer_component_pool<local_transform_component> scene_graph_pool(32);
 
         size_t check = 0;
         for (int i = 0; i < 128; ++i)
@@ -466,7 +466,7 @@ namespace polymer
         }
 
         size_t sum1{ 0 }, sum2{ 0 };
-        scene_graph_pool.for_each([&](scene_graph_component & t) { sum1 += t.parent; });
+        scene_graph_pool.for_each([&](local_transform_component & t) { sum1 += t.parent; });
         for (auto & w : scene_graph_pool) { sum2 += w.parent; }
 
         REQUIRE(sum1 == check);

@@ -108,17 +108,11 @@ sample_engine_ecs::sample_engine_ecs() : polymer_app(1280, 720, "sample-ecs-stre
             material_component.material = material_handle(material_library::kDefaultMaterialId);
             scene.render_system->create(debug_icosa, std::move(material_component));
 
-            // Assemble a renderable (gather components so the renderer does not have to interface
+            // Assemble a render_component (gather components so the renderer does not have to interface
             // with many systems). Ordinarily this assembly is done per-frame in the update loop, but
             // this is a fully static scene.
-            renderable debug_icosahedron_renderable;
-            debug_icosahedron_renderable.e = debug_icosa;
-            debug_icosahedron_renderable.material = scene.render_system->get_material_component(debug_icosa);
-            debug_icosahedron_renderable.mesh = scene.render_system->get_mesh_component(debug_icosa);
-            debug_icosahedron_renderable.scale = scene.xform_system->get_local_transform(debug_icosa)->local_scale;
-            debug_icosahedron_renderable.t = scene.xform_system->get_world_transform(debug_icosa)->world_pose;
-
-            payload.render_set.push_back(debug_icosahedron_renderable);
+            render_component debug_icosahedron_renderable = assemble_render_component(scene, debug_icosa);
+            payload.render_components.push_back(debug_icosahedron_renderable);
         }
     }
 

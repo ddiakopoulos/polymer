@@ -63,7 +63,7 @@ namespace polymer
         // the list of children of the parent. 
         void fix_parent_child_orphans()
         {
-            scene_graph_transforms.for_each([&](scene_graph_component & t)
+            scene_graph_transforms.for_each([&](local_transform_component & t)
             {
                 const auto entity = t.get_entity();
                 auto parent = get_parent(entity);
@@ -83,20 +83,20 @@ namespace polymer
 
     public:
 
-        polymer_component_pool<scene_graph_component> scene_graph_transforms{ 64 };
+        polymer_component_pool<local_transform_component> scene_graph_transforms{ 64 };
         polymer_component_pool<world_transform_component> world_transforms{ 64 };
 
         transform_system(entity_orchestrator * f) : base_system(f)
         {
-            register_system_for_type(this, get_typeid<scene_graph_component>());
+            register_system_for_type(this, get_typeid<local_transform_component>());
         }
 
         ~transform_system() override { }
 
         bool create(entity e, poly_typeid hash, void * data) override final 
         { 
-            if (hash != get_typeid<scene_graph_component>()) { return false; }
-            auto new_component = static_cast<scene_graph_component *>(data);
+            if (hash != get_typeid<local_transform_component>()) { return false; }
+            auto new_component = static_cast<local_transform_component *>(data);
             return create(e, new_component->local_pose, new_component->local_scale, new_component->parent, new_component->children);
         }
 
@@ -110,7 +110,7 @@ namespace polymer
             const auto check_world = world_transforms.get(e);
             if (check_node == nullptr || check_world == nullptr)
             {
-                auto node = scene_graph_transforms.emplace(scene_graph_component(e));
+                auto node = scene_graph_transforms.emplace(local_transform_component(e));
                 auto world = world_transforms.emplace(world_transform_component(e));
                 node->local_pose = local_pose;
                 node->local_scale = local_scale;
@@ -145,7 +145,7 @@ namespace polymer
 
         void move_child(entity child, uint32_t idx) { /* todo */ }
 
-        const scene_graph_component * get_local_transform(entity e)
+        const local_transform_component * get_local_transform(entity e)
         {
             if (e == kInvalidEntity) return nullptr;
             return scene_graph_transforms.get(e);
@@ -217,7 +217,7 @@ namespace polymer
 
         void refresh()
         {
-           scene_graph_transforms.for_each([&](scene_graph_component & t) 
+           scene_graph_transforms.for_each([&](local_transform_component & t) 
            { 
                const auto entity = t.get_entity();
                if (entity != kInvalidEntity) recalculate_world_transform(entity);
@@ -227,7 +227,7 @@ namespace polymer
 
     template<class F> void visit_components(entity e, transform_system * system, F f)
     {
-        scene_graph_component * component = system->scene_graph_transforms.get(e);
+        local_transform_component * component = system->scene_graph_transforms.get(e);
         if (component != nullptr) f("transform component", *component);
 
         // while inspecting, we need to continuously recalculate based on potentially changed data

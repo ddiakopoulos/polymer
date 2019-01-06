@@ -290,21 +290,21 @@ namespace polymer
     };
 
     ///////////////////////////////////////////////////////////
-    //   scene_graph_component & world_transform_component   //
+    //   local_transform_component & world_transform_component   //
     ///////////////////////////////////////////////////////////
 
-    struct scene_graph_component : public base_component
+    struct local_transform_component : public base_component
     {
-        scene_graph_component() {};
-        scene_graph_component(entity e) : base_component(e) {}
+        local_transform_component() {};
+        local_transform_component(entity e) : base_component(e) {}
         polymer::transform local_pose;
         polymer::float3 local_scale{ 1, 1, 1 };
         entity parent{ kInvalidEntity };
         std::vector<entity> children;
     };
-    POLYMER_SETUP_TYPEID(scene_graph_component);
+    POLYMER_SETUP_TYPEID(local_transform_component);
 
-    template<class F> void visit_fields(scene_graph_component & o, F f)
+    template<class F> void visit_fields(local_transform_component & o, F f)
     {
         f("local_pose", o.local_pose);
         f("local_scale", o.local_scale);
@@ -312,11 +312,11 @@ namespace polymer
         f("children", o.children); // editor_hidden{}
     }
 
-    inline void to_json(json & j, const scene_graph_component & p) {
-        visit_fields(const_cast<scene_graph_component&>(p), [&j](const char * name, auto & field, auto... metadata) { j.push_back({ name, field }); });
+    inline void to_json(json & j, const local_transform_component & p) {
+        visit_fields(const_cast<local_transform_component&>(p), [&j](const char * name, auto & field, auto... metadata) { j.push_back({ name, field }); });
     }
 
-    inline void from_json(const json & archive, scene_graph_component & m) {
+    inline void from_json(const json & archive, local_transform_component & m) {
         visit_fields(m, [&archive](const char * name, auto & field, auto... metadata) {
             field = archive.at(name).get<std::remove_reference_t<decltype(field)>>();
         });
@@ -334,15 +334,26 @@ namespace polymer
     //   environment   //
     /////////////////////
 
-    // fixme - should be an ad-hoc render_component
-    struct renderable
+    /// @todo - render_component submission groups
+    /// @todo - render_component sort order
+    struct render_component : public base_component
     {
-        entity e{ kInvalidEntity };
-        material_component * material{ nullptr };
-        mesh_component * mesh{ nullptr };
-        float3 scale{ 1, 1, 1 };
-        transform t;
+        render_component() {};
+        render_component(entity e) : base_component(e) {}
+        polymer::material_component * material{ nullptr };
+        polymer::mesh_component * mesh{ nullptr };
+        const polymer::world_transform_component * world_transform{ nullptr };
+        const polymer::local_transform_component * local_transform{ nullptr };
     };
+    POLYMER_SETUP_TYPEID(render_component);
+
+    template<class F> void visit_fields(render_component & o, F f)
+    {
+        f("material_component", o.material);
+        f("mesh_component", o.mesh);
+        f("world_transform_component", o.world_transform);
+        f("local_transform_component", o.local_transform);
+    }
 
     class render_system;;
     class collision_system;
@@ -361,7 +372,7 @@ namespace polymer
 
         polymer::render_system * render_system;
         polymer::collision_system * collision_system;
-        polymer::transform_system * xform_system;
+        polymer::transform_system * xform_system; 
         polymer::identifier_system * identifier_system;
 
         void import_environment(const std::string & path, entity_orchestrator & o);
@@ -380,6 +391,8 @@ namespace polymer
         f("render_system", p->render_system);
         f("collision_system", p->collision_system);
     }
+
+    render_component assemble_render_component(environment & env, const entity e);
 
 } // end namespace polymer
 

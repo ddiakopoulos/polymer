@@ -487,7 +487,7 @@ namespace polymer
         return capsule;
     }
     
-    // A renderable quad with a configurable subvision. Constructed on the XY axis with normals facing -Z for front-faces.
+    // A render_component quad with a configurable subvision. Constructed on the XY axis with normals facing -Z for front-faces.
     inline geometry make_plane(float width, float height, uint32_t widthVertices, uint32_t heightVertices, bool doubleSided = false)
     {
         geometry plane;

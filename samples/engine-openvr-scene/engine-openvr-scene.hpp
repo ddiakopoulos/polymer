@@ -37,7 +37,6 @@ struct sample_vr_app : public polymer_app
     sample_vr_app();
     ~sample_vr_app();
 
-    renderable assemble_renderable(const entity e);
     void on_window_resize(int2 size) override;
     void on_input(const app_input_event & event) override;
     void on_update(const app_update_event & e) override;

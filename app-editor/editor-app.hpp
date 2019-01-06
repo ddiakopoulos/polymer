@@ -54,7 +54,7 @@ struct scene_editor_app final : public polymer_app
     std::unique_ptr<simple_texture_view> fullscreen_surface;
     std::shared_ptr<gizmo_controller> gizmo;
 
-    render_payload the_render_payload;
+    render_payload renderer_payload;
     entity_orchestrator orchestrator;
     environment scene;
 

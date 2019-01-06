@@ -241,9 +241,9 @@ void pbr_renderer::run_depth_prepass(const view_data & view, const render_payloa
     auto & shader = renderPassEarlyZ.get()->get_variant()->shader;
     shader.bind();
 
-    for (const renderable & r : scene.render_set)
+    for (const render_component & r : scene.render_components)
     {
-        update_per_object_uniform_buffer(r.t, r.scale, r.material->receive_shadow, view);
+        update_per_object_uniform_buffer(r.world_transform->world_pose, r.local_transform->local_scale, r.material->receive_shadow, view);
         r.mesh->draw();
     }
 
@@ -292,11 +292,11 @@ void pbr_renderer::run_shadow_pass(const view_data & view, const render_payload 
 
     shadow->pre_draw();
 
-    for (const renderable & r : scene.render_set)
+    for (const render_component & r : scene.render_components)
     {
         if (r.material->cast_shadow)
         {
-            const float4x4 modelMatrix = (r.t.matrix() * make_scaling_matrix(r.scale));
+            const float4x4 modelMatrix = (r.world_transform->world_pose.matrix() * make_scaling_matrix(r.local_transform->local_scale));
             shadow->update_shadow_matrix(modelMatrix);
             r.mesh->draw();
         }
@@ -307,7 +307,7 @@ void pbr_renderer::run_shadow_pass(const view_data & view, const render_payload 
     gl_check_error(__FILE__, __LINE__);
 }
 
-void pbr_renderer::run_forward_pass(std::vector<const renderable *> & render_queue, const view_data & view, const render_payload & scene)
+void pbr_renderer::run_forward_pass(std::vector<const render_component *> & render_queue, const view_data & view, const render_payload & scene)
 {
     if (settings.useDepthPrepass)
     {
@@ -316,9 +316,9 @@ void pbr_renderer::run_forward_pass(std::vector<const renderable *> & render_que
         glDepthMask(GL_FALSE); // depth already comes from the prepass
     }
 
-    for (const renderable * r : render_queue)
+    for (const render_component * r : render_queue)
     {
-        update_per_object_uniform_buffer(r->t, r->scale, r->material->receive_shadow, view);
+        update_per_object_uniform_buffer(r->world_transform->world_pose, r->local_transform->local_scale, r->material->receive_shadow, view);
 
         // Lookup the material component (materials[e]), .get() the asset_handle, and then .get() since 
         // materials instances are stored as shared pointers. 
@@ -531,7 +531,7 @@ void pbr_renderer::render_frame(const render_payload & scene)
     perScene.set_buffer_data(sizeof(b), &b, GL_STREAM_DRAW);
 
     // We follow the sorting strategy outlined here: http://realtimecollisiondetection.net/blog/?p=86
-    auto materialSortFunc = [this, scene, shadowAndCullingView](const renderable * lhs, const renderable * rhs)
+    auto materialSortFunc = [this, scene, shadowAndCullingView](const render_component * lhs, const render_component * rhs)
     {
         // Sort by material (expensive shader state change)
         // @fixme - why is this so expensive? Adds an additional ~2ms to the sort
@@ -539,18 +539,18 @@ void pbr_renderer::render_frame(const render_payload & scene)
         auto rid = rhs->material->material.get()->id();
         if (lid != rid) return lid > rid;
 
-        const float lDist = distance(shadowAndCullingView.pose.position, lhs->t.position);
-        const float rDist = distance(shadowAndCullingView.pose.position, rhs->t.position);
+        const float lDist = distance(shadowAndCullingView.pose.position, lhs->world_transform->world_pose.position);
+        const float rDist = distance(shadowAndCullingView.pose.position, rhs->world_transform->world_pose.position);
 
         // Otherwise sort by distance
         return lDist < rDist;
     };
 
     cpuProfiler.begin("sort-render_queue_material");
-    std::vector<const renderable *> render_queue_material(scene.render_set.size());
-    for (int i = 0; i < scene.render_set.size(); ++i) 
+    std::vector<const render_component *> render_queue_material(scene.render_components.size());
+    for (int i = 0; i < scene.render_components.size(); ++i) 
     { 
-        render_queue_material[i] = (&(scene.render_set[i]));
+        render_queue_material[i] = (&(scene.render_components[i]));
     }
     std::sort(render_queue_material.begin(), render_queue_material.end(), materialSortFunc);
     cpuProfiler.end("sort-render_queue_material");

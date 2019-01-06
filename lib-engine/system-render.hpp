@@ -20,13 +20,8 @@ namespace polymer
     //   render_system   //
     ///////////////////////
 
-    /// render_component rather than assemble_renderable
-    /// renderable submission groups
-    /// renderable sort order
-
     class render_system final : public base_system
     {
-
         std::unordered_map<entity, mesh_component> meshes;
         std::unordered_map<entity, material_component> materials;
         std::unordered_map<entity, point_light_component> point_lights;
@@ -181,7 +176,6 @@ namespace polymer
             transform_system * transform_sys = dynamic_cast<transform_system *>(system->orchestrator->get_system(get_typeid<transform_system>()));
             auto pt_light_xform = transform_sys->get_world_transform(e);
             ptr->data.position = pt_light_xform->world_pose.position;
-
             f("point light component", *ptr);
         }
         if (auto ptr = system->get_directional_light_component(e)) f("directional light component", *ptr);

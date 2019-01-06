@@ -2,17 +2,6 @@
 
 using namespace polymer::xr;
 
-renderable sample_vr_app::assemble_renderable(const entity e)
-{
-    renderable r;
-    r.e = e;
-    r.material = scene.render_system->get_material_component(e);
-    r.mesh = scene.render_system->get_mesh_component(e);
-    r.scale = scene.xform_system->get_local_transform(e)->local_scale;
-    r.t = scene.xform_system->get_world_transform(e)->world_pose;
-    return r;
-}
-
 sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-scene")
 {
     int windowWidth, windowHeight;
@@ -162,11 +151,11 @@ void sample_vr_app::on_draw()
     glDisable(GL_CULL_FACE);
 
     // Render scene using payload
-    payload.render_set.clear();
-    payload.render_set.push_back(assemble_renderable(floor));
-    for (const entity & r : vr_imgui->get_renderables()) payload.render_set.push_back(assemble_renderable(r));
-    for (const entity & r : controller_system->get_renderables()) payload.render_set.push_back(assemble_renderable(r));
-    for (const entity & r : gizmo_system->get_renderables()) payload.render_set.push_back(assemble_renderable(r));
+    payload.render_components.clear();
+    payload.render_components.push_back(assemble_render_component(scene, floor));
+    for (const entity & r : vr_imgui->get_renderables()) payload.render_components.push_back(assemble_render_component(scene, r));
+    for (const entity & r : controller_system->get_renderables()) payload.render_components.push_back(assemble_render_component(scene, r));
+    for (const entity & r : gizmo_system->get_renderables()) payload.render_components.push_back(assemble_render_component(scene, r));
     scene.render_system->get_renderer()->render_frame(payload);
 
     const uint32_t left_eye_texture = scene.render_system->get_renderer()->get_color_texture(0);

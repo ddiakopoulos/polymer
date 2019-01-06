@@ -14,7 +14,7 @@
         "@mesh_component": {
             "gpu_mesh_handle": "room/room"
         },
-        "@scene_graph_component": {
+        "@local_transform_component": {
             "children": [],
             "local_pose": {
                 "orientation": {
@@ -52,7 +52,7 @@
         "@mesh_component": {
             "gpu_mesh_handle": "floor-bevels/floor-bevels"
         },
-        "@scene_graph_component": {
+        "@local_transform_component": {
             "children": [],
             "local_pose": {
                 "orientation": {
@@ -90,7 +90,7 @@
         "@mesh_component": {
             "gpu_mesh_handle": "ceiling/ceiling"
         },
-        "@scene_graph_component": {
+        "@local_transform_component": {
             "children": [],
             "local_pose": {
                 "orientation": {
@@ -128,7 +128,7 @@
         "@mesh_component": {
             "gpu_mesh_handle": "floor/floor"
         },
-        "@scene_graph_component": {
+        "@local_transform_component": {
             "children": [],
             "local_pose": {
                 "orientation": {
@@ -155,7 +155,7 @@
         "@identifier_component": {
             "id": "dev-room"
         },
-        "@scene_graph_component": {
+        "@local_transform_component": {
             "children": [
                 5,
                 4,
@@ -201,7 +201,7 @@
             },
             "radius": 10.0
         },
-        "@scene_graph_component": {
+        "@local_transform_component": {
             "children": [],
             "local_pose": {
                 "orientation": {

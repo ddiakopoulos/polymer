@@ -26,4 +26,5 @@ vr_button get_button_id_for_vendor(const uint32_t which_button, const vr_input_v
             break;
         }
     }
+    return {};
 }

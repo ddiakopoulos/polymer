@@ -75,8 +75,8 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
     gizmo.reset(new gizmo_controller(scene.xform_system));
 
     // Only need to set the skybox on the |render_payload| once (unless we clear the payload)
-    the_render_payload.skybox = scene.render_system->get_skybox();
-    the_render_payload.sunlight = scene.render_system->get_implicit_sunlight();
+    renderer_payload.skybox = scene.render_system->get_skybox();
+    renderer_payload.sunlight = scene.render_system->get_implicit_sunlight();
 
     // @fixme - to be resolved rather than hard-coded
     auto radianceBinary = read_file_binary("../assets/textures/envmaps/studio_radiance.dds");
@@ -86,8 +86,8 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
     create_handle_for_asset("wells-radiance-cubemap", load_cubemap(radianceHandle));
     create_handle_for_asset("wells-irradiance-cubemap", load_cubemap(irradianceHandle));
 
-    the_render_payload.ibl_irradianceCubemap = texture_handle("wells-irradiance-cubemap");
-    the_render_payload.ibl_radianceCubemap = texture_handle("wells-radiance-cubemap");
+    renderer_payload.ibl_irradianceCubemap = texture_handle("wells-irradiance-cubemap");
+    renderer_payload.ibl_radianceCubemap = texture_handle("wells-radiance-cubemap");
 
     scene.mat_library.reset(new polymer::material_library("../assets/materials/")); // must include trailing slash
 
@@ -213,7 +213,7 @@ void scene_editor_app::import_scene(const std::string & path)
     {
         scene.destroy(kAllEntities);
         gizmo->clear();
-        the_render_payload.render_set.clear();
+        renderer_payload.render_components.clear();
         scene.import_environment(path, orchestrator);
         resolver->resolve("../assets/", &scene, scene.mat_library.get());
         glfwSetWindowTitle(window, path.c_str());
@@ -346,10 +346,10 @@ void scene_editor_app::on_draw()
         editorProfiler.begin("gather-scene");
 
         // Clear out transient scene payload data
-        the_render_payload.views.clear();
-        the_render_payload.render_set.clear();
-        the_render_payload.point_lights.clear();
-        the_render_payload.sunlight = nullptr;
+        renderer_payload.views.clear();
+        renderer_payload.render_components.clear();
+        renderer_payload.point_lights.clear();
+        renderer_payload.sunlight = nullptr;
 
         // Does the entity have a material? If so, we can render it. 
         for (const auto e : scene.entity_list())
@@ -365,13 +365,8 @@ void scene_editor_app::on_draw()
                 auto scale_c = scene.xform_system->get_local_transform(e);
                 assert(scale_c != nullptr); 
 
-                renderable r;
-                r.e = e;
-                r.material = mat_c;
-                r.mesh = mesh_c;
-                r.t = xform_c->world_pose;
-                r.scale = scale_c->local_scale;
-                the_render_payload.render_set.push_back(r);
+                render_component r = assemble_render_component(scene, e);
+                renderer_payload.render_components.push_back(r);
             }
         }
 
@@ -379,7 +374,7 @@ void scene_editor_app::on_draw()
         // on the renderer (it is not tracked by the orchestrator so isn't in the scene.entity_list())
         if (auto implicit_sun = scene.render_system->get_implicit_sunlight())
         {
-            the_render_payload.sunlight = implicit_sun;
+            renderer_payload.sunlight = implicit_sun;
         }
 
         // Gather point lights
@@ -387,18 +382,18 @@ void scene_editor_app::on_draw()
         {
             if (auto pt_light_c = scene.render_system->get_point_light_component(e))
             {
-                the_render_payload.point_lights.push_back(pt_light_c);
+                renderer_payload.point_lights.push_back(pt_light_c);
             }
         }
 
         // Add single-viewport camera
-        the_render_payload.views.push_back(view_data(0, cam.pose, projectionMatrix));
+        renderer_payload.views.push_back(view_data(0, cam.pose, projectionMatrix));
 
         editorProfiler.end("gather-scene");
 
         // Submit scene to the scene renderer
         editorProfiler.begin("submit-scene");
-        scene.render_system->get_renderer()->render_frame(the_render_payload);
+        scene.render_system->get_renderer()->render_frame(renderer_payload);
         editorProfiler.end("submit-scene");
 
         // Draw to screen framebuffer
@@ -463,7 +458,7 @@ void scene_editor_app::on_draw()
             if (!export_path.empty())
             {
                 gizmo->clear();
-                the_render_payload.render_set.clear();
+                renderer_payload.render_components.clear();
                 scene.export_environment(export_path);
                 glfwSetWindowTitle(window, export_path.c_str());
             }
@@ -473,7 +468,7 @@ void scene_editor_app::on_draw()
         {
             gizmo->clear();
             scene.destroy(kAllEntities);
-            the_render_payload.render_set.clear();
+            renderer_payload.render_components.clear();
             glfwSetWindowTitle(window, "unsaved new scene");
         }
 
@@ -584,7 +579,7 @@ void scene_editor_app::on_draw()
                         if (system_pointer)
                         {
                             if      (type_name == get_typename<identifier_component>()) system_pointer->create(selection, get_typeid<identifier_component>(), &identifier_component(selection));
-                            else if (type_name == get_typename<scene_graph_component>()) system_pointer->create(selection, get_typeid<scene_graph_component>(), &scene_graph_component(selection));
+                            else if (type_name == get_typename<local_transform_component>()) system_pointer->create(selection, get_typeid<local_transform_component>(), &local_transform_component(selection));
                             else if (type_name == get_typename<mesh_component>()) system_pointer->create(selection, get_typeid<mesh_component>(), &mesh_component(selection));
                             else if (type_name == get_typename<material_component>()) system_pointer->create(selection, get_typeid<material_component>(), &material_component(selection));
                             else if (type_name == get_typename<geometry_component>()) system_pointer->create(selection, get_typeid<geometry_component>(), &geometry_component(selection));
@@ -659,9 +654,9 @@ void scene_editor_app::on_draw()
 
                 ImGui::Dummy({ 0, 10 });
 
-                if (ImGui::TreeNode("Procedural Sky") && the_render_payload.skybox)
+                if (ImGui::TreeNode("Procedural Sky") && renderer_payload.skybox)
                 {
-                    build_imgui(im_ui_ctx, "skybox", *the_render_payload.skybox);
+                    build_imgui(im_ui_ctx, "skybox", *renderer_payload.skybox);
                     ImGui::TreePop();
                 }
 
@@ -683,8 +678,8 @@ void scene_editor_app::on_draw()
 
             if (ImGui::TreeNode("Scene"))
             {
-                build_imgui(im_ui_ctx, "Radiance IBL", the_render_payload.ibl_radianceCubemap);
-                build_imgui(im_ui_ctx, "Irradiance IBL", the_render_payload.ibl_irradianceCubemap);
+                build_imgui(im_ui_ctx, "Radiance IBL", renderer_payload.ibl_radianceCubemap);
+                build_imgui(im_ui_ctx, "Irradiance IBL", renderer_payload.ibl_irradianceCubemap);
                 ImGui::TreePop();
             }
 

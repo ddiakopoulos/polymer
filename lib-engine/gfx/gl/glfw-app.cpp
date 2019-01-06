@@ -193,16 +193,9 @@ int glfw_window::get_mods() const
 //   polymer_app   //
 /////////////////////
 
-// fixme -- technically gl_context is leaky
-polymer_app::polymer_app(int w, int h, const std::string title, int samples) : glfw_window(new gl_context(), w, h, title, samples)
-{
-
-}
-
-polymer_app::~polymer_app() 
-{
-
-}
+/// @fixme - theoretically gl_context is leaky
+polymer_app::polymer_app(int w, int h, const std::string title, int samples) : glfw_window(new gl_context(), w, h, title, samples) {}
+polymer_app::~polymer_app() {}
 
 void polymer_app::request_screenshot(const std::string & filename)
 {

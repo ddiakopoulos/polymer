@@ -15,7 +15,7 @@
         "emissive_handle": "",
         "emissive_strength": 0.0,
         "height_handle": "",
-        "metallic_factor": 0.0,
+        "metallic_factor": 0.25080999732017517,
         "metallic_handle": "",
         "normal_handle": "concrete_tile_normal",
         "occlusion_handle": "",
@@ -27,8 +27,8 @@
         "shadow_opacity": 1.0,
         "specularLevel": 0.0,
         "texcoord_scale": {
-            "x": 0.07500000298023224,
-            "y": 0.07500000298023224
+            "x": 4.0,
+            "y": 4.0
         }
     }
 }

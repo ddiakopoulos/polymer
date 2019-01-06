@@ -51,7 +51,10 @@ struct material_editor_window final : public glfw_window
     std::unique_ptr<pbr_renderer> preview_renderer;
     std::unique_ptr<material_component> material_comp;
     std::unique_ptr<mesh_component> mesh_comp;
-    renderable preview_renderable;
+    std::unique_ptr<world_transform_component> world_xform_comp;
+    std::unique_ptr<local_transform_component> local_xform_comp;
+
+    render_component preview_renderable;
 
     perspective_camera previewCam;
 
@@ -104,9 +107,12 @@ struct material_editor_window final : public glfw_window
         material_comp.reset(new material_component(debug_sphere));
         material_comp->material = material_handle(material_library::kDefaultMaterialId);
 
-        preview_renderable.e = debug_sphere;
-        preview_renderable.scale = float3(1.f, 1.f, 1.f);
-        preview_renderable.t = transform();
+        local_xform_comp.reset(new local_transform_component(debug_sphere));
+        world_xform_comp.reset(new world_transform_component(debug_sphere));
+
+        preview_renderable = render_component(debug_sphere);
+        preview_renderable.local_transform = local_xform_comp.get();
+        preview_renderable.world_transform = world_xform_comp.get();
         preview_renderable.material = material_comp.get();
         preview_renderable.mesh = mesh_comp.get();
 
@@ -135,7 +141,8 @@ struct material_editor_window final : public glfw_window
         else if (e.type == app_input_event::CURSOR && e.drag)
         {
             arcball->mouse_drag(e.cursor);
-            preview_renderable.t.orientation = safe_normalize(arcball->currentQuat * preview_renderable.t.orientation);
+            world_xform_comp->world_pose.orientation = safe_normalize(
+                arcball->currentQuat * world_xform_comp->world_pose.orientation);
         }
     }
 
@@ -218,7 +225,7 @@ struct material_editor_window final : public glfw_window
                 preview_payload.ibl_irradianceCubemap = texture_handle("wells-irradiance-cubemap");
                 preview_payload.ibl_radianceCubemap = texture_handle("wells-radiance-cubemap");
                 preview_payload.views.push_back(view_data(0, previewCam.pose, previewCam.get_projection_matrix(width / float(previewHeight))));
-                preview_payload.render_set.push_back(preview_renderable);
+                preview_payload.render_components.push_back(preview_renderable);
 
                 // Render
                 preview_renderer->render_frame(preview_payload);

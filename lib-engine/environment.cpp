@@ -10,6 +10,16 @@
 
 using namespace polymer;
 
+render_component polymer::assemble_render_component(environment & env, const entity e)
+{
+    render_component r{ e };
+    r.material = env.render_system->get_material_component(e);
+    r.mesh = env.render_system->get_mesh_component(e);
+    r.world_transform = env.xform_system->get_world_transform(e);
+    r.local_transform = env.xform_system->get_local_transform(e);
+    return r;
+}
+
 entity environment::track_entity(entity e) 
 { 
     log::get()->engine_log->info("[environment] created tracked entity {}", e);
@@ -149,10 +159,10 @@ void environment::import_environment(const std::string & import_path, entity_orc
                             c.e = new_entity;
                             if (system_pointer->create(new_entity, id, &c)) std::cout << "Created " << type_name << " on " << system_name << std::endl;
                         }
-                        else if (type_name == get_typename<scene_graph_component>())
+                        else if (type_name == get_typename<local_transform_component>())
                         {
                             // Create a new graph component
-                            scene_graph_component c = componentIterator.value();
+                            local_transform_component c = componentIterator.value();
 
                             // Assign it's id to the one we created for this import operation (instead of the one in the file)
                             c.e = new_entity;
