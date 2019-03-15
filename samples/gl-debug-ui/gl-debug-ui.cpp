@@ -47,7 +47,7 @@ constexpr const char textured_frag[] = R"(#version 330
 
 class orbit_camera
 {
-    float3 make_direction_vector(const float yaw, const float pitch) const
+    linalg::aliases::float3 make_direction_vector(const float yaw, const float pitch) const
     {
         return { cos(pitch) * cos(yaw), sin(pitch), cos(pitch) * sin(yaw) };
     }
@@ -63,11 +63,9 @@ class orbit_camera
 
     struct frame_rh
     {
-        float3 zDir;
-        float3 xDir;
-        float3 yDir;
+        linalg::aliases::float3 zDir, xDir, yDir;
         frame_rh() = default;
-        frame_rh(const float3 & eyePoint, const float3 & target, const float3 & worldUp = { 0,1,0 })
+        frame_rh(const linalg::aliases::float3 & eyePoint, const linalg::aliases::float3 & target, const linalg::aliases::float3 & worldUp = { 0,1,0 })
         {
             zDir = normalize(eyePoint - target);
             xDir = normalize(cross(worldUp, zDir));
@@ -77,56 +75,50 @@ class orbit_camera
 
     float yaw{ 0.f };
     float pitch{ 0.f };
-    float3 eye{ 0, 10, 10 };
-    float3 target{ 0, 0.01f, 0.01f };
     frame_rh f;
 
-    bool ml = 0, mr = 0;
-    delta_state delta;
-    float2 last_cursor{ 0.f, 0.f };
+    linalg::aliases::float3 eye{ 0, 300, 300 };
+    linalg::aliases::float3 target{ 0, 0, 0 };
 
-    float zoom_scale = 0.25f;
-    float pan_scale = 0.005f;
+    bool ml = 0, mr = 0;
+    linalg::aliases::float2 last_cursor{ 0.f, 0.f };
+
+    float zoom_scale = 5.f;
+    float pan_scale = 0.1f;
     float rotate_scale = 0.0025f;
 
-    float zoom_inertia = 0.2f;
-    float pan_inertia = 0.075f;
-    float rotation_inertia = 0.075f;
+    float focus = 10.f;
 
-    float focus = 0.f;
-    float3 pan_offset;
+    bool hasUpdatedInput{ false };
 
 public:
 
-    float yfov{ 1.f }, near_clip{ 0.01f }, far_clip{ 128.f };
+    delta_state delta;
+    float yfov{ 1.f }, near_clip{ 0.01f }, far_clip{ 512.f };
 
-    orbit_camera()
-    {
-        set_target(target);
-    }
+    orbit_camera() { set_target(target); }
 
-    void set_target(const float3 & new_target)
+    void set_target(const linalg::aliases::float3 & new_target)
     {
         target = new_target;
-        const float3 lookat = normalize(eye - target);
+        const linalg::aliases::float3 lookat = normalize(eye - target);
         pitch = asinf(lookat.y);
         yaw = acosf(lookat.x);
         f = frame_rh(eye, target);
-        focus = distance(eye, target);
+        // set focus? 
     }
 
-    void set_eye_position(const float3 & new_eye)
+    void set_eye_position(const linalg::aliases::float3 & new_eye)
     {
         eye = new_eye;
         f = frame_rh(eye, target);
-        focus = distance(eye, target);
     }
 
     void handle_input(const app_input_event & e)
     {
         if (e.type == app_input_event::Type::SCROLL)
         {
-            delta.delta_zoom += (-e.value[1]) * zoom_scale;
+            delta.delta_zoom = (-e.value[1]) * zoom_scale;
         }
         else if (e.type == app_input_event::MOUSE)
         {
@@ -135,27 +127,35 @@ public:
         }
         else if (e.type == app_input_event::CURSOR)
         {
-            const float2 delta_cursor = e.cursor - last_cursor;
+            const linalg::aliases::float2 delta_cursor = e.cursor - last_cursor;
 
             if (mr)
             {
                 if (e.mods & GLFW_MOD_SHIFT)
                 {
-                    delta.delta_pan_x += delta_cursor.x * pan_scale;
-                    delta.delta_pan_y += delta_cursor.y * pan_scale;
+                    delta.delta_pan_x = delta_cursor.x * pan_scale;
+                    delta.delta_pan_y = delta_cursor.y * pan_scale;
                 }
                 else
                 {
-                    delta.delta_yaw += delta_cursor.x * rotate_scale;
-                    delta.delta_pitch += delta_cursor.y * rotate_scale;
+                    delta.delta_yaw = delta_cursor.x * rotate_scale;
+                    delta.delta_pitch = delta_cursor.y * rotate_scale;
                 }
             }
             last_cursor = e.cursor;
         }
+
     }
 
-    void update(const float timestep)
+    void update(const float timestep, const float speed = 1.f)
     {
+        if (delta.delta_pan_x != 0.f ||
+            delta.delta_pan_y != 0.f ||
+            delta.delta_yaw != 0.f ||
+            delta.delta_pitch != 0.f ||
+            delta.delta_zoom != 0.f) hasUpdatedInput = true;
+        else hasUpdatedInput = false;
+
         if (should_update())
         {
             // Rotate
@@ -163,46 +163,38 @@ public:
                 yaw += delta.delta_yaw;
                 pitch += delta.delta_pitch;
 
-                pitch = clamp(pitch, float(-POLYMER_PI / 2.f) + 0.1f, float(POLYMER_PI / 2.f) - 0.1f);
-                yaw = std::fmod(yaw, float(POLYMER_TAU));
+                pitch = clamp(pitch, ((float)-POLYMER_PI / 2.f) + 0.1f, ((float)POLYMER_PI / 2.f) - 0.1f);
+                yaw = std::fmod(yaw, (float) POLYMER_TAU);
 
-                const float3 lookvec = normalize(make_direction_vector(yaw, pitch));
-                const float3 new_eye = lookvec * focus;
+                const linalg::aliases::float3 lookvec = normalize(make_direction_vector(yaw, pitch));
+                const linalg::aliases::float3 eye_point = (lookvec * focus);
 
-                eye = new_eye + pan_offset;
-                f = frame_rh(new_eye, target);
+                eye = eye_point + target;
+                f = frame_rh(eye, target);
             }
 
             // Pan
             {
-                const float3 flat_z = normalize(f.zDir * float3(1, 0, 1));
-                const float3 flat_x = normalize(f.xDir * float3(1, 0, 1));
-                pan_offset += (flat_x * -delta.delta_pan_x) + (flat_z * -delta.delta_pan_y);
+                const linalg::aliases::float3 local_y = -normalize(f.yDir);
+                const linalg::aliases::float3 flat_x = normalize(f.xDir * linalg::aliases::float3(1, 0, 1));
+                const linalg::aliases::float3 delta_pan_offset = (flat_x * -delta.delta_pan_x) + (local_y * -delta.delta_pan_y);
+                target += delta_pan_offset;
             }
 
-            // Zoom
+            // Zoom / Eye Distance
             focus += (delta.delta_zoom);
-            focus = std::max(0.1f, std::min(focus, 128.f));
+            focus = std::max(0.1f, std::min(focus, 1024.f));
+
+            // Reset delta state
+            delta.delta_yaw = 0.f;
+            delta.delta_pitch = 0.f;
+            delta.delta_pan_x = 0.f;
+            delta.delta_pan_y = 0.f;
+            delta.delta_zoom = 0.f;
         }
-
-        apply_decay(timestep);
     }
 
-    void apply_decay(const float dt)
-    {
-        const float rotation_decay = rotation_inertia ? std::exp(-dt / rotation_inertia / (float) POLYMER_LN_2) : 0.f;
-        delta.delta_yaw *= rotation_decay;
-        delta.delta_pitch *= rotation_decay;
-
-        const float pan_decay = pan_inertia ? std::exp(-dt / pan_inertia / (float) POLYMER_LN_2) : 0.f;
-        delta.delta_pan_x *= pan_decay;
-        delta.delta_pan_y *= pan_decay;
-
-        const float zoom_decay = zoom_inertia ? std::exp(-dt / zoom_inertia / (float) POLYMER_LN_2) : 0.f;
-        delta.delta_zoom *= zoom_decay;
-    }
-
-    bool should_update(const float threshhold = 1e-3)
+    bool should_update(const float threshhold = 1e-3) const
     {
         if (std::abs(delta.delta_yaw) > threshhold) return true;
         if (std::abs(delta.delta_pitch) > threshhold) return true;
@@ -210,6 +202,22 @@ public:
         if (std::abs(delta.delta_pan_y) > threshhold) return true;
         if (std::abs(delta.delta_zoom) > threshhold) return true;
         return false;
+    }
+
+    float3 get_target() const
+    {
+        return target;
+    }
+
+    void set_transform(const float4x4 & m) 
+    {
+        // todo 
+        // eye = m.z.xyz();
+    }
+
+    void set_yfov(float fov_radians)
+    {
+        yfov = fov_radians;
     }
 
     transform get_transform() const
