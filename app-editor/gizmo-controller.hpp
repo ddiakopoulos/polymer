@@ -104,7 +104,7 @@ public:
 
     void refresh()
     {
-        //compute_entity_transform();
+        compute_entity_transform();
     }
 
     bool active() const

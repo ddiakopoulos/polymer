@@ -133,9 +133,9 @@ namespace polymer
     // ZYX is probably the most common standard: yaw, pitch, roll (YPR)
     // XYZ is somewhat less common: roll, pitch, yaw (RPY)
 
-    inline float4 make_quat_from_euler_zyx(float y, float p, float r)
+    inline quatf make_quat_from_euler_zyx(float y, float p, float r)
     {
-        float4 q;
+        quatf q;
         q.x = cos(y/2.f)*cos(p/2.f)*cos(r/2.f) - sin(y/2.f)*sin(p/2.f)*sin(r/2.f);
         q.y = cos(y/2.f)*cos(p/2.f)*sin(r/2.f) + sin(y/2.f)*cos(r/2.f)*sin(p/2.f);
         q.z = cos(y/2.f)*cos(r/2.f)*sin(p/2.f) - sin(y/2.f)*cos(p/2.f)*sin(r/2.f);
@@ -143,9 +143,9 @@ namespace polymer
         return q;
     }
 
-    inline float4 make_quat_from_euler_xyz(float r, float p, float y)
+    inline quatf make_quat_from_euler_xyz(float r, float p, float y)
     {
-        float4 q;
+        quatf q;
         q.x = cos(r/2.f)*cos(p/2.f)*cos(y/2.f) + sin(r/2.f)*sin(p/2.f)*sin(y/2.f);
         q.y = sin(r/2.f)*cos(p/2.f)*cos(y/2.f) - cos(r/2.f)*sin(y/2.f)*sin(p/2.f);
         q.z = cos(r/2.f)*cos(y/2.f)*sin(p/2.f) + sin(r/2.f)*cos(p/2.f)*sin(y/2.f);
@@ -153,7 +153,7 @@ namespace polymer
         return q;
     }
 
-    inline float3 make_euler_from_quat_zyx(float4 q)
+    inline float3 make_euler_from_quat_zyx(quatf q)
     {
         float3 ypr;
         const double q0 = q.w, q1 = q.x, q2 = q.y, q3 = q.z;
@@ -163,7 +163,7 @@ namespace polymer
         return ypr;
     }
 
-    inline float3 make_euler_from_quat_xyz(float4 q)
+    inline float3 make_euler_from_quat_xyz(quatf q)
     {
         float3 rpy;
         const double q0 = q.w, q1 = q.x, q2 = q.y, q3 = q.z;

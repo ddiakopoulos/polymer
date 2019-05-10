@@ -29,6 +29,7 @@ const T * unpack() { return nullptr; }
 template<class T> struct range_metadata { T min, max; };
 struct editor_hidden { };
 struct input_field { };
+struct euler_angles { };
 
 using json = nlohmann::json;
 

@@ -84,7 +84,12 @@ namespace polymer
 {
     using json = nlohmann::json;
 
-    template<class F> void visit_fields(polymer::transform & o, F f) { f("position", o.position); f("orientation", o.orientation); }
+    template<class F, class ... A> void visit_fields(polymer::transform & o, F f, const A & ... metadata)
+    {
+        //std::cout << "Visit Fields Specifically for Interactive Editing " << std::endl;
+        f("position", o.position, metadata...);
+        f("orientation", o.orientation, euler_angles{});
+    }
 
     // Polymer Asset Handles
     inline void to_json(json & archive, const texture_handle & m)  { archive = m.name == "empty" ? "" : m.name; }
