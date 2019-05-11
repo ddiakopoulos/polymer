@@ -16,9 +16,15 @@
 //   imgui generators for object properties  //
 ///////////////////////////////////////////////
 
+struct qe
+{
+    polymer::quatf q;
+    polymer::float3 e;
+};
+
 struct imgui_ui_context
 {
-    std::unordered_map<polymer::quatf *, polymer::float3> quat_euler_table;
+    std::unordered_map<polymer::quatf *, qe> quat_euler_table;
 };
 
 template<class... A>
@@ -125,67 +131,54 @@ inline bool build_imgui(imgui_ui_context & ctx, const char * label, quatf & v, A
     if (auto * hidden = unpack<editor_hidden>(metadata...)) return false;
     if (auto * euler_representation = unpack<euler_angles>(metadata...))
     {   
+        //std::cout << "v is: " << v << std::endl;
 
+        // Write current quaternion value to euler table
+        float3 euler_xyz = make_euler_from_quat_xyz(v);
+        euler_xyz = { to_degrees(euler_xyz.x), to_degrees(euler_xyz.y), to_degrees(euler_xyz.z) };
 
-       // auto value = ctx.quat_euler_table.find(&v);
-       // if (value != ctx.quat_euler_table.end())
-       // {
-       //     auto persistent_euler = value->second;
-       //
-       //     std::cout << "Loading... " << persistent_euler << std::endl;
-       //
-       //     // Load existing value into quaternion from persistent euler angles
-       //     //v = make_quat_from_euler_xyz(persistent_euler.x, persistent_euler.y, persistent_euler.z);
-       //
-       //     std::cout << "V is: " << v << std::endl;
-       //
-       //     data_ptr = &(ctx.quat_euler_table[&v]).x;
-       // }
-       // else
-       // {
-       //
-       // }
-
-        //std::cout << "Addr: " << data_ptr << std::endl;
-
-        float * data_ptr_x = &(ctx.quat_euler_table[&v]).x;
-        float * data_ptr_y = &(ctx.quat_euler_table[&v]).y;
-        float * data_ptr_z = &(ctx.quat_euler_table[&v]).z;
-
-        std::cout << "v is: " << v << std::endl;
-
-        if (ImGui::InputFloat((std::string(label) + " x").c_str(), data_ptr_x))
+        if (ctx.quat_euler_table[&v].q != v)
         {
-            float persisent_euler_x_deg = ctx.quat_euler_table[&v].x;
+            qe _qe;
+            _qe.e = euler_xyz;
+            _qe.q = v;
+            ctx.quat_euler_table[&v] = _qe;
+            std::cout << "updating..." << std::endl;
+        }
+
+        float * data_ptr_x = &(ctx.quat_euler_table[&v]).e.x;
+        float * data_ptr_y = &(ctx.quat_euler_table[&v]).e.y;
+        float * data_ptr_z = &(ctx.quat_euler_table[&v]).e.z;
+
+        if (ImGui::InputFloat((std::string(label) + " x").c_str(), data_ptr_x, 0.f, 0.f, 2, ImGuiInputTextFlags_EnterReturnsTrue))
+        {
+            float persisent_euler_x_deg = ctx.quat_euler_table[&v].e.x;
             float3 euler_xyz_radians = make_euler_from_quat_xyz(v);
             euler_xyz_radians = { to_radians(persisent_euler_x_deg), euler_xyz_radians.y, euler_xyz_radians.z };
             v = make_quat_from_euler_xyz(euler_xyz_radians.x, euler_xyz_radians.y, euler_xyz_radians.z);
+            ctx.quat_euler_table[&v].q = v;
             return true;
         }
 
-        if (ImGui::InputFloat((std::string(label) + " y").c_str(), data_ptr_y))
+        if (ImGui::InputFloat((std::string(label) + " y").c_str(), data_ptr_y, 0.f, 0.f, 2, ImGuiInputTextFlags_EnterReturnsTrue))
         {
-            float persisent_euler_y_deg = ctx.quat_euler_table[&v].y;
+            float persisent_euler_y_deg = ctx.quat_euler_table[&v].e.y;
             float3 euler_xyz_radians = make_euler_from_quat_xyz(v);
             euler_xyz_radians = { euler_xyz_radians.x, to_radians(persisent_euler_y_deg), euler_xyz_radians.z };
             v = make_quat_from_euler_xyz(euler_xyz_radians.x, euler_xyz_radians.y, euler_xyz_radians.z);
+            ctx.quat_euler_table[&v].q = v;
             return true;
         }
 
-        if (ImGui::InputFloat((std::string(label) + " z").c_str(), data_ptr_z))
+        if (ImGui::InputFloat((std::string(label) + " z").c_str(), data_ptr_z, 0.f, 0.f, 2, ImGuiInputTextFlags_EnterReturnsTrue))
         {
-            float persisent_euler_z_deg = ctx.quat_euler_table[&v].z;
+            float persisent_euler_z_deg = ctx.quat_euler_table[&v].e.z;
             float3 euler_xyz_radians = make_euler_from_quat_xyz(v);
             euler_xyz_radians = { euler_xyz_radians.x, euler_xyz_radians.y, to_radians(persisent_euler_z_deg) };
             v = make_quat_from_euler_xyz(euler_xyz_radians.x, euler_xyz_radians.y, euler_xyz_radians.z);
+            ctx.quat_euler_table[&v].q = v;
             return true;
         }
-
-
-        //float3 euler_xyz = make_euler_from_quat_xyz(v);
-        //euler_xyz = { to_degrees(euler_xyz.x), to_degrees(euler_xyz.y), to_degrees(euler_xyz.z) };
-        //std::cout << "Updating Euler To: " << euler_xyz << std::endl;
-        //ctx.quat_euler_table[&v] = euler_xyz;
         return false;
     }
     return ImGui::InputFloat4(label, &v.x);
