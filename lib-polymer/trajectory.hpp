@@ -14,13 +14,13 @@
 
 namespace polymer
 {
-    // Calculate the maximum range that a ballistic projectile can be fired on given speed and gravity.
-    //
-    // speed (float): projectile velocity
-    // gravity (float): force of gravity, positive is down
-    // initial_height (float): distance above flat terrain
-    //
-    // return (float): maximum range
+    /// Calculate the maximum range that a ballistic projectile can be fired on given speed and gravity.
+    ///
+    /// speed (float): projectile velocity
+    /// gravity (float): force of gravity, positive is down
+    /// initial_height (float): distance above flat terrain
+    ///
+    /// return (float): maximum range
     inline float ballistic_range(float speed, float gravity, float initial_height)
     {
         if (speed < 0 || gravity < 0 || initial_height <= 0) throw std::range_error("invalid initial conditions");
@@ -33,17 +33,17 @@ namespace polymer
         return range;
     }
 
-    // Solve firing angles for a ballistic projectile with speed and gravity to hit a fixed position.
-    //
-    // origin (float3): point projectile will fire from
-    // speed (float): scalar speed of projectile
-    // target (float3): point projectile is trying to hit
-    // gravity (float): force of gravity, positive down
-    //
-    // s0 (out float3): firing solution (low angle) 
-    // s1 (out float3): firing solution (high angle)
-    //
-    // return (int): number of unique solutions found: 0, 1, or 2.
+    /// Solve firing angles for a ballistic projectile with speed and gravity to hit a fixed position.
+    ///
+    /// origin (float3): point projectile will fire from
+    /// speed (float): scalar speed of projectile
+    /// target (float3): point projectile is trying to hit
+    /// gravity (float): force of gravity, positive down
+    ///
+    /// s0 (out float3): firing solution (low angle) 
+    /// s1 (out float3): firing solution (high angle)
+    ///
+    /// return (int): number of unique solutions found: 0, 1, or 2.
     inline int solve_ballistic_arc(const float3 origin, const float speed, const float3 target, const float gravity, float3 & s0, float3 & s1)
     {
         if (origin == target || speed < 0 || gravity < 0) throw std::range_error("invalid initial conditions");
@@ -80,20 +80,20 @@ namespace polymer
         return numSolutions;
     }
 
-    // Solve firing angles for a ballistic projectile with speed and gravity to hit a target moving with constant, linear velocity.
-    //
-    // proj_pos (float3): point projectile will fire from
-    // proj_speed (float): scalar speed of projectile
-    // target (float3): point projectile is trying to hit
-    // target_velocity (float3): velocity of target
-    // gravity (float): force of gravity, positive down
-    //
-    // s0 (out float3): firing solution (fastest time impact) 
-    // s1 (out float3): firing solution (next impact)
-    // s2 (out float3): firing solution (next impact)
-    // s3 (out float3): firing solution (next impact)
-    //
-    // return (int): number of unique solutions found: 0, 1, 2, 3, or 4.
+    /// Solve firing angles for a ballistic projectile with speed and gravity to hit a target moving with constant, linear velocity.
+    ///
+    /// proj_pos (float3): point projectile will fire from
+    /// proj_speed (float): scalar speed of projectile
+    /// target (float3): point projectile is trying to hit
+    /// target_velocity (float3): velocity of target
+    /// gravity (float): force of gravity, positive down
+    ///
+    /// s0 (out float3): firing solution (fastest time impact) 
+    /// s1 (out float3): firing solution (next impact)
+    /// s2 (out float3): firing solution (next impact)
+    /// s3 (out float3): firing solution (next impact)
+    ///
+    /// return (int): number of unique solutions found: 0, 1, 2, 3, or 4.
     inline int solve_ballistic_arc(const float3 proj_pos, const float proj_speed, const float3 target_pos, const float3 target_velocity, const float gravity, float3 & s0, float3 & s1)
     {
         double G = gravity;
@@ -151,18 +151,18 @@ namespace polymer
         return numSolutions;
     }
 
-    // Solve the firing arc with a fixed lateral speed. Vertical speed and gravity varies. 
-    // This enables a visually pleasing arc.
-    //
-    // proj_pos (float3): point projectile will fire from
-    // lateral_speed (float): scalar speed of projectile along XZ plane
-    // target_pos (float3): point projectile is trying to hit
-    // max_height (float): height above Max(proj_pos, impact_pos) for projectile to peak at
-    //
-    // fire_velocity (out float3): firing velocity
-    // gravity (out float): gravity necessary to projectile to hit precisely max_height
-    //
-    // return (bool): true if a valid solution was found
+    /// Solve the firing arc with a fixed lateral speed. Vertical speed and gravity varies. 
+    /// This enables a visually pleasing arc.
+    ///
+    /// proj_pos (float3): point projectile will fire from
+    /// lateral_speed (float): scalar speed of projectile along XZ plane
+    /// target_pos (float3): point projectile is trying to hit
+    /// max_height (float): height above Max(proj_pos, impact_pos) for projectile to peak at
+    ///
+    /// fire_velocity (out float3): firing velocity
+    /// gravity (out float): gravity necessary to projectile to hit precisely max_height
+    ///
+    /// return (bool): true if a valid solution was found
     inline bool solve_ballistic_arc_lateral(const float3 proj_pos, const float lateral_speed, const float3 target_pos, const float max_height, float3 & fire_velocity, float & gravity)
     {
         if (proj_pos == target_pos || lateral_speed < 0 || max_height < proj_pos.y) throw std::range_error("invalid initial conditions");
@@ -188,19 +188,19 @@ namespace polymer
         return true;
     }
 
-    // Solve the firing arc with a fixed lateral speed. Vertical speed and gravity varies. 
-    // This enables a visually pleasing arc.
-    //
-    // proj_pos (float3): point projectile will fire from
-    // lateral_speed (float): scalar speed of projectile along XZ plane
-    // target_pos (float3): point projectile is trying to hit
-    // max_height (float): height above Max(proj_pos, impact_pos) for projectile to peak at
-    //
-    // fire_velocity (out float3): firing velocity
-    // gravity (out float): gravity necessary to projectile to hit precisely max_height
-    // impact_point (out float3): point where moving target will be hit
-    //
-    // return (bool): true if a valid solution was found
+    /// Solve the firing arc with a fixed lateral speed. Vertical speed and gravity varies. 
+    /// This enables a visually pleasing arc.
+    ///
+    /// proj_pos (float3): point projectile will fire from
+    /// lateral_speed (float): scalar speed of projectile along XZ plane
+    /// target_pos (float3): point projectile is trying to hit
+    /// max_height (float): height above Max(proj_pos, impact_pos) for projectile to peak at
+    ///
+    /// fire_velocity (out float3): firing velocity
+    /// gravity (out float): gravity necessary to projectile to hit precisely max_height
+    /// impact_point (out float3): point where moving target will be hit
+    ///
+    /// return (bool): true if a valid solution was found
     inline bool solve_ballistic_arc_lateral(const float3 proj_pos, const float lateral_speed, const float3 target, const float3 target_velocity, const float max_height_offset,
         float3 & fire_velocity, float & gravity, float3 & impact_point)
     {

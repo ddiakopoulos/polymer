@@ -82,21 +82,17 @@ namespace quickhull
 
         struct Face 
         {
-            size_t m_he;
+            size_t m_he{ std::numeric_limits<size_t>::max() };
             plane m_P;
             float m_mostDistantPointDist{ 0 };
             size_t m_mostDistantPoint{ 0 };
             size_t m_visibilityCheckedOnIteration{ 0 };
-            std::uint8_t m_isVisibleFaceOnCurrentIteration : 1;
-            std::uint8_t m_inFaceStack : 1;
-            std::uint8_t m_horizonEdgesOnCurrentIteration : 3; // Bit for each half edge assigned to this face, each being 0 or 1 depending on whether the edge belongs to horizon edge
+            uint8_t m_isVisibleFaceOnCurrentIteration{ 0 };
+            uint8_t m_inFaceStack{ 0 };
+            uint8_t m_horizonEdgesOnCurrentIteration{ 0 }; // Bit for each half edge assigned to this face, each being 0 or 1 depending on whether the edge belongs to horizon edge
             std::unique_ptr<std::vector<size_t>> m_pointsOnPositiveSide;
 
-            Face() : m_he(std::numeric_limits<size_t>::max()),
-                     m_isVisibleFaceOnCurrentIteration(0),
-                     m_inFaceStack(0),
-                     m_horizonEdgesOnCurrentIteration(0) {}
-
+            Face() = default;
             void disable() { m_he = std::numeric_limits<size_t>::max(); }
             bool isDisabled() const { return m_he == std::numeric_limits<size_t>::max(); }
         };
@@ -309,7 +305,7 @@ namespace quickhull
 
             // Map vertex indices from original point cloud to the new mesh vertex indices
             std::unordered_map<size_t, size_t> vertexIndexMapping; 
-            for (size_t i = 0;i<mesh.m_faces.size();i++) 
+            for (size_t i = 0; i < mesh.m_faces.size();i++) 
             {
                 if (!mesh.m_faces[i].isDisabled()) 
                 {
@@ -439,9 +435,9 @@ namespace quickhull
             // Find two most distant extreme points.
             float maxD = m_epsilonSquared;
             std::pair<size_t, size_t> selectedPoints;
-            for (size_t i=0;i<6;i++) 
+            for (size_t i = 0; i < 6; i++) 
             {
-                for (size_t j=i+1;j<6;j++) 
+                for (size_t j = i+1; j < 6; j++) 
                 {
                     const float d = distance2(m_vertexData[m_extremeValues[i]], m_vertexData[m_extremeValues[j]]);
                     if (d > maxD) 
