@@ -166,6 +166,26 @@ void scene_editor_app::on_input(const app_input_event & event)
             }
 
             if (event.value[0] == GLFW_KEY_SPACE && event.action == GLFW_RELEASE) {}
+
+            // XZ plane nudging
+            if (event.action == GLFW_RELEASE)
+            {
+                auto nudge = [this](const float3 amount)
+                {
+                    if (gizmo->get_selection().size() == 0) return;
+                    if (const entity first_selection = gizmo->get_selection()[0])
+                    {
+                        auto transform = scene.xform_system->get_local_transform(first_selection)->local_pose;
+                        transform.position += amount;
+                        scene.xform_system->set_local_transform(first_selection, transform);
+                    }
+                };
+
+                if (event.value[0] == GLFW_KEY_UP)    nudge({  0.25f, 0.f,  0.f });
+                if (event.value[0] == GLFW_KEY_DOWN)  nudge({ -0.25f, 0.f,  0.f });
+                if (event.value[0] == GLFW_KEY_LEFT)  nudge({  0.f,   0.f,  0.25f });
+                if (event.value[0] == GLFW_KEY_RIGHT) nudge({  0.f,   0.f, -0.25f });
+            }
         }
 
         // Raycast for editor/gizmo selection on mouse up
