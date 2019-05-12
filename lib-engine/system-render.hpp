@@ -38,7 +38,6 @@ namespace polymer
         void initialize_skybox(entity_orchestrator * orch, skybox_component & skybox)
         {
             the_skybox = skybox_component(orch->create_entity());
-
             the_skybox.sun_directional_light = orch->create_entity();
 
             transform_system * transform_sys = dynamic_cast<transform_system *>(orch->get_system(get_typeid<transform_system>()));
@@ -61,7 +60,6 @@ namespace polymer
 
             // Set initial values on the skybox with the sunlight entity we just created
             the_skybox.sky.onParametersChanged();
-
         }
 
     public:
@@ -79,8 +77,6 @@ namespace polymer
 
             initialize_skybox(orch, the_skybox);
         }
-
-        skybox_component & get_skybox() { return the_skybox; }
 
         pbr_renderer * get_renderer() { return renderer.get(); }
 
@@ -117,6 +113,15 @@ namespace polymer
             return nullptr;
         }
 
+        skybox_component * get_skybox() 
+        {   
+            if (the_skybox.get_entity() != kInvalidEntity)
+            {
+                return &the_skybox;
+            }
+            return nullptr;
+        }
+
         virtual bool create(entity e, poly_typeid hash, void * data) override final 
         { 
             if (hash == get_typeid<mesh_component>()) 
@@ -139,6 +144,11 @@ namespace polymer
                 directional_lights[e] = *static_cast<directional_light_component *>(data); 
                 return true; 
             }
+            else if (hash == get_typeid<skybox_component>())
+            {
+                the_skybox = std::move(*static_cast<skybox_component *>(data));
+                return true;
+            }
             return false;
         }
 
@@ -146,6 +156,7 @@ namespace polymer
         material_component * create(entity e, material_component && c) { materials[e] = std::move(c); return &materials[e]; }
         point_light_component * create(entity e, point_light_component && c) { point_lights[e] = std::move(c); return &point_lights[e]; }
         directional_light_component * create(entity e, directional_light_component && c) { directional_lights[e] = std::move(c); return &directional_lights[e]; }
+        skybox_component * create(entity e, skybox_component && c) { the_skybox = std::move(c); return &the_skybox; }
 
         virtual void destroy(entity e) override final 
         {
@@ -169,6 +180,8 @@ namespace polymer
 
             auto dirLightIter = directional_lights.find(e);
             if (dirLightIter != directional_lights.end()) directional_lights.erase(dirLightIter);
+
+            if (the_skybox.get_entity() == e) the_skybox = {};
         }
     };
     POLYMER_SETUP_TYPEID(render_system);

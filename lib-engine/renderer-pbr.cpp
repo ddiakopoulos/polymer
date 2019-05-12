@@ -273,7 +273,7 @@ void pbr_renderer::run_skybox_pass(const view_data & view, const render_payload 
     //m.draw_elements();
     //program.unbind();
 
-    scene.skybox->render(view.viewProjMatrix, view.pose.position, view.farClip);
+    scene.skybox->sky.render(view.viewProjMatrix, view.pose.position, view.farClip);
 
     //glDepthMask(GL_TRUE);
     //if (wasCullingEnabled) glEnable(GL_CULL_FACE);

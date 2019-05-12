@@ -104,11 +104,19 @@ namespace polymer
         std::vector<view_data> views;
         std::vector<render_component> render_components;
         std::vector<point_light_component *> point_lights;
-        directional_light_component * sunlight;
+        directional_light_component * sunlight{ nullptr };
+        skybox_component * skybox{ nullptr };
         float4 clear_color{ 1, 0, 0, 1 };
         texture_handle ibl_radianceCubemap;
         texture_handle ibl_irradianceCubemap;
-        gl_procedural_sky * skybox{ nullptr };
+        void reset()
+        {
+           views.clear();
+           render_components.clear();
+           point_lights.clear();
+           sunlight = nullptr;
+           skybox = nullptr;
+        }
     };
 
     //////////////////////

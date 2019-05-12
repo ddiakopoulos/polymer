@@ -159,6 +159,12 @@ void environment::import_environment(const std::string & import_path, entity_orc
                             c.e = new_entity;
                             if (system_pointer->create(new_entity, id, &c)) std::cout << "Created " << type_name << " on " << system_name << std::endl;
                         }
+                        else if (type_name == get_typename<skybox_component>())
+                        {
+                            skybox_component c = componentIterator.value();
+                            c.e = new_entity;
+                            if (system_pointer->create(new_entity, id, &c)) std::cout << "Created " << type_name << " on " << system_name << std::endl;
+                        }
                         else if (type_name == get_typename<local_transform_component>())
                         {
                             // Create a new graph component
@@ -181,7 +187,7 @@ void environment::import_environment(const std::string & import_path, entity_orc
                         }
                         else
                         {
-                            throw std::runtime_error("component type name mismatch!");
+                            throw std::runtime_error("component type name mismatch. did you forget to add a new component type here?");
                         }
    
                     }

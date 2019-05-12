@@ -74,13 +74,8 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
 
     gizmo.reset(new gizmo_controller(scene.xform_system));
 
-    // Only need to set the skybox on the |render_payload| once (unless we clear the payload)
-
-    renderer_payload.skybox = &scene.render_system->get_skybox().sky;
-    renderer_payload.sunlight = scene.render_system->get_directional_light_component(scene.render_system->get_skybox().sun_directional_light);
-
-    scene.track_entity(scene.render_system->get_skybox().get_entity());
-    scene.track_entity(scene.render_system->get_skybox().sun_directional_light);
+    scene.track_entity(scene.render_system->get_skybox()->get_entity());
+    scene.track_entity(scene.render_system->get_skybox()->sun_directional_light);
 
     // @fixme - to be resolved rather than hard-coded
     auto radianceBinary = read_file_binary("../assets/textures/envmaps/studio_radiance.dds");
@@ -351,10 +346,7 @@ void scene_editor_app::on_draw()
         editorProfiler.begin("gather-scene");
 
         // Clear out transient scene payload data
-        renderer_payload.views.clear();
-        renderer_payload.render_components.clear();
-        renderer_payload.point_lights.clear();
-        renderer_payload.sunlight = nullptr;
+        renderer_payload.reset();
 
         // Does the entity have a material? If so, we can render it. 
         for (const auto e : scene.entity_list())
@@ -375,17 +367,15 @@ void scene_editor_app::on_draw()
             }
         }
 
-        if (auto sunlight = scene.render_system->get_directional_light_component(scene.render_system->get_skybox().sun_directional_light))
+        if (auto skybox = scene.render_system->get_skybox())
         {
-            renderer_payload.sunlight = sunlight;
-        }
+            renderer_payload.skybox = skybox;
 
-        //// Gather directional light. The sunlight is an implicit directional light created
-        //// on the renderer (it is not tracked by the orchestrator so isn't in the scene.entity_list())
-        //if (auto implicit_sun = scene.render_system->get_implicit_sunlight())
-        //{
-        //    renderer_payload.sunlight = implicit_sun;
-        //}
+            if (auto sunlight = scene.render_system->get_directional_light_component(skybox->sun_directional_light))
+            {
+                renderer_payload.sunlight = sunlight;
+            }
+        }
 
         // Gather point lights
         for (const auto e : scene.entity_list())
@@ -663,12 +653,6 @@ void scene_editor_app::on_draw()
                 }
 
                 ImGui::Dummy({ 0, 10 });
-
-                if (ImGui::TreeNode("Procedural Sky") && renderer_payload.skybox)
-                {
-                    build_imgui(im_ui_ctx, "skybox", *renderer_payload.skybox);
-                    ImGui::TreePop();
-                }
 
                 ImGui::Dummy({ 0, 10 });
 

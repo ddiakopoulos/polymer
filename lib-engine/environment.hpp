@@ -242,7 +242,7 @@ namespace polymer
     POLYMER_SETUP_TYPEID(skybox_component);
 
     template<class F> void visit_fields(skybox_component & o, F f) {
-        f("gl_procedural_sky", o.sky);
+        f("skybox", o.sky);
     }
 
     inline void to_json(json & j, const skybox_component & p) {
