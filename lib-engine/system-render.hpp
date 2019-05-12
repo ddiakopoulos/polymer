@@ -22,18 +22,47 @@ namespace polymer
 
     class render_system final : public base_system
     {
+        friend class asset_resolver; // for private access to the components
+
         std::unordered_map<entity, mesh_component> meshes;
         std::unordered_map<entity, material_component> materials;
         std::unordered_map<entity, point_light_component> point_lights;
         std::unordered_map<entity, directional_light_component> directional_lights;
+        skybox_component the_skybox;
 
         renderer_settings settings;
         std::unique_ptr<pbr_renderer> renderer;
 
-        std::unique_ptr<polymer::gl_procedural_sky> skybox;
-        entity sunlight;
+        template<class F> friend void visit_components(entity e, render_system * system, F f);
 
-        friend class asset_resolver; // for private access to the components
+        void initialize_skybox(entity_orchestrator * orch, skybox_component & skybox)
+        {
+            the_skybox = skybox_component(orch->create_entity());
+
+            the_skybox.sun_directional_light = orch->create_entity();
+
+            transform_system * transform_sys = dynamic_cast<transform_system *>(orch->get_system(get_typeid<transform_system>()));
+            transform_sys->create(the_skybox.get_entity(), transform(), {});
+            transform_sys->create(the_skybox.sun_directional_light, transform(), {});
+
+            identifier_system * identifier_sys = dynamic_cast<identifier_system *>(orch->get_system(get_typeid<identifier_system>()));
+            identifier_sys->create(the_skybox.get_entity(), "skybox");
+            identifier_sys->create(the_skybox.sun_directional_light, "sunlight");
+
+            // Setup the skybox; link internal parameters to a directional light entity owned by the render system. 
+            the_skybox.sky.onParametersChanged = [this]
+            {
+                directional_light_component dir_light(the_skybox.sun_directional_light);
+                dir_light.data.direction = the_skybox.sky.get_sun_direction();
+                dir_light.data.color = float3(1.f, 1.f, 1.f);
+                dir_light.data.amount = 1.f;
+                create(the_skybox.sun_directional_light, std::move(dir_light));
+            };
+
+            // Set initial values on the skybox with the sunlight entity we just created
+            the_skybox.sky.onParametersChanged();
+
+        }
 
     public:
 
@@ -46,34 +75,12 @@ namespace polymer
             register_system_for_type(this, get_typeid<point_light_component>());
             register_system_for_type(this, get_typeid<directional_light_component>());
 
-            skybox.reset(new gl_hosek_sky());
             renderer.reset(new pbr_renderer(settings));
 
-            // This will not show up in the scene entity list because it is not "tracked" by the environment
-            sunlight = orchestrator->create_entity();
-
-            transform_system * transform_sys = dynamic_cast<transform_system *>(orchestrator->get_system(get_typeid<transform_system>()));
-            identifier_system * identifier_sys = dynamic_cast<identifier_system *>(orchestrator->get_system(get_typeid<identifier_system>()));
-
-            transform_sys->create(sunlight, transform(), {});
-            identifier_sys->create(sunlight, "implict skybox");
-
-            // Setup the skybox; link internal parameters to a directional light entity owned by the render system. 
-            skybox->onParametersChanged = [this]
-            {
-                directional_light_component dir_light(sunlight);
-                dir_light.data.direction = skybox->get_sun_direction();
-                dir_light.data.color = float3(1.f, 1.f, 1.f);
-                dir_light.data.amount = 1.f;
-                create(sunlight, std::move(dir_light));
-            };
-
-            // Set initial values on the skybox with the sunlight entity we just created
-            skybox->onParametersChanged();
+            initialize_skybox(orch, the_skybox);
         }
 
-        directional_light_component * get_implicit_sunlight() { return get_directional_light_component(sunlight); }
-        gl_procedural_sky * get_skybox() { return skybox.get(); }
+        skybox_component & get_skybox() { return the_skybox; }
 
         pbr_renderer * get_renderer() { return renderer.get(); }
 
@@ -168,6 +175,7 @@ namespace polymer
 
     template<class F> void visit_components(entity e, render_system * system, F f)
     {
+        if (system->the_skybox.get_entity() == e) f("skybox component", system->the_skybox);
         if (auto ptr = system->get_mesh_component(e)) f("mesh component", *ptr);
         if (auto ptr = system->get_material_component(e)) f("material component", *ptr);
         if (auto ptr = system->get_point_light_component(e))

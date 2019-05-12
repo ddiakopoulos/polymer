@@ -275,13 +275,22 @@ namespace polymer
 
     template<class F> void visit_fields(gl_procedural_sky & o, F f)
     {
-        f("sun_position_theta", o.sunPosition.x, range_metadata<float>{ 0.f, (float)POLYMER_PI });
-        f("sun_position_phi", o.sunPosition.y, range_metadata<float>{ 0.f, (float)POLYMER_TWO_PI });
+        f("sun_position_theta_phi", o.sunPosition, range_metadata<float>{ 0.f, (float)POLYMER_PI });
         f("normalized_sun_y", o.normalizedSunY, range_metadata<float>{ 0.f, (float)POLYMER_PI });
         f("albedo", o.albedo, range_metadata<float>{ 0.01f, 4.f});
         f("turbidity", o.turbidity, range_metadata<float>{ 1.f, 14.f });
         o.recompute(o.turbidity, o.albedo, o.normalizedSunY);
     }
+
+    inline void to_json(json & j, const gl_procedural_sky & p) {
+        visit_fields(const_cast<gl_procedural_sky&>(p), [&j](const char * name, auto & field, auto... metadata) { j.push_back({ name, field }); });
+    }
+
+    inline void from_json(const json & archive, gl_procedural_sky & m) {
+        visit_fields(m, [&archive](const char * name, auto & field, auto... metadata) {
+            field = archive.at(name).get<std::remove_reference_t<decltype(field)>>();
+        });
+    };
 
     class gl_preetham_sky : public gl_procedural_sky
     {

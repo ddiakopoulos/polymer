@@ -31,7 +31,7 @@ namespace polymer
     // Provide a consistent way to retrieve an entity to which a component belongs. 
     class base_component
     {
-        entity e;
+        entity e{ kInvalidEntity };
         friend struct component_hash;
         friend class environment; // for serialization to modify e directly
     public:

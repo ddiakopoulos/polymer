@@ -75,8 +75,12 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
     gizmo.reset(new gizmo_controller(scene.xform_system));
 
     // Only need to set the skybox on the |render_payload| once (unless we clear the payload)
-    renderer_payload.skybox = scene.render_system->get_skybox();
-    renderer_payload.sunlight = scene.render_system->get_implicit_sunlight();
+
+    renderer_payload.skybox = &scene.render_system->get_skybox().sky;
+    renderer_payload.sunlight = scene.render_system->get_directional_light_component(scene.render_system->get_skybox().sun_directional_light);
+
+    scene.track_entity(scene.render_system->get_skybox().get_entity());
+    scene.track_entity(scene.render_system->get_skybox().sun_directional_light);
 
     // @fixme - to be resolved rather than hard-coded
     auto radianceBinary = read_file_binary("../assets/textures/envmaps/studio_radiance.dds");
@@ -118,7 +122,8 @@ void scene_editor_app::on_window_resize(int2 size)
         renderer_settings settings;
         settings.renderSize = size;
         scene.render_system->reconfigure(settings);
-        scene.render_system->get_skybox()->onParametersChanged(); // reconfigure directional light
+
+        // scene.render_system->get_skybox()->onParametersChanged(); // reconfigure directional light
     }
 }
 
@@ -370,12 +375,17 @@ void scene_editor_app::on_draw()
             }
         }
 
-        // Gather directional light. The sunlight is an implicit directional light created
-        // on the renderer (it is not tracked by the orchestrator so isn't in the scene.entity_list())
-        if (auto implicit_sun = scene.render_system->get_implicit_sunlight())
+        if (auto sunlight = scene.render_system->get_directional_light_component(scene.render_system->get_skybox().sun_directional_light))
         {
-            renderer_payload.sunlight = implicit_sun;
+            renderer_payload.sunlight = sunlight;
         }
+
+        //// Gather directional light. The sunlight is an implicit directional light created
+        //// on the renderer (it is not tracked by the orchestrator so isn't in the scene.entity_list())
+        //if (auto implicit_sun = scene.render_system->get_implicit_sunlight())
+        //{
+        //    renderer_payload.sunlight = implicit_sun;
+        //}
 
         // Gather point lights
         for (const auto e : scene.entity_list())

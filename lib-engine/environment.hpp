@@ -228,6 +228,33 @@ namespace polymer
         });
     };
 
+    //////////////////////////
+    //   skybox_component   //
+    //////////////////////////
+
+    struct skybox_component : public base_component
+    {
+        polymer::gl_hosek_sky sky;
+        entity sun_directional_light;
+        skybox_component() {};
+        skybox_component(entity e) : base_component(e) {}
+    };
+    POLYMER_SETUP_TYPEID(skybox_component);
+
+    template<class F> void visit_fields(skybox_component & o, F f) {
+        f("gl_procedural_sky", o.sky);
+    }
+
+    inline void to_json(json & j, const skybox_component & p) {
+        visit_fields(const_cast<skybox_component&>(p), [&j](const char * name, auto & field, auto... metadata) { j.push_back({ name, field }); });
+    }
+
+    inline void from_json(const json & archive, skybox_component & m) {
+        visit_fields(m, [&archive](const char * name, auto & field, auto... metadata) {
+            field = archive.at(name).get<std::remove_reference_t<decltype(field)>>();
+        });
+    };
+
     ///////////////////////////////
     //   point_light_component   //
     ///////////////////////////////

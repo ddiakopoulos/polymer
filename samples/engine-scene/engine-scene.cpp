@@ -79,7 +79,7 @@ sample_engine_scene::sample_engine_scene() : polymer_app(1280, 720, "sample-engi
     create_handle_for_asset("debug-icosahedron", make_mesh_from_geometry(make_icosasphere(3))); // gpu mesh
     create_handle_for_asset("debug-icosahedron", make_icosasphere(3)); // cpu mesh
 
-    // Configuring an entity at runtime programmatically
+    // This describes how to configure a renderable entity programmatically, at runtime.
     {
         // Create a new entity to represent an icosahedron that we will render
         const entity debug_icosa = scene.track_entity(orchestrator->create_entity());
