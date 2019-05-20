@@ -261,23 +261,20 @@ void pbr_renderer::run_skybox_pass(const view_data & view, const render_payload 
     const GLboolean wasCullingEnabled = glIsEnabled(GL_CULL_FACE);
 
     glDisable(GL_DEPTH_TEST);
+    glDepthMask(GL_FALSE);
+    glDisable(GL_CULL_FACE);
 
-    //glDepthMask(GL_FALSE);
-    //glDisable(GL_CULL_FACE);
+    auto & cubemapProgram = renderPassCubemap.get()->get_variant()->shader;
+    cubemapProgram.bind();
+    cubemapProgram.uniform("u_mvp", (view.projectionMatrix * make_rotation_matrix(conjugate(view.pose.orientation))));
+    cubemapProgram.texture("sc_ibl", 0, scene.ibl_radianceCubemap.get(), GL_TEXTURE_CUBE_MAP);
+    cubemap_box.draw_elements();
+    cubemapProgram.unbind();
 
-    //auto & program = shader_handle("ibl").get()->get_variant()->shader;
-    //program.bind();
-    //program.uniform("u_mvp", (view.projectionMatrix * rotation_matrix(qconj(view.pose.orientation))));
-    //program.texture("sc_ibl", 0, texture_handle("wells-radiance-cubemap").get(), GL_TEXTURE_CUBE_MAP);
-    //auto m = make_cube_mesh();
-    //m.draw_elements();
-    //program.unbind();
+    //scene.skybox->sky.render(view.viewProjMatrix, view.pose.position, view.farClip);
 
-    scene.skybox->sky.render(view.viewProjMatrix, view.pose.position, view.farClip);
-
-    //glDepthMask(GL_TRUE);
-    //if (wasCullingEnabled) glEnable(GL_CULL_FACE);
-
+    glDepthMask(GL_TRUE);
+    if (wasCullingEnabled) glEnable(GL_CULL_FACE);
     if (wasDepthTestingEnabled) glEnable(GL_DEPTH_TEST);
 }
 
@@ -376,6 +373,9 @@ pbr_renderer::pbr_renderer(const renderer_settings settings) : settings(settings
     assert(settings.renderSize.x > 0 && settings.renderSize.y > 0);
     assert(settings.cameraCount >= 1);
 
+    post_quad = make_fullscreen_quad();
+    cubemap_box = make_cube_mesh();
+
     eyeFramebuffers.resize(settings.cameraCount);
     eyeTextures.resize(settings.cameraCount);
     eyeDepthTextures.resize(settings.cameraCount);
@@ -411,7 +411,7 @@ pbr_renderer::pbr_renderer(const renderer_settings settings) : settings(settings
     {
         postFramebuffers.resize(settings.cameraCount);
         postTextures.resize(settings.cameraCount);
-        post_quad = make_fullscreen_quad();
+
 
         for (uint32_t camIdx = 0; camIdx < settings.cameraCount; ++camIdx)
         {

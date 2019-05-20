@@ -8,5 +8,5 @@ in vec3 position;
 
 void main()
 { 
-    f_color = texture(sc_ibl, position); 
+    f_color = textureLod(sc_ibl, position, 0); 
 }

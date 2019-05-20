@@ -59,7 +59,7 @@ namespace polymer
     template<class F> void visit_fields(stable_cascaded_shadows & o, F f)
     {
         f("shadowmap_resolution", o.resolution);
-        f("cascade_split", o.splitLambda, range_metadata<float>{ 0.1f, 1.0f });
+        f("cascade_split",        o.splitLambda, range_metadata<float>{ 0.1f, 1.0f });
     }
 
     ////////////////////////////////////////
@@ -145,8 +145,12 @@ namespace polymer
         gl_mesh left_stencil_mask, right_stencil_mask;
         bool using_stencil_mask{ false };
 
+        shader_handle renderPassCubemap = { "cubemap" };
+        gl_mesh cubemap_box;
+
         shader_handle renderPassEarlyZ = { "depth-prepass" };
         shader_handle renderPassTonemap = { "post-tonemap" };
+
         shader_handle no_op = { "no-op" };
 
         void update_per_object_uniform_buffer(const transform & p, const float3 & scale, const bool receiveShadow, const view_data & d);
@@ -180,13 +184,12 @@ namespace polymer
 
     template<class F> void visit_fields(pbr_renderer & o, F f)
     {
-        f("num_cameras", o.settings.cameraCount, editor_hidden{});
-        f("num_msaa_samples", o.settings.msaaSamples, editor_hidden{});
-        f("render_size", o.settings.renderSize);
-        f("performance_profiling", o.settings.performanceProfiling);
-        f("depth_prepass", o.settings.useDepthPrepass);
-        f("tonemap_pass", o.settings.tonemapEnabled);
-        f("shadow_pass", o.settings.shadowsEnabled);
+        f("num_msaa_samples",       o.settings.msaaSamples, editor_hidden{});
+        f("render_size",            o.settings.renderSize);
+        f("performance_profiling",  o.settings.performanceProfiling);
+        f("depth_prepass",          o.settings.useDepthPrepass);
+        f("tonemap_pass",           o.settings.tonemapEnabled);
+        f("shadow_pass",            o.settings.shadowsEnabled);
     }
 
 }

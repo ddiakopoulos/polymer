@@ -19,9 +19,9 @@ namespace polymer
                 base_path + "/shaders/sky_vert.glsl",
                 base_path + "/shaders/sky_hosek_frag.glsl");
 
-            monitor.watch("ibl",
-                base_path + "/shaders/ibl_vert.glsl",
-                base_path + "/shaders/ibl_frag.glsl",
+            monitor.watch("cubemap",
+                base_path + "/shaders/cubemap_vert.glsl",
+                base_path + "/shaders/cubemap_frag.glsl",
                 base_path + "/shaders/renderer");
 
             monitor.watch("default-shader",
