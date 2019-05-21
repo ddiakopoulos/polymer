@@ -69,7 +69,7 @@ sample_engine_scene::sample_engine_scene() : polymer_app(1280, 720, "sample-engi
     payload.ibl_irradianceCubemap = create_handle_for_asset("wells-irradiance-cubemap", load_cubemap(irradianceHandle));
 
     // Only need to set the skybox on the |render_payload| once (unless we clear the payload)
-    payload.skybox = scene.render_system->get_skybox();
+    payload.procedural_skybox = scene.render_system->get_procedural_skybox();
     payload.sunlight = scene.render_system->get_implicit_sunlight();
 
     // Resolve asset_handles to resources on disk. In the case of this sample, the assets

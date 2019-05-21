@@ -227,29 +227,54 @@ namespace polymer
             field = archive.at(name).get<std::remove_reference_t<decltype(field)>>();
         });
     };
+    
+    /////////////////////////////////////
+    //   procedural_skybox_component   //
+    /////////////////////////////////////
 
-    //////////////////////////
-    //   skybox_component   //
-    //////////////////////////
-
-    struct skybox_component : public base_component
+    struct procedural_skybox_component : public base_component
     {
         polymer::gl_hosek_sky sky;
         entity sun_directional_light;
-        skybox_component() {};
-        skybox_component(entity e) : base_component(e) {}
+        procedural_skybox_component() {};
+        procedural_skybox_component(entity e) : base_component(e) {}
     };
-    POLYMER_SETUP_TYPEID(skybox_component);
+    POLYMER_SETUP_TYPEID(procedural_skybox_component);
 
-    template<class F> void visit_fields(skybox_component & o, F f) {
-        f("skybox", o.sky);
+    template<class F> void visit_fields(procedural_skybox_component & o, F f) {
+        f("procedural_skybox", o.sky);
     }
 
-    inline void to_json(json & j, const skybox_component & p) {
-        visit_fields(const_cast<skybox_component&>(p), [&j](const char * name, auto & field, auto... metadata) { j.push_back({ name, field }); });
+    inline void to_json(json & j, const procedural_skybox_component & p) {
+        visit_fields(const_cast<procedural_skybox_component&>(p), [&j](const char * name, auto & field, auto... metadata) { j.push_back({ name, field }); });
     }
 
-    inline void from_json(const json & archive, skybox_component & m) {
+    inline void from_json(const json & archive, procedural_skybox_component & m) {
+        visit_fields(m, [&archive](const char * name, auto & field, auto... metadata) {
+            field = archive.at(name).get<std::remove_reference_t<decltype(field)>>();
+        });
+    };
+
+    ///////////////////////////
+    //   cubemap_component   //
+    ///////////////////////////
+
+    struct cubemap_component : public base_component
+    {
+        cubemap_component() {};
+        cubemap_component(entity e) : base_component(e) {}
+    };
+    POLYMER_SETUP_TYPEID(cubemap_component);
+
+    template<class F> void visit_fields(cubemap_component & o, F f) {
+        //f("cubemap", o.sky);
+    }
+
+    inline void to_json(json & j, const cubemap_component & p) {
+        visit_fields(const_cast<cubemap_component&>(p), [&j](const char * name, auto & field, auto... metadata) { j.push_back({ name, field }); });
+    }
+
+    inline void from_json(const json & archive, cubemap_component & m) {
         visit_fields(m, [&archive](const char * name, auto & field, auto... metadata) {
             field = archive.at(name).get<std::remove_reference_t<decltype(field)>>();
         });
@@ -391,6 +416,23 @@ namespace polymer
     class environment
     {
         std::vector<entity> active_entities;
+
+        template<typename component_t, typename system_t> void create_component_on_system(
+            const entity new_entity,
+            const std::string & type_name,
+            system_t * system_pointer,
+            polymer::json::const_iterator & componentIterator)
+        {
+            if (type_name == get_typename<component_t>())
+            {
+                component_t the_new_component = componentIterator.value();
+                the_new_component.e = new_entity;
+                if (system_pointer->create(new_entity, get_typeid(type_name.c_str()), &the_new_component))
+                {
+                    log::get()->engine_log->info("created {} on {}", type_name, "system_name_here");
+                }
+            }
+        }
 
     public:
 

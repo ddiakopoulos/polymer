@@ -255,7 +255,7 @@ void pbr_renderer::run_depth_prepass(const view_data & view, const render_payloa
 
 void pbr_renderer::run_skybox_pass(const view_data & view, const render_payload & scene)
 {
-    if (!scene.skybox) return;
+    if (!scene.procedural_skybox) return;
 
     const GLboolean wasDepthTestingEnabled = glIsEnabled(GL_DEPTH_TEST);
     const GLboolean wasCullingEnabled = glIsEnabled(GL_CULL_FACE);

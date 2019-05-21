@@ -114,7 +114,6 @@ void environment::import_environment(const std::string & import_path, entity_orc
             {
                 const std::string type_key = componentIterator.key();
                 const std::string type_name = type_key.substr(1);
-                const poly_typeid id = get_typeid(type_name.c_str());
 
                 // This is a inefficient given that components are re-parsed and re-constructed
                 // for every system until a system finally creates it. We should eventually return a system
@@ -123,49 +122,16 @@ void environment::import_environment(const std::string & import_path, entity_orc
                 {
                     if (system_pointer)
                     {
-                        if (type_name == get_typename<identifier_component>())
-                        {
-                            identifier_component c = componentIterator.value();
-                            c.e = new_entity;
-                            if (system_pointer->create(new_entity, id, &c)) std::cout << "Created " << type_name << " on " << system_name << std::endl;
-                        }
-                        else if (type_name == get_typename<mesh_component>())
-                        {
-                            mesh_component c = componentIterator.value();
-                            c.e = new_entity;
-                            if (system_pointer->create(new_entity, id, &c)) std::cout << "Created " << type_name << " on " << system_name << std::endl;
-                        }
-                        else if (type_name == get_typename<material_component>())
-                        {
-                            material_component c = componentIterator.value();
-                            c.e = new_entity;
-                            if (system_pointer->create(new_entity, id, &c)) std::cout << "Created " << type_name << " on " << system_name << std::endl;
-                        }
-                        else if (type_name == get_typename<geometry_component>())
-                        {
-                            geometry_component c = componentIterator.value();
-                            c.e = new_entity;
-                            if (system_pointer->create(new_entity, id, &c)) std::cout << "Created " << type_name << " on " << system_name << std::endl;
-                        }
-                        else if (type_name == get_typename<point_light_component>())
-                        {
-                            point_light_component c = componentIterator.value();
-                            c.e = new_entity;
-                            if (system_pointer->create(new_entity, id, &c)) std::cout << "Created " << type_name << " on " << system_name << std::endl;
-                        }
-                        else if (type_name == get_typename<directional_light_component>())
-                        {
-                            directional_light_component c = componentIterator.value();
-                            c.e = new_entity;
-                            if (system_pointer->create(new_entity, id, &c)) std::cout << "Created " << type_name << " on " << system_name << std::endl;
-                        }
-                        else if (type_name == get_typename<skybox_component>())
-                        {
-                            skybox_component c = componentIterator.value();
-                            c.e = new_entity;
-                            if (system_pointer->create(new_entity, id, &c)) std::cout << "Created " << type_name << " on " << system_name << std::endl;
-                        }
-                        else if (type_name == get_typename<local_transform_component>())
+                        create_component_on_system<identifier_component>(new_entity, type_name, system_pointer, componentIterator);
+                        create_component_on_system<mesh_component>(new_entity, type_name, system_pointer, componentIterator);
+                        create_component_on_system<geometry_component>(new_entity, type_name, system_pointer, componentIterator);
+                        create_component_on_system<material_component>(new_entity, type_name, system_pointer, componentIterator);
+                        create_component_on_system<point_light_component>(new_entity, type_name, system_pointer, componentIterator);
+                        create_component_on_system<directional_light_component>(new_entity, type_name, system_pointer, componentIterator);
+                        create_component_on_system<procedural_skybox_component>(new_entity, type_name, system_pointer, componentIterator);
+                        create_component_on_system<cubemap_component>(new_entity, type_name, system_pointer, componentIterator);
+
+                        if (type_name == get_typename<local_transform_component>())
                         {
                             // Create a new graph component
                             local_transform_component c = componentIterator.value();

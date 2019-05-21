@@ -60,7 +60,7 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
         scene.render_system->get_renderer()->set_stencil_mask(1, hmd->get_stencil_mask(vr_eye::right_eye));
 
         // Only need to set the skybox on the |render_payload| once (unless we clear the payload)
-        payload.skybox = scene.render_system->get_skybox();
+        payload.procedural_skybox = scene.render_system->get_procedural_skybox();
         payload.sunlight = scene.render_system->get_implicit_sunlight();
 
         {

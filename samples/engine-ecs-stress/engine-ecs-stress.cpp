@@ -63,7 +63,7 @@ sample_engine_ecs::sample_engine_ecs() : polymer_app(1280, 720, "sample-ecs-stre
     scene.event_manager.reset(new polymer::event_manager_async());
 
     // Only need to set the skybox on the |render_payload| once (unless we clear the payload)
-    payload.skybox = scene.render_system->get_skybox();
+    payload.procedural_skybox = scene.render_system->get_procedural_skybox();
     payload.sunlight = scene.render_system->get_implicit_sunlight();
 
     // Resolve asset_handles to resources on disk. In the case of this sample, the assets
