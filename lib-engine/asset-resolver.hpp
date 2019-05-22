@@ -51,9 +51,13 @@ namespace polymer
     }
 
     // The purpose of an asset resolver is to match an asset_handle to an asset on disk. This is done
-    // for scene objects (meshes, geometry) and materials (shaders, textures). 
+    // for scene objects (meshes, geometry) and materials (shaders, textures, cubemaps). 
     class asset_resolver
     {
+        const std::string & asset_dir;
+        environment * scene;
+        material_library * library;
+
         // Unresolved asset names
         std::vector<std::string> mesh_names;
         std::vector<std::string> shader_names;
@@ -84,6 +88,19 @@ namespace polymer
                         if (name == filename_no_ext)
                         {
                             create_handle_for_asset(name.c_str(), load_image(path, false));
+                            log::get()->engine_log->info("resolved {} ({})", name, typeid(gl_texture_2d).name());
+                        }
+                    }
+                }
+                else if (ext == "dds")
+                {
+                    for (const auto & name : texture_names)
+                    {
+                        if (name == filename_no_ext)
+                        {
+                            auto cubemap_binary = read_file_binary(path);
+                            gli::texture_cube cubemap_as_gli_cubemap(gli::load_dds((char *)cubemap_binary.data(), cubemap_binary.size()));
+                            create_handle_for_asset(filename_no_ext.c_str(), load_cubemap(cubemap_as_gli_cubemap));
                             log::get()->engine_log->info("resolved {} ({})", name, typeid(gl_texture_2d).name());
                         }
                     }
@@ -121,7 +138,7 @@ namespace polymer
 
     public:
 
-        void resolve(const std::string & asset_dir, environment * scene, material_library * library)
+        void resolve()
         {
             assert(scene != nullptr);
             assert(library != nullptr);
@@ -166,10 +183,23 @@ namespace polymer
                 }
             }
 
+            // IBLs 
+            if (auto * ibl_cubemap_component = scene->render_system->get_cubemap())
+            {
+                texture_names.push_back(ibl_cubemap_component->ibl_irradianceCubemap.name);
+                texture_names.push_back(ibl_cubemap_component->ibl_radianceCubemap.name);
+            }
+
             remove_duplicates(shader_names);
             remove_duplicates(texture_names);
 
             walk_directory(asset_dir);
+        }
+
+        asset_resolver::asset_resolver(const std::string & asset_dir, environment * scene, material_library * library) :
+            asset_dir(asset_dir), scene(scene), library(library)
+        {
+            resolve();
         }
     };
 

@@ -82,7 +82,8 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
 
     scene.mat_library.reset(new polymer::material_library("../assets/materials/")); // must include trailing slash
 
-    resolver.reset(new asset_resolver());
+    // Resolving assets is the last thing we should do
+    resolver.reset(new asset_resolver("../assets/", &scene, scene.mat_library.get()));
 }
 
 void scene_editor_app::on_drop(std::vector<std::string> filepaths)
@@ -226,7 +227,7 @@ void scene_editor_app::import_scene(const std::string & path)
         gizmo->clear();
         renderer_payload.render_components.clear();
         scene.import_environment(path, orchestrator);
-        resolver->resolve("../assets/", &scene, scene.mat_library.get());
+        resolver->resolve();
         glfwSetWindowTitle(window, path.c_str());
     }
     else

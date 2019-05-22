@@ -73,17 +73,6 @@ namespace polymer
 
             identifier_system * identifier_sys = dynamic_cast<identifier_system *>(orch->get_system(get_typeid<identifier_system>()));
             identifier_sys->create(the_cubemap.get_entity(), "ibl-cubemap");
-
-            // wells-radiance-cubemap
-            // wells-irradiance-cubemap
-
-            // @fixme - to be resolved rather than hard-coded
-            auto radianceBinary = read_file_binary("../assets/textures/envmaps/studio_radiance.dds");
-            auto irradianceBinary = read_file_binary("../assets/textures/envmaps/studio_irradiance.dds");
-            gli::texture_cube radianceHandle(gli::load_dds((char *)radianceBinary.data(), radianceBinary.size()));
-            gli::texture_cube irradianceHandle(gli::load_dds((char *)irradianceBinary.data(), irradianceBinary.size()));
-            the_cubemap.ibl_radianceCubemap = create_handle_for_asset("default-radiance-cubemap", load_cubemap(radianceHandle));
-            the_cubemap.ibl_irradianceCubemap = create_handle_for_asset("default-irradiance-cubemap", load_cubemap(irradianceHandle));
         }
 
     public:
