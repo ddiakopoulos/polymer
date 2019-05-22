@@ -37,7 +37,7 @@ namespace polymer
 
         template<class F> friend void visit_components(entity e, render_system * system, F f);
 
-        void initialize_skybox(entity_orchestrator * orch, procedural_skybox_component & skybox)
+        void initialize_procedural_skybox(entity_orchestrator * orch)
         {
             the_procedural_skybox = procedural_skybox_component(orch->create_entity());
             the_procedural_skybox.sun_directional_light = orch->create_entity();
@@ -64,6 +64,28 @@ namespace polymer
             the_procedural_skybox.sky.onParametersChanged();
         }
 
+        void initialize_cubemap(entity_orchestrator * orch)
+        {
+            the_cubemap = cubemap_component(orch->create_entity());
+
+            transform_system * transform_sys = dynamic_cast<transform_system *>(orch->get_system(get_typeid<transform_system>()));
+            transform_sys->create(the_cubemap.get_entity(), transform(), {});
+
+            identifier_system * identifier_sys = dynamic_cast<identifier_system *>(orch->get_system(get_typeid<identifier_system>()));
+            identifier_sys->create(the_cubemap.get_entity(), "ibl-cubemap");
+
+            // wells-radiance-cubemap
+            // wells-irradiance-cubemap
+
+            // @fixme - to be resolved rather than hard-coded
+            auto radianceBinary = read_file_binary("../assets/textures/envmaps/studio_radiance.dds");
+            auto irradianceBinary = read_file_binary("../assets/textures/envmaps/studio_irradiance.dds");
+            gli::texture_cube radianceHandle(gli::load_dds((char *)radianceBinary.data(), radianceBinary.size()));
+            gli::texture_cube irradianceHandle(gli::load_dds((char *)irradianceBinary.data(), irradianceBinary.size()));
+            the_cubemap.ibl_radianceCubemap = create_handle_for_asset("default-radiance-cubemap", load_cubemap(radianceHandle));
+            the_cubemap.ibl_irradianceCubemap = create_handle_for_asset("default-irradiance-cubemap", load_cubemap(irradianceHandle));
+        }
+
     public:
 
         transform_system * xform_system{ nullptr };
@@ -74,10 +96,13 @@ namespace polymer
             register_system_for_type(this, get_typeid<material_component>());
             register_system_for_type(this, get_typeid<point_light_component>());
             register_system_for_type(this, get_typeid<directional_light_component>());
+            register_system_for_type(this, get_typeid<procedural_skybox_component>());
+            register_system_for_type(this, get_typeid<cubemap_component>());
 
             renderer.reset(new pbr_renderer(settings));
 
-            initialize_skybox(orch, the_procedural_skybox);
+            initialize_procedural_skybox(orch);
+            initialize_cubemap(orch);
         }
 
         pbr_renderer * get_renderer() { return renderer.get(); }
@@ -193,6 +218,7 @@ namespace polymer
             if (dirLightIter != directional_lights.end()) directional_lights.erase(dirLightIter);
 
             if (the_procedural_skybox.get_entity() == e) the_procedural_skybox = {};
+            if (the_cubemap.get_entity() == e) the_cubemap = {};
         }
     };
     POLYMER_SETUP_TYPEID(render_system);

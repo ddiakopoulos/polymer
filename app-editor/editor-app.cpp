@@ -74,19 +74,11 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
 
     gizmo.reset(new gizmo_controller(scene.xform_system));
 
+    // @fixme - less than ideal that we have to remember to add tracked entities 
+    // when systems ideally can do it themselves...
     scene.track_entity(scene.render_system->get_procedural_skybox()->get_entity());
     scene.track_entity(scene.render_system->get_procedural_skybox()->sun_directional_light);
-
-    // @fixme - to be resolved rather than hard-coded
-    auto radianceBinary = read_file_binary("../assets/textures/envmaps/studio_radiance.dds");
-    auto irradianceBinary = read_file_binary("../assets/textures/envmaps/studio_irradiance.dds");
-    gli::texture_cube radianceHandle(gli::load_dds((char *)radianceBinary.data(), radianceBinary.size()));
-    gli::texture_cube irradianceHandle(gli::load_dds((char *)irradianceBinary.data(), irradianceBinary.size()));
-    create_handle_for_asset("wells-radiance-cubemap", load_cubemap(radianceHandle));
-    create_handle_for_asset("wells-irradiance-cubemap", load_cubemap(irradianceHandle));
-
-    renderer_payload.ibl_irradianceCubemap = texture_handle("wells-irradiance-cubemap");
-    renderer_payload.ibl_radianceCubemap = texture_handle("wells-radiance-cubemap");
+    scene.track_entity(scene.render_system->get_cubemap()->get_entity());
 
     scene.mat_library.reset(new polymer::material_library("../assets/materials/")); // must include trailing slash
 
@@ -117,8 +109,7 @@ void scene_editor_app::on_window_resize(int2 size)
         renderer_settings settings;
         settings.renderSize = size;
         scene.render_system->reconfigure(settings);
-
-        // scene.render_system->get_procedural_skybox()->onParametersChanged(); // reconfigure directional light
+        // scene.render_system->get_procedural_skybox()->onParametersChanged(); // @tofix - reconfigure directional light
     }
 }
 
@@ -387,14 +378,18 @@ void scene_editor_app::on_draw()
             }
         }
 
-        if (auto skybox = scene.render_system->get_procedural_skybox())
+        if (auto proc_skybox = scene.render_system->get_procedural_skybox())
         {
-            renderer_payload.procedural_skybox = skybox;
-
-            if (auto sunlight = scene.render_system->get_directional_light_component(skybox->sun_directional_light))
+            renderer_payload.procedural_skybox = proc_skybox;
+            if (auto sunlight = scene.render_system->get_directional_light_component(proc_skybox->sun_directional_light))
             {
                 renderer_payload.sunlight = sunlight;
             }
+        }
+
+        if (auto ibl_cubemap = scene.render_system->get_cubemap())
+        {
+            renderer_payload.ibl_cubemap = ibl_cubemap;
         }
 
         // Gather point lights
@@ -685,15 +680,6 @@ void scene_editor_app::on_draw()
                     }
                 }
 
-                ImGui::TreePop();
-            }
-
-            ImGui::Dummy({ 0, 10 });
-
-            if (ImGui::TreeNode("Scene"))
-            {
-                build_imgui(im_ui_ctx, "Radiance IBL", renderer_payload.ibl_radianceCubemap);
-                build_imgui(im_ui_ctx, "Irradiance IBL", renderer_payload.ibl_irradianceCubemap);
                 ImGui::TreePop();
             }
 

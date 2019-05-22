@@ -256,18 +256,23 @@ namespace polymer
     };
 
     ///////////////////////////
-    //   cubemap_component   //
+    //   ibl_cubemap   //
     ///////////////////////////
 
     struct cubemap_component : public base_component
     {
+        texture_handle ibl_radianceCubemap{ "default-radiance-cubemap" };
+        texture_handle ibl_irradianceCubemap{ "default-irradiance-cubemap" };
+        bool force_draw{ false };
         cubemap_component() {};
         cubemap_component(entity e) : base_component(e) {}
     };
     POLYMER_SETUP_TYPEID(cubemap_component);
 
     template<class F> void visit_fields(cubemap_component & o, F f) {
-        //f("cubemap", o.sky);
+        f("ibl_radiance_cubemap", o.ibl_radianceCubemap);
+        f("ibl_irradiance_cubemap", o.ibl_irradianceCubemap);
+        f("force_draw", o.force_draw);
     }
 
     inline void to_json(json & j, const cubemap_component & p) {

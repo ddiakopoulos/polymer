@@ -53,6 +53,7 @@ struct material_editor_window final : public glfw_window
     std::unique_ptr<mesh_component> mesh_comp;
     std::unique_ptr<world_transform_component> world_xform_comp;
     std::unique_ptr<local_transform_component> local_xform_comp;
+    std::unique_ptr<cubemap_component> ibl_cubemap;
 
     render_component preview_renderable;
 
@@ -115,6 +116,8 @@ struct material_editor_window final : public glfw_window
         preview_renderable.world_transform = world_xform_comp.get();
         preview_renderable.material = material_comp.get();
         preview_renderable.mesh = mesh_comp.get();
+
+        ibl_cubemap.reset(new cubemap_component(debug_sphere));
 
         previewCam.pose = lookat_rh(float3(0, 0.25f, 2), float3(0, 0.001f, 0));
         auxImgui.reset(new gui::imgui_instance(window, true));
@@ -222,8 +225,7 @@ struct material_editor_window final : public glfw_window
                 // Construct ad-hoc payload
                 render_payload preview_payload = {};
                 preview_payload.clear_color = float4(0.25f, 0.25f, 0.25f, 1.f);
-                preview_payload.ibl_irradianceCubemap = texture_handle("wells-irradiance-cubemap");
-                preview_payload.ibl_radianceCubemap = texture_handle("wells-radiance-cubemap");
+                preview_payload.ibl_cubemap = ibl_cubemap.get();
                 preview_payload.views.push_back(view_data(0, previewCam.pose, previewCam.get_projection_matrix(width / float(previewHeight))));
                 preview_payload.render_components.push_back(preview_renderable);
 

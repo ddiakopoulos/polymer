@@ -264,14 +264,24 @@ void pbr_renderer::run_skybox_pass(const view_data & view, const render_payload 
     glDepthMask(GL_FALSE);
     glDisable(GL_CULL_FACE);
 
-    auto & cubemapProgram = renderPassCubemap.get()->get_variant()->shader;
-    cubemapProgram.bind();
-    cubemapProgram.uniform("u_mvp", (view.projectionMatrix * make_rotation_matrix(conjugate(view.pose.orientation))));
-    cubemapProgram.texture("sc_ibl", 0, scene.ibl_radianceCubemap.get(), GL_TEXTURE_CUBE_MAP);
-    cubemap_box.draw_elements();
-    cubemapProgram.unbind();
+    if (scene.procedural_skybox)
+    {
+        scene.procedural_skybox->sky.render(view.viewProjMatrix, view.pose.position, view.farClip);
+    }
 
-    //scene.skybox->sky.render(view.viewProjMatrix, view.pose.position, view.farClip);
+    if (scene.ibl_cubemap)
+    {
+        // This will draw order the procedural skybox
+        if (scene.ibl_cubemap->force_draw)
+        {
+            auto & cubemapProgram = renderPassCubemap.get()->get_variant()->shader;
+            cubemapProgram.bind();
+            cubemapProgram.uniform("u_mvp", (view.projectionMatrix * make_rotation_matrix(conjugate(view.pose.orientation))));
+            cubemapProgram.texture("sc_ibl", 0, scene.ibl_cubemap->ibl_radianceCubemap.get(), GL_TEXTURE_CUBE_MAP);
+            cubemap_box.draw_elements();
+            cubemapProgram.unbind();
+        }
+    }
 
     glDepthMask(GL_TRUE);
     if (wasCullingEnabled) glEnable(GL_CULL_FACE);
@@ -331,7 +341,11 @@ void pbr_renderer::run_forward_pass(std::vector<const render_component *> & rend
                 mr->update_uniforms_shadow(shadow->get_output_texture());
             }
 
-            mr->update_uniforms_ibl(scene.ibl_irradianceCubemap.get(), scene.ibl_radianceCubemap.get());
+            if (scene.ibl_cubemap)
+            {
+                mr->update_uniforms_ibl(scene.ibl_cubemap->ibl_irradianceCubemap.get(), 
+                    scene.ibl_cubemap->ibl_radianceCubemap.get());
+            }
         }
         mat->use();
 
