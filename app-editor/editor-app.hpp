@@ -48,7 +48,6 @@ struct scene_editor_app final : public polymer_app
     shader_handle wireframeHandle{ "wireframe" };
 
     std::unique_ptr<gui::imgui_instance> igm;
-    std::unique_ptr<asset_resolver> resolver;
     std::unique_ptr<material_editor_window> material_editor;
     std::unique_ptr<asset_browser_window> asset_browser;
     std::unique_ptr<simple_texture_view> fullscreen_surface;

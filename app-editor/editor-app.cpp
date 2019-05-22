@@ -65,25 +65,9 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
 
     fullscreen_surface.reset(new simple_texture_view());
 
-    renderer_settings initialSettings;
-    initialSettings.renderSize = int2(width, height);
-    scene.collision_system = orchestrator.create_system<collision_system>(&orchestrator);
-    scene.xform_system = orchestrator.create_system<transform_system>(&orchestrator);
-    scene.identifier_system = orchestrator.create_system<identifier_system>(&orchestrator);
-    scene.render_system = orchestrator.create_system<render_system>(initialSettings, &orchestrator);
+    scene.reset(orchestrator, { width, height }, true);
 
     gizmo.reset(new gizmo_controller(scene.xform_system));
-
-    // @fixme - less than ideal that we have to remember to add tracked entities 
-    // when systems ideally can do it themselves...
-    scene.track_entity(scene.render_system->get_procedural_skybox()->get_entity());
-    scene.track_entity(scene.render_system->get_procedural_skybox()->sun_directional_light);
-    scene.track_entity(scene.render_system->get_cubemap()->get_entity());
-
-    scene.mat_library.reset(new polymer::material_library("../assets/materials/")); // must include trailing slash
-
-    // Resolving assets is the last thing we should do
-    resolver.reset(new asset_resolver("../assets/", &scene, scene.mat_library.get()));
 }
 
 void scene_editor_app::on_drop(std::vector<std::string> filepaths)
@@ -223,11 +207,17 @@ void scene_editor_app::import_scene(const std::string & path)
 {
     if (!path.empty())
     {
-        scene.destroy(kAllEntities);
         gizmo->clear();
         renderer_payload.render_components.clear();
+
+        int width, height;
+        glfwGetWindowSize(window, &width, &height);
+        scene.reset(orchestrator, { width, height }, false);
+
         scene.import_environment(path, orchestrator);
-        resolver->resolve();
+
+        scene.resolver->resolve();
+
         glfwSetWindowTitle(window, path.c_str());
     }
     else
@@ -483,7 +473,9 @@ void scene_editor_app::on_draw()
         if (menu.item("New Scene", GLFW_MOD_CONTROL, GLFW_KEY_N, mod_enabled))
         {
             gizmo->clear();
-            scene.destroy(kAllEntities);
+
+            scene.reset(orchestrator, { width, height }, true);
+
             renderer_payload.render_components.clear();
             glfwSetWindowTitle(window, "unsaved new scene");
         }

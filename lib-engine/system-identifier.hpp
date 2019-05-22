@@ -75,7 +75,11 @@ namespace polymer
             // Ensure a different entity with the same name does not already exist. This
             // may happen if an entity with the name had not been properly deleted or
             // the same entity had been created multiple times.
-            if (find_entity(name) != kInvalidEntity) return false; // fail silently
+            if (find_entity(name) != kInvalidEntity)
+            {
+                log::get()->engine_log->info("[identifier system] an entity by the name {} already exists...", name);
+                return false; // fail silently
+            }
 
             const auto h = hash(name.c_str());
 

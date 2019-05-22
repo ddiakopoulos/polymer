@@ -95,7 +95,7 @@ namespace polymer
 
         bool create(entity e, poly_typeid hash, void * data) override final 
         { 
-            if (hash != get_typeid<local_transform_component>()) { return false; }
+            if (hash != get_typeid<local_transform_component>()) { std::cout << "FUCL!\n"; return false; }
             auto new_component = static_cast<local_transform_component *>(data);
             return create(e, new_component->local_pose, new_component->local_scale, new_component->parent, new_component->children);
         }
@@ -108,7 +108,7 @@ namespace polymer
         {
             const auto check_node = scene_graph_transforms.get(e);
             const auto check_world = world_transforms.get(e);
-            if (check_node == nullptr || check_world == nullptr)
+            if (check_node == nullptr || check_world == nullptr) // and vs. or?
             {
                 auto node = scene_graph_transforms.emplace(local_transform_component(e));
                 auto world = world_transforms.emplace(world_transform_component(e));

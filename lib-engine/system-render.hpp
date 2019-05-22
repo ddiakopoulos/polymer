@@ -79,7 +79,7 @@ namespace polymer
 
         transform_system * xform_system{ nullptr };
 
-        render_system(renderer_settings s, entity_orchestrator * orch) : base_system(orch), settings(s)
+        render_system(renderer_settings s, bool create_default_entities, entity_orchestrator * orch) : base_system(orch), settings(s)
         {
             register_system_for_type(this, get_typeid<mesh_component>());
             register_system_for_type(this, get_typeid<material_component>());
@@ -90,8 +90,15 @@ namespace polymer
 
             renderer.reset(new pbr_renderer(settings));
 
-            initialize_procedural_skybox(orch);
-            initialize_cubemap(orch);
+            // We only need to create the skybox and cubemap sometimes, like a brand
+            // new scene or a fully procedural application that doesn't use serialization.
+            // If we import a serialized scene, components for these will be created
+            // and associated already.
+            if (create_default_entities)
+            {
+                initialize_procedural_skybox(orch);
+                initialize_cubemap(orch);
+            }
         }
 
         pbr_renderer * get_renderer() { return renderer.get(); }
@@ -209,6 +216,8 @@ namespace polymer
             if (the_procedural_skybox.get_entity() == e) the_procedural_skybox = {};
             if (the_cubemap.get_entity() == e) the_cubemap = {};
         }
+
+        renderer_settings get_settings() const { return settings; }
     };
     POLYMER_SETUP_TYPEID(render_system);
 

@@ -54,7 +54,7 @@ namespace polymer
     // for scene objects (meshes, geometry) and materials (shaders, textures, cubemaps). 
     class asset_resolver
     {
-        const std::string & asset_dir;
+        const std::string asset_dir;
         environment * scene;
         material_library * library;
 

@@ -4,6 +4,7 @@
 #include "system-transform.hpp"
 #include "system-identifier.hpp"
 #include "system-render.hpp"
+#include "asset-resolver.hpp"
 
 #include "file_io.hpp"
 #include "serialization.hpp"
@@ -122,16 +123,15 @@ void environment::import_environment(const std::string & import_path, entity_orc
                 {
                     if (system_pointer)
                     {
-                        create_component_on_system<identifier_component>(new_entity, type_name, system_pointer, componentIterator);
-                        create_component_on_system<mesh_component>(new_entity, type_name, system_pointer, componentIterator);
-                        create_component_on_system<geometry_component>(new_entity, type_name, system_pointer, componentIterator);
-                        create_component_on_system<material_component>(new_entity, type_name, system_pointer, componentIterator);
-                        create_component_on_system<point_light_component>(new_entity, type_name, system_pointer, componentIterator);
-                        create_component_on_system<directional_light_component>(new_entity, type_name, system_pointer, componentIterator);
-                        create_component_on_system<procedural_skybox_component>(new_entity, type_name, system_pointer, componentIterator);
-                        create_component_on_system<cubemap_component>(new_entity, type_name, system_pointer, componentIterator);
-
-                        if (type_name == get_typename<local_transform_component>())
+                        if (create_component_on_system<identifier_component>(new_entity, type_name, system_pointer, componentIterator)) {}
+                        else if (create_component_on_system<mesh_component>(new_entity, type_name, system_pointer, componentIterator)) {}
+                        else if (create_component_on_system<geometry_component>(new_entity, type_name, system_pointer, componentIterator)) {}
+                        else if (create_component_on_system<material_component>(new_entity, type_name, system_pointer, componentIterator)) {}
+                        else if (create_component_on_system<point_light_component>(new_entity, type_name, system_pointer, componentIterator)) {}
+                        else if (create_component_on_system<directional_light_component>(new_entity, type_name, system_pointer, componentIterator)) {}
+                        else if (create_component_on_system<procedural_skybox_component>(new_entity, type_name, system_pointer, componentIterator)) {}
+                        else if (create_component_on_system<cubemap_component>(new_entity, type_name, system_pointer, componentIterator)) {}
+                        else if (type_name == get_typename<local_transform_component>())
                         {
                             // Create a new graph component
                             local_transform_component c = componentIterator.value();
@@ -213,4 +213,39 @@ void environment::export_environment(const std::string & export_path)
 
     t.stop();
     log::get()->engine_log->info("exporting {} took {}ms", export_path, t.get());
+}
+
+void environment::reset(entity_orchestrator & o, int2 default_renderer_resolution, bool create_default_entities)
+{
+    destroy(kAllEntities);
+
+    // Create an event manager
+    event_manager.reset(new polymer::event_manager_async());
+
+    // Create or reset other required systems for scenes to work. We don't have any kind
+    // of dependency injection system, so systems are roughly created in order
+    // of their importance
+    xform_system = o.create_system<polymer::transform_system>(&o);
+    identifier_system = o.create_system<polymer::identifier_system>(&o);
+    collision_system = o.create_system<polymer::collision_system>(&o);
+
+    // Create or reset the renderer
+    renderer_settings initialSettings;
+    initialSettings.renderSize = default_renderer_resolution;
+    render_system = o.create_system<polymer::render_system>(initialSettings, create_default_entities, &o);
+
+    // @todo - less than ideal that we have to remember to add tracked entities. Systems should
+    // be able to do it.
+    if (create_default_entities)
+    {
+        track_entity(render_system->get_procedural_skybox()->get_entity());
+        track_entity(render_system->get_procedural_skybox()->sun_directional_light);
+        track_entity(render_system->get_cubemap()->get_entity());
+    }
+
+    // Create a material library
+    mat_library.reset(new polymer::material_library("../assets/materials/")); // must include trailing slash
+
+    // Resolving assets is the last thing we should do
+    resolver.reset(new polymer::asset_resolver("../assets/", this, mat_library.get()));
 }

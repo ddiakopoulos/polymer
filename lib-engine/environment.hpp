@@ -417,32 +417,43 @@ namespace polymer
     class transform_system;
     class identifier_system;
     struct material_library;
+    class asset_resolver;
 
     class environment
     {
         std::vector<entity> active_entities;
 
-        template<typename component_t, typename system_t> void create_component_on_system(
+        template<typename component_t, typename system_t> bool create_component_on_system(
             const entity new_entity,
             const std::string & type_name,
             system_t * system_pointer,
             polymer::json::const_iterator & componentIterator)
         {
+            const auto system_name = get_typename<std::remove_pointer_t<decltype(system_pointer)>>();
+
             if (type_name == get_typename<component_t>())
             {
                 component_t the_new_component = componentIterator.value();
                 the_new_component.e = new_entity;
                 if (system_pointer->create(new_entity, get_typeid(type_name.c_str()), &the_new_component))
                 {
-                    log::get()->engine_log->info("created {} on {}", type_name, "system_name_here");
+                    log::get()->engine_log->info("created {} on {}", type_name, system_name);
                 }
+                else
+                {
+                    log::get()->engine_log->info("could not create {} on {}", type_name, system_name);
+                }
+
+                return true;
             }
+            return false;
         }
 
     public:
 
         std::unique_ptr<polymer::material_library> mat_library;
         std::unique_ptr<polymer::event_manager_async> event_manager;
+        std::unique_ptr<polymer::asset_resolver> resolver;
 
         polymer::render_system * render_system;
         polymer::collision_system * collision_system;
@@ -456,6 +467,8 @@ namespace polymer
         const std::vector<entity> & entity_list();
         void copy(entity src, entity dest);
         void destroy(entity e);
+
+        void reset(entity_orchestrator & o, int2 default_renderer_resolution, bool create_default_entities = false);
     };
 
     template<class F> void visit_systems(environment * p, F f)
