@@ -4,8 +4,6 @@
 #include "geometry.hpp"
 #include "system-render.hpp"
 
-#include <execution>
-
 ////////////////////////////////////////////////
 //   stable_cascaded_shadows implementation   //
 ////////////////////////////////////////////////
@@ -72,7 +70,7 @@ void stable_cascaded_shadows::update_cascades(const float4x4 & view, const float
             sphereRadius = std::max(sphereRadius, dist);
         }
 
-        sphereRadius = (std::ceil(sphereRadius * 32.0f) / 32.0f);
+        sphereRadius = (std::ceil(sphereRadius * 16.0f) / 16.0f);
 
         const float3 maxExtents = float3(sphereRadius, sphereRadius, sphereRadius);
         const float3 minExtents = -maxExtents;
@@ -200,6 +198,7 @@ void pbr_renderer::run_stencil_prepass(const view_data & view, const render_payl
 
 void pbr_renderer::set_stencil_mask(const uint32_t idx, gl_mesh && m)
 {
+    if (!m.has_data()) return; // oculus sdk doesn't provide one through OpenVR
     if (idx == 0) left_stencil_mask = std::move(m);
     else if (idx == 1) right_stencil_mask = std::move(m);
     else throw std::invalid_argument("invalid index");
@@ -323,17 +322,21 @@ void pbr_renderer::run_forward_pass(std::vector<const render_component *> & rend
         glDepthMask(GL_FALSE); // depth already comes from the prepass
     }
 
-    for (const render_component * r : render_queue)
+    for (const render_component * render_comp : render_queue)
     {
-        update_per_object_uniform_buffer(r->world_transform->world_pose, r->local_transform->local_scale, r->material->receive_shadow, view);
+        update_per_object_uniform_buffer(
+            render_comp->world_transform->world_pose, 
+            render_comp->local_transform->local_scale, 
+            render_comp->material->receive_shadow, 
+            view);
 
-        // Lookup the material component (materials[e]), .get() the asset_handle, and then .get() since 
-        // materials instances are stored as shared pointers. 
-        material_interface * mat = r->material->material.get().get();
-        mat->update_uniforms();
+        material_interface * the_material = render_comp->material->material.get().get();
+
+        // Debugging: 
+        //std::cout << "Rendering with material: " << view.index << " : " << r->material->material.name << " / " << r->get_entity() << std::endl;
 
         // @todo - handle other specific material requirements here
-        if (auto * mr = dynamic_cast<polymer_pbr_standard*>(mat))
+        if (auto * mr = dynamic_cast<polymer_pbr_standard*>(the_material))
         {
             if (settings.shadowsEnabled)
             {
@@ -347,9 +350,12 @@ void pbr_renderer::run_forward_pass(std::vector<const render_component *> & rend
                     scene.ibl_cubemap->ibl_radianceCubemap.get());
             }
         }
-        mat->use();
 
-        r->mesh->draw();
+        the_material->update_uniforms();
+
+        the_material->use();
+
+        render_comp->mesh->draw();
     }
 
     if (settings.useDepthPrepass)

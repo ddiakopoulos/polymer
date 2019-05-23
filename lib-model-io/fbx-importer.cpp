@@ -66,27 +66,32 @@ void polymer::gather_meshes(fbx_container & file, fbxsdk::FbxNode * node)
             const fbxsdk::FbxGeometryElementNormal * pNormals = fbxMesh->GetElementNormal(0);
 
             int materialCount = node->GetMaterialCount();
+            std::function<uint32_t(uint32_t triangleIndex)> getMaterialIndex = [](uint32_t triangleIndex) { return 0; };
 
-            const fbxsdk::FbxLayerElementMaterial * pPolygonMaterials = fbxMesh->GetElementMaterial();
-            assert(pPolygonMaterials != nullptr);
-            assert(pPolygonMaterials->GetReferenceMode() == fbxsdk::FbxGeometryElement::eIndex || pPolygonMaterials->GetReferenceMode() == fbxsdk::FbxGeometryElement::eIndexToDirect);
-
-            fbxsdk::FbxGeometryElement::EMappingMode mappingMode = pPolygonMaterials->GetMappingMode();
-
-            auto getMaterialIndex = [pPolygonMaterials, mappingMode, materialCount](uint32_t triangleIndex) 
+            // Load materials if available
+            if (materialCount > 0)
             {
-                int lookupIndex = 0;
-                switch (mappingMode) 
+                const fbxsdk::FbxLayerElementMaterial * pPolygonMaterials = fbxMesh->GetElementMaterial();
+                assert(pPolygonMaterials != nullptr);
+                assert(pPolygonMaterials->GetReferenceMode() == fbxsdk::FbxGeometryElement::eIndex || pPolygonMaterials->GetReferenceMode() == fbxsdk::FbxGeometryElement::eIndexToDirect);
+
+                fbxsdk::FbxGeometryElement::EMappingMode mappingMode = pPolygonMaterials->GetMappingMode();
+
+                getMaterialIndex = [pPolygonMaterials, mappingMode, materialCount](uint32_t triangleIndex) 
                 {
+                    int lookupIndex = 0;
+                    switch (mappingMode) 
+                    {
                     case fbxsdk::FbxGeometryElement::eByPolygon: lookupIndex = triangleIndex; break;
                     case fbxsdk::FbxGeometryElement::eAllSame: lookupIndex = 0; break;
                     default: assert(false); break;
-                }
+                    }
 
-                int materialIndex = pPolygonMaterials->mIndexArray->GetAt(lookupIndex);
-                assert(materialIndex >= 0 && materialIndex < materialCount);
-                return uint32_t(materialIndex);
-            };
+                    int materialIndex = pPolygonMaterials->mIndexArray->GetAt(lookupIndex);
+                    assert(materialIndex >= 0 && materialIndex < materialCount);
+                    return uint32_t(materialIndex);
+                };
+            }
 
             // de-duplicate vertices
             unordered_map_generator<unique_vertex, uint32_t>::Type uniqueVertexMap;

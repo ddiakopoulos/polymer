@@ -40,13 +40,13 @@ namespace polymer
         // Call this regularly on the gl thread
         void handle_recompile();
 
-        // Watch vertex and fragment
+        // Watch vertex and fragment (no #includes)
         void watch(const std::string & name, const std::string & vert_path, const std::string & frag_path);
 
-        // Watch vertex and fragment with includes
+        // Watch vertex and fragment with #includes
         void watch(const std::string & name, const std::string & vert_path, const std::string & frag_path, const std::string & include_path);
 
-        // Watch vertex and fragment and geometry with includes
+        // Watch vertex and fragment and geometry with #includes
         void watch(const std::string & name, const std::string & vert_path, const std::string & frag_path, const std::string & geom_path, const std::string & include_path);
     };
 }

@@ -25,11 +25,19 @@ enum class vr_input_vendor
     leap_motion
 };
 
+enum class vr_controller_role
+{
+    invalid = 0,
+    left_hand = 1,
+    right_hand = 2
+};
+
 struct cached_controller_render_data
 {
     geometry mesh;
     gl_texture_2d tex;
     bool loaded = false;
+    vr_controller_role role;
 };
 
 struct vr_button_state
@@ -41,13 +49,6 @@ struct vr_button_state
 };
 
 void update_button_state(vr_button_state & state, const bool value);
-
-enum class vr_controller_role
-{
-    invalid = 0,
-    left_hand = 1,
-    right_hand = 2
-};
 
 enum class vr_eye
 {

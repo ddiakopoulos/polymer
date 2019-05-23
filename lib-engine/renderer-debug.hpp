@@ -6,100 +6,108 @@
 #include "math-core.hpp"
 #include "gl-api.hpp"
 #include "procedural_mesh.hpp"
+#include "environment.hpp"
 
 namespace polymer
 {
-    class renderer_debug
+    class global_debug_mesh_manager : public singleton<global_debug_mesh_manager>
     {
+        friend class polymer::singleton<global_debug_mesh_manager>;
+
+        environment * env{ nullptr };
+
         struct Vertex { float3 position; float3 color; };
         std::vector<Vertex> vertices;
 
-        gl_mesh payload;
-        gl_shader shader;
-
-        constexpr static const char debugVertexShader[] = R"(#version 330 
-            layout(location = 0) in vec3 v; 
-            layout(location = 1) in vec3 c; 
-            uniform mat4 u_mvp; 
-            out vec3 color; 
-            void main() { gl_Position = u_mvp * vec4(v.xyz, 1); color = c; }
-        )";
-
-        constexpr static const char debugFragmentShader[] = R"(#version 330 
-            in vec3 color; 
-            out vec4 f_color; 
-            void main() { f_color = vec4(color.rgb, 1); }
-        )";
+        entity dbg_renderer_ent;
+        std::shared_ptr<polymer_fx_material> debug_renderer_material;
 
     public:
 
-        renderer_debug() { shader = gl_shader(debugVertexShader, debugFragmentShader); }
+        global_debug_mesh_manager() = default;
+
+        void initialize_resources(entity_orchestrator * orch, environment * env)
+        {
+            debug_renderer_material = std::make_shared<polymer_fx_material>();
+            debug_renderer_material->shader = shader_handle("debug-renderer");
+            env->mat_library->create_material("debug-renderer-material", debug_renderer_material);
+
+            dbg_renderer_ent = env->track_entity(orch->create_entity());
+            env->identifier_system->create(dbg_renderer_ent, "debug_renderer-" + std::to_string(dbg_renderer_ent));
+            env->xform_system->create(dbg_renderer_ent, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
+
+            auto mat_c = material_component(dbg_renderer_ent, material_handle("debug-renderer-material"));
+            mat_c.cast_shadow = false;
+            mat_c.receive_shadow = false;
+            env->render_system->create(dbg_renderer_ent, std::move(mat_c));
+            env->render_system->create(dbg_renderer_ent, mesh_component(dbg_renderer_ent, gpu_mesh_handle("debug-renderer")));
+        }
 
         void clear() { vertices.clear(); }
 
         // World-space
-        void draw_line(const float3 & from, const float3 & to, const float3 color = float3(1, 1, 1))
+        void draw_line(const float3 & world_from, const float3 & world_to, const float3 color = float3(1, 1, 1))
         {
-            vertices.push_back({ from, color });
-            vertices.push_back({ to, color });
+            vertices.push_back({ world_from, color });
+            vertices.push_back({ world_to, color });
         }
 
-        void draw_line(const transform & pose, const float3 & from, const float3 & to, const float3 color = float3(1, 1, 1))
+        void draw_line(const transform & local_to_world, const float3 & from, const float3 & to, const float3 color = float3(1, 1, 1))
         {
-            vertices.push_back({ pose.transform_coord(from), color });
-            vertices.push_back({ pose.transform_coord(to), color });
+            vertices.push_back({ local_to_world.transform_coord(from), color });
+            vertices.push_back({ local_to_world.transform_coord(to), color });
         }
 
-        void draw_box(const transform & pose, const aabb_3d & local_bounds, const float3 color = float3(1, 1, 1))
+        void draw_box(const transform & local_to_world, const aabb_3d & local_bounds, const float3 color = float3(1, 1, 1))
         {
             auto unit_cube = make_cube();
 
             for (auto & v : unit_cube.vertices)
             {
                 v *= local_bounds.size() / 2.f; // scale
-                auto tV = pose.transform_coord(v); // translate
+                auto tV = local_to_world.transform_coord(v); // translate
                 vertices.push_back({ tV, color });
             }
         }
 
-        void draw_sphere(const transform & pose, const float radius = 1.f, const float3 color = float3(1, 1, 1))
+        void draw_sphere(const transform & local_to_world, const float scale = 1.f, const float3 color = float3(1, 1, 1))
         {
             auto unit_sphere = make_sphere(1.f);
 
             for (auto & v : unit_sphere.vertices)
             {
-                v *= radius;
-                auto tV = pose.transform_coord(v);
+                v *= scale;
+                auto tV = local_to_world.transform_coord(v);
                 vertices.push_back({ tV, color });
             }
         }
 
-        void draw_axis(const transform & pose, const float3 color = float3(1, 1, 1))
+        void draw_axis(const transform & local_to_world, const float3 scale = float3(1, 1, 1))
         {
             auto axis = make_axis();
 
             for (int i = 0; i < axis.vertices.size(); ++i)
             {
-                auto v = axis.vertices[i];
-                v = pose.transform_coord(v);
+                auto v = axis.vertices[i] * scale;
+                v = local_to_world.transform_coord(v);
                 vertices.push_back({ v, axis.colors[i].xyz });
             }
         }
 
-        void draw(const float4x4 & viewProjectionMatrix)
+        void upload()
         {
-            payload.set_vertices(vertices.size(), vertices.data(), GL_STREAM_DRAW);
-            payload.set_attribute(0, &Vertex::position);
-            payload.set_attribute(1, &Vertex::color);
-            payload.set_non_indexed(GL_LINES);
-
-            shader.bind();
-            shader.uniform("u_mvp", viewProjectionMatrix * Identity4x4);
-            payload.draw_elements();
-            shader.unbind();
+            auto & debug_renderer_mesh = gpu_mesh_handle("debug-renderer").get();
+            debug_renderer_mesh.set_vertices(vertices.size(), vertices.data(), GL_STREAM_DRAW);
+            debug_renderer_mesh.set_attribute(0, &Vertex::position);
+            debug_renderer_mesh.set_attribute(2, &Vertex::color);
+            debug_renderer_mesh.set_non_indexed(GL_LINES);
         }
 
+        entity get_entity() const { return dbg_renderer_ent; }
     };
+
+    // Implement singleton
+    template<> global_debug_mesh_manager * polymer::singleton<global_debug_mesh_manager>::single = nullptr;
 
 } // end namespace polymer
 

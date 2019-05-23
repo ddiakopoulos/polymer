@@ -44,6 +44,7 @@ struct scene_editor_app final : public polymer_app
     bool should_open_material_window = false;
     bool should_open_asset_browser = false;
     std::string working_dir_on_launch;
+    std::string currently_open_scene {"New Scene"};
 
     shader_handle wireframeHandle{ "wireframe" };
 

@@ -119,6 +119,7 @@ std::unordered_map<std::string, runtime_mesh> polymer::import_obj_model(const st
 
         // de-duplicate vertices
         unordered_map_generator<unique_vertex, uint32_t>::Type uniqueVertexMap;
+        bool shouldGenerateNormals = false;
 
         for (size_t f = 0; f < mesh->num_face_vertices.size(); f++)
         {
@@ -131,7 +132,9 @@ std::unordered_map<std::string, runtime_mesh> polymer::import_obj_model(const st
 
                 unique_vertex vertex;
                 vertex.position = { attrib.vertices[3 * idx.vertex_index + 0], attrib.vertices[3 * idx.vertex_index + 1], attrib.vertices[3 * idx.vertex_index + 2] };
-                vertex.normal = { attrib.normals[3 * idx.normal_index + 0], attrib.normals[3 * idx.normal_index + 1], attrib.normals[3 * idx.normal_index + 2] };
+                if (attrib.normals.size()) vertex.normal = { attrib.normals[3 * idx.normal_index + 0], attrib.normals[3 * idx.normal_index + 1], attrib.normals[3 * idx.normal_index + 2] };
+                else shouldGenerateNormals = true;
+
                 if (idx.texcoord_index != -1) vertex.texcoord = { attrib.texcoords[2 * idx.texcoord_index + 0], attrib.texcoords[2 * idx.texcoord_index + 1] };
 
                 auto it = uniqueVertexMap.find(vertex);
@@ -148,8 +151,8 @@ std::unordered_map<std::string, runtime_mesh> polymer::import_obj_model(const st
                     indices[v] = index;
 
                     g.vertices.push_back(vertex.position);
-                    g.normals.push_back(vertex.normal);
-                    g.texcoord0.push_back(vertex.texcoord);
+                    if (attrib.normals.size()) g.normals.push_back(vertex.normal);
+                    if (idx.texcoord_index != -1) g.texcoord0.push_back(vertex.texcoord);
                 }
             }
 
@@ -157,6 +160,9 @@ std::unordered_map<std::string, runtime_mesh> polymer::import_obj_model(const st
             g.faces.push_back(indices);
             indexOffset += 3;
         }
+
+        // Optionally generate normals if the mesh was provided without them
+        if (shouldGenerateNormals) compute_normals(g);
     }
 
     return meshes;

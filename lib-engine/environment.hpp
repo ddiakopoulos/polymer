@@ -238,6 +238,7 @@ namespace polymer
         entity sun_directional_light;
         procedural_skybox_component() {};
         procedural_skybox_component(entity e) : base_component(e) {}
+        //procedural_skybox_component & operator = (const procedural_skybox_component & other) { sky = other.sky; sun_directional_light = other.sun_directional_light; }
     };
     POLYMER_SETUP_TYPEID(procedural_skybox_component);
 
@@ -256,7 +257,7 @@ namespace polymer
     };
 
     ///////////////////////////
-    //   ibl_cubemap   //
+    //   cubemap_component   //
     ///////////////////////////
 
     struct cubemap_component : public base_component
@@ -346,9 +347,9 @@ namespace polymer
         });
     };
 
-    ///////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////
     //   local_transform_component & world_transform_component   //
-    ///////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////
 
     struct local_transform_component : public base_component
     {
@@ -363,6 +364,7 @@ namespace polymer
 
     template<class F> void visit_fields(local_transform_component & o, F f)
     {
+        f("entity", o.get_entity_ref()); // editor_hidden{}
         f("local_pose", o.local_pose);
         f("local_scale", o.local_scale);
         f("parent", o.parent);
@@ -387,10 +389,6 @@ namespace polymer
     };
     POLYMER_SETUP_TYPEID(world_transform_component);
 
-    /////////////////////
-    //   environment   //
-    /////////////////////
-
     /// @todo - render_component submission groups
     /// @todo - render_component sort order
     struct render_component : public base_component
@@ -399,8 +397,8 @@ namespace polymer
         render_component(entity e) : base_component(e) {}
         polymer::material_component * material{ nullptr };
         polymer::mesh_component * mesh{ nullptr };
-        const polymer::world_transform_component * world_transform{ nullptr };
-        const polymer::local_transform_component * local_transform{ nullptr };
+        polymer::world_transform_component * world_transform{ nullptr };
+        polymer::local_transform_component * local_transform{ nullptr };
     };
     POLYMER_SETUP_TYPEID(render_component);
 
@@ -412,7 +410,11 @@ namespace polymer
         f("local_transform_component", o.local_transform);
     }
 
-    class render_system;;
+    /////////////////////
+    //   environment   //
+    /////////////////////
+
+    class render_system;
     class collision_system;
     class transform_system;
     class identifier_system;

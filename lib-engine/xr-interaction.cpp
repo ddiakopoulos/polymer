@@ -57,6 +57,19 @@ xr_input_focus xr_input_processor::get_focus() const
     return last_focus; 
 }
 
+void xr_input_processor::set_fixed_dominant_hand(const vr_controller_role hand)
+{
+    if (hand == vr_controller_role::invalid) 
+    {
+        fixed_dominant_hand = false;
+    }
+    else
+    {
+        dominant_hand = hand;
+        fixed_dominant_hand = true;
+    }
+}
+
 void xr_input_processor::process(const float dt)
 {
     //scoped_timer t("xr_input_processor::process()");
@@ -79,7 +92,10 @@ void xr_input_processor::process(const float dt)
                 // Swap dominant hand based on last activated trigger button
                 if (b.first == vr_button::trigger)
                 {
-                    dominant_hand = hand;
+                    if (!fixed_dominant_hand) 
+                    {
+                        dominant_hand = hand;
+                    }
                 }
             }
             else if (b.second.released)
@@ -138,46 +154,54 @@ xr_controller_system::xr_controller_system(entity_orchestrator * orch, environme
 
     // Setup the pointer entity (which is re-used between laser/arc styles)
     pointer = env->track_entity(orch->create_entity());
-    env->identifier_system->create(pointer, "vr-pointer");
+    env->identifier_system->create(pointer, "xr-pointer");
     env->xform_system->create(pointer, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
     env->render_system->create(pointer, material_component(pointer, material_handle("laser-pointer-mat")));
-    pointer_mesh_component = env->render_system->create(pointer, polymer::mesh_component(pointer, gpu_mesh_handle("vr-pointer")));
+    pointer_mesh_component = env->render_system->create(pointer, polymer::mesh_component(pointer, gpu_mesh_handle("xr-pointer")));
+
+    controller_material[0] = std::make_shared<polymer_blinn_phong_standard>();
+    env->mat_library->create_material("xr-controller-material-left", controller_material[0]);
+
+    controller_material[1] = std::make_shared<polymer_blinn_phong_standard>();
+    env->mat_library->create_material("xr-controller-material-right", controller_material[1] );
 
     // Setup left controller
     left_controller = env->track_entity(orch->create_entity());
-    env->identifier_system->create(left_controller, "openvr-left-controller");
+    env->identifier_system->create(left_controller, "xr-controller-root-left");
     env->xform_system->create(left_controller, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
-    env->render_system->create(left_controller, material_component(left_controller, material_handle(material_library::kDefaultMaterialId)));
+    env->render_system->create(left_controller, material_component(left_controller, material_handle("xr-controller-material-left")));
     env->render_system->create(left_controller, mesh_component(left_controller));
 
     // Setup right controller
     right_controller = env->track_entity(orch->create_entity());
-    env->identifier_system->create(right_controller, "openvr-right-controller");
+    env->identifier_system->create(right_controller, "xr-controller-root-right");
     env->xform_system->create(right_controller, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
-    env->render_system->create(right_controller, material_component(right_controller, material_handle(material_library::kDefaultMaterialId)));
+    env->render_system->create(right_controller, material_component(right_controller, material_handle("xr-controller-material-right")));
     env->render_system->create(right_controller, mesh_component(right_controller));
 
     // Setup render models for controllers when they are loaded
     hmd->controller_render_data_callback([this, env](cached_controller_render_data & data)
     {
-        // We will get this callback for each controller, but we only need to handle it once for both.
-        if (need_controller_render_data == true)
+        auto role = data.role;
+        const std::string role_str = (role == vr_controller_role::left_hand) ? "-left" : "-right";
+
+        if (role == vr_controller_role::left_hand)
         {
-            need_controller_render_data = false;
-
-            // Create new gpu mesh from the openvr geometry
-            create_handle_for_asset("controller-mesh", make_mesh_from_geometry(data.mesh));
-
-            // Re-lookup components since they were std::move'd above
+            create_handle_for_asset(std::string("xr-controller-mesh" + role_str).c_str(), make_mesh_from_geometry(data.mesh));
             auto lmc = env->render_system->get_mesh_component(left_controller);
             assert(lmc != nullptr);
-
+            lmc->mesh = gpu_mesh_handle(std::string("xr-controller-mesh" + role_str).c_str());
+            create_handle_for_asset("xr-controller-root-left-texture", std::move(data.tex));
+            controller_material[0]->diffuse = texture_handle("xr-controller-root-left-texture");
+        }
+        else
+        {
+            create_handle_for_asset(std::string("xr-controller-mesh" + role_str).c_str(), make_mesh_from_geometry(data.mesh));
             auto rmc = env->render_system->get_mesh_component(right_controller);
             assert(rmc != nullptr);
-
-            // Set the handles
-            lmc->mesh = gpu_mesh_handle("controller-mesh");
-            rmc->mesh = gpu_mesh_handle("controller-mesh");
+            rmc->mesh = gpu_mesh_handle(std::string("xr-controller-mesh" + role_str).c_str());
+            create_handle_for_asset("xr-controller-root-right-texture", std::move(data.tex));
+            controller_material[1]->diffuse = texture_handle("xr-controller-root-right-texture");
         }
     });
 
@@ -185,6 +209,15 @@ xr_controller_system::xr_controller_system(entity_orchestrator * orch, environme
     {
         handle_event(event);
     });
+
+    laser_pointer_material->update_uniform_func = [this]()
+    {
+        auto & laser_shader = laser_pointer_material->compiled_shader->shader;
+        laser_shader.bind();
+        laser_shader.uniform("u_alpha", laser_alpha);
+        laser_shader.uniform("u_color", laser_color);
+        laser_shader.unbind();
+    };
 }
 
 xr_controller_system::~xr_controller_system()
@@ -231,8 +264,17 @@ void xr_controller_system::handle_event(const xr_input_event & event)
 
 void xr::xr_controller_system::update_laser_geometry(const float distance)
 {
+
+    auto front_plane = make_plane(laser_line_thickness, distance, 4, 24, false);
+
+    auto back_plane = make_plane(laser_line_thickness, distance, 4, 24, false);
+    for (auto & v : back_plane.vertices) v = transform_coord(make_rotation_matrix({0, 0, 1.f}, (float) POLYMER_PI), v);
+    for (auto & f : back_plane.faces) f = {f.z, f.y, f.x};
+
+    auto laser_geom = concatenate_geometry(front_plane, back_plane);
+    
     auto & m = pointer_mesh_component->mesh.get();
-    m = make_mesh_from_geometry(make_plane(laser_line_thickness, distance, 4, 24, true), GL_STREAM_DRAW);
+    m = make_mesh_from_geometry(laser_geom, GL_STREAM_DRAW);
 
     if (auto * tc = env->xform_system->get_local_transform(pointer))
     {
@@ -260,10 +302,21 @@ void xr_controller_system::process(const float dt)
         hmd->get_controller(vr_controller_role::right_hand).buttons[vr_button::xy]
     };
 
+    auto check_ignored = [this](const entity what)
+    {
+        bool result = false;
+        for (const auto & e : ignored_entities)
+        {
+            if (what == e) return true;
+        }
+        return false;
+    };
+
     if (render_styles.size() && render_styles.top() == controller_render_style_t::laser_to_entity)
     {
         const xr_input_focus focus = processor->get_focus();
-        if (focus.result.e != kInvalidEntity)
+
+        if (focus.result.e != kInvalidEntity && check_ignored(focus.result.e) == false)
         {
             // Hard focus ends on the object hit
             if (focus.soft == false)
@@ -343,12 +396,11 @@ void xr_controller_system::process(const float dt)
             }
         }
     }
+}
 
-    // Update uniforms
-    laser_pointer_material->use();
-    auto & laser_shader = laser_pointer_material->compiled_shader->shader;
-    laser_shader.uniform("u_alpha", laser_alpha);
-    laser_shader.unbind();
+void xr_controller_system::add_focus_ignore(const entity ignored_entity)
+{
+    ignored_entities.push_back(ignored_entity);
 }
 
 ////////////////////////////////////////
@@ -365,16 +417,16 @@ xr_imgui_system::xr_imgui_system(entity_orchestrator * orch, environment * env, 
     create_handle_for_asset("imgui-billboard", make_mesh_from_geometry(mesh)); // gpu mesh
     create_handle_for_asset("imgui-billboard", std::move(mesh)); // cpu mesh
 
+    imgui_material = std::make_shared<polymer_fx_material>();
+    imgui_material->shader = shader_handle("unlit-texture");
+    env->mat_library->create_material("imgui", imgui_material);
+
     imgui_billboard = env->track_entity(orch->create_entity());
     env->identifier_system->create(imgui_billboard, "imgui-billboard");
     env->xform_system->create(imgui_billboard, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
     env->render_system->create(imgui_billboard, material_component(imgui_billboard, material_handle("imgui")));
     env->render_system->create(imgui_billboard, mesh_component(imgui_billboard, gpu_mesh_handle("imgui-billboard")));
     env->collision_system->create(imgui_billboard, geometry_component(imgui_billboard, cpu_mesh_handle("imgui-billboard")));
-
-    imgui_material = std::make_shared<polymer_fx_material>();
-    imgui_material->shader = shader_handle("unlit-texture");
-    env->mat_library->create_material("imgui", imgui_material);
 
     xr_input = env->event_manager->connect(this, [this](const xr_input_event & event)
     {
@@ -425,11 +477,12 @@ void xr_imgui_system::process(const float dt)
         imgui->update_input(controller_event);
     }
 
-    // Update material uniforms
-    imgui_material->use();
-    auto & imgui_shader = imgui_material->compiled_shader->shader;
-    imgui_shader.texture("s_texture", 0, get_render_texture(), GL_TEXTURE_2D);
-    imgui_shader.unbind();
+    imgui_material->update_uniform_func = [this]()
+    {
+        auto & imgui_shader = imgui_material->compiled_shader->shader;
+        imgui_shader.uniform("u_flip", 1.f);
+        imgui_shader.texture("s_texture", 0, get_render_texture(), GL_TEXTURE_2D);
+    };
 }
 
 std::vector<entity> xr_imgui_system::get_renderables() const
@@ -504,7 +557,7 @@ xr_gizmo_system::xr_gizmo_system(entity_orchestrator * orch, environment * env, 
 
 xr_gizmo_system::~xr_gizmo_system()
 {
-    // fixme - xr_input must be disconnected
+    // @todo - xr_input must be disconnected
 }
 
 void xr_gizmo_system::handle_event(const xr_input_event & event)
@@ -550,12 +603,18 @@ std::vector<entity> xr_gizmo_system::get_renderables() const
     return { gizmo_entity };
 }
 
+void xr_gizmo_system::set_transform(const transform t)
+{
+    xform.position = {t.position.x, t.position.y, t.position.z};
+    xform.orientation = {t.orientation.x, t.orientation.y, t.orientation.z, t.orientation.w};
+}
+
+// @todo - transforms do not carry scale (yet)
 transform xr_gizmo_system::get_transform() const
 {
     transform t;
     t.position = float3(xform.position.x, xform.position.y, xform.position.z);
     t.orientation = quatf(xform.orientation.x, xform.orientation.y, xform.orientation.z, xform.orientation.w);
-    // @todo - transforms do not carry scale (yet)
     return t;
 }
 

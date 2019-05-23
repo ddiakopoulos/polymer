@@ -10,12 +10,6 @@
 #ifndef fbx_importer_hpp
 #define fbx_importer_hpp
 
-#ifdef _DEBUG
-    #pragma comment(lib, "Debug/libfbxsdk.lib")
-#else
-    #pragma comment(lib, "Release/libfbxsdk.lib")
-#endif
-
 #include <fbxsdk/fbxsdk_nsbegin.h>
 class FbxLayerElementNormal;
 class FbxLayerElementVertexColor;

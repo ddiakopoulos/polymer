@@ -128,6 +128,7 @@ public:
         tinygizmo::transform_gizmo("editor-controller", gizmo.gizmo_ctx, gizmo_transform);
 
         gizmo_active = false;
+
         // Has the gizmo moved? 
         if (gizmo_transform != previous_gizmo_transform)
         {
@@ -147,6 +148,7 @@ public:
                     const entity parent_entity = xform_system->get_parent(e);
                     const transform parent_pose = xform_system->get_local_transform(parent_entity)->local_pose;
                     const transform child_local_pose = parent_pose.inverse() * updated_pose;
+
                     xform_system->set_local_transform(e, child_local_pose);
                 }
                 else
@@ -161,11 +163,11 @@ public:
         }
     }
 
-    void on_draw()
+    void on_draw(const float screenspace_scale = 0.0f)
     {
         if (selected_entities.size())
         {
-            gizmo.draw();
+            gizmo.draw(screenspace_scale);
         }
     }
 };

@@ -18,7 +18,6 @@ struct sample_engine_scene final : public polymer_app
 
     std::unique_ptr<gl_shader_monitor> shaderMonitor;
     std::unique_ptr<entity_orchestrator> orchestrator;
-    std::unique_ptr<asset_resolver> resolver;
     std::unique_ptr<simple_texture_view> fullscreen_surface;
 
     render_payload payload;
@@ -45,36 +44,10 @@ sample_engine_scene::sample_engine_scene() : polymer_app(1280, 720, "sample-engi
     shaderMonitor.reset(new gl_shader_monitor("../../assets/"));
     fullscreen_surface.reset(new simple_texture_view());
     orchestrator.reset(new entity_orchestrator());
-    resolver.reset(new asset_resolver());
 
     load_required_renderer_assets("../../assets/", *shaderMonitor);
 
-    // Initial renderer settings
-    renderer_settings settings;
-    settings.renderSize = int2(width, height);
-
-    // Setup the required systems
-    scene.collision_system = orchestrator->create_system<collision_system>(orchestrator.get());
-    scene.xform_system = orchestrator->create_system<transform_system>(orchestrator.get());
-    scene.identifier_system = orchestrator->create_system<identifier_system>(orchestrator.get());
-    scene.render_system = orchestrator->create_system<render_system>(settings, orchestrator.get());
-    scene.mat_library.reset(new polymer::material_library("../../assets/sample-material.json"));
-    scene.event_manager.reset(new polymer::event_manager_async());
-
-    auto radianceBinary = read_file_binary("../../assets/textures/envmaps/wells_radiance.dds");
-    auto irradianceBinary = read_file_binary("../../assets/textures/envmaps/wells_irradiance.dds");
-    gli::texture_cube radianceHandle(gli::load_dds((char *)radianceBinary.data(), radianceBinary.size()));
-    gli::texture_cube irradianceHandle(gli::load_dds((char *)irradianceBinary.data(), irradianceBinary.size()));
-    payload.ibl_radianceCubemap = create_handle_for_asset("wells-radiance-cubemap", load_cubemap(radianceHandle));
-    payload.ibl_irradianceCubemap = create_handle_for_asset("wells-irradiance-cubemap", load_cubemap(irradianceHandle));
-
-    // Only need to set the skybox on the |render_payload| once (unless we clear the payload)
-    payload.procedural_skybox = scene.render_system->get_procedural_skybox();
-    payload.sunlight = scene.render_system->get_implicit_sunlight();
-
-    // Resolve asset_handles to resources on disk. In the case of this sample, the assets
-    // are created programmatically so no asset resolution needs to be performed.
-    resolver->resolve("../../assets/", &scene, scene.mat_library.get());
+    scene.reset(*orchestrator, {width, height}, true);
 
     create_handle_for_asset("debug-icosahedron", make_mesh_from_geometry(make_icosasphere(3))); // gpu mesh
     create_handle_for_asset("debug-icosahedron", make_icosasphere(3)); // cpu mesh
@@ -113,6 +86,8 @@ sample_engine_scene::sample_engine_scene() : polymer_app(1280, 720, "sample-engi
 
     cam.look_at({ 0, 0, 2 }, { 0, 0.1f, 0 });
     flycam.set_camera(&cam);
+
+    scene.resolver->resolve("../../assets/");
 }
 
 sample_engine_scene::~sample_engine_scene() {}

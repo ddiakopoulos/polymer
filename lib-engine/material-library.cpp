@@ -15,21 +15,27 @@ const std::string material_library::kDefaultMaterialId = "default-material";
 
 void material_library::search()
 {
-    for (auto & entry : recursive_directory_iterator(search_path))
+    for (const auto & path : search_paths)
     {
-        const size_t root_len = search_path.length(), ext_len = entry.path().extension().string().length();
-        auto path = entry.path().string(), name = path.substr(root_len + 1, path.size() - root_len - ext_len - 1);
-        for (auto & chr : path) if (chr == '\\') chr = '/';
-
-        if (entry.path().extension().string() == ".material")
+        for (auto & entry : recursive_directory_iterator(path))
         {
-            import_material(path);
+            const size_t root_len = path.length(), ext_len = entry.path().extension().string().length();
+            auto path = entry.path().string(), name = path.substr(root_len + 1, path.size() - root_len - ext_len - 1);
+            for (auto & chr : path) if (chr == '\\') chr = '/';
+
+            if (entry.path().extension().string() == ".material")
+            {
+                import_material(path);
+            }
         }
     }
+
 };
 
-material_library::material_library(const std::string & search_path) : search_path(search_path)
+material_library::material_library(const std::string & default_search_path)
 {
+    search_paths.push_back(default_search_path);
+
     // Create an empty asset for textures. 
     create_handle_for_asset("", gl_texture_2d());
 
@@ -50,7 +56,9 @@ material_library::material_library(const std::string & search_path) : search_pat
 
 material_library::~material_library()
 {
-    export_all();
+    //export_all();
+
+
     // Should we also call material_handle::destroy(...) for all the material assets? 
     instances.clear();
 }
@@ -60,12 +68,13 @@ void material_library::export_all()
     // Save all instances to disk
     for (auto & instance : instances)
     {
-        export_material(instance.first, search_path);
+        export_material(instance.first, search_paths[0]);
     }
 }
 
 void material_library::import_material(const std::string & path)
 {
+    // todo - de-duplicate based on name
     const json instance_doc = json::parse(read_file_text(path));
     const std::string name = get_filename_without_extension(path);
     assert(!name.empty());
@@ -110,7 +119,7 @@ void material_library::export_material(const std::string & name, const std::stri
         }
     });
 
-    polymer::write_file_text(path + name + ".material", library.dump(4));
+    polymer::write_file_text(path + "/" + name + ".material", library.dump(4));
 }
 
 void material_library::remove_material(const std::string & name)
@@ -126,4 +135,10 @@ void material_library::remove_material(const std::string & name)
     {
         log::get()->engine_log->info("{} was not found in the material list", name);
     }
+}
+
+void material_library::add_search_path(const std::string & search_path)
+{
+    search_paths.push_back(search_path);
+    search();
 }

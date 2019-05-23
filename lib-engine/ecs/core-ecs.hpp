@@ -33,10 +33,11 @@ namespace polymer
     {
         entity e{ kInvalidEntity };
         friend struct component_hash;
-        friend class environment; // for serialization to modify e directly
+        friend class environment; // for serialization and cloning operations to modify e directly
     public:
         explicit base_component(entity e = kInvalidEntity) : e(e) { }
         entity get_entity() const { return e; }
+        entity & get_entity_ref() { return e; }
     };
 
     // Hash functor for components so they can be used in unordered containers. 

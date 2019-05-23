@@ -74,9 +74,9 @@ void main()
         diffuseContrib += irradiance * lambert_diffuse(diffuseColor);
         specContrib += irradiance * blinn_phong_specular(NdotH, LdotH, u_specularColor, u_specularShininess) * u_specularStrength;
 
-        Lo += (diffuseContrib + specContrib);
+        Lo += diffuseContrib + specContrib;
     }
-
+    
     // Compute point lights
     for (int i = 0; i < u_activePointLights; ++i)
     {
@@ -96,7 +96,7 @@ void main()
         diffuseContrib += irradiance * lambert_diffuse(diffuseColor);
         specContrib += irradiance * blinn_phong_specular(NdotH, LdotH, u_specularColor, u_specularShininess) * u_specularStrength;
 
-        Lo += (diffuseContrib + specContrib) * attenuation;
+       	Lo += (diffuseContrib + specContrib) * attenuation;
     }
 
     f_color = vec4(Lo, 1.0); 

@@ -54,7 +54,6 @@ namespace polymer
     // for scene objects (meshes, geometry) and materials (shaders, textures, cubemaps). 
     class asset_resolver
     {
-        const std::string asset_dir;
         environment * scene;
         material_library * library;
 
@@ -111,7 +110,7 @@ namespace polymer
                     // `mesh_names` contains both CPU and GPU geometry handle ids
                     for (const auto & name : mesh_names)
                     {
-                        std::cout << "Looking for: " << name << std::endl;
+                        // std::cout << "Looking for: " << name << std::endl;
 
                         // "my_mesh/sub_component" should match to "my_mesh.obj" or similar
                         if (find_root(name) == filename_no_ext)
@@ -138,11 +137,11 @@ namespace polymer
 
     public:
 
-        void resolve()
+        void resolve(const std::string & asset_dir)
         {
             assert(scene != nullptr);
             assert(library != nullptr);
-            assert(asset_dir.size() > 1);
+            assert(asset_dir.size() > 0);
 
             // Material Names
             for (auto & m : scene->render_system->materials)
@@ -196,10 +195,9 @@ namespace polymer
             walk_directory(asset_dir);
         }
 
-        asset_resolver::asset_resolver(const std::string & asset_dir, environment * scene, material_library * library) :
-            asset_dir(asset_dir), scene(scene), library(library)
+        asset_resolver::asset_resolver(const std::string & asset_dir, environment * scene, material_library * library) 
+            : scene(scene), library(library)
         {
-            resolve();
         }
     };
 

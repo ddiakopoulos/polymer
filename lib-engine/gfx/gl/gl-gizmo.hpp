@@ -117,8 +117,13 @@ namespace polymer
             gizmo_ctx.update(gizmo_state);
         }
 
-        void draw()
+        void draw(const float screenspace_scale = 0.0f)
         {
+            if (screenspace_scale > 0.f)
+            {
+                gizmo_state.screenspace_scale = screenspace_scale;
+            }
+
             gizmo_ctx.draw();
         }
 

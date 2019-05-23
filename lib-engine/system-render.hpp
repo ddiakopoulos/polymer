@@ -105,6 +105,7 @@ namespace polymer
 
         void reconfigure(const renderer_settings new_settings)
         {
+            settings = new_settings;
             renderer.reset(new pbr_renderer(settings));
         }
 

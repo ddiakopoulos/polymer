@@ -175,7 +175,7 @@ namespace polymer
     protected:
 
         gl_mesh skyMesh;
-        virtual void render_internal(const float4x4 & viewProjection, const float3 & sunDir, const float4x4 & modelToWorld) = 0;
+        virtual void render_internal(const float4x4 & viewProjection, const float3 & sunDir, const float4x4 & modelToWorld) {};
 
     public:
     
@@ -190,6 +190,16 @@ namespace polymer
         {
             skyMesh = make_sphere_mesh(1.0);
             set_sun_position(50, 110);
+        }
+
+        gl_procedural_sky & operator = (const gl_procedural_sky & other)
+        {
+            this->skyMesh = make_sphere_mesh(1.0);
+            this->sunPosition = other.sunPosition;
+            this->normalizedSunY = other.normalizedSunY;
+            this->albedo = other.albedo;
+            this->turbidity = other.turbidity;
+            set_sun_position(sunPosition.x, sunPosition.y);
         }
 
         void render(const float4x4 & viewProj, const float3 & eyepoint, const float farClip)
@@ -231,7 +241,7 @@ namespace polymer
                    qrot(make_rotation_quat_axis_angle(float3(-1,0,0), sunPosition.x), float3(0,0,1)));
         }
 
-        virtual void recompute(float turbidity, float albedo, float normalizedSunY) = 0;
+        virtual void recompute(float turbidity, float albedo, float normalizedSunY) {};
     };
 
     class gl_hosek_sky : public gl_procedural_sky
@@ -265,7 +275,9 @@ namespace polymer
     public:
     
         gl_hosek_sky() { recompute(turbidity, albedo, normalizedSunY); }
-    
+        gl_hosek_sky(const gl_hosek_sky & other) { recompute(turbidity, albedo, normalizedSunY); }
+        gl_hosek_sky & operator = (const gl_hosek_sky & other) { recompute(turbidity, albedo, normalizedSunY); return *this; }
+
         virtual void recompute(float turbidity, float albedo, float normalizedSunY) override
         {
             data = ::detail::HosekSkyRadianceData::compute(get_sun_direction(), turbidity, albedo, normalizedSunY);
@@ -321,11 +333,10 @@ namespace polymer
     
     public:
     
-        gl_preetham_sky()
-        {
-            recompute(turbidity, albedo, normalizedSunY);
-        }
-    
+        gl_preetham_sky() { recompute(turbidity, albedo, normalizedSunY); }
+        gl_preetham_sky(const gl_preetham_sky & other) { recompute(turbidity, albedo, normalizedSunY); }
+        gl_preetham_sky & operator = (const gl_preetham_sky & other) { recompute(turbidity, albedo, normalizedSunY); return *this; }
+
         virtual void recompute(float turbidity, float albedo, float normalizedSunY) override
         {
             data = ::detail::PreethamSkyRadianceData::compute(get_sun_direction(), turbidity, albedo, normalizedSunY);

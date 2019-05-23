@@ -21,8 +21,8 @@ namespace polymer
     {
         static const std::string kDefaultMaterialId;
         std::map<std::string, std::shared_ptr<material_interface>> instances;
-        std::string search_path;
-        material_library(const std::string & search_path);
+        std::vector<std::string> search_paths;
+        material_library(const std::string & default_search_path);
         ~material_library();
         template<typename T> void create_material(const std::string & name, std::shared_ptr<T> mat);
         void remove_material(const std::string & name);
@@ -30,6 +30,7 @@ namespace polymer
         void export_material(const std::string & name, const std::string & path);
         void export_all();
         void search();
+        void add_search_path(const std::string & search_path);
     };
 
     template<typename T>

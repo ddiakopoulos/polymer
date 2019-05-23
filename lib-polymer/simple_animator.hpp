@@ -5,6 +5,8 @@
 
 #include "util.hpp"
 #include "math-common.hpp"
+#include "bit_mask.hpp"
+
 #include <list>
 #include <functional>
 #include <thread>
@@ -88,19 +90,30 @@ namespace tween
 
 namespace polymer
 {
+    
+    enum playback_state
+    {
+        none             = 0x1,
+        loop             = 0x2,
+        playback_forward = 0x4,
+        playback_reverse = 0x8,
+    };
+
     class tween_event
     {
         void * variable;
         float t0, t1;
-        std::function<void(float t)> update_impl;
+        std::function<void(float t)> forward_update_impl;
+        std::function<void(float t)> reverse_update_impl;
         friend class simple_animator;
+        float duration_seconds;
     public:
-        tween_event(void * v, float t0, float t1, std::function<void(float t)> update)
-            : variable(v), t0(t0), t1(t1), update_impl(update) {}
+        tween_event(void * v, float t0, float t1, float duration, std::function<void(float t)> fwd, std::function<void(float t)> rvs)
+            : variable(v), t0(t0), t1(t1), duration_seconds(duration), forward_update_impl(fwd), reverse_update_impl(rvs) {}
         std::function<void()> on_finish;
         std::function<void(float t)> on_update;
+        playback_state state {static_cast<playback_state>(none | playback_forward)};
     };
-
 
     // A simple playback manager for basic animation curves. 
     // @todo - threading, on_start callback, trigger delay, polymer::property support
@@ -119,15 +132,37 @@ namespace polymer
                 {
                     const float dx = static_cast<float>((now_seconds - it->t0) / (it->t1 - it->t0));
                     if (it->on_update) it->on_update(dx);
-                    it->update_impl(dx);
+
+                    if (it->state & playback_forward) it->forward_update_impl(dx);
+                    else it->reverse_update_impl(dx);
+
                     ++it;
                 }
                 else
                 {
-                    it->update_impl(1.f);
-                    if (it->on_update) it->on_update(1.f);
-                    if (it->on_finish) it->on_finish();
-                    it = tweens.erase(it);
+                    if (it->state & loop)
+                    {
+                        it->t0 = now_seconds;
+                        it->t1 = now_seconds + it->duration_seconds;
+
+                        if (it->state & playback_forward)
+                        {
+                            it->state = static_cast<playback_state>(it->state & ~playback_forward); // unset fwd
+                            it->state = static_cast<playback_state>(it->state | playback_reverse); // set reverse
+                        }
+                        else
+                        {
+                            it->state = static_cast<playback_state>(it->state & ~playback_reverse); 
+                            it->state = static_cast<playback_state>(it->state | playback_forward);
+                        }
+                    }
+                    else
+                    {
+                        it->forward_update_impl(1.f);
+                        if (it->on_update) it->on_update(1.f);
+                        if (it->on_finish) it->on_finish();
+                        it = tweens.erase(it);
+                    }
                 }
             }
         }
@@ -141,12 +176,18 @@ namespace polymer
         tween_event & add_tween(VariableType * variable, VariableType targetValue, float duration_seconds, EasingFunc ease)
         {
             VariableType initialValue = *variable;
-            auto update = [initialValue, variable, targetValue, ease](float t)
+
+            auto forward_update = [initialValue, variable, targetValue, ease](float t)
             {
                 *variable = static_cast<VariableType>(initialValue * (1.f - ease(t)) + targetValue * ease(t));
             };
 
-            tweens.emplace_back(variable, now_seconds, now_seconds + duration_seconds, update);
+            auto reverse_update = [initialValue, variable, targetValue, ease](float t)
+            {
+                *variable = static_cast<VariableType>(targetValue * (1.f - ease(t)) + initialValue * ease(t));
+            };
+
+            tweens.emplace_back(variable, now_seconds, now_seconds + duration_seconds, duration_seconds, forward_update, reverse_update);
             return tweens.back();
         }
 

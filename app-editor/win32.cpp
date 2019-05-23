@@ -17,8 +17,11 @@
 #include <Commdlg.h>
 #include <tchar.h>
 #include <direct.h>
+#include <Shlwapi.h>
 
 using namespace polymer;
+
+#pragma comment(lib, "Shlwapi.lib")
 
 std::wstring utf8_to_windows(const std::string & str)
 {
@@ -48,6 +51,7 @@ std::string windows_file_dialog(const std::string & filter_type, const std::stri
     ofn.nFilterIndex = 1;
     ofn.lpstrFileTitle = NULL;
     ofn.nMaxFileTitle = 0;
+    ofn.lpstrDefExt = utf8_to_windows(extension).c_str();
     ofn.lpstrInitialDir = NULL;
     ofn.Flags = OFN_PATHMUSTEXIST; // OFN_ALLOWMULTISELECT
     if (must_exist) ofn.Flags |= OFN_FILEMUSTEXIST;
@@ -74,6 +78,13 @@ std::string get_current_directory()
 bool set_working_directory(const std::string & dir)
 {
     return _chdir(dir.c_str()) == 0;
+}
+
+bool file_exists(const std::string & path) 
+{
+    auto w_path = utf8_to_windows(path);
+    if (::PathFileExistsW(w_path.c_str()) == FALSE) return false;
+    return true;
 }
 
 #ifdef UNICODE_WAS_UNDEFINED

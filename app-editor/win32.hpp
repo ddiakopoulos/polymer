@@ -8,3 +8,5 @@ std::string windows_file_dialog(const std::string & filter_type, const std::stri
 
 std::string get_current_directory();
 bool set_working_directory(const std::string & dir);
+
+bool file_exists(const std::string & path);

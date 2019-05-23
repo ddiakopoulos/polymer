@@ -44,18 +44,29 @@ namespace polymer
             for (auto c : node->children) recalculate_world_transform(c);
         }
 
-        void destroy_recursive(entity child)
+        void destroy_recursive(entity child, std::vector<entity> & destroyed_entities)
         {
-            // Remove parent assocations first
-            remove_parent_from_child(child);
-
             auto node = scene_graph_transforms.get(child);
-            if (node) for (auto & n : node->children) destroy_recursive(n);
+            if (node)
+            {
+                const auto children_copy = node->children;
+                for (auto & n : children_copy)
+                {
+                    destroy_recursive(n, destroyed_entities);
+                }
+                if (node->parent != kInvalidEntity)
+                {
+                    // If this node has a parent, remove the child from its list
+                    remove_child_from_parent(child);
+                }
+            }
+
+            destroyed_entities.push_back(child);
 
             // Erase world transform
             world_transforms.destroy(child);
 
-            // Erase itself after all children are gone
+            // Erase graph node
             scene_graph_transforms.destroy(child);
         }
 
@@ -83,8 +94,8 @@ namespace polymer
 
     public:
 
-        polymer_component_pool<local_transform_component> scene_graph_transforms{ 64 };
-        polymer_component_pool<world_transform_component> world_transforms{ 64 };
+        polymer_component_pool<local_transform_component> scene_graph_transforms{ 256 };
+        polymer_component_pool<world_transform_component> world_transforms{ 256 };
 
         transform_system(entity_orchestrator * f) : base_system(f)
         {
@@ -95,7 +106,7 @@ namespace polymer
 
         bool create(entity e, poly_typeid hash, void * data) override final 
         { 
-            if (hash != get_typeid<local_transform_component>()) { std::cout << "FUCL!\n"; return false; }
+            if (hash != get_typeid<local_transform_component>()) { return false; }
             auto new_component = static_cast<local_transform_component *>(data);
             return create(e, new_component->local_pose, new_component->local_scale, new_component->parent, new_component->children);
         }
@@ -108,7 +119,7 @@ namespace polymer
         {
             const auto check_node = scene_graph_transforms.get(e);
             const auto check_world = world_transforms.get(e);
-            if (check_node == nullptr || check_world == nullptr) // and vs. or?
+            if (check_node == nullptr && check_world == nullptr) // and vs. or?
             {
                 auto node = scene_graph_transforms.emplace(local_transform_component(e));
                 auto world = world_transforms.emplace(world_transform_component(e));
@@ -130,14 +141,17 @@ namespace polymer
         bool add_child(entity parent, entity child)
         {
             if (parent == child) throw std::invalid_argument("parent and child cannot be the same");
-            if (parent == kInvalidEntity) throw std::invalid_argument("parent was invalid");
+            /// if (parent == kInvalidEntity) throw std::invalid_argument("parent was invalid"); kInvalidEntity means no parent
+            /// if (!has_transform(parent)) throw std::invalid_argument("parent has no transform component");
             if (child == kInvalidEntity) throw std::invalid_argument("child was invalid");
-            if (!has_transform(parent)) throw std::invalid_argument("parent has no transform component");
             if (!has_transform(child)) throw std::invalid_argument("child has no transform component");
 
-            scene_graph_transforms.get(parent)->children.push_back(child);
+            if (parent != kInvalidEntity) scene_graph_transforms.get(parent)->children.push_back(child); // add to children list if not a top level root node
+
             scene_graph_transforms.get(child)->parent = parent;
-            recalculate_world_transform(parent);
+
+            if (parent != kInvalidEntity) recalculate_world_transform(parent); // only recalc if there is a sub graph
+
             return true;
         }
 
@@ -153,16 +167,17 @@ namespace polymer
 
         const world_transform_component * get_world_transform(entity e)
         {
-            if (e == kInvalidEntity) return nullptr;
+            if (e == kInvalidEntity) { return nullptr; }
             return world_transforms.get(e);
         }
 
-        bool set_local_transform(entity e, const transform new_transform)
+        bool set_local_transform(entity e, const transform new_transform, const float3 new_scale = {1.f, 1.f, 1.f})
         {
             if (e == kInvalidEntity) return kInvalidEntity;
             if (auto * node = scene_graph_transforms.get(e))
             {
-                node->local_pose = new_transform;
+                if (node->local_pose != new_transform) node->local_pose = new_transform;
+                if (node->local_scale != new_scale) node->local_scale = new_scale;
                 recalculate_world_transform(e);
                 return true;
             }
@@ -195,10 +210,11 @@ namespace polymer
             return found_child;
         }
 
-        void remove_parent_from_child(entity child)
+        void remove_child_from_parent(entity child)
         {
             if (child == kInvalidEntity) throw std::invalid_argument("entity was invalid");
             auto child_node = scene_graph_transforms.get(child);
+            if (!child_node) return;
             if (child_node->parent != kInvalidEntity)
             {
                 auto parent_node = scene_graph_transforms.get(child_node->parent);
@@ -210,9 +226,19 @@ namespace polymer
 
         void destroy(entity e) override final
         {
+            std::vector<entity> destroyed_entities;
             if (e == kInvalidEntity) throw std::invalid_argument("entity was invalid");
-            if (!has_transform(e)) throw std::invalid_argument("no component exists for this entity");
-            destroy_recursive(e);
+            if (!has_transform(e)) return;
+            destroy_recursive(e, destroyed_entities);
+        }
+
+        std::vector<entity> destroy_with_list(entity e)
+        {
+            if (e == kInvalidEntity) throw std::invalid_argument("entity was invalid");
+            if (!has_transform(e)) return {};
+            std::vector<entity> destroyed_entities;
+            destroy_recursive(e, destroyed_entities);
+            return destroyed_entities;
         }
 
         void refresh()
@@ -233,7 +259,6 @@ namespace polymer
         // while inspecting, we need to continuously recalculate based on potentially changed data
         system->fix_parent_child_orphans();
         system->recalculate_world_transform(e);
-
     }
 
     POLYMER_SETUP_TYPEID(transform_system);

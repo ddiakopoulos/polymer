@@ -82,6 +82,7 @@ namespace xr {
         hmd_base * hmd{ nullptr };
 
         vr_controller_role dominant_hand{ vr_controller_role::right_hand };
+        bool fixed_dominant_hand {false};
 
         xr_input_focus last_focus;
         xr_input_focus recompute_focus(const vr_controller & controller);
@@ -94,6 +95,12 @@ namespace xr {
         vr_controller get_controller(const vr_controller_role hand);
         xr_input_focus get_focus() const;
         void process(const float dt);
+
+        // The dominant hand changes depending on which controller last pressed the primary trigger.
+        // This function can pin the dominant hand. For instance, if we attach some 
+        // UI to one hand, then this function will enable us to stop generating raycast/pointer events
+        // if we press the trigger on that hand. 
+        void set_fixed_dominant_hand(const vr_controller_role hand);
     };
 
     //////////////////////////////
@@ -119,21 +126,25 @@ namespace xr {
         hmd_base * hmd{ nullptr };
         xr_input_processor * processor{ nullptr };
 
+        std::shared_ptr<polymer_blinn_phong_standard> controller_material[2];
         std::shared_ptr<polymer_fx_material> laser_pointer_material;
+
         simple_animator animator;
         mesh_component * pointer_mesh_component{ nullptr };
         entity pointer, left_controller, right_controller;
         arc_pointer_data arc_pointer;
         std::vector<float3> arc_curve;
         float3 target_location;
-        float laser_line_thickness{ 0.010f };
-        float laser_fade_seconds{ 0.20f };
+        float3 laser_color {172.f/255.f, 54.f/255.f, 134.f/255.f};
         float laser_alpha{ 0.f };
+        float laser_line_thickness{ 0.0075f };
+        float laser_fade_seconds{ 0.25f };
         float laser_alpha_on_teleport{ 0.f };
         float laser_fixed_draw_distance{ 2.f };
         void update_laser_geometry(const float distance);
         std::stack<controller_render_style_t> render_styles;
-        bool need_controller_render_data{ true };
+
+        std::vector<entity> ignored_entities;
 
         polymer::event_manager_sync::connection xr_input;
         void handle_event(const xr_input_event & event);
@@ -144,6 +155,8 @@ namespace xr {
         ~xr_controller_system();
         std::vector<entity> get_renderables() const;
         void process(const float dt);
+        void add_focus_ignore(const entity ignored_entity); 
+        const entity get_entity_for_controller(vr_controller_role role) const { return (role == vr_controller_role::left_hand ? left_controller : right_controller); }
     };
 
     /////////////////////////
@@ -200,6 +213,7 @@ namespace xr {
         std::vector<entity> get_renderables() const;
         void process(const float dt);
 
+        void set_transform(const transform t);
         transform get_transform() const;
 		void set_render_scale(const float scale = 1.f);
     };

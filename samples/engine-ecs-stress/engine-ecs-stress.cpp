@@ -19,7 +19,6 @@ struct sample_engine_ecs final : public polymer_app
 
     std::unique_ptr<gl_shader_monitor> shaderMonitor;
     std::unique_ptr<entity_orchestrator> orchestrator;
-    std::unique_ptr<asset_resolver> resolver;
     std::unique_ptr<simple_texture_view> fullscreen_surface;
 
     render_payload payload;
@@ -46,34 +45,16 @@ sample_engine_ecs::sample_engine_ecs() : polymer_app(1280, 720, "sample-ecs-stre
     shaderMonitor.reset(new gl_shader_monitor("../../assets/"));
     fullscreen_surface.reset(new simple_texture_view());
     orchestrator.reset(new entity_orchestrator());
-    resolver.reset(new asset_resolver());
 
     load_required_renderer_assets("../../assets/", *shaderMonitor);
 
-    // Initial renderer settings
-    renderer_settings settings;
-    settings.renderSize = int2(width, height);
+    scene.reset(*orchestrator, {width, height}, true);
 
-    // Setup the required systems
-    scene.collision_system = orchestrator->create_system<collision_system>(orchestrator.get());
-    scene.xform_system = orchestrator->create_system<transform_system>(orchestrator.get());
-    scene.identifier_system = orchestrator->create_system<identifier_system>(orchestrator.get());
-    scene.render_system = orchestrator->create_system<render_system>(settings, orchestrator.get());
-    scene.mat_library.reset(new polymer::material_library("../../assets/sample-material.json"));
-    scene.event_manager.reset(new polymer::event_manager_async());
-
-    // Only need to set the skybox on the |render_payload| once (unless we clear the payload)
-    payload.procedural_skybox = scene.render_system->get_procedural_skybox();
-    payload.sunlight = scene.render_system->get_implicit_sunlight();
-
-    // Resolve asset_handles to resources on disk. In the case of this sample, the assets
-    // are created programmatically so no asset resolution needs to be performed.
-    resolver->resolve("../../assets/", &scene, scene.mat_library.get());
-
-    create_handle_for_asset("debug-icosahedron", make_mesh_from_geometry(make_icosasphere(5))); // gpu mesh
-    create_handle_for_asset("debug-icosahedron", make_icosasphere(5)); // cpu mesh
+    create_handle_for_asset("debug-icosahedron", make_mesh_from_geometry(make_icosasphere(1))); // gpu mesh
+    create_handle_for_asset("debug-icosahedron", make_icosasphere(1)); // cpu mesh
 
     {
+       // 16384
         uniform_random_gen rand;
         scoped_timer create_timer("create 16384 entities");
 
@@ -83,9 +64,9 @@ sample_engine_ecs::sample_engine_ecs() : polymer_app(1280, 720, "sample-ecs-stre
             // Create a new entity to represent an icosahedron that we will render
             const entity debug_icosa = scene.track_entity(orchestrator->create_entity());
 
-            const float rnd1 = static_cast<float>(rand.random_int(-128, 128));
-            const float rnd2 = static_cast<float>(rand.random_int(-128, 128));
-            const float rnd3 = static_cast<float>(rand.random_int(-128, 128));
+            const float rnd1 = rand.random_float();
+            const float rnd2 = rand.random_float();
+            const float rnd3 = rand.random_float();
             const float rnd_scale = rand.random_float(0.1f, 0.5f);
 
             // Give the icosa a name and default transform and scale
@@ -111,13 +92,14 @@ sample_engine_ecs::sample_engine_ecs() : polymer_app(1280, 720, "sample-ecs-stre
             // Assemble a render_component (gather components so the renderer does not have to interface
             // with many systems). Ordinarily this assembly is done per-frame in the update loop, but
             // this is a fully static scene.
-            render_component debug_icosahedron_renderable = assemble_render_component(scene, debug_icosa);
-            payload.render_components.push_back(debug_icosahedron_renderable);
+            payload.render_components.emplace_back(assemble_render_component(scene, debug_icosa));
         }
     }
 
     cam.look_at({ 0, 0, 2 }, { 0, 0.1f, 0 });
     flycam.set_camera(&cam);
+
+    scene.resolver->resolve("../../assets/");
 }
 
 sample_engine_ecs::~sample_engine_ecs() {}

@@ -448,21 +448,25 @@ namespace gui
 
     void imgui_surface::end_frame()
     {
+        renderFramebuffer.check_complete();
+
         // Save framebuffer state
         GLint last_viewport[4]; glGetIntegerv(GL_VIEWPORT, last_viewport);
         GLint drawFramebuffer = 0, readFramebuffer = 0;
         glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &drawFramebuffer);
         glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &readFramebuffer);
+
+
         glBindFramebuffer(GL_FRAMEBUFFER, renderFramebuffer);
         glViewport(0, 0, (GLsizei)framebufferSize.x, (GLsizei)framebufferSize.y);
-
         glClear(GL_COLOR_BUFFER_BIT);
+
         imgui->end_frame();
 
         // Restore framebuffer state
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, drawFramebuffer);
         glBindFramebuffer(GL_READ_FRAMEBUFFER, readFramebuffer);
-        glViewport(last_viewport[0], last_viewport[1], (GLsizei)last_viewport[2], (GLsizei)last_viewport[3]);
+        glViewport((GLsizei)last_viewport[0], (GLsizei)last_viewport[1], (GLsizei)last_viewport[2], (GLsizei)last_viewport[3]);
     }
 
     //////////////////////////////

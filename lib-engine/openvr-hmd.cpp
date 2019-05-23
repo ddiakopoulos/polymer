@@ -63,7 +63,7 @@ gl_mesh openvr_hmd::get_stencil_mask(vr_eye eye)
     gl_mesh mesh;
 
     auto ham =  hmd->GetHiddenAreaMesh(openvr_eye, vr::k_eHiddenAreaMesh_Standard); // k_eHiddenAreaMesh_Standard k_eHiddenAreaMesh_Inverse
-    assert(ham.unTriangleCount > 0);
+    std::cout << "Hidden Area Mesh Triangle Count: " << (ham.unTriangleCount > 0) << std::endl;
     std::vector<float2> hidden_vertices;
 
     for (uint32_t i = 0; i < ham.unTriangleCount * 3; ++i)
@@ -133,9 +133,17 @@ void openvr_hmd::get_optical_properties(vr_eye eye, float & aspectRatio, float &
 
 void openvr_hmd::load_render_data_impl(vr::VREvent_t event)
 {
-    if (controllerRenderData.loaded == true)
+    const vr::ETrackedControllerRole role = hmd->GetControllerRoleForTrackedDeviceIndex(event.trackedDeviceIndex); 
+
+    // std::cout << "Which: " << static_cast<uint32_t>(role) + 1 << std::endl;
+    if (role == vr::ETrackedControllerRole::TrackedControllerRole_Invalid) return;
+
+    auto & render_data_for_role = controllerRenderData[static_cast<uint32_t>(role) - 1];
+    render_data_for_role.role = (role == vr::ETrackedControllerRole::TrackedControllerRole_LeftHand) ? vr_controller_role::left_hand : vr_controller_role::right_hand;
+
+    if (render_data_for_role.loaded == true)
     {
-        async_data_cb(controllerRenderData);
+        async_data_cb(render_data_for_role);
         return;
     }
 
@@ -166,27 +174,27 @@ void openvr_hmd::load_render_data_impl(vr::VREvent_t event)
             for (uint32_t v = 0; v < model->unVertexCount; v++)
             {
                 const vr::RenderModel_Vertex_t vertex = model->rVertexData[v];
-                controllerRenderData.mesh.vertices.push_back({ vertex.vPosition.v[0], vertex.vPosition.v[1], vertex.vPosition.v[2] });
-                controllerRenderData.mesh.normals.push_back({ vertex.vNormal.v[0], vertex.vNormal.v[1], vertex.vNormal.v[2] });
-                controllerRenderData.mesh.texcoord0.push_back({ vertex.rfTextureCoord[0], vertex.rfTextureCoord[1] });
+                render_data_for_role.mesh.vertices.push_back({ vertex.vPosition.v[0], vertex.vPosition.v[1], vertex.vPosition.v[2] });
+                render_data_for_role.mesh.normals.push_back({ vertex.vNormal.v[0], vertex.vNormal.v[1], vertex.vNormal.v[2] });
+                render_data_for_role.mesh.texcoord0.push_back({ vertex.rfTextureCoord[0], vertex.rfTextureCoord[1] });
             }
 
             for (uint32_t f = 0; f < model->unTriangleCount * 3; f += 3)
             {
-                controllerRenderData.mesh.faces.push_back({ model->rIndexData[f], model->rIndexData[f + 1] , model->rIndexData[f + 2] });
+                render_data_for_role.mesh.faces.push_back({ model->rIndexData[f], model->rIndexData[f + 1] , model->rIndexData[f + 2] });
             }
 
-            glTextureImage2DEXT(controllerRenderData.tex, GL_TEXTURE_2D, 0, GL_RGBA, texture->unWidth, texture->unHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture->rubTextureMapData);
-            glGenerateTextureMipmapEXT(controllerRenderData.tex, GL_TEXTURE_2D);
-            glTextureParameteriEXT(controllerRenderData.tex, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTextureParameteriEXT(controllerRenderData.tex, GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+            glTextureImage2DEXT(render_data_for_role.tex, GL_TEXTURE_2D, 0, GL_RGBA, texture->unWidth, texture->unHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture->rubTextureMapData);
+            glGenerateTextureMipmapEXT(render_data_for_role.tex, GL_TEXTURE_2D);
+            glTextureParameteriEXT(render_data_for_role.tex, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTextureParameteriEXT(render_data_for_role.tex, GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 
             renderModels->FreeTexture(texture);
             renderModels->FreeRenderModel(model);
 
-            controllerRenderData.loaded = true;
+            render_data_for_role.loaded = true;
 
-            async_data_cb(controllerRenderData);
+            async_data_cb(render_data_for_role);
         }
     }
 }
@@ -227,6 +235,8 @@ void openvr_hmd::update()
             {
             case vr::TrackedControllerRole_LeftHand:
             {
+                // todo - unPacketNum
+
                 if (hmd->GetControllerState(i, &controllerState, sizeof(controllerState)))
                 {
                     update_button_state(controllers[0].buttons[get_button_id_for_vendor(static_cast<uint32_t>(vr::k_EButton_SteamVR_Trigger), get_input_vendor())],

@@ -2,7 +2,7 @@
 
 using namespace polymer::xr;
 
-sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-scene")
+openvr_sample_app::openvr_sample_app() : polymer_app(1280, 800, "sample-engine-openvr-scene")
 {
     int windowWidth, windowHeight;
     glfwGetWindowSize(window, &windowWidth, &windowHeight);
@@ -38,30 +38,20 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
             "../../assets/shaders/renderer/no_op_frag.glsl",
             "../../assets/shaders/renderer");
 
-        // Create required environment utilities
-        scene.mat_library.reset(new polymer::material_library("../../assets/materials/"));
-
-
         // Setup for the recommended eye target size
         const uint2 eye_target_size = hmd->get_recommended_render_target_size();
+
+        scene.reset(*orchestrator, {eye_target_size.x, eye_target_size.y}, true);
+
         renderer_settings settings;
         settings.renderSize = int2(eye_target_size.x, eye_target_size.y);
         settings.cameraCount = 2;
         settings.performanceProfiling = true;
-
-        // Create required systems
-        scene.collision_system = orchestrator->create_system<collision_system>(orchestrator.get());
-        scene.xform_system = orchestrator->create_system<transform_system>(orchestrator.get());
-        scene.identifier_system = orchestrator->create_system<identifier_system>(orchestrator.get());
-        scene.render_system = orchestrator->create_system<render_system>(settings, orchestrator.get());
+        scene.render_system->reconfigure(settings);
 
         // Setup hidden area mesh
         scene.render_system->get_renderer()->set_stencil_mask(0, hmd->get_stencil_mask(vr_eye::left_eye));
         scene.render_system->get_renderer()->set_stencil_mask(1, hmd->get_stencil_mask(vr_eye::right_eye));
-
-        // Only need to set the skybox on the |render_payload| once (unless we clear the payload)
-        payload.procedural_skybox = scene.render_system->get_procedural_skybox();
-        payload.sunlight = scene.render_system->get_implicit_sunlight();
 
         {
             create_handle_for_asset("floor-mesh", make_mesh_from_geometry(make_plane(48, 48, 24, 24))); // gpu mesh
@@ -79,7 +69,9 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
         input_processor.reset(new xr_input_processor(orchestrator.get(), &scene, hmd.get()));
         controller_system.reset(new xr_controller_system(orchestrator.get(), &scene, hmd.get(), input_processor.get()));
         gizmo_system.reset(new xr_gizmo_system(orchestrator.get(), &scene, hmd.get(), input_processor.get()));
+
         vr_imgui.reset(new xr_imgui_system(orchestrator.get(), &scene, hmd.get(), input_processor.get(), { 256, 256 }, window));
+
         gui::make_light_theme();
     }
     catch (const std::exception & e)
@@ -90,25 +82,27 @@ sample_vr_app::sample_vr_app() : polymer_app(1280, 800, "sample-engine-openvr-sc
     // Setup left/right eye debug view we see on the desktop window
     eye_views.push_back(simple_texture_view()); // for the left view
     eye_views.push_back(simple_texture_view()); // for the right view
+
+    scene.resolver->resolve("../../assets/");
 }
 
-sample_vr_app::~sample_vr_app()
+openvr_sample_app::~openvr_sample_app()
 {
     hmd.reset();
 }
 
-void sample_vr_app::on_window_resize(int2 size)
+void openvr_sample_app::on_window_resize(int2 size)
 {
     int windowWidth, windowHeight;
     glfwGetWindowSize(window, &windowWidth, &windowHeight);
 }
 
-void sample_vr_app::on_input(const app_input_event & event) 
+void openvr_sample_app::on_input(const app_input_event & event) 
 {
     desktop_imgui->update_input(event);
 }
 
-void sample_vr_app::on_update(const app_update_event & e)
+void openvr_sample_app::on_update(const app_update_event & e)
 {
     shaderMonitor.handle_recompile();
 
@@ -128,7 +122,7 @@ void sample_vr_app::on_update(const app_update_event & e)
     vr_imgui->set_surface_transform(left_controller_xform);
 }
 
-void sample_vr_app::on_draw()
+void openvr_sample_app::on_draw()
 {
     glfwMakeContextCurrent(window);
 
@@ -214,7 +208,7 @@ int main(int argc, char * argv[])
 {
     try
     {
-        sample_vr_app app;
+        openvr_sample_app app;
         app.main_loop();
     }
     catch (const std::exception & e)

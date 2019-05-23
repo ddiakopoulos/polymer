@@ -12,7 +12,7 @@ struct viewport_t
     GLuint texture;
 };
 
-struct sample_vr_app : public polymer_app
+struct openvr_sample_app : public polymer_app
 {
     gl_shader_monitor shaderMonitor{ "../../assets/" };
 
@@ -34,8 +34,8 @@ struct sample_vr_app : public polymer_app
     render_payload payload;
     environment scene;
 
-    sample_vr_app();
-    ~sample_vr_app();
+    openvr_sample_app();
+    ~openvr_sample_app();
 
     void on_window_resize(int2 size) override;
     void on_input(const app_input_event & event) override;

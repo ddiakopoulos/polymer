@@ -111,7 +111,7 @@ namespace rhi {
     struct sampler_desc
     {
         filter min_filter, mag_filter;
-        std::optional<filter> mip_filter;
+        nonstd::optional<filter> mip_filter;
         address_mode wrap_s, wrap_t, wrap_r;
         /* todo - lod min/max/bias, border color */
     };

@@ -18,22 +18,23 @@ namespace polymer
     {
         const size_t qSize = 256;
         std::vector<spdlog::sink_ptr> sinks;
-        spdlog_t engine_log;
-        spdlog_t input_log;
+        spdlog_t engine_log, input_log, import_log;
 
         log()
         {
             spdlog::set_async_mode(qSize);
             sinks.push_back(std::make_shared<spdlog::sinks::simple_file_sink_mt>("polymer-engine-log.txt", true));
             sinks.push_back(std::make_shared<spdlog::sinks::simple_file_sink_mt>("polymer-input-log.txt", true));
+            sinks.push_back(std::make_shared<spdlog::sinks::simple_file_sink_mt>("polymer-import-log.txt", true));
             engine_log = std::make_shared<spdlog::logger>("polymer-engine-log", sinks[0]);
             input_log = std::make_shared<spdlog::logger>("polymer-input-log", sinks[1]);
+            import_log = std::make_shared<spdlog::logger>("polymer-import-log", sinks[2]);
         }
 
         void replace_sink(spdlog::sink_ptr sink)
         {
             sinks.push_back(sink);
-            engine_log = std::make_shared<spdlog::logger>("polymer-engine-log", std::begin(sinks), std::end(sinks));
+            engine_log = std::make_shared<spdlog::logger>("polymer-engine-log", std::begin(sinks), std::end(sinks)); // fixme - this is not correct
         }
 
         friend class polymer::singleton<log>;

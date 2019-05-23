@@ -350,6 +350,11 @@ namespace polymer
         return { transform[0].xyz, transform[1].xyz, transform[2].xyz };
     }
 
+    inline float3 get_translation_vector(const float4x4 & transform)
+    {
+        return { transform.row(0).w, transform.row(1).w, transform.row(2).w };
+    }
+
     inline float3 transform_coord(const float4x4 & transform, const float3 & coord)
     {
         auto r = transform * float4(coord, 1); return (r.xyz / r.w);

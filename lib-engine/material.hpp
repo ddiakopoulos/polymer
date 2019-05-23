@@ -58,6 +58,8 @@ namespace polymer
         virtual void use() override final;
         virtual void resolve_variants() override final;
         virtual uint32_t id() override final;
+        virtual void update_uniforms() override final;
+        std::function<void()> update_uniform_func;
     };
     POLYMER_SETUP_TYPEID(polymer_fx_material);
 
@@ -104,10 +106,10 @@ namespace polymer
         texture_handle diffuse;
         texture_handle normal;
 
-        float3 diffuseColor;
-        float3 specularColor;
-        float specularShininess;
-        float specularStrength;
+        float3 diffuseColor {1.f, 1.f, 1.f};
+        float3 specularColor {1.f, 1.f, 1.f};
+        float specularShininess {1.f};
+        float specularStrength {2.f};
     };
     POLYMER_SETUP_TYPEID(polymer_blinn_phong_standard);
 

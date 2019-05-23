@@ -554,6 +554,8 @@ public:
         indexType = 0;
         indexBuffers.clear();
     }
+
+    bool has_data() const { return vertexBuffer.size > 0; }
     
     void draw_elements(int instances = 0, int submesh_index = 0)
     {
@@ -561,10 +563,10 @@ public:
         {
             glBindVertexArray(vao);
 
-            submesh & idx = indexBuffers[submesh_index]; // note: will default construct
-
-            if (idx.count)
+            if (indexBuffers.size() >= 1)
             {
+                submesh & idx = indexBuffers[submesh_index]; // note: will default construct
+
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idx.indexBuffer);
                 if (instances) glDrawElementsInstanced(drawMode, idx.count, indexType, 0, instances);
                 else glDrawElements(drawMode, idx.count, indexType, nullptr);

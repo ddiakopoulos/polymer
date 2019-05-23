@@ -50,8 +50,8 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
     gui::make_light_theme();
     igm->add_font(droidSansTTFBytes);
 
-    cam.look_at({ 0, 9.5f, -6.0f }, { 0, 0.1f, 0 });
-    cam.farclip = 256;
+    cam.look_at({ 0, 5.f, -5.f }, { 0, 3.5f, 0 });
+    cam.farclip = 24;
     flycam.set_camera(&cam);
 
     load_editor_intrinsic_assets("../assets/models/runtime/");
@@ -215,8 +215,14 @@ void scene_editor_app::import_scene(const std::string & path)
         scene.reset(orchestrator, { width, height }, false);
 
         scene.import_environment(path, orchestrator);
+       
+        // Resolve polymer-local assets
+        scene.resolver->resolve("../assets/");
 
-        scene.resolver->resolve();
+        // Resolve project assets
+        const auto parent_dir = parent_directory_from_filepath(path);
+        log::get()->engine_log->info("resolving local `{}` directory.", parent_dir);
+        scene.resolver->resolve(parent_dir);
 
         glfwSetWindowTitle(window, path.c_str());
     }
@@ -442,6 +448,14 @@ void scene_editor_app::on_draw()
     }
     editorProfiler.end("wireframe-rendering");
 
+    // Render the gizmo behind imgui
+    {
+        editorProfiler.begin("gizmo_on_draw");
+        glClear(GL_DEPTH_BUFFER_BIT);
+        gizmo->on_draw(32.f); // set the gizmo to a fixed pixel size
+        editorProfiler.end("gizmo_on_draw");
+    }
+
     editorProfiler.begin("imgui-menu");
     igm->begin_frame();
 
@@ -455,18 +469,32 @@ void scene_editor_app::on_draw()
             const auto import_path = windows_file_dialog("polymer scene", "json", true);
             set_working_directory(working_dir_on_launch); // required because the dialog resets the cwd
             import_scene(import_path);
+            currently_open_scene = import_path;
         }
 
         if (menu.item("Save Scene", GLFW_MOD_CONTROL, GLFW_KEY_S, mod_enabled))
         {
-            const auto export_path = windows_file_dialog("polymer scene", "json", false);
-            set_working_directory(working_dir_on_launch); // required because the dialog resets the cwd
-            if (!export_path.empty())
+            if (currently_open_scene == "New Scene")
             {
-                gizmo->clear();
-                renderer_payload.render_components.clear();
-                scene.export_environment(export_path);
-                glfwSetWindowTitle(window, export_path.c_str());
+                const auto export_path = windows_file_dialog("polymer scene", "json", false);
+                set_working_directory(working_dir_on_launch); // required because the dialog resets the cwd
+                if (!export_path.empty())
+                {
+                    //gizmo->clear();
+                    renderer_payload.render_components.clear();
+                    scene.export_environment(export_path);
+                    glfwSetWindowTitle(window, export_path.c_str());
+
+                    auto scene_name = get_filename_without_extension(export_path);
+                    currently_open_scene = export_path;
+                }
+            }
+            else
+            {
+                if (file_exists(currently_open_scene)) // ensure that path via save-as or open is valid
+                {
+                    scene.export_environment(currently_open_scene);
+                }
             }
         }
 
@@ -477,7 +505,8 @@ void scene_editor_app::on_draw()
             scene.reset(orchestrator, { width, height }, true);
 
             renderer_payload.render_components.clear();
-            glfwSetWindowTitle(window, "unsaved new scene");
+            glfwSetWindowTitle(window, "New Scene");
+            currently_open_scene = "New Scene";
         }
 
         if (menu.item("Take Screenshot", GLFW_MOD_CONTROL, GLFW_KEY_EQUAL, mod_enabled))
@@ -496,6 +525,14 @@ void scene_editor_app::on_draw()
             {
                 const entity the_copy = scene.track_entity(orchestrator.create_entity());
                 scene.copy(selection_list[0], the_copy);
+
+                // offset cloned object by 0.1 units
+                auto old_local_xform = scene.xform_system->get_local_transform(the_copy);
+                transform t = old_local_xform->local_pose;
+                t.position += 0.1f;
+
+                scene.xform_system->set_local_transform(the_copy, t);
+
                 std::vector<entity> new_selection_list = { the_copy };
                 gizmo->set_selection(new_selection_list);
             }
@@ -503,7 +540,10 @@ void scene_editor_app::on_draw()
         if (menu.item("Delete", 0, GLFW_KEY_DELETE)) 
         {
             const auto selection_list = gizmo->get_selection();
-            if (!selection_list.empty() && selection_list[0] != kInvalidEntity) scene.destroy(selection_list[0]);
+            if (!selection_list.empty() && selection_list[0] != kInvalidEntity) 
+            {
+                scene.destroy(selection_list[0]);
+            }
             gizmo->clear();
         }
         if (menu.item("Select All", GLFW_MOD_CONTROL, GLFW_KEY_A)) 
@@ -699,13 +739,6 @@ void scene_editor_app::on_draw()
 
     igm->end_frame();
     editorProfiler.end("imgui-editor");
-
-    {
-        editorProfiler.begin("gizmo_on_draw");
-        glClear(GL_DEPTH_BUFFER_BIT);
-        gizmo->on_draw();
-        editorProfiler.end("gizmo_on_draw");
-    }
 
     gl_check_error(__FILE__, __LINE__);
 

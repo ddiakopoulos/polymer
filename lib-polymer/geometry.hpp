@@ -21,6 +21,24 @@ namespace polymer
         std::vector<uint32_t> material;
     };
 
+    struct runtime_mesh_quads : public runtime_mesh
+    {
+        std::vector<uint4> quads;
+    };
+
+    inline runtime_mesh quadmesh_to_trimesh(runtime_mesh_quads & quadmesh)
+    {
+        runtime_mesh trimesh = quadmesh;
+
+        for(auto & q : quadmesh.quads)
+        {
+            trimesh.faces.push_back({q.x,q.y,q.z});
+            trimesh.faces.push_back({q.x,q.z,q.w});
+        }
+
+        return trimesh;
+    }
+
     typedef runtime_mesh geometry;
 
     inline aabb_3d compute_bounds(const geometry & g)
@@ -209,12 +227,20 @@ namespace polymer
         }
     }
 
-    // warning: only accounts for vertices and faces
+    // warning: only accounts for vertices, faces, normals, and texcoords
     inline geometry concatenate_geometry(const geometry & a, const geometry & b)
     {
         geometry s;
+
         s.vertices.insert(s.vertices.end(), a.vertices.begin(), a.vertices.end());
         s.vertices.insert(s.vertices.end(), b.vertices.begin(), b.vertices.end());
+
+        s.normals.insert(s.normals.end(), a.normals.begin(), a.normals.end());
+        s.normals.insert(s.normals.end(), b.normals.begin(), b.normals.end());
+
+        s.texcoord0.insert(s.texcoord0.end(), a.texcoord0.begin(), a.texcoord0.end());
+        s.texcoord0.insert(s.texcoord0.end(), b.texcoord0.begin(), b.texcoord0.end());
+
         s.faces.insert(s.faces.end(), a.faces.begin(), a.faces.end());
         for (auto & f : b.faces) s.faces.push_back({ (int)a.vertices.size() + f.x, (int)a.vertices.size() + f.y, (int)a.vertices.size() + f.z });
         return s;

@@ -13,11 +13,11 @@ using namespace polymer;
 
 render_component polymer::assemble_render_component(environment & env, const entity e)
 {
-    render_component r{ e };
+    render_component r(e);
     r.material = env.render_system->get_material_component(e);
     r.mesh = env.render_system->get_mesh_component(e);
-    r.world_transform = env.xform_system->get_world_transform(e);
-    r.local_transform = env.xform_system->get_local_transform(e);
+    r.world_transform = const_cast<world_transform_component*>(env.xform_system->get_world_transform(e));
+    r.local_transform = const_cast<local_transform_component*>(env.xform_system->get_local_transform(e));
     return r;
 }
 
@@ -43,7 +43,9 @@ void environment::copy(entity src, entity dest)
                 if (component_ref.get_entity() == src)
                 {
                     const auto id = get_typeid<std::decay<decltype(component_ref)>::type>();
-                    system_pointer->create(dest, id, &component_ref);
+                    auto component_copy = component_ref;
+                    component_copy.e = dest;
+                    system_pointer->create(dest, id, &component_copy);
                 }
             });
         }
@@ -52,6 +54,7 @@ void environment::copy(entity src, entity dest)
     log::get()->engine_log->info("[environment] copied entity {} to {}", src, dest);
 
 }
+
 void environment::destroy(entity e)
 {
     if (e == kInvalidEntity) return;
@@ -67,19 +70,27 @@ void environment::destroy(entity e)
             });
         }
         active_entities.clear();
-        log::get()->engine_log->info("[environment] destroyed all entities");
+        log::get()->engine_log->info("[environment] destroyed all active entities");
     }
     else
     {
-        active_entities.erase(std::find(active_entities.begin(), active_entities.end(), e));
+        // Recursively destroy entities from the transform_system, including children.
+        const std::vector<entity> entities_to_destroy = xform_system->destroy_with_list(e);
 
-        // Destroy a single entity
-        visit_systems(this, [e](const char * name, auto * system_pointer)
+        for (const auto & to_be_destroyed : entities_to_destroy)
         {
-            if (system_pointer) system_pointer->destroy(e);
-        });
+            active_entities.erase(std::find(active_entities.begin(), active_entities.end(), to_be_destroyed));
 
-        log::get()->engine_log->info("[environment] destroyed single entity {}", e);
+            // Destroy systems this entity is attached to (except transform_system, which we did above). 
+            visit_systems(this, [to_be_destroyed](const char * name, auto * system_pointer)
+            {
+                if (system_pointer) 
+                {
+                    if (auto xform_system = dynamic_cast<transform_system*>(system_pointer)) {} // no-op
+                    else system_pointer->destroy(to_be_destroyed);
+                }
+            });
+        }
     }
 }
 
@@ -88,9 +99,12 @@ void environment::import_environment(const std::string & import_path, entity_orc
     manual_timer t;
     t.start();
 
-    destroy(kAllEntities);
+    // Leave this up to applications; user-created objects in code might be part of 
+    // the non-serialized scene, etc.
+    //destroy(kAllEntities);
 
-    const json env_doc = json::parse(read_file_text(import_path));
+    const std::string json_txt = read_file_text(import_path);
+    const json env_doc = json::parse(json_txt);
     std::unordered_map<entity, entity> remap_table;
 
     // Remap
@@ -99,14 +113,13 @@ void environment::import_environment(const std::string & import_path, entity_orc
         const entity parsed_entity = std::atoi(entityIterator.key().c_str());
         const entity new_entity = track_entity(o.create_entity());
         remap_table[parsed_entity] = new_entity; // remap old entity to new (used for transform system)
-        std::cout << "Remapping: " << parsed_entity << " to " << new_entity << std::endl;
+        log::get()->import_log->info("remapping {} to {}", parsed_entity, new_entity);
     }
 
     for (auto entityIterator = env_doc.begin(); entityIterator != env_doc.end(); ++entityIterator)
     {
         const entity parsed_entity = std::atoi(entityIterator.key().c_str());
         const entity new_entity = remap_table[parsed_entity];
-
         const json & comp = entityIterator.value();
 
         for (auto componentIterator = comp.begin(); componentIterator != comp.end(); ++componentIterator)
@@ -133,27 +146,17 @@ void environment::import_environment(const std::string & import_path, entity_orc
                         else if (create_component_on_system<cubemap_component>(new_entity, type_name, system_pointer, componentIterator)) {}
                         else if (type_name == get_typename<local_transform_component>())
                         {
-                            // Create a new graph component
                             local_transform_component c = componentIterator.value();
-
-                            // Assign it's id to the one we created for this import operation (instead of the one in the file)
                             c.e = new_entity;
-
-                            // At this point, all the children entities serialized from disk refer to old ones. We update them here.
-                            if (c.parent != kInvalidEntity) c.parent = remap_table[c.parent];
-                            for (auto & child : c.children) child = remap_table[child];
 
                             if (auto xform_system = dynamic_cast<transform_system*>(system_pointer))
                             {
-                                if (xform_system->create(new_entity, c.local_pose, c.local_scale, c.parent, c.children))
-                                {
-                                    std::cout << "Created " << type_name << " on " << system_name << std::endl;
-                                }
+                                if (xform_system->create(new_entity, c.local_pose, c.local_scale)) { log::get()->import_log->info("[visit_systems] created {} to {}", type_name, system_name); }
                             }
                         }
                         else
                         {
-                            throw std::runtime_error("component type name mismatch. did you forget to add a new component type here?");
+                            throw std::runtime_error("`type_name` does not match any known component type...");
                         }
    
                     }
@@ -161,7 +164,54 @@ void environment::import_environment(const std::string & import_path, entity_orc
             }
             else throw std::runtime_error("type key mismatch!");
         }
-    }
+    } // end first pass
+
+    // Second pass (for the transform system and parent/child relationships)
+    for (auto entityIterator = env_doc.begin(); entityIterator != env_doc.end(); ++entityIterator)
+    {
+        const entity parsed_entity = std::atoi(entityIterator.key().c_str());
+        const entity new_entity = remap_table[parsed_entity];
+        const json & comp = entityIterator.value();
+
+        for (auto componentIterator = comp.begin(); componentIterator != comp.end(); ++componentIterator)
+        {
+            if (starts_with(componentIterator.key(), "@"))
+            {
+                const std::string type_key = componentIterator.key();
+                const std::string type_name = type_key.substr(1);
+                const poly_typeid id = get_typeid(type_name.c_str());
+
+                visit_systems(this, [&, new_entity](const char * system_name, auto * system_pointer)
+                {
+                    if (system_pointer)
+                    {
+                        if (type_name == get_typename<local_transform_component>())
+                        {
+                            // Deserialize the graph component again
+                            local_transform_component c = componentIterator.value();
+
+                            if (c.parent != kInvalidEntity)
+                            {
+                                // At this point, all the children entities serialized from disk refer to old ones. We update them here.
+                                auto remapped_parent = remap_table[c.parent];
+
+                                if (auto xform_system = dynamic_cast<transform_system*>(system_pointer))
+                                {
+                                    if (xform_system->add_child(remapped_parent, new_entity)) 
+                                    {
+                                        log::get()->import_log->info("[visit_systems] xform_system->add_child {} (child) to {} (parent)", new_entity, remapped_parent);
+                                    }
+                                    else log::get()->import_log->info("[visit_systems] failed to add_child {} (child) to {} (parent)", new_entity, remapped_parent);
+                                }
+
+                            }
+                        }
+                    }
+                });
+            }
+            else throw std::runtime_error("type key mismatch!");
+        }
+    } // end second pass
 
     // Finalize the transform system by refreshing the scene graph
     xform_system->refresh();

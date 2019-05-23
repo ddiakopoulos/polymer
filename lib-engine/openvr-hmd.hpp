@@ -24,7 +24,7 @@ class openvr_hmd : public hmd_base
     uint2 renderTargetSize;
     transform hmdPose, worldPose;
 
-    cached_controller_render_data controllerRenderData;
+    cached_controller_render_data controllerRenderData[2];
     vr_controller controllers[2];
     std::function<void(cached_controller_render_data & data)> async_data_cb;
     void load_render_data_impl(vr::VREvent_t event);
