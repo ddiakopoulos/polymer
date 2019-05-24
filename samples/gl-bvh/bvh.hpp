@@ -10,9 +10,44 @@
 #define polymer_bvh_hpp
 
 #include "math-core.hpp"
+#include "math-mortion.hpp"
 
 namespace polymer
 {
+
+    constexpr std::uint32_t clz4(std::uint8_t v) noexcept
+    {
+        typedef const std::uint_fast8_t table_t[0x10];
+        return table_t{4, 3, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 }[v];
+    }
+
+    constexpr std::uint32_t clz8(std::uint8_t v) noexcept
+    {
+        return ((v & 0xF0) == 0) ? 4 + clz4(v) : clz4(v >> 4);
+    }
+
+    constexpr std::uint32_t clz16(std::uint16_t v) noexcept
+    {
+        return ((v & 0xFF00U) == 0) ? 8 + clz8(v) : clz8(v >> 8);
+    }
+
+    constexpr std::uint32_t clz32(std::uint32_t v) noexcept
+    {
+        return ((v & 0xFFFF0000UL) == 0) ? 16 + clz16(v) : clz16(v >> 16);
+    }
+
+    constexpr std::uint32_t clz64(std::uint64_t v) noexcept
+    {
+        return ((v & 0xFFFFFFFF00000000ULL) == 0) ? 32 + clz32(v) : clz32(v >> 32);
+    }
+
+    enum class bvh_node_type
+    {
+        root     = 0,
+        internal = 1,
+        leaf     = 2
+    };
+
     struct scene_object
     {
 
@@ -20,7 +55,13 @@ namespace polymer
 
     struct bvh_node
     {
-
+        aabb_3d bounds;                    // Bounds of this BVH node that encompass all children.
+        uint64_t morton { 0 };             // The morton index value for this node.
+        bvh_node * parent { nullptr };     // Parent node attached to this node (null if this is root).
+        bvh_node * left { nullptr };       // The 'left' child node (null if this is a leaf).
+        bvh_node * right { nullptr };      // The 'right' child node (null if this is a leaf).
+        scene_object * object { nullptr }; // The object attached to this node (null unless this is a leaf).
+        bvh_node_type node_type { bvh_node_type::root };
     };
 
     class bvh_tree
@@ -31,16 +72,39 @@ namespace polymer
         bvh_node * root {nullptr};               // Root scene node of the tree
         std::vector<bvh_node *> dirty_nodes;     // Container of all dirty nodes that need to be updated
         std::vector<scene_object *> object_list; // Convenience container for tree reconstruction (prevents the need of a full-traversal).
+        std::vector<scene_object *> new_objects; //  Newly added objects that are waiting to be added to the tree.
 
     public:
 
-        bvh_tree();
-        bvh_tree();
+        bvh_tree() = default;
+        ~bvh_tree() { destroy(); }
 
-        void restructure();
-        void destroy();
+        void restructure()
+        {
+            if (dirty)
+            {
+                if (rebuild_needed()) rebuild();
+                else
+                {
+                    insert_new_objects();
+                    update_dirty_nodes();
+                }
+                dirty = false;
+            }
+        }
 
-        bool contains(scene_object * object, bool check_new) const;
+        void destroy()
+        {
+            if (root)
+            {
+                destroy(root);
+                root = nullptr;
+                new_objects.clear();
+                object_list.clear();
+            }
+        }
+
+        bool contains(scene_object * object, bool check_new) const { /* todo */ }
         void add(scene_object * object);
         void add(std::vector<scene_object*> const & objects);
         bool remove(scene_object * object);
@@ -59,7 +123,9 @@ namespace polymer
         // Performs a complete rebuild of the tree.
         // This is a potentially costly operation and should only be called when absolutely necessary
         // (either on initial tree construction or when a significant number of new objects have been added).
-        void rebuild();
+        void rebuild()
+        {
+        }
 
         // Individually inserts new objects into the tree.
         // If the number of new objects that need to be added is significant, then a complete tree rebuild
