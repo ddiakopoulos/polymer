@@ -87,6 +87,22 @@ sample_engine_scene::sample_engine_scene() : polymer_app(1280, 720, "sample-engi
     cam.look_at({ 0, 0, 2 }, { 0, 0.1f, 0 });
     flycam.set_camera(&cam);
 
+    // Add a default skybox
+    if (auto proc_skybox = scene.render_system->get_procedural_skybox())
+    {
+        payload.procedural_skybox = proc_skybox;
+        if (auto sunlight = scene.render_system->get_directional_light_component(proc_skybox->sun_directional_light))
+        {
+            payload.sunlight = sunlight;
+        }
+    }
+
+    // Add a default cubemap
+    if (auto ibl_cubemap = scene.render_system->get_cubemap())
+    {
+        payload.ibl_cubemap = ibl_cubemap;
+    }
+
     scene.resolver->resolve("../../assets/");
 }
 

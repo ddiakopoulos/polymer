@@ -51,8 +51,8 @@ namespace polymer
         // memory before allocating a new "page" for more elements.
         explicit unordered_vector_map(size_t page_size) : page_size(page_size) {}
 
-        unordered_vector_map(const unordered_vector_map& rhs) = delete;
-        unordered_vector_map & operator = (const unordered_vector_map& rhs) = delete;
+        unordered_vector_map(const unordered_vector_map & rhs) = delete;
+        unordered_vector_map & operator = (const unordered_vector_map & rhs) = delete;
 
         // Emplaces an object at the end of the container's internal memory and
         // returns a pointer to it. Returns nullptr if there is already an Object in
@@ -88,7 +88,7 @@ namespace polymer
             }
         }
 
-        // destroys the Object associated with |key|.  The Object being destroyed will
+        // destroys the Object associated with |key|. The Object being destroyed will
         // be swapped with the object at the end of the internal storage structure,
         // and then will be "popped" off the back.
         void destroy(const Key & key)

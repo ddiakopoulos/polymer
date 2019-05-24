@@ -53,10 +53,11 @@ sample_engine_ecs::sample_engine_ecs() : polymer_app(1280, 720, "sample-ecs-stre
     create_handle_for_asset("debug-icosahedron", make_mesh_from_geometry(make_icosasphere(1))); // gpu mesh
     create_handle_for_asset("debug-icosahedron", make_icosasphere(1)); // cpu mesh
 
-    {
-       // 16384
+    {   
         uniform_random_gen rand;
         scoped_timer create_timer("create 16384 entities");
+
+        std::vector<entity> new_entities;
 
         // Configuring an entity at runtime programmatically
         for (uint32_t entity_index = 0; entity_index < 16384; ++entity_index)
@@ -64,9 +65,9 @@ sample_engine_ecs::sample_engine_ecs() : polymer_app(1280, 720, "sample-ecs-stre
             // Create a new entity to represent an icosahedron that we will render
             const entity debug_icosa = scene.track_entity(orchestrator->create_entity());
 
-            const float rnd1 = rand.random_float();
-            const float rnd2 = rand.random_float();
-            const float rnd3 = rand.random_float();
+            const float rnd1 = rand.random_float() * 100.f;
+            const float rnd2 = rand.random_float() * 100.f;
+            const float rnd3 = rand.random_float() * 100.f;
             const float rnd_scale = rand.random_float(0.1f, 0.5f);
 
             // Give the icosa a name and default transform and scale
@@ -89,10 +90,20 @@ sample_engine_ecs::sample_engine_ecs() : polymer_app(1280, 720, "sample-ecs-stre
             material_component.material = material_handle(material_library::kDefaultMaterialId);
             scene.render_system->create(debug_icosa, std::move(material_component));
 
+            new_entities.push_back(debug_icosa);
+        }
+
+        // Second pass to assemble render components separately, since `assemble_render_component` will
+        // grab pointers to components that were probably shuffled around as we inserted
+        // a bunch of them into the underlying component pool in transform_system.
+        for (uint32_t i = 0; i < new_entities.size(); ++i)
+        {
+            const auto e = new_entities[i];
+
             // Assemble a render_component (gather components so the renderer does not have to interface
             // with many systems). Ordinarily this assembly is done per-frame in the update loop, but
             // this is a fully static scene.
-            payload.render_components.emplace_back(assemble_render_component(scene, debug_icosa));
+            payload.render_components.emplace_back(assemble_render_component(scene, e));
         }
     }
 

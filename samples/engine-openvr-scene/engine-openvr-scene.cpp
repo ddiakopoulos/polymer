@@ -83,6 +83,22 @@ openvr_sample_app::openvr_sample_app() : polymer_app(1280, 800, "sample-engine-o
     eye_views.push_back(simple_texture_view()); // for the left view
     eye_views.push_back(simple_texture_view()); // for the right view
 
+    // Add a default skybox
+    if (auto proc_skybox = scene.render_system->get_procedural_skybox())
+    {
+        payload.procedural_skybox = proc_skybox;
+        if (auto sunlight = scene.render_system->get_directional_light_component(proc_skybox->sun_directional_light))
+        {
+            payload.sunlight = sunlight;
+        }
+    }
+
+    // Add a default cubemap
+    if (auto ibl_cubemap = scene.render_system->get_cubemap())
+    {
+        payload.ibl_cubemap = ibl_cubemap;
+    }
+
     scene.resolver->resolve("../../assets/");
 }
 

@@ -1,7 +1,7 @@
 /*
  * Based on: https://github.com/ssell/OcularEngine
  * Apache 2.0 License. Copyright 2014-2017 Steven T Sell (ssell@vertexfragment.com). All Rights Reserved.
- * See LICENSE file for full attribution information.
+ * See COPYING file for full attribution information.
  */
 
 #pragma once
@@ -10,33 +10,33 @@
 #define polymer_bvh_hpp
 
 #include "math-core.hpp"
-#include "math-mortion.hpp"
+#include "math-morton.hpp"
 
 namespace polymer
 {
 
-    constexpr std::uint32_t clz4(std::uint8_t v) noexcept
+    constexpr inline std::uint32_t clz4(std::uint8_t v) noexcept
     {
         typedef const std::uint_fast8_t table_t[0x10];
         return table_t{4, 3, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 }[v];
     }
 
-    constexpr std::uint32_t clz8(std::uint8_t v) noexcept
+    constexpr inline std::uint32_t clz8(std::uint8_t v) noexcept
     {
         return ((v & 0xF0) == 0) ? 4 + clz4(v) : clz4(v >> 4);
     }
 
-    constexpr std::uint32_t clz16(std::uint16_t v) noexcept
+    constexpr inline std::uint32_t clz16(std::uint16_t v) noexcept
     {
         return ((v & 0xFF00U) == 0) ? 8 + clz8(v) : clz8(v >> 8);
     }
 
-    constexpr std::uint32_t clz32(std::uint32_t v) noexcept
+    constexpr inline std::uint32_t clz32(std::uint32_t v) noexcept
     {
         return ((v & 0xFFFF0000UL) == 0) ? 16 + clz16(v) : clz16(v >> 16);
     }
 
-    constexpr std::uint32_t clz64(std::uint64_t v) noexcept
+    constexpr inline std::uint32_t clz64(std::uint64_t v) noexcept
     {
         return ((v & 0xFFFFFFFF00000000ULL) == 0) ? 32 + clz32(v) : clz32(v >> 32);
     }
@@ -72,7 +72,7 @@ namespace polymer
         bvh_node * root {nullptr};               // Root scene node of the tree
         std::vector<bvh_node *> dirty_nodes;     // Container of all dirty nodes that need to be updated
         std::vector<scene_object *> object_list; // Convenience container for tree reconstruction (prevents the need of a full-traversal).
-        std::vector<scene_object *> new_objects; //  Newly added objects that are waiting to be added to the tree.
+        std::vector<scene_object *> new_objects; // Newly added objects that are waiting to be added to the tree.
 
     public:
 
