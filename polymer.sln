@@ -52,6 +52,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rhi-render", "samples\rhi-r
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "engine-ecs-stress", "samples\engine-ecs-stress\engine-ecs-stress.vcxproj", "{12628B4B-9C5C-4453-9745-E5FB26D2DF44}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gl-bvh", "samples\gl-bvh\gl-bvh.vcxproj", "{3A3D9E39-B36D-461B-A579-E3A8C6B49D89}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -134,6 +136,10 @@ Global
 		{12628B4B-9C5C-4453-9745-E5FB26D2DF44}.Debug|x64.Build.0 = Debug|x64
 		{12628B4B-9C5C-4453-9745-E5FB26D2DF44}.Release|x64.ActiveCfg = Release|x64
 		{12628B4B-9C5C-4453-9745-E5FB26D2DF44}.Release|x64.Build.0 = Release|x64
+		{3A3D9E39-B36D-461B-A579-E3A8C6B49D89}.Debug|x64.ActiveCfg = Debug|x64
+		{3A3D9E39-B36D-461B-A579-E3A8C6B49D89}.Debug|x64.Build.0 = Debug|x64
+		{3A3D9E39-B36D-461B-A579-E3A8C6B49D89}.Release|x64.ActiveCfg = Release|x64
+		{3A3D9E39-B36D-461B-A579-E3A8C6B49D89}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -158,6 +164,7 @@ Global
 		{915353E9-42AC-4EA0-92C8-9FBB0E8E747A} = {25969120-2DC7-47EA-827F-41616989B284}
 		{CD22CB80-729E-45C0-8FE4-065EADE463AA} = {0B054E41-2F3E-4230-8488-B44C3643F315}
 		{12628B4B-9C5C-4453-9745-E5FB26D2DF44} = {0B054E41-2F3E-4230-8488-B44C3643F315}
+		{3A3D9E39-B36D-461B-A579-E3A8C6B49D89} = {0B054E41-2F3E-4230-8488-B44C3643F315}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {E2D0793D-BD41-4F42-A6AA-DAB3D17A46BE}
