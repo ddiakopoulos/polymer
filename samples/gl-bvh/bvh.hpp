@@ -25,11 +25,11 @@ namespace polymer
 
     class bvh_tree
     {
-        typedef std::pair<uint64_t, scene_object*> MortonPair;
+        typedef std::pair<uint64_t, scene_object*> bvh_morton_pair;
 
         bool dirty{ true };                      // Dirty flag indicating if the tree needs to be updated
-        bvh_node * root;                     // Root scene node of the tree
-        std::vector<bvh_node *> dirty_nodes; // Container of all dirty nodes that need to be updated
+        bvh_node * root {nullptr};               // Root scene node of the tree
+        std::vector<bvh_node *> dirty_nodes;     // Container of all dirty nodes that need to be updated
         std::vector<scene_object *> object_list; // Convenience container for tree reconstruction (prevents the need of a full-traversal).
 
     public:
@@ -47,12 +47,12 @@ namespace polymer
         void remove(std::vector<scene_object*> const & objects);
         std::vector<scene_object*> get() const;
 
-        ///virtual void getAllVisibleObjects(Math::Frustum const& frustum, std::vector<SceneObject*>& objects) const override;
-        ///virtual void getIntersections(Math::Ray const& ray, std::vector<std::pair<SceneObject*, float>>& objects) const override;
-        ///virtual void getIntersections(Math::BoundsSphere const& bounds, std::vector<SceneObject*>& objects) const override;
-        ///virtual void getIntersections(Math::BoundsAABB const& bounds, std::vector<SceneObject*>& objects) const override;
-        ///virtual void getIntersections(Math::BoundsOBB const& bounds, std::vector<SceneObject*>& objects) const override;
-        ///virtual void setDirty(UUID const& uuid) override;
+        ///void visible(Math::Frustum const& frustum, std::vector<scene_object'*> & objects) const;
+        ///void intersect(Math::Ray const& ray, std::vector<std::pair<scene_object'*, float>>& objects) const;
+        ///void intersect(Math::BoundsSphere const& bounds, std::vector<scene_object'*> & objects) const;
+        ///void intersect(Math::BoundsAABB const& bounds, std::vector<scene_object'*> & objects) const;
+        ///void intersect(Math::BoundsOBB const& bounds, std::vector<scene_object'*> & objects) const;
+        ///void mark_dirty(UUID const& uuid);
 
     private: 
 
@@ -97,31 +97,31 @@ namespace polymer
         /*
         // \param[in]  node    Current node.
         // \param[in]  frustum Frustum to test against.
-        // \param[out] objects All discovered SceneObjects that intersect.
-        void findVisible(bvh_node * node, Math::Frustum const& frustum, std::vector<scene_object *>& objects) const;
+        // \param[out] objects All discovered scene_object's that intersect.
+        void visible(bvh_node * node, Math::Frustum const& frustum, std::vector<scene_object *>& objects) const;
 
         // \param[in]  node    Current node.
         // \param[in]  ray     Ray to test against.
-        // \param[out] objects All discovered SceneObjects that intersect and their intersection points.
-        void findIntersections(bvh_node * node, Math::Ray const& ray, std::vector<std::pair<scene_object *, float>>& objects) const;
+        // \param[out] objects All discovered scene_object's that intersect and their intersection points.
+        void intersect(bvh_node * node, Math::Ray const& ray, std::vector<std::pair<scene_object *, float>>& objects) const;
 
-        // Recursively finds all SceneObjects that intersect with the specified bounds.
+        // Recursively finds all scene_object's that intersect with the specified bounds.
         // \param[in]  node    Current node.
         // \param[in]  bounds  Bounds to test against.
-        // \param[out] objects All discovered SceneObjects that intersect.
-        void findIntersections(bvh_node * node, Math::BoundsSphere const& bounds, std::vector<scene_object *>& objects) const;
+        // \param[out] objects All discovered scene_object's that intersect.
+        void intersect(bvh_node * node, Math::BoundsSphere const& bounds, std::vector<scene_object *>& objects) const;
 
-        // Recursively finds all SceneObjects that intersect with the specified bounds.
+        // Recursively finds all scene_object's that intersect with the specified bounds.
         // \param[in]  node    Current node.
         // \param[in]  bounds  Bounds to test against.
-        // \param[out] objects All discovered SceneObjects that intersect.
-        void findIntersections(bvh_node * node, Math::BoundsAABB const& bounds, std::vector<scene_object *>& objects) const;
+        // \param[out] objects All discovered scene_object's that intersect.
+        void intersect(bvh_node * node, Math::BoundsAABB const& bounds, std::vector<scene_object *>& objects) const;
 
-        // Recursively finds all SceneObjects that intersect with the specified bounds.
+        // Recursively finds all scene_object's that intersect with the specified bounds.
         // \param[in]  node    Current node.
         // \param[in]  bounds  Bounds to test against.
-        // \param[out] objects All discovered SceneObjects that intersect.
-        void findIntersections(bvh_node * node, Math::BoundsOBB const& bounds, std::vector<scene_object *>& objects) const;
+        // \param[out] objects All discovered scene_object's that intersect.
+        void intersect(bvh_node * node, Math::BoundsOBB const& bounds, std::vector<scene_object *>& objects) const;
         */
 
         //////////////////////
@@ -132,8 +132,8 @@ namespace polymer
         void build();
 
         // Calculates and sorts the Morton Codes for all objects in the tree.
-        // \param[out] pairs Container to be filled with the sorted Morton Codes and their associated SceneObject
-        void create_morton_pairs(std::vector<MortonPair> & pairs) const;
+        // \param[out] pairs Container to be filled with the sorted Morton Codes and their associated scene_object
+        void create_morton_pairs(std::vector<bvh_morton_pair> & pairs) const;
 
         // Recursively generates the tree in a top-down manner beginning at the root.
         // \param[in] parent The node calling this recursive sequence.
@@ -141,14 +141,14 @@ namespace polymer
         // \param[in] first  First node in the current split
         // \param[in] last   Last node in the current split (inclusive)
         // \return Pointer to the root node of the newly generated tree.
-        bvh_node * generate_tree(bvh_node * parent, std::vector<MortonPair> const & pairs, uint32_t first, uint32_t last) const;
+        bvh_node * generate_tree(bvh_node * parent, std::vector<bvh_morton_pair> const & pairs, uint32_t first, uint32_t last) const;
 
         // Finds the index to split the remaining objects to fit the tree.
         // \param[in] pairs Sorted list of morton code/scene object pairings.
         // \param[in] first Index of first object remaining to be added to the tree
         // \param[in] last  Index of the last object remaining to be added to the tree
         // \return Best index to split the remaining objects.
-        uint32_t find_split(std::vector<MortonPair> const & pairs, uint32_t first, uint32_t last) const;
+        uint32_t find_split(std::vector<bvh_morton_pair> const & pairs, uint32_t first, uint32_t last) const;
 
         // Adjusts the bounds of the specified node to fit over it's children.
         void fit_node_bounds(bvh_node * node) const;
