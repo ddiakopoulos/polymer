@@ -92,16 +92,13 @@ std::unordered_map<std::string, runtime_mesh> polymer::import_obj_model(const st
     std::string err;
     bool status = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, path.c_str(), parentDir.c_str());
 
-    if (status && !err.empty())
-    {
-        std::cout << "tinyobj warning: " << err << std::endl;
-    }
+    // if (status && !err.empty()) std::cerr << "tinyobj warning: " << err << std::endl;
 
     // Append `default` material
     materials.push_back(tinyobj::material_t());
 
-    std::cout << "# of shapes    : " << shapes.size() << std::endl;
-    std::cout << "# of materials : " << materials.size() << std::endl;
+    // std::cout << "# of shapes    : " << shapes.size() << std::endl;
+    // std::cout << "# of materials : " << materials.size() << std::endl;
 
     // Parse tinyobj data into geometry struct
     for (unsigned int i = 0; i < shapes.size(); i++)
@@ -111,9 +108,9 @@ std::unordered_map<std::string, runtime_mesh> polymer::import_obj_model(const st
 
         runtime_mesh & g = meshes[shape->name];
 
-        std::cout << "Submesh Name:  " << shape->name << std::endl;
-        std::cout << "Num Indices:   " << mesh->indices.size() << std::endl;
-        std::cout << "Num TexCoords: " << attrib.texcoords.size() << std::endl;
+        // std::cout << "Submesh Name:  " << shape->name << std::endl;
+        // std::cout << "Num Indices:   " << mesh->indices.size() << std::endl;
+        // std::cout << "Num TexCoords: " << attrib.texcoords.size() << std::endl;
 
         size_t indexOffset = 0;
 
