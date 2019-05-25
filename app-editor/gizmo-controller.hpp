@@ -20,7 +20,9 @@ class gizmo_controller
     std::vector<transform> relative_transforms;  // Pose of the objects relative to the selection
 
     bool gizmo_active{ false };
-    transform_system * xform_system{ nullptr };
+    environment * scene{ nullptr };
+
+    polymer::transform_system * get_transform_system() { return scene->xform_system; }
 
     void compute_entity_transform()
     {
@@ -32,7 +34,7 @@ class gizmo_controller
         // Single object selection
         else if (selected_entities.size() == 1)
         {
-            entity_transform = xform_system->get_world_transform(selected_entities[0])->world_pose;
+            entity_transform = get_transform_system()->get_world_transform(selected_entities[0])->world_pose;
         }
         // Multi-object selection
         else
@@ -41,7 +43,7 @@ class gizmo_controller
             float numObjects = 0;
             for (auto entity : selected_entities)
             {
-                center_of_mass += xform_system->get_world_transform(entity)->world_pose.position;
+                center_of_mass += get_transform_system()->get_world_transform(entity)->world_pose.position;
                 numObjects++;
             }
             center_of_mass /= numObjects;
@@ -63,14 +65,14 @@ class gizmo_controller
 
         for (entity e : selected_entities)
         {
-            const transform x = xform_system->get_world_transform(e)->world_pose;
+            const transform x = get_transform_system()->get_world_transform(e)->world_pose;
             relative_transforms.push_back(entity_transform.inverse() * x);
         }
     }
 
 public:
 
-    gizmo_controller(transform_system * system) : xform_system(system) { }
+    gizmo_controller(environment * scene) : scene(scene) {}
 
     bool selected(entity e) const
     {
@@ -141,21 +143,21 @@ public:
                 const transform updated_pose = to_linalg(gizmo_transform) * relative_transforms[i];
 
                 // Does this have a parent?
-                if (xform_system->get_parent(e) != kInvalidEntity)
+                if (get_transform_system()->get_parent(e) != kInvalidEntity)
                 {
                     // `updated_pose` is in worldspace, even though it's a child. 
                     // We need to bring it back into the space of the parent. 
-                    const entity parent_entity = xform_system->get_parent(e);
-                    const transform parent_pose = xform_system->get_local_transform(parent_entity)->local_pose;
+                    const entity parent_entity = get_transform_system()->get_parent(e);
+                    const transform parent_pose = get_transform_system()->get_local_transform(parent_entity)->local_pose;
                     const transform child_local_pose = parent_pose.inverse() * updated_pose;
 
-                    xform_system->set_local_transform(e, child_local_pose);
+                    get_transform_system()->set_local_transform(e, child_local_pose);
                 }
                 else
                 {
                     // Note how we're setting the local transform. If this is a parent entity,
                     // local is already in worldspace. 
-                    xform_system->set_local_transform(e, updated_pose);
+                    get_transform_system()->set_local_transform(e, updated_pose);
                 }
             }
 

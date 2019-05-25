@@ -154,11 +154,7 @@ void environment::import_environment(const std::string & import_path, entity_orc
                                 if (xform_system->create(new_entity, c.local_pose, c.local_scale)) { log::get()->import_log->info("[visit_systems] created {} to {}", type_name, system_name); }
                             }
                         }
-                        else
-                        {
-                            throw std::runtime_error("`type_name` does not match any known component type...");
-                        }
-   
+                        else throw std::runtime_error("`type_name` does not match any known component type...");
                     }
                 });
             }
@@ -203,7 +199,6 @@ void environment::import_environment(const std::string & import_path, entity_orc
                                     }
                                     else log::get()->import_log->info("[visit_systems] failed to add_child {} (child) to {} (parent)", new_entity, remapped_parent);
                                 }
-
                             }
                         }
                     }
@@ -248,6 +243,7 @@ void environment::export_environment(const std::string & export_path)
                     // foreach field (object)
                     visit_fields(component_ref, [&](const char * name, auto & field, auto... metadata)
                     { 
+                        if (auto * no_serialize = unpack<serializer_hidden>(metadata...)) return;
                         component[name] = field;
                     });
 

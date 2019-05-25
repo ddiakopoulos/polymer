@@ -254,7 +254,7 @@ void polymer_app::main_loop()
         }
         catch(...)
         {
-            // ...
+            throw;
         }
     }
 }

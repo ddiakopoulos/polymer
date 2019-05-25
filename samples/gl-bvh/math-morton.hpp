@@ -132,9 +132,9 @@ namespace polymer
 
     inline uint64_t morton_3d(const float x, const float y, const float z)
     {
-        const uint32_t x_int = static_cast<uint32_t>(fminf(fmaxf(x * 2097152.0f, 0.0f), 2097151.0f));
-        const uint32_t y_int = static_cast<uint32_t>(fminf(fmaxf(y * 2097152.0f, 0.0f), 2097151.0f));
-        const uint32_t z_int = static_cast<uint32_t>(fminf(fmaxf(z * 2097152.0f, 0.0f), 2097151.0f));
+        const uint32_t x_int = static_cast<uint32_t>(std::min(std::max(x * 2097152.f, 0.f), 2097151.f));
+        const uint32_t y_int = static_cast<uint32_t>(std::min(std::max(y * 2097152.f, 0.f), 2097151.f));
+        const uint32_t z_int = static_cast<uint32_t>(std::min(std::max(z * 2097152.f, 0.f), 2097151.f));
         return morton_3d(x_int, y_int, z_int);
     }
 

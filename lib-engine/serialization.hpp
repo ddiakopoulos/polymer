@@ -27,8 +27,9 @@ template<class T>
 const T * unpack() { return nullptr; }
 
 template<class T> struct range_metadata { T min, max; };
-struct editor_hidden { };
-struct input_field { };
+struct editor_hidden {};
+struct input_field {};
+struct serializer_hidden {};
 
 using json = nlohmann::json;
 

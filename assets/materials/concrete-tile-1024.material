@@ -27,8 +27,8 @@
         "shadow_opacity": 1.0,
         "specularLevel": 0.0,
         "texcoord_scale": {
-            "x": 4.0,
-            "y": 4.0
+            "x": 0.07500000298023224,
+            "y": 0.07500000298023224
         }
     }
 }

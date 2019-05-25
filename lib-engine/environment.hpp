@@ -235,15 +235,15 @@ namespace polymer
     struct procedural_skybox_component : public base_component
     {
         polymer::gl_hosek_sky sky;
-        entity sun_directional_light;
+        entity sun_directional_light {kInvalidEntity};
         procedural_skybox_component() {};
         procedural_skybox_component(entity e) : base_component(e) {}
-        //procedural_skybox_component & operator = (const procedural_skybox_component & other) { sky = other.sky; sun_directional_light = other.sun_directional_light; }
     };
     POLYMER_SETUP_TYPEID(procedural_skybox_component);
 
     template<class F> void visit_fields(procedural_skybox_component & o, F f) {
         f("procedural_skybox", o.sky);
+        f("sun_directional_light", o.sun_directional_light);
     }
 
     inline void to_json(json & j, const procedural_skybox_component & p) {
@@ -364,7 +364,7 @@ namespace polymer
 
     template<class F> void visit_fields(local_transform_component & o, F f)
     {
-        f("entity", o.get_entity_ref()); // editor_hidden{}
+        f("entity", o.get_entity_ref(), serializer_hidden{}); 
         f("local_pose", o.local_pose);
         f("local_scale", o.local_scale);
         f("parent", o.parent);
@@ -377,6 +377,7 @@ namespace polymer
 
     inline void from_json(const json & archive, local_transform_component & m) {
         visit_fields(m, [&archive](const char * name, auto & field, auto... metadata) {
+            if (auto * no_serialize = unpack<serializer_hidden>(metadata...)) return;
             field = archive.at(name).get<std::remove_reference_t<decltype(field)>>();
         });
     };

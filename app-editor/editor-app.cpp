@@ -67,7 +67,7 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
 
     scene.reset(orchestrator, { width, height }, true);
 
-    gizmo.reset(new gizmo_controller(scene.xform_system));
+    gizmo.reset(new gizmo_controller(&scene));
 }
 
 void scene_editor_app::on_drop(std::vector<std::string> filepaths)
@@ -75,14 +75,8 @@ void scene_editor_app::on_drop(std::vector<std::string> filepaths)
     for (auto path : filepaths)
     {
         const std::string ext = get_extension(path);
-        if (ext == "json")
-        {
-            import_scene(path);
-        }
-        else
-        {
-            import_asset_runtime(path, scene, orchestrator);
-        }
+        if (ext == "json") import_scene(path);
+        else import_asset_runtime(path, scene, orchestrator);
     }
 }
 
@@ -208,7 +202,7 @@ void scene_editor_app::import_scene(const std::string & path)
     if (!path.empty())
     {
         gizmo->clear();
-        renderer_payload.render_components.clear();
+        renderer_payload.reset();
 
         int width, height;
         glfwGetWindowSize(window, &width, &height);
@@ -228,7 +222,7 @@ void scene_editor_app::import_scene(const std::string & path)
     }
     else
     {
-        throw std::runtime_error("scene path was empty...");
+        throw std::invalid_argument("path was empty...?");
     }
 }
 

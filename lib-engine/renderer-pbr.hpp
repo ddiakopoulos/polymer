@@ -115,6 +115,7 @@ namespace polymer
            point_lights.clear();
            sunlight = nullptr;
            procedural_skybox = nullptr;
+           ibl_cubemap = nullptr;
         }
     };
 
@@ -190,7 +191,6 @@ namespace polymer
         f("tonemap_pass",           o.settings.tonemapEnabled);
         f("shadow_pass",            o.settings.shadowsEnabled);
     }
-
 }
 
 #endif // end polymer_renderer_pbr_hpp
