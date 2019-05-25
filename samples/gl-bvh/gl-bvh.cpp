@@ -2,6 +2,8 @@
 #include "gl-camera.hpp"
 #include "gl-texture-view.hpp"
 #include "gl-gizmo.hpp"
+#include "gl-imgui.hpp"
+
 #include "bvh.hpp"
 
 using namespace polymer;
@@ -39,6 +41,8 @@ struct debug_sphere
     }
 };
 
+using namespace gui;
+
 struct sample_gl_bvh final : public polymer_app
 {
     perspective_camera cam;
@@ -47,13 +51,17 @@ struct sample_gl_bvh final : public polymer_app
 
     bool show_debug = false;
 
+    std::vector<scene_object> bvh_objects;
+
+    std::unique_ptr<imgui_instance> imgui;
     std::unique_ptr<gl_shader> shader;
     std::vector<debug_sphere> spheres;
     gl_mesh sphereMesh;
     gl_mesh boxMesh;
 
-    octree<debug_sphere> octree{ 8,{ { -24, -24, -24 },{ +24, +24, +24 } } };
-    std::vector<node_container<debug_sphere>> nodes;
+    bvh_tree scene_accelerator;
+    bvh_node * selected_node{ nullptr };
+    scene_object * selected_object{ nullptr };
 
     std::unique_ptr<gl_gizmo> gizmo;
     tinygizmo::rigid_transform xform;
@@ -76,6 +84,9 @@ sample_gl_bvh::sample_gl_bvh() : polymer_app(1280, 720, "sample-gl-bvh")
     glfwGetWindowSize(window, &width, &height);
     glViewport(0, 0, width, height);
 
+    imgui.reset(new gui::imgui_instance(window, true));
+    gui::make_light_theme();
+
     cam.look_at({ 0, 9.5f, -6.0f }, { 0, 0.1f, 0 });
     flycam.set_camera(&cam);
 
@@ -88,28 +99,132 @@ sample_gl_bvh::sample_gl_bvh() : polymer_app(1280, 720, "sample-gl-bvh")
     boxMesh = make_cube_mesh();
     boxMesh.set_non_indexed(GL_LINES);
 
-    for (int i = 0; i < 512; ++i)
+    const uint32_t num_elements = 65536;
+
+    const float size = 256.f;
+    const float half_size = size * 0.5f;
+
+    //{
+    //    scoped_timer t("[sample_gl_bvh] create spheres");
+    //
+    //    for (int i = 0; i < num_elements; ++i)
+    //    {
+    //        //gen.random_float(size) - half_size,
+    //        const float3 position = { gen.random_float(size) - half_size, gen.random_float(size) - half_size, gen.random_float(size) - half_size };
+    //        const float radius = .25f;
+    //
+    //        debug_sphere s;
+    //        s.p = transform(quatf(linalg::identity), position);
+    //        s.radius = radius;
+    //
+    //        spheres.push_back(std::move(s));
+    //    }
+    //}
+
+
+    auto spiral = make_spiral(96.f, 2.f);
+    for (auto & v : spiral.vertices)
     {
-        const float3 position = { gen.random_float(48.f) - 24.f, gen.random_float(48.f) - 24.f, gen.random_float(48.f) - 24.f };
-        const float radius = gen.random_float(0.225f);
-
-        debug_sphere s;
-        s.p = transform(quatf(linalg::identity), position);
-        s.radius = radius;
-
-        spheres.push_back(std::move(s));
+        debug_sphere s1;
+        s1.radius = 0.05f;
+        s1.p.position = v * 10;
+        spheres.push_back(std::move(s1));
     }
+
+    //debug_sphere s1;
+    //s1.radius = 0.5f;
+    //s1.p.position = { 2, -2, 2 };
+    //spheres.push_back(std::move(s1));
+    //
+    //debug_sphere s2;
+    //s2.radius = 0.5f;
+    //s2.p.position = { -2, -1, 2 };
+    //spheres.push_back(std::move(s2));
+    //
+    //debug_sphere s3;
+    //s3.radius = 0.5f;
+    //s3.p.position = { 2, 0, -2 };
+    //spheres.push_back(std::move(s3));
+    //
+    //debug_sphere s4;
+    //s4.radius = 0.5f;
+    //s4.p.position = { -2, 1, -2 };
+    //spheres.push_back(std::move(s4));
+    //
+    //debug_sphere s5;
+    //s5.radius = 0.5f;
+    //s5.p.position = { -0, 4, -0 };
+    //spheres.push_back(std::move(s5));
+
+    for (int i = 0; i < spheres.size(); ++i)
+    {
+        auto & sphere = spheres[i];
+
+        scene_object obj;
+        obj.bounds = sphere.get_bounds();
+        obj.user_data = &sphere;
+        bvh_objects.emplace_back(std::move(obj));
+    }
+
+    for (int i = 0; i < bvh_objects.size(); ++i)
+    {
+        scene_accelerator.add(&bvh_objects[i]);
+        //scene_accelerator.insert_object(&bvh_objects[i]);
+    }
+
+    scene_accelerator.build();
+
+    std::vector<bvh_node *> flat_node_list;
+    scene_accelerator.get_flat_node_list(flat_node_list, nullptr);
+
+    //std::cout << "----------------------------------------------\n";
+    //
+    //for (bvh_node * node : flat_node_list)
+    //{
+    //    std::cout << "- Type: " << (int) node->type << std::endl;
+    //    std::cout << "- Extents: " << node->bounds << std::endl;
+    //    std::cout << "- Morton: " << node->morton << std::endl;
+    //
+    //    if (node->object)
+    //    {
+    //        auto the_sphere = static_cast<debug_sphere*>(node->object->user_data);
+    //        if (the_sphere) std::cout << "- Sphere: " << the_sphere->get_bounds() << std::endl;
+    //    }
+    //}
+    //
+    //std::cout << "----------------------------------------------\n";
 }
 
+uint32_t node_index{ 0 };
 void sample_gl_bvh::on_input(const app_input_event & event)
 {
     flycam.handle_input(event);
-
+    imgui->update_input(event);
     if (gizmo) gizmo->handle_input(event);
 
-    if (event.type == app_input_event::KEY && event.value[0] == GLFW_KEY_SPACE && event.action == GLFW_RELEASE)
+    if (event.type == app_input_event::KEY && event.action == GLFW_RELEASE)
     {
-        show_debug = !show_debug;
+        if (event.value[0] == GLFW_KEY_UP)    node_index++;
+        if (event.value[0] == GLFW_KEY_DOWN)  node_index--;
+        if (event.value[0] == GLFW_KEY_SPACE) show_debug = !show_debug;
+    }
+
+    if (event.type == app_input_event::MOUSE && event.action == GLFW_RELEASE)
+    {
+        if (event.value[0] == GLFW_MOUSE_BUTTON_LEFT)
+        {
+            int width, height;
+            glfwGetWindowSize(window, &width, &height);
+
+            const ray r = cam.get_world_ray(event.cursor, float2(static_cast<float>(width), static_cast<float>(height)));
+
+            if (length(r.direction) > 0)
+            {
+                std::vector<std::pair<scene_object*, float>> hit_results;
+                if (scene_accelerator.intersect(r, hit_results)) selected_object = hit_results[0].first;
+                else selected_object = nullptr;
+            }
+        }
     }
 }
 
@@ -119,6 +234,8 @@ void sample_gl_bvh::on_update(const app_update_event & e)
     glfwGetWindowSize(window, &width, &height);
     flycam.update(e.timestep_ms);
 }
+
+uint64_t frame_count = 0;
 
 void sample_gl_bvh::on_draw()
 {
@@ -143,14 +260,91 @@ void sample_gl_bvh::on_draw()
     const float4x4 viewMatrix = cam.get_view_matrix();
     const float4x4 viewProjectionMatrix = (projectionMatrix * viewMatrix);
 
+    std::vector<bvh_node *> all_nodes;
+    scene_accelerator.get_flat_node_list(all_nodes, nullptr);
+
+    selected_node = all_nodes[node_index];
+    std::vector<bvh_node *> selected_subtree;
+    scene_accelerator.get_flat_node_list(selected_subtree, selected_node);
+
     shader->bind();
+
+    for (int i = 0; i < selected_subtree.size(); ++i)
+    {
+        bvh_node * node = selected_subtree[i];
+        if (node->type == bvh_node_type::leaf)
+        {
+            if (node->object)
+            {
+                auto the_sphere = static_cast<debug_sphere*>(node->object->user_data);
+
+                if (the_sphere)
+                {
+                    const auto leaf_model = make_translation_matrix(node->bounds.center()) * make_scaling_matrix(node->bounds.size());
+                    //const auto leaf_model = the_sphere->p.matrix() * make_scaling_matrix(the_sphere->radius);
+
+                    if (selected_object == node->object)
+                    {
+                        shader->uniform("u_color", float3(1, 0, 1));
+                    }
+                    else
+                    {
+                        shader->uniform("u_color", float3(1, 0, 0));
+                    }
+                   
+                    shader->uniform("u_mvp", viewProjectionMatrix * leaf_model);
+                    boxMesh.draw_elements();
+                    //sphereMesh.draw_elements();
+                }
+            }
+        }
+        else
+        {
+            float3 eps = { gen.random_float(0.01), gen.random_float(0.01), gen.random_float(0.01) };
+            const auto internal_node_model = make_translation_matrix(node->bounds.center()) * make_scaling_matrix(node->bounds.size());
+
+            shader->uniform("u_mvp", viewProjectionMatrix * internal_node_model);
+
+            if (node->type == bvh_node_type::root)
+            {
+                shader->uniform("u_color", float3(1, 1, 1));
+                boxMesh.draw_elements();
+            }
+            else if (node->type == bvh_node_type::internal)
+            {
+                shader->uniform("u_color", float3(1, 1, 0));
+                boxMesh.draw_elements();
+            }
+
+        }
+    }
+
+    //if (frame_count % 1 == 0)
+    //{
+    //    spiral_position = (spiral_position + 1) % flat_node_list.size();
+    //}
+
     shader->unbind();
 
     if (gizmo) gizmo->draw();
 
+    imgui->begin_frame();
+
+    //gui::imgui_fixed_window_begin("bvh-debug", { { 0, 0 },{ 320, height } });
+    //if (selected_node)
+    //{
+    //
+    //}
+    //gui::imgui_fixed_window_end();
+
+    // Render imgui
+    imgui->end_frame();
+
     gl_check_error(__FILE__, __LINE__);
 
     glfwSwapBuffers(window); 
+
+    frame_count++;
 }
 
 int main(int argc, char * argv[])

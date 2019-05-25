@@ -52,7 +52,6 @@ void environment::copy(entity src, entity dest)
     });
 
     log::get()->engine_log->info("[environment] copied entity {} to {}", src, dest);
-
 }
 
 void environment::destroy(entity e)

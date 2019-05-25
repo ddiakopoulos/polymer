@@ -1,4 +1,4 @@
-// Based on https://www.forceflow.be/2013/10/07/morton-encodingdecoding-through-bit-interleaving-implementations/
+// Based on https://github.com/aavenel/mortonlib
 
 #pragma once
 
@@ -7,7 +7,6 @@
 
 #include "math-core.hpp"
 
-// Shifted table for X coordinates (1 bit to the left)
 static const uint32_t morton_lt_x[256] =
 {
     0x00000000,
@@ -45,7 +44,6 @@ static const uint32_t morton_lt_x[256] =
     0x00249201, 0x00249208, 0x00249209, 0x00249240, 0x00249241, 0x00249248, 0x00249249
 };
 
-// Shifted table for Y coordinates (1 bit to the left)
 static const uint32_t morton_lt_y[256] = {
     0x00000000,
     0x00000002, 0x00000010, 0x00000012, 0x00000080, 0x00000082, 0x00000090, 0x00000092, 0x00000400,
@@ -82,7 +80,6 @@ static const uint32_t morton_lt_y[256] = {
     0x00492402, 0x00492410, 0x00492412, 0x00492480, 0x00492482, 0x00492490, 0x00492492
 };
 
-// Shifted table for z (2 bits to the left)
 static const uint32_t morton_lt_z[256] = {
     0x00000000,
     0x00000004, 0x00000020, 0x00000024, 0x00000100, 0x00000104, 0x00000120, 0x00000124, 0x00000800,
@@ -121,23 +118,28 @@ static const uint32_t morton_lt_z[256] = {
 
 namespace polymer
 {
+    // Produce a 64-bit morton code, with one unused bit. 
     inline uint64_t morton_3d(const uint32_t x, const uint32_t y, const uint32_t z)
     {
         uint64_t result = 0;
-        result = morton_lt_z[(z >> 16) & 0xFF] | morton_lt_y[(y >> 16) & 0xFF] | morton_lt_x[(x >> 16) & 0xFF];
-        result = result << 48 | morton_lt_z[(z >> 8) & 0xFF] | morton_lt_y[(y >> 8) & 0xFF] | morton_lt_x[(x >> 8) & 0xFF];
-        result = result << 24 | morton_lt_z[z & 0xFF] | morton_lt_y[y & 0xFF] | morton_lt_x[x & 0xFF];
+        result =                morton_lt_z[(z >> 16) & 0xFF] | morton_lt_y[(y >> 16) & 0xFF] | morton_lt_x[(x >> 16) & 0xFF];
+        result = result << 48 | morton_lt_z[(z >> 8) & 0xFF]  | morton_lt_y[(y >> 8) & 0xFF]  | morton_lt_x[(x >> 8) & 0xFF];
+        result = result << 24 | morton_lt_z[z & 0xFF]         | morton_lt_y[y & 0xFF] |         morton_lt_x[x & 0xFF];
         return result;
     }
 
+    // Note: values must be normalized to the [0,1] range
     inline uint64_t morton_3d(const float x, const float y, const float z)
     {
+        // Each float coordinate is quantized to a 21-bit integer range, so that
+        // 3 coordinates (21 * 3 = 63) fits nicely into a 64-bit number. 
         const uint32_t x_int = static_cast<uint32_t>(std::min(std::max(x * 2097152.f, 0.f), 2097151.f));
         const uint32_t y_int = static_cast<uint32_t>(std::min(std::max(y * 2097152.f, 0.f), 2097151.f));
         const uint32_t z_int = static_cast<uint32_t>(std::min(std::max(z * 2097152.f, 0.f), 2097151.f));
         return morton_3d(x_int, y_int, z_int);
     }
 
+    // Note: values must be normalized to the [0,1] range
     inline uint64_t morton_3d(const float3 & vector)
     {
         return morton_3d(vector.x, vector.y, vector.z);
