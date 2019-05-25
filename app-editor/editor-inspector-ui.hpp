@@ -217,7 +217,7 @@ inline bool inspect_entity(imgui_ui_context & ctx, const char * label, entity e,
     return r;
 }
 
-inline bool inspect_material(imgui_ui_context & ctx, material_interface * material)
+inline bool inspect_material(imgui_ui_context & ctx, base_material * material)
 {
     bool r = false;
 

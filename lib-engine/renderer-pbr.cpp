@@ -330,7 +330,7 @@ void pbr_renderer::run_forward_pass(std::vector<const render_component *> & rend
             render_comp->material->receive_shadow, 
             view);
 
-        material_interface * the_material = render_comp->material->material.get().get();
+        base_material * the_material = render_comp->material->material.get().get();
 
         // Debugging: 
         if (view.index == 0)

@@ -20,7 +20,7 @@ namespace polymer
         std::vector<Vertex> vertices;
 
         entity dbg_renderer_ent;
-        std::shared_ptr<polymer_fx_material> debug_renderer_material;
+        std::shared_ptr<polymer_procedural_material> debug_renderer_material;
 
     public:
 
@@ -28,7 +28,7 @@ namespace polymer
 
         void initialize_resources(entity_orchestrator * orch, environment * env)
         {
-            debug_renderer_material = std::make_shared<polymer_fx_material>();
+            debug_renderer_material = std::make_shared<polymer_procedural_material>();
             debug_renderer_material->shader = shader_handle("debug-renderer");
             env->mat_library->register_material("debug-renderer-material", debug_renderer_material);
 

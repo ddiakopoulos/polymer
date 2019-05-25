@@ -9,7 +9,7 @@ namespace polymer
 {
 
     // Forward declarations
-    struct material_interface;
+    struct base_material;
     struct polymer_default_material;
     class polymer_pbr_standard;
     class polymer_blinn_phong_standard;
@@ -20,7 +20,7 @@ namespace polymer
     struct material_library
     {
         static const std::string kDefaultMaterialId;
-        std::map<std::string, std::shared_ptr<material_interface>> instances;
+        std::map<std::string, std::shared_ptr<base_material>> instances;
 
         material_library();
         ~material_library();
@@ -50,7 +50,7 @@ namespace polymer
             log::get()->engine_log->info("material list already contains {}", name);
             return;
         }
-        create_handle_for_asset(name.c_str(), std::dynamic_pointer_cast<material_interface>(mat));
+        create_handle_for_asset(name.c_str(), std::dynamic_pointer_cast<base_material>(mat));
         instances[name] = mat;
     }
 }

@@ -148,7 +148,7 @@ xr_controller_system::xr_controller_system(entity_orchestrator * orch, environme
     // fixme - the min/max teleportation bounds in world space are defined by this bounding box. 
     arc_pointer.xz_plane_bounds = aabb_3d({ -24.f, -0.01f, -24.f }, { +24.f, +0.01f, +24.f });
 
-    laser_pointer_material = std::make_shared<polymer_fx_material>();
+    laser_pointer_material = std::make_shared<polymer_procedural_material>();
     laser_pointer_material->shader = shader_handle("xr-laser");
     env->mat_library->register_material("laser-pointer-mat", laser_pointer_material);
 
@@ -417,7 +417,7 @@ xr_imgui_system::xr_imgui_system(entity_orchestrator * orch, environment * env, 
     create_handle_for_asset("imgui-billboard", make_mesh_from_geometry(mesh)); // gpu mesh
     create_handle_for_asset("imgui-billboard", std::move(mesh)); // cpu mesh
 
-    imgui_material = std::make_shared<polymer_fx_material>();
+    imgui_material = std::make_shared<polymer_procedural_material>();
     imgui_material->shader = shader_handle("unlit-texture");
     env->mat_library->register_material("imgui", imgui_material);
 
@@ -497,7 +497,7 @@ std::vector<entity> xr_imgui_system::get_renderables() const
 xr_gizmo_system::xr_gizmo_system(entity_orchestrator * orch, environment * env, hmd_base * hmd, xr_input_processor * processor)
     : env(env), hmd(hmd), processor(processor)
 {
-    auto unlit_material = std::make_shared<polymer_fx_material>();
+    auto unlit_material = std::make_shared<polymer_procedural_material>();
     unlit_material->shader = shader_handle("unlit-vertex-color");
     env->mat_library->register_material("unlit-vertex-color-material", unlit_material);
 

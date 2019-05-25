@@ -127,7 +127,7 @@ namespace xr {
         xr_input_processor * processor{ nullptr };
 
         std::shared_ptr<polymer_blinn_phong_standard> controller_material[2];
-        std::shared_ptr<polymer_fx_material> laser_pointer_material;
+        std::shared_ptr<polymer_procedural_material> laser_pointer_material;
 
         simple_animator animator;
         mesh_component * pointer_mesh_component{ nullptr };
@@ -170,7 +170,7 @@ namespace xr {
         xr_input_processor * processor{ nullptr };
 
         entity imgui_billboard;
-        std::shared_ptr<polymer_fx_material> imgui_material;
+        std::shared_ptr<polymer_procedural_material> imgui_material;
         bool focused{ false };
 
         polymer::event_manager_sync::connection xr_input;

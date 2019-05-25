@@ -41,16 +41,16 @@ uint32_t polymer_default_material::id()
 //   Special FX Material   //
 /////////////////////////////
 
-polymer_fx_material::polymer_fx_material() {}
+polymer_procedural_material::polymer_procedural_material() {}
 
-void polymer_fx_material::use()
+void polymer_procedural_material::use()
 {
     if (!shader.assigned()) return;
     resolve_variants();
     compiled_shader->shader.bind();
 }
 
-void polymer_fx_material::resolve_variants()
+void polymer_procedural_material::resolve_variants()
 {
     if (!compiled_shader && shader.assigned())
     {
@@ -59,14 +59,14 @@ void polymer_fx_material::resolve_variants()
     }
 }
 
-uint32_t polymer_fx_material::id()
+uint32_t polymer_procedural_material::id()
 {
     if (!shader.assigned()) return 0;
     resolve_variants();
     return compiled_shader->shader.handle();
 }
 
-void polymer_fx_material::update_uniforms()
+void polymer_procedural_material::update_uniforms()
 {
     if (update_uniform_func)
     {

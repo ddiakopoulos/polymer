@@ -195,7 +195,7 @@ struct material_editor_window final : public glfw_window
                 // Produce a list of material instance names. This could also be done by
                 // iterating the keys of instances in the mat library, but using asset_handles is more canonical.
                 std::vector<std::string> materialNames;
-                for (auto & m : asset_handle<std::shared_ptr<material_interface>>::list()) materialNames.push_back(m.name);
+                for (auto & m : asset_handle<std::shared_ptr<base_material>>::list()) materialNames.push_back(m.name);
 
                 // Get an entity from the selection
                 entity selected_entity = selected_entities[0];
@@ -254,7 +254,7 @@ struct material_editor_window final : public glfw_window
 
                 // Make a list of the material types (i.e. pbr, blinn-phong, etc)
                 std::vector<std::string> materialTypes;
-                visit_subclasses((material_interface*)nullptr, [&materialTypes](const char * name, auto * p)
+                visit_subclasses((base_material*)nullptr, [&materialTypes](const char * name, auto * p)
                 {
                     if (name != "polymer_default_material") materialTypes.push_back(name);
                 });
@@ -316,7 +316,7 @@ struct material_editor_window final : public glfw_window
                 auto index_to_handle_name = [](const uint32_t index) -> std::string
                 {
                     uint32_t idx = 0;
-                    for (auto & m : asset_handle<std::shared_ptr<material_interface>>::list())
+                    for (auto & m : asset_handle<std::shared_ptr<base_material>>::list())
                     {
                         if (index == idx) return m.name;
                         idx++;
@@ -326,7 +326,7 @@ struct material_editor_window final : public glfw_window
 
                 // Set the material on the preview mesh
                 // This is by index. Future: might be easier if materials were entities too.
-                std::shared_ptr<material_interface> mat = material_handle::list()[assetSelection].get();
+                std::shared_ptr<base_material> mat = material_handle::list()[assetSelection].get();
                 const std::string material_handle_name = index_to_handle_name(assetSelection);
 
                 material_comp->material = material_handle(material_handle_name);
