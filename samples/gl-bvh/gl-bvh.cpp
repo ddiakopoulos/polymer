@@ -300,7 +300,7 @@ void sample_gl_bvh::on_draw()
         }
         else
         {
-            float3 eps = { gen.random_float(0.01), gen.random_float(0.01), gen.random_float(0.01) };
+            float3 eps = { gen.random_float(0.01f), gen.random_float(0.01f), gen.random_float(0.01f) };
             const auto internal_node_model = make_translation_matrix(node->bounds.center()) * make_scaling_matrix(node->bounds.size());
 
             shader->uniform("u_mvp", viewProjectionMatrix * internal_node_model);

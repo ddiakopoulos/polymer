@@ -21,11 +21,14 @@
 namespace polymer
 {
 
+    #pragma warning(push)
+    #pragma warning(disable : 4244)
     constexpr inline uint32_t clz4(uint8_t v) noexcept { typedef const uint_fast8_t table_t[0x10]; return table_t{4,3,2,2,1,1,1,1,0,0,0,0,0,0,0,0}[v]; }
     constexpr inline uint32_t clz8(uint8_t v) noexcept { return ((v & 0xF0) == 0) ? 4 + clz4(v) : clz4(v >> 4); }
     constexpr inline uint32_t clz16(uint16_t v) noexcept { return ((v & 0xFF00U) == 0) ? 8 + clz8(v) : clz8(v >> 8); }
     constexpr inline uint32_t clz32(uint32_t v) noexcept { return ((v & 0xFFFF0000UL) == 0) ? 16 + clz16(v) : clz16(v >> 16); }
     constexpr inline uint32_t clz64(uint64_t v) noexcept { return ((v & 0xFFFFFFFF00000000ULL) == 0) ? 32 + clz32(v) : clz32(v >> 32); }
+    #pragma warning(pop)
 
     enum class bvh_node_type
     {
