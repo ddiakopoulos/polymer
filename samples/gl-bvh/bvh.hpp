@@ -1,11 +1,11 @@
 /*
- * Based on: https://github.com/ssell/OcularEngine
- * Apache 2.0 License. Copyright 2014-2017 Steven T Sell (ssell@vertexfragment.com). All Rights Reserved.
- * See COPYING file for full attribution information.
+ * This is free and unencumbered software released into the public domain.
+ * The base code is derived from https://github.com/ssell/OcularEngine/blob/master/OcularCore/include/Scene/BVHSceneTree.hpp
+ * and re-released to the public domain on permission from the original author, Steven T. Sell (ssell@vertexfragment.com)
+ * [1] https://henrikdahlberg.github.io/2017/11/20/cuda-bvh-builder-using-morton-curves.html
+ * [2] http://graphics.snu.ac.kr/class/graphics2011/references/2007_lauterbach.pdf
+ * [3] https://dcgi.fel.cvut.cz/projects/emc/
  */
-
-// Reference: https://henrikdahlberg.github.io/2017/11/20/cuda-bvh-builder-using-morton-curves.html
-// LBVH http://graphics.snu.ac.kr/class/graphics2011/references/2007_lauterbach.pdf
 
 #pragma once
 
@@ -56,10 +56,9 @@ namespace polymer
         bvh_node_type type { bvh_node_type::root };
     };
 
-    // Lauterbach et al: 
     // "The main disadvantage of the LBVH algorithm is that it does not build hierarchies that are optimized for 
-    // performance in raytracing since it uniormly subdivides space at the median." It's also non-ideal for scenes
-    // with highly non-uniform distributions, which might be improved by using https://dcgi.fel.cvut.cz/projects/emc/.
+    // performance in raytracing since it uniormly subdivides space at the median" [2]. It's also non-ideal for scenes
+    // with highly non-uniform distributions, which might be improved by using [3].
 
     class bvh_tree
     {
