@@ -103,7 +103,8 @@ sample_engine_scene::sample_engine_scene() : polymer_app(1280, 720, "sample-engi
         payload.ibl_cubemap = ibl_cubemap;
     }
 
-    scene.resolver->resolve("../../assets/");
+    scene.resolver->add_search_path("../../assets/");
+    scene.resolver->resolve();
 }
 
 sample_engine_scene::~sample_engine_scene() {}

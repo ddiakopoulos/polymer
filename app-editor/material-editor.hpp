@@ -244,7 +244,7 @@ struct material_editor_window final : public glfw_window
 
             if (ImGui::Button(" " ICON_FA_PLUS " Create Material ", { 160, 24 })) ImGui::OpenPopup("Create Material");
             ImGui::SameLine();
-            if (ImGui::Button(" " ICON_FA_FILE " Save Materials ", { 160, 24 })) scene.mat_library->export_all();
+            if (ImGui::Button(" " ICON_FA_FILE " Save Materials ", { 160, 24 })) scene.mat_library->export_all(""); // @tofix - export path?
 
             if (ImGui::BeginPopupModal("Create Material", NULL, ImGuiWindowFlags_AlwaysAutoResize))
             {
@@ -271,17 +271,17 @@ struct material_editor_window final : public glfw_window
                         if (materialTypeSelection == 0) // pbr
                         {
                             auto new_material = std::make_shared<polymer_pbr_standard>();
-                            scene.mat_library->create_material(stringBuffer, new_material);
+                            scene.mat_library->register_material(stringBuffer, new_material);
                         }
                         else if (materialTypeSelection == 1) // blinn-phong
                         {
                             auto new_material = std::make_shared<polymer_blinn_phong_standard>();
-                            scene.mat_library->create_material(stringBuffer, new_material);
+                            scene.mat_library->register_material(stringBuffer, new_material);
                         }
                         else if (materialTypeSelection == 2) // wireframe
                         {
                             auto new_material = std::make_shared<polymer_wireframe_material>();
-                            scene.mat_library->create_material(stringBuffer, new_material);
+                            scene.mat_library->register_material(stringBuffer, new_material);
                         }
                         // todo - 3 = fx material
                     }

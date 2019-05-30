@@ -57,7 +57,7 @@ openvr_sample_app::openvr_sample_app() : polymer_app(1280, 800, "sample-engine-o
             create_handle_for_asset("floor-mesh", make_mesh_from_geometry(make_plane(48, 48, 24, 24))); // gpu mesh
 
             auto wiref_mat = std::make_shared<polymer_wireframe_material>();
-            scene.mat_library->create_material("renderer-wireframe", wiref_mat);
+            scene.mat_library->register_material("renderer-wireframe", wiref_mat);
 
             floor = scene.track_entity(orchestrator->create_entity());
             scene.identifier_system->create(floor, "floor-mesh");
@@ -99,7 +99,8 @@ openvr_sample_app::openvr_sample_app() : polymer_app(1280, 800, "sample-engine-o
         payload.ibl_cubemap = ibl_cubemap;
     }
 
-    scene.resolver->resolve("../../assets/");
+    scene.resolver->add_search_path("../../assets/");
+    scene.resolver->resolve();
 }
 
 openvr_sample_app::~openvr_sample_app()

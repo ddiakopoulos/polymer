@@ -211,12 +211,14 @@ void scene_editor_app::import_scene(const std::string & path)
         scene.import_environment(path, orchestrator);
        
         // Resolve polymer-local assets
-        scene.resolver->resolve("../assets/");
+        scene.resolver->add_search_path("../assets/");
 
         // Resolve project assets
         const auto parent_dir = parent_directory_from_filepath(path);
         log::get()->engine_log->info("resolving local `{}` directory.", parent_dir);
-        scene.resolver->resolve(parent_dir);
+        scene.resolver->add_search_path(parent_dir);
+
+        scene.resolver->resolve();
 
         glfwSetWindowTitle(window, path.c_str());
     }

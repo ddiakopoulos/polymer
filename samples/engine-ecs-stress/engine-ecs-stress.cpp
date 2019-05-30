@@ -110,7 +110,8 @@ sample_engine_ecs::sample_engine_ecs() : polymer_app(1280, 720, "sample-ecs-stre
     cam.look_at({ 0, 0, 2 }, { 0, 0.1f, 0 });
     flycam.set_camera(&cam);
 
-    scene.resolver->resolve("../../assets/");
+    scene.resolver->add_search_path("../../assets/");
+    scene.resolver->resolve();
 }
 
 sample_engine_ecs::~sample_engine_ecs() {}

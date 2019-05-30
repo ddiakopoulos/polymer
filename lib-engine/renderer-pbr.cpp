@@ -332,12 +332,12 @@ void pbr_renderer::run_forward_pass(std::vector<const render_component *> & rend
 
         base_material * the_material = render_comp->material->material.get().get();
 
-        // Debugging: 
-        if (view.index == 0)
-        {
-            std::cout << ">> material:  " << render_comp->get_entity() << " : " << render_comp->material->material.name << std::endl;
-            std::cout << "\t >> shader: " << the_material->shader.name << std::endl;
-        }
+        // Debugging -
+        // if (view.index == 0)
+        // {
+        //     std::cout << ">> material:  " << render_comp->get_entity() << " : " << render_comp->material->material.name << std::endl;
+        //     std::cout << "\t >> shader: " << the_material->shader.name << std::endl;
+        // }
 
         // @todo - handle other specific material requirements here
         if (auto * mr = dynamic_cast<polymer_pbr_standard*>(the_material))

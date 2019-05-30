@@ -91,12 +91,14 @@ void material_library::import_material(const std::string & path)
                 std::shared_ptr<polymer_pbr_standard> new_instance(new polymer_pbr_standard());
                 *new_instance = inst.value();
                 instances[name] = new_instance;
+                create_handle_for_asset(name.c_str(), static_cast<std::shared_ptr<base_material>>(new_instance));
             }
             else if (type_name == get_typename<polymer_blinn_phong_standard>())
             {
                 std::shared_ptr<polymer_blinn_phong_standard> new_instance(new polymer_blinn_phong_standard());
                 *new_instance = inst.value();
                 instances[name] = new_instance;
+                create_handle_for_asset(name.c_str(), static_cast<std::shared_ptr<base_material>>(new_instance));
             }
         }
         else throw std::runtime_error("type key mismatch!");
