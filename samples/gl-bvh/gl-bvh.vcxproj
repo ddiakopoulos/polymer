@@ -104,7 +104,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="bvh.hpp" />
-    <ClInclude Include="math-morton.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

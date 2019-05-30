@@ -15,5 +15,6 @@
 #include "math-ray.hpp"
 #include "math-color.hpp"
 #include "math-sampling.hpp"
+#include "math-morton.hpp"
 
 #endif // end math_core_hpp

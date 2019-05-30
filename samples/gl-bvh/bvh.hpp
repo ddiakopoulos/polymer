@@ -505,7 +505,9 @@ namespace polymer
 
             {
                 // Recursively fit the bounds of each node around children
+                #ifdef POLYMER_BVH_DEBUG_SPAM
                 scoped_timer t("[bvh_tree] fit_bounds_recursive(root)");
+                #endif
                 fit_bounds_recursive(root);
             }
         }
