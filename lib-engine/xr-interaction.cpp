@@ -150,7 +150,7 @@ xr_controller_system::xr_controller_system(entity_orchestrator * orch, environme
 
     laser_pointer_material = std::make_shared<polymer_fx_material>();
     laser_pointer_material->shader = shader_handle("xr-laser");
-    env->mat_library->create_material("laser-pointer-mat", laser_pointer_material);
+    env->mat_library->register_material("laser-pointer-mat", laser_pointer_material);
 
     // Setup the pointer entity (which is re-used between laser/arc styles)
     pointer = env->track_entity(orch->create_entity());
@@ -160,10 +160,10 @@ xr_controller_system::xr_controller_system(entity_orchestrator * orch, environme
     pointer_mesh_component = env->render_system->create(pointer, polymer::mesh_component(pointer, gpu_mesh_handle("xr-pointer")));
 
     controller_material[0] = std::make_shared<polymer_blinn_phong_standard>();
-    env->mat_library->create_material("xr-controller-material-left", controller_material[0]);
+    env->mat_library->register_material("xr-controller-material-left", controller_material[0]);
 
     controller_material[1] = std::make_shared<polymer_blinn_phong_standard>();
-    env->mat_library->create_material("xr-controller-material-right", controller_material[1] );
+    env->mat_library->register_material("xr-controller-material-right", controller_material[1] );
 
     // Setup left controller
     left_controller = env->track_entity(orch->create_entity());
@@ -419,7 +419,7 @@ xr_imgui_system::xr_imgui_system(entity_orchestrator * orch, environment * env, 
 
     imgui_material = std::make_shared<polymer_fx_material>();
     imgui_material->shader = shader_handle("unlit-texture");
-    env->mat_library->create_material("imgui", imgui_material);
+    env->mat_library->register_material("imgui", imgui_material);
 
     imgui_billboard = env->track_entity(orch->create_entity());
     env->identifier_system->create(imgui_billboard, "imgui-billboard");
@@ -499,7 +499,7 @@ xr_gizmo_system::xr_gizmo_system(entity_orchestrator * orch, environment * env, 
 {
     auto unlit_material = std::make_shared<polymer_fx_material>();
     unlit_material->shader = shader_handle("unlit-vertex-color");
-    env->mat_library->create_material("unlit-vertex-color-material", unlit_material);
+    env->mat_library->register_material("unlit-vertex-color-material", unlit_material);
 
     gizmo_entity = env->track_entity(orch->create_entity());
     env->identifier_system->create(gizmo_entity, "gizmo-renderable");

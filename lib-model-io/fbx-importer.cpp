@@ -176,8 +176,8 @@ fbxsdk::FbxScene * import_scene(const std::string & file, fbxsdk::FbxManager * m
     fbxsdk::FbxManager::GetFileFormatVersion(lSDKMajor, lSDKMinor, lSDKRevision);
     lImporter->GetFileVersion(lFileMajor, lFileMinor, lFileRevision);
 
-    std::cout << "FBX SDK Version - Major: " << lSDKMajor << ", Minor: " << lSDKMinor << ", rev: " << lSDKRevision << std::endl;
-    std::cout << "File Version - Major: " << lFileMajor << ", Minor: " << lFileMinor << ", rev: " << lFileRevision << std::endl;
+    //std::cout << "FBX SDK Version - Major: " << lSDKMajor << ", Minor: " << lSDKMinor << ", rev: " << lSDKRevision << std::endl;
+    //std::cout << "File Version - Major: " << lFileMajor << ", Minor: " << lFileMinor << ", rev: " << lFileRevision << std::endl;
 
     fbxsdk::FbxScene * scene = fbxsdk::FbxScene::Create(mgr, "default");
 

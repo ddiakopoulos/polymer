@@ -15,47 +15,80 @@ namespace polymer
     {
         try
         {
-            monitor.watch("sky-hosek",
-                base_path + "/shaders/sky_vert.glsl",
-                base_path + "/shaders/sky_hosek_frag.glsl");
-
-            monitor.watch("cubemap",
-                base_path + "/shaders/cubemap_vert.glsl",
-                base_path + "/shaders/cubemap_frag.glsl",
+            // [utility] used for rendering debug meshes 
+            monitor.watch("debug-renderer",
+                base_path + "/shaders/renderer/renderer_vert.glsl",
+                base_path + "/shaders/renderer/debug_renderer_frag.glsl",
                 base_path + "/shaders/renderer");
 
+            // [utility] default shader used when none are specified (shows world-space normals)
             monitor.watch("default-shader",
                 base_path + "/shaders/renderer/renderer_vert.glsl",
                 base_path + "/shaders/renderer/default_material_frag.glsl",
                 base_path + "/shaders/renderer");
 
+            // [utility] wireframe rendering (currently for gizmo selection in scene editor)
             monitor.watch("renderer-wireframe",
                 base_path + "/shaders/renderer/renderer_vert.glsl",
                 base_path + "/shaders/renderer/wireframe_frag.glsl",
                 base_path + "/shaders/renderer/wireframe_geom.glsl",
                 base_path + "/shaders/renderer");
+            
+            // [utility] render a single unlit diffuse texture (currently for imgui surfaces)
+            monitor.watch("unlit-texture",
+                base_path + "/shaders/renderer/renderer_vert.glsl",
+                base_path + "/shaders/renderer/unlit_texture_frag.glsl",
+                base_path + "/shaders/renderer");
 
+            // [utility] used for the xr laser pointer
+            monitor.watch("xr-laser",
+                base_path + "/shaders/renderer/renderer_vert.glsl",
+                base_path + "/shaders/renderer/xr_laser_frag.glsl",
+                base_path + "/shaders/renderer");
+
+            // [utility] used for shading the gizmo (both xr and desktop)
+            monitor.watch("unlit-vertex-color",
+                base_path + "/shaders/renderer/renderer_vert.glsl",
+                base_path + "/shaders/renderer/unlit_vertex_color_frag.glsl",
+                base_path + "/shaders/renderer");
+
+            // [renderer-pbr] render a procedural sky
+            monitor.watch("sky-hosek",
+                base_path + "/shaders/sky_vert.glsl",
+                base_path + "/shaders/sky_hosek_frag.glsl");
+
+            // [renderer-pbr] render a cubemap
+            monitor.watch("cubemap",
+                base_path + "/shaders/cubemap_vert.glsl",
+                base_path + "/shaders/cubemap_frag.glsl",
+                base_path + "/shaders/renderer");
+
+            // [renderer-pbr] depth prepass
             monitor.watch("depth-prepass",
                 base_path + "/shaders/renderer/renderer_vert.glsl",
                 base_path + "/shaders/renderer/no_op_frag.glsl",
                 base_path + "/shaders/renderer");
 
+            // [renderer-pbr] cascaded shadow maps
             monitor.watch("cascaded-shadows",
                 base_path + "/shaders/renderer/shadowcascade_vert.glsl",
                 base_path + "/shaders/renderer/shadowcascade_frag.glsl",
                 base_path + "/shaders/renderer/shadowcascade_geom.glsl",
                 base_path + "/shaders/renderer");
 
+            // [renderer-pbr] blinn-phong forward model
             monitor.watch("phong-forward-lighting",
                 base_path + "/shaders/renderer/renderer_vert.glsl",
                 base_path + "/shaders/renderer/phong_material_frag.glsl",
                 base_path + "/shaders/renderer");
 
+            // [renderer-pbr] standard gLTF-style PBR forward model 
             monitor.watch("pbr-forward-lighting",
                 base_path + "/shaders/renderer/renderer_vert.glsl",
                 base_path + "/shaders/renderer/pbr_material_frag.glsl",
                 base_path + "/shaders/renderer");
 
+            // [renderer-pbr] post-process tonemapping
             monitor.watch("post-tonemap",
                 base_path + "/shaders/renderer/post_tonemap_vert.glsl",
                 base_path + "/shaders/renderer/post_tonemap_frag.glsl");

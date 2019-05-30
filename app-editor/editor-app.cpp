@@ -25,8 +25,8 @@ void load_editor_intrinsic_assets(path root)
         if (entry.path().extension().string() == ".mesh")
         {
             auto geo_import = import_mesh_binary(path);
-            create_handle_for_asset(std::string("poly-" + get_filename_without_extension(path)).c_str(), make_mesh_from_geometry(geo_import));
-            create_handle_for_asset(std::string("poly-" + get_filename_without_extension(path)).c_str(), std::move(geo_import));
+            create_handle_for_asset(std::string(get_filename_without_extension(path)).c_str(), make_mesh_from_geometry(geo_import));
+            create_handle_for_asset(std::string(get_filename_without_extension(path)).c_str(), std::move(geo_import));
         }
     }
 };

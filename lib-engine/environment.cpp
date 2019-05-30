@@ -119,7 +119,18 @@ void environment::import_environment(const std::string & import_path, entity_orc
     for (auto entityIterator = env_doc.begin(); entityIterator != env_doc.end(); ++entityIterator)
     {
         const entity parsed_entity = std::atoi(entityIterator.key().c_str());
-        const entity new_entity = remap_table[parsed_entity];
+        entity new_entity = kInvalidEntity;
+
+        auto iter = remap_table.find(parsed_entity);
+        if (iter != remap_table.end())
+        {
+            new_entity = remap_table[parsed_entity];
+        }
+        else
+        {
+            throw std::runtime_error("scene file might be broken (hand-edited?) because it contains duplicate entity IDs");
+        }
+
         const json & comp = entityIterator.value();
 
         for (auto componentIterator = comp.begin(); componentIterator != comp.end(); ++componentIterator)
@@ -290,8 +301,8 @@ void environment::reset(entity_orchestrator & o, int2 default_renderer_resolutio
     }
 
     // Create a material library
-    mat_library.reset(new polymer::material_library("../assets/materials/")); // must include trailing slash
+    mat_library.reset(new polymer::material_library()); // must include trailing slash
 
     // Resolving assets is the last thing we should do
-    resolver.reset(new polymer::asset_resolver("../assets/", this, mat_library.get()));
+    resolver.reset(new polymer::asset_resolver(this, mat_library.get()));
 }

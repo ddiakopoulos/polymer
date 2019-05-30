@@ -237,7 +237,7 @@ namespace polymer
         polymer::gl_hosek_sky sky;
         entity sun_directional_light {kInvalidEntity};
         procedural_skybox_component() {};
-        procedural_skybox_component(entity e) : base_component(e) {}
+        procedural_skybox_component(entity e) : base_component(e) { }
     };
     POLYMER_SETUP_TYPEID(procedural_skybox_component);
 

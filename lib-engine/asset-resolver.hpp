@@ -63,11 +63,11 @@ namespace polymer
         std::vector<std::string> material_names;
         std::vector<std::string> texture_names;
 
+        std::vector<std::string> search_paths;
+
         // fixme - what to do if we find multiples? 
         void walk_directory(path root)
         {
-            scoped_timer t("load + resolve");
-
             for (auto & entry : recursive_directory_iterator(root))
             {
                 const size_t root_len = root.string().length(), ext_len = entry.path().extension().string().length();
@@ -80,14 +80,25 @@ namespace polymer
                 std::string filename_no_ext = get_filename_without_extension(path);
                 std::transform(filename_no_ext.begin(), filename_no_ext.end(), filename_no_ext.begin(), ::tolower);
 
-                if (ext == "png" || ext == "tga" || ext == "jpg" || ext == "jpeg")
+                auto report_resolved_asset = [&](const std::string & name, const std::string & type_id)
+                {
+                    // std::cout << ">> \tResolved " << "(" << type_id << ") " << name << std::endl;
+                    log::get()->engine_log->info("resolved {} ({})", name, type_id);
+                };
+
+                if (ext == "material")
+                {
+                    library->import_material(path);
+                    report_resolved_asset(name, "material");
+                }
+                else if (ext == "png" || ext == "tga" || ext == "jpg" || ext == "jpeg")
                 {
                     for (const auto & name : texture_names)
                     {
                         if (name == filename_no_ext)
                         {
                             create_handle_for_asset(name.c_str(), load_image(path, false));
-                            log::get()->engine_log->info("resolved {} ({})", name, typeid(gl_texture_2d).name());
+                            report_resolved_asset(name, typeid(gl_texture_2d).name());
                         }
                     }
                 }
@@ -100,18 +111,16 @@ namespace polymer
                             auto cubemap_binary = read_file_binary(path);
                             gli::texture_cube cubemap_as_gli_cubemap(gli::load_dds((char *)cubemap_binary.data(), cubemap_binary.size()));
                             create_handle_for_asset(filename_no_ext.c_str(), load_cubemap(cubemap_as_gli_cubemap));
-                            log::get()->engine_log->info("resolved {} ({})", name, typeid(gl_texture_2d).name());
+                            report_resolved_asset(name, "dds-cubemap");
                         }
                     }
                 }
-                else if (ext == "obj" || ext == "fbx")
+                else if (ext == "obj" || ext == "fbx" || ext == "mesh")
                 {
                     // Name could either be something like "my_mesh" or "my_mesh/sub_component"
                     // `mesh_names` contains both CPU and GPU geometry handle ids
                     for (const auto & name : mesh_names)
                     {
-                        // std::cout << "Looking for: " << name << std::endl;
-
                         // "my_mesh/sub_component" should match to "my_mesh.obj" or similar
                         if (find_root(name) == filename_no_ext)
                         {
@@ -127,7 +136,7 @@ namespace polymer
                                 create_handle_for_asset(handle_id.c_str(), make_mesh_from_geometry(mesh));
                                 create_handle_for_asset(handle_id.c_str(), std::move(mesh));
 
-                                log::get()->engine_log->info("resolved {} ({})", handle_id, typeid(gl_mesh).name());
+                                report_resolved_asset(name, typeid(gl_mesh).name());
                             }
                         }
                     }
@@ -137,11 +146,10 @@ namespace polymer
 
     public:
 
-        void resolve(const std::string & asset_dir)
+        void resolve()
         {
             assert(scene != nullptr);
             assert(library != nullptr);
-            assert(asset_dir.size() > 0);
 
             // Material Names
             for (auto & m : scene->render_system->materials)
@@ -191,13 +199,23 @@ namespace polymer
 
             remove_duplicates(shader_names);
             remove_duplicates(texture_names);
+            
+            for (auto & path : search_paths)
+            {
+                log::get()->engine_log->info("resolving directory " + path);
+                walk_directory(path);
+            }
 
-            walk_directory(asset_dir);
         }
 
-        asset_resolver::asset_resolver(const std::string & asset_dir, environment * scene, material_library * library) 
+        asset_resolver::asset_resolver(environment * scene, material_library * library) 
             : scene(scene), library(library)
         {
+        }
+
+        void add_search_path(const std::string & search_path)
+        {
+            search_paths.push_back(search_path);
         }
     };
 

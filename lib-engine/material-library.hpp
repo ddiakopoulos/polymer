@@ -21,20 +21,28 @@ namespace polymer
     {
         static const std::string kDefaultMaterialId;
         std::map<std::string, std::shared_ptr<material_interface>> instances;
-        std::vector<std::string> search_paths;
-        material_library(const std::string & default_search_path);
+
+        material_library();
         ~material_library();
-        template<typename T> void create_material(const std::string & name, std::shared_ptr<T> mat);
+
+        // Use this function to programmatically register new materials in the instance table and the global asset handle table
+        template<typename T> void register_material(const std::string & name, std::shared_ptr<T> mat);
+
+        // Removes from local instances and deletes handle from global table
         void remove_material(const std::string & name);
+
+        // Deserializes *.material file from disk, importing into the local instances and creating a handle in the global table
         void import_material(const std::string & path);
+
+        // Serializes a named material instance into a *.material file onto disk
         void export_material(const std::string & name, const std::string & path);
-        void export_all();
-        void search();
-        void add_search_path(const std::string & search_path);
+       
+        // Batch export all named instances, equivalent to calling `export_material(...)` on every known material
+        void export_all(const std::string & to_path);
     };
 
     template<typename T>
-    void material_library::create_material(const std::string & name, std::shared_ptr<T> mat)
+    void material_library::register_material(const std::string & name, std::shared_ptr<T> mat)
     {
         const auto itr = instances.find(name);
         if (itr != instances.end())

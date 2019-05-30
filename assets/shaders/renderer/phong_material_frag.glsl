@@ -62,7 +62,7 @@ void main()
     // Compute directional light
     if (sunlightActive > 0)
     {
-        vec3 L = normalize(u_directionalLight.direction); //incident light direction
+        vec3 L = normalize(u_directionalLight.direction); // incident light direction
         vec3 H = normalize(L + V);  
         float NdotL = clamp(dot(N, L), 0.001, 1.0);
         float NdotH = clamp(dot(N, H), 0.0, 1.0);
