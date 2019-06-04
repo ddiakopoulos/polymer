@@ -1,9 +1,9 @@
 #include "model-io.hpp"
 #include "fbx-importer.hpp"
 #include "model-io-util.hpp"
+#include "../lib-polymer/file_io.hpp"
 
 #include "third-party/tinyobj/tiny_obj_loader.h"
-#include "third-party/tinyply/tinyply.h"
 #include "third-party/meshoptimizer/meshoptimizer.h"
 
 #include <assert.h>
@@ -12,6 +12,10 @@
 #include <ostream>
 
 using namespace polymer;
+using namespace tinyply;
+
+#define TINYPLY_IMPLEMENTATION
+#include "third-party/tinyply/tinyply.h"
 
 std::unordered_map<std::string, runtime_mesh> polymer::import_model(const std::string & path)
 {
@@ -163,6 +167,59 @@ std::unordered_map<std::string, runtime_mesh> polymer::import_obj_model(const st
     }
 
     return meshes;
+}
+
+std::unordered_map<std::string, runtime_mesh> polymer::import_ply_model(const std::string & path)
+{
+
+    std::unordered_map<std::string, runtime_mesh> result;
+
+    try
+    {
+        std::ifstream ss(path, std::ios::binary);
+        if (ss.fail()) throw std::runtime_error("failed to open " + path);
+
+        const auto ply_file_name = get_filename_without_extension(path);
+
+        PlyFile file;
+        file.parse_header(ss);
+
+        std::shared_ptr<PlyData> vertices, normals, colors, faces, texcoords;
+
+        // The header information can be used to programmatically extract properties on elements
+        // known to exist in the header prior to reading the data. For brevity of this sample, properties 
+        // like vertex position are hard-coded: 
+        try { vertices = file.request_properties_from_element("vertex", { "x", "y", "z" }); }
+        catch (const std::exception & e) { std::cerr << "tinyply exception: " << e.what() << std::endl; }
+
+        try { normals = file.request_properties_from_element("vertex", { "nx", "ny", "nz" }); }
+        catch (const std::exception & e) { std::cerr << "tinyply exception: " << e.what() << std::endl; }
+
+        try { colors = file.request_properties_from_element("vertex", { "red", "green", "blue", "alpha" }); }
+        catch (const std::exception & e) { std::cerr << "tinyply exception: " << e.what() << std::endl; }
+
+        try { texcoords = file.request_properties_from_element("vertex", { "u", "v" }); }
+        catch (const std::exception & e) { std::cerr << "tinyply exception: " << e.what() << std::endl; }
+
+        try { faces = file.request_properties_from_element("face", { "vertex_indices" }, 3); }
+        catch (const std::exception & e) { std::cerr << "tinyply exception: " << e.what() << std::endl; }
+
+        file.read(ss);
+
+        runtime_mesh & g = result[ply_file_name];
+
+        {
+            const size_t numVerticesBytes = vertices->buffer.size_bytes();
+            std::vector<float3> verts(vertices->count);
+            std::memcpy(verts.data(), vertices->buffer.get(), numVerticesBytes);
+        }
+
+    }
+    catch (const std::exception & e)
+    {
+        std::cerr << "Caught tinyply exception: " << e.what() << std::endl;
+    }
+
 }
 
 void polymer::optimize_model(runtime_mesh & input)

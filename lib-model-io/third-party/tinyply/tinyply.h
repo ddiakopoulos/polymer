@@ -1,24 +1,24 @@
 /*
- * tinyply 2.2 (https://github.com/ddiakopoulos/tinyply)
- *
- * A single-header, zero-dependency (except the C++ STL) public domain implementation
- * of the PLY mesh file format. Requires C++11; errors are handled through exceptions.
- *
- * This software is in the public domain. Where that dedication is not
- * recognized, you are granted a perpetual, irrevocable license to copy,
- * distribute, and modify this file as you see fit.
- *
- * Authored by Dimitri Diakopoulos (http://www.dimitridiakopoulos.com)
- *
- * tinyply.h may be included in many files, however in a single compiled file,
- * the implementation must be created with the following defined
- * before including the header.
- * #define TINYPLY_IMPLEMENTATION
- */
+* tinyply 2.2 (https://github.com/ddiakopoulos/tinyply)
+*
+* A single-header, zero-dependency (except the C++ STL) public domain implementation 
+* of the PLY mesh file format. Requires C++11; errors are handled through exceptions.
+*
+* This software is in the public domain. Where that dedication is not
+* recognized, you are granted a perpetual, irrevocable license to copy,
+* distribute, and modify this file as you see fit.
+*
+* Authored by Dimitri Diakopoulos (http://www.dimitridiakopoulos.com)
+*
+* tinyply.h may be included in many files, however in a single compiled file,
+* the implementation must be created with the following defined
+* before including the header.
+* #define TINYPLY_IMPLEMENTATION
+*/
 
- ////////////////////////
- //   tinyply header   //
- ////////////////////////
+////////////////////////
+//   tinyply header   //
+////////////////////////
 
 #ifndef tinyply_h
 #define tinyply_h
@@ -56,14 +56,14 @@ namespace tinyply
     static std::map<Type, PropertyInfo> PropertyTable
     {
         { Type::INT8,    { 1, "char" } },
-        { Type::UINT8,   { 1, "uchar" } },
-        { Type::INT16,   { 2, "short" } },
-        { Type::UINT16,  { 2, "ushort" } },
-        { Type::INT32,   { 4, "int" } },
-        { Type::UINT32,  { 4, "uint" } },
-        { Type::FLOAT32, { 4, "float" } },
-        { Type::FLOAT64, { 8, "double" } },
-        { Type::INVALID, { 0, "INVALID" } }
+    { Type::UINT8,   { 1, "uchar" } },
+    { Type::INT16,   { 2, "short" } },
+    { Type::UINT16,  { 2, "ushort" } },
+    { Type::INT32,   { 4, "int" } },
+    { Type::UINT32,  { 4, "uint" } },
+    { Type::FLOAT32, { 4, "float" } },
+    { Type::FLOAT64, { 8, "double" } },
+    { Type::INVALID, { 0, "INVALID" } }
     };
 
     class Buffer
@@ -92,7 +92,7 @@ namespace tinyply
     {
         PlyProperty(std::istream & is);
         PlyProperty(Type type, std::string & _name) : name(_name), propertyType(type) {}
-        PlyProperty(Type list_type, Type prop_type, std::string & _name, size_t list_count)
+        PlyProperty(Type list_type, Type prop_type, std::string & _name, size_t list_count) 
             : name(_name), propertyType(prop_type), isList(true), listType(list_type), listCount(list_count) {}
         std::string name;
         Type propertyType;
@@ -119,49 +119,49 @@ namespace tinyply
         ~PlyFile();
 
         /*
-         * The ply format requires an ascii header. This can be used to determine at
-         * runtime which properties or elements exist in the file. Limited validation of the
-         * header is performed; it is assumed the header correctly reflects the contents of the
-         * payload. This function may throw. Returns true on success, false on failure.
-         */
+        * The ply format requires an ascii header. This can be used to determine at 
+        * runtime which properties or elements exist in the file. Limited validation of the 
+        * header is performed; it is assumed the header correctly reflects the contents of the 
+        * payload. This function may throw. Returns true on success, false on failure. 
+        */ 
         bool parse_header(std::istream & is);
 
-        /*
-         * Execute a read operation. Data must be requested via `request_properties_from_element(...)`
-         * prior to calling this function.
-         */
+        /* 
+        * Execute a read operation. Data must be requested via `request_properties_from_element(...)` 
+        * prior to calling this function.
+        */
         void read(std::istream & is);
 
-        /*
-         * `write` performs no validation and assumes that the data passed into
-         * `add_properties_to_element` is well-formed.
-         */
+        /* 
+        * `write` performs no validation and assumes that the data passed into 
+        * `add_properties_to_element` is well-formed. 
+        */
         void write(std::ostream & os, bool isBinary);
 
-        /*
-         * These functions are valid after a call to `parse_header(...)`. In the case of
-         * writing, get_comments() may also be used to add new comments to the ply header.
-         */
+        /* 
+        * These functions are valid after a call to `parse_header(...)`. In the case of
+        * writing, get_comments() may also be used to add new comments to the ply header.
+        */
         std::vector<PlyElement> get_elements() const;
         std::vector<std::string> get_info() const;
         std::vector<std::string> & get_comments();
 
         /*
-         * In the general case where |list_size_hint| is zero, `read` performs a two-pass
-         * parse to support variable length lists. The most general use of the
-         * ply format is storing triangle meshes. When this fact is known a-priori, we can pass
-         * an expected list length that will apply to this element. Doing so results in an up-front
-         * memory allocation and a single-pass import, a 2x performance optimization.
-         */
-        std::shared_ptr<PlyData> request_properties_from_element(const std::string & elementKey,
+        * In the general case where |list_size_hint| is zero, `read` performs a two-pass
+        * parse to support variable length lists. The most general use of the
+        * ply format is storing triangle meshes. When this fact is known a-priori, we can pass
+        * an expected list length that will apply to this element. Doing so results in an up-front
+        * memory allocation and a single-pass import, a 2x performance optimization.
+        */
+        std::shared_ptr<PlyData> request_properties_from_element(const std::string & elementKey, 
             const std::initializer_list<std::string> propertyKeys, const uint32_t list_size_hint = 0);
 
-        void add_properties_to_element(const std::string & elementKey,
-            const std::initializer_list<std::string> propertyKeys,
-            const Type type,
-            const size_t count,
-            uint8_t * data,
-            const Type listType,
+        void add_properties_to_element(const std::string & elementKey, 
+            const std::initializer_list<std::string> propertyKeys, 
+            const Type type, 
+            const size_t count, 
+            uint8_t * data, 
+            const Type listType, 
             const size_t listCount);
     };
 
@@ -169,9 +169,9 @@ namespace tinyply
 
 #endif // end tinyply_h
 
-////////////////////////////////
-//   tinyply implementation   //
-////////////////////////////////
+  ////////////////////////////////
+  //   tinyply implementation   //
+  ////////////////////////////////
 
 #ifdef TINYPLY_IMPLEMENTATION
 
@@ -192,8 +192,8 @@ template<> inline uint64_t endian_swap<uint64_t, uint64_t>(const uint64_t & v)
     return (((v & 0x00000000000000ffLL) << 56) |
         ((v & 0x000000000000ff00LL) << 40) |
         ((v & 0x0000000000ff0000LL) << 24) |
-        ((v & 0x00000000ff000000LL) << 8) |
-        ((v & 0x000000ff00000000LL) >> 8) |
+        ((v & 0x00000000ff000000LL) << 8)  |
+        ((v & 0x000000ff00000000LL) >> 8)  |
         ((v & 0x0000ff0000000000LL) >> 24) |
         ((v & 0x00ff000000000000LL) >> 40) |
         ((v & 0xff00000000000000LL) >> 56));
@@ -434,7 +434,7 @@ size_t PlyFile::PlyFileImpl::read_property_ascii(const Type & t, const size_t & 
     case Type::UINT32:     ply_cast_ascii<uint32_t>(dest, is);                break;
     case Type::FLOAT32:    ply_cast_ascii<float>(dest, is);                   break;
     case Type::FLOAT64:    ply_cast_ascii<double>(dest, is);                  break;
-    case Type::INVALID:    throw std::invalid_argument("invalid ply property");
+    case Type::INVALID:    throw std::invalid_argument("invalid ply property"); 
     }
     return stride;
 }
@@ -704,8 +704,8 @@ std::shared_ptr<PlyData> PlyFile::PlyFileImpl::request_properties_from_element(c
     return helper.data;
 }
 
-void PlyFile::PlyFileImpl::add_properties_to_element(const std::string & elementKey,
-    const std::initializer_list<std::string> propertyKeys,
+void PlyFile::PlyFileImpl::add_properties_to_element(const std::string & elementKey, 
+    const std::initializer_list<std::string> propertyKeys, 
     const Type type, const size_t count, uint8_t * data, const Type listType, const size_t listCount)
 {
     ParsingHelper helper;
@@ -802,23 +802,23 @@ void PlyFile::PlyFileImpl::parse_data(std::istream & is, bool firstPass)
     }
     else
     {
-        read = [this, &listSize, &dummyCount](PropertyLookup & f, const PlyProperty & p, uint8_t * dest, size_t & destOffset, std::istream & _is)
-        {
+        read = [this, &listSize, &dummyCount](PropertyLookup & f, const PlyProperty & p, uint8_t * dest, size_t & destOffset, std::istream & _is) 
+        { 
             if (!p.isList)
             {
-                read_property_ascii(p.propertyType, f.prop_stride, dest + destOffset, destOffset, _is);
+                read_property_ascii(p.propertyType, f.prop_stride, dest + destOffset, destOffset, _is); 
             }
             else
             {
                 read_property_ascii(p.listType, f.list_stride, &listSize, dummyCount, _is); // the list size
-                for (size_t i = 0; i < listSize; ++i)
+                for (size_t i = 0; i < listSize; ++i) 
                 {
                     read_property_ascii(p.propertyType, f.prop_stride, dest + destOffset, destOffset, _is);
                 }
             }
         };
         skip = [this, &listSize, &dummyCount, &skip_ascii_buffer](PropertyLookup & f, const PlyProperty & p, std::istream & _is)
-        {
+        { 
             skip_ascii_buffer.clear();
             if (p.isList)
             {

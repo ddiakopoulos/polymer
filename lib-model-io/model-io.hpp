@@ -86,6 +86,9 @@ namespace polymer
     // Load an OBJ model, assuming the path points to a valid *.obj
     std::unordered_map<std::string, runtime_mesh> import_obj_model(const std::string & path);
 
+    // Load a PLY model, assuming the path points to a valid *.ply
+    std::unordered_map<std::string, runtime_mesh> polymer::import_ply_model(const std::string & path)
+
     // Convenience function that checks extension for *.fbx, *.obj, or *.mesh
     std::unordered_map<std::string, runtime_mesh> import_model(const std::string & path);
 
