@@ -115,7 +115,7 @@ namespace polymer
                         }
                     }
                 }
-                else if (ext == "obj" || ext == "fbx" || ext == "mesh")
+                else if (ext == "obj" || ext == "fbx" || ext == "ply" || ext == "mesh")
                 {
                     // Name could either be something like "my_mesh" or "my_mesh/sub_component"
                     // `mesh_names` contains both CPU and GPU geometry handle ids

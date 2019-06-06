@@ -60,6 +60,8 @@ namespace polymer
     // Terathon Software 3D Graphics Library, 2001.
     inline void compute_tangents(geometry & g)
     {
+        if (!g.texcoord0.size() || !g.normals.size()) return;
+
         g.tangents.resize(g.vertices.size());
         g.bitangents.resize(g.vertices.size());
 
@@ -90,7 +92,7 @@ namespace polymer
 
             float r = (s1 * t2 - s2 * t1);
 
-            if (r != 0.0f) r = 1.0f / r;
+            if (r != 0.f) r = 1.f / r;
 
             // Tangent in the S direction
             const float3 tangent((t2 * x1 - t1 * x2) * r, (t2 * y1 - t1 * y2) * r, (t2 * z1 - t1 * z2) * r);
@@ -112,7 +114,7 @@ namespace polymer
 
             const float len = length(g.tangents[i]);
 
-            if (len > 0.0f) g.tangents[i] = g.tangents[i] / (float)sqrt(len);
+            if (len > 0.f) g.tangents[i] = g.tangents[i] / (float)std::sqrt(len);
         }
 
         // Bitangents 

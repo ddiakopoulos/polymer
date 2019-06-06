@@ -11,11 +11,11 @@
 #include <fstream>
 #include <ostream>
 
-using namespace polymer;
-using namespace tinyply;
-
 #define TINYPLY_IMPLEMENTATION
 #include "third-party/tinyply/tinyply.h"
+
+using namespace polymer;
+using namespace tinyply;
 
 std::unordered_map<std::string, runtime_mesh> polymer::import_model(const std::string & path)
 {
@@ -36,11 +36,12 @@ std::unordered_map<std::string, runtime_mesh> polymer::import_model(const std::s
     }
     else if (ext == "ply")
     {
-        // @todo - wire up tinyply support
+        auto asset = import_ply_model(path);
+        for (auto & a : asset) models[a.first] = a.second;
     }
     else if (ext == "mesh")
     {
-        auto m = import_mesh_binary(path);
+        auto m = import_polymer_binary_model(path);
         models[get_filename_without_extension(path)] = m;
     }
     else
@@ -171,7 +172,6 @@ std::unordered_map<std::string, runtime_mesh> polymer::import_obj_model(const st
 
 std::unordered_map<std::string, runtime_mesh> polymer::import_ply_model(const std::string & path)
 {
-
     std::unordered_map<std::string, runtime_mesh> result;
 
     try
@@ -179,16 +179,11 @@ std::unordered_map<std::string, runtime_mesh> polymer::import_ply_model(const st
         std::ifstream ss(path, std::ios::binary);
         if (ss.fail()) throw std::runtime_error("failed to open " + path);
 
-        const auto ply_file_name = get_filename_without_extension(path);
-
         PlyFile file;
         file.parse_header(ss);
 
         std::shared_ptr<PlyData> vertices, normals, colors, faces, texcoords;
 
-        // The header information can be used to programmatically extract properties on elements
-        // known to exist in the header prior to reading the data. For brevity of this sample, properties 
-        // like vertex position are hard-coded: 
         try { vertices = file.request_properties_from_element("vertex", { "x", "y", "z" }); }
         catch (const std::exception & e) { std::cerr << "tinyply exception: " << e.what() << std::endl; }
 
@@ -206,28 +201,51 @@ std::unordered_map<std::string, runtime_mesh> polymer::import_ply_model(const st
 
         file.read(ss);
 
+        const auto ply_file_name = get_filename_without_extension(path);
         runtime_mesh & g = result[ply_file_name];
 
+        g.vertices.resize(vertices->count);
+        std::memcpy(g.vertices.data(), vertices->buffer.get(), vertices->buffer.size_bytes());
+
+        if (normals)
         {
-            const size_t numVerticesBytes = vertices->buffer.size_bytes();
-            std::vector<float3> verts(vertices->count);
-            std::memcpy(verts.data(), vertices->buffer.get(), numVerticesBytes);
+            g.normals.resize(normals->count);
+            std::memcpy(g.normals.data(), normals->buffer.get(), normals->buffer.size_bytes());
+        }
+
+        if (colors)
+        {
+            g.colors.resize(colors->count);
+            std::memcpy(g.colors.data(), colors->buffer.get(), colors->buffer.size_bytes());
+        }
+
+        if (texcoords)
+        {
+            g.texcoord0.resize(texcoords->count);
+            std::memcpy(g.texcoord0.data(), texcoords->buffer.get(), texcoords->buffer.size_bytes());
+        }
+
+        if (faces)
+        {
+            g.faces.resize(faces->count);
+            std::memcpy(g.faces.data(), faces->buffer.get(), faces->buffer.size_bytes());
         }
 
     }
     catch (const std::exception & e)
     {
-        std::cerr << "Caught tinyply exception: " << e.what() << std::endl;
+        std::cerr << "fatal tinyply exception: " << e.what() << std::endl;
     }
 
+    return result;
 }
 
 void polymer::optimize_model(runtime_mesh & input)
 {
-    // todo 
+    // @todo - implement mesh-optimizer workflow
 }
 
-runtime_mesh polymer::import_mesh_binary(const std::string & path)
+runtime_mesh polymer::import_polymer_binary_model(const std::string & path)
 {
     std::ifstream file(path, std::ios::binary | std::ios::ate);
     if (!file.good()) throw std::runtime_error("couldn't open");
@@ -267,7 +285,7 @@ runtime_mesh polymer::import_mesh_binary(const std::string & path)
     return mesh;
 }
 
-void polymer::export_mesh_binary(const std::string & path, runtime_mesh & mesh, bool compressed)
+void polymer::export_polymer_binary_model(const std::string & path, runtime_mesh & mesh, bool compressed)
 {
     auto file = std::ofstream(path, std::ios::out | std::ios::binary);
 

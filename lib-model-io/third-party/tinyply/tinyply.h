@@ -56,14 +56,14 @@ namespace tinyply
     static std::map<Type, PropertyInfo> PropertyTable
     {
         { Type::INT8,    { 1, "char" } },
-    { Type::UINT8,   { 1, "uchar" } },
-    { Type::INT16,   { 2, "short" } },
-    { Type::UINT16,  { 2, "ushort" } },
-    { Type::INT32,   { 4, "int" } },
-    { Type::UINT32,  { 4, "uint" } },
-    { Type::FLOAT32, { 4, "float" } },
-    { Type::FLOAT64, { 8, "double" } },
-    { Type::INVALID, { 0, "INVALID" } }
+        { Type::UINT8,   { 1, "uchar" } },
+        { Type::INT16,   { 2, "short" } },
+        { Type::UINT16,  { 2, "ushort" } },
+        { Type::INT32,   { 4, "int" } },
+        { Type::UINT32,  { 4, "uint" } },
+        { Type::FLOAT32, { 4, "float" } },
+        { Type::FLOAT64, { 8, "double" } },
+        { Type::INVALID, { 0, "INVALID" } }
     };
 
     class Buffer
@@ -204,7 +204,7 @@ template<> inline int64_t endian_swap<int64_t, int64_t>(const int64_t & v) { uin
 template<> inline float endian_swap<uint32_t, float>(const uint32_t & v) { union { float f; uint32_t i; }; i = endian_swap<uint32_t, uint32_t>(v); return f; }
 template<> inline double endian_swap<uint64_t, double>(const uint64_t & v) { union { double d; uint64_t i; }; i = endian_swap<uint64_t, uint64_t>(v); return d; }
 
-inline uint32_t hash_fnv1a(const std::string & str)
+inline uint32_t ply_hash_fnv1a(const std::string & str)
 {
     static const uint32_t fnv1aBase32 = 0x811C9DC5u;
     static const uint32_t fnv1aPrime32 = 0x01000193u;
@@ -286,7 +286,7 @@ struct PlyFile::PlyFileImpl
             {
                 PropertyLookup f;
 
-                auto cursorIt = userData.find(hash_fnv1a(element.name + property.name));
+                auto cursorIt = userData.find(ply_hash_fnv1a(element.name + property.name));
                 if (cursorIt != userData.end()) f.helper = &cursorIt->second;
                 else f.skip = true;
 
@@ -592,7 +592,7 @@ void PlyFile::PlyFileImpl::write_ascii_internal(std::ostream & os)
         {
             for (auto & p : e.properties)
             {
-                auto & helper = userData[hash_fnv1a(e.name + p.name)];
+                auto & helper = userData[ply_hash_fnv1a(e.name + p.name)];
                 if (p.isList)
                 {
                     os << p.listCount << " ";
@@ -684,10 +684,10 @@ std::shared_ptr<PlyData> PlyFile::PlyFileImpl::request_properties_from_element(c
                 const PlyProperty & property = element.properties[propertyIndex];
                 helper.data->t = property.propertyType;
                 helper.data->isList = property.isList;
-                auto result = userData.insert(std::pair<uint32_t, ParsingHelper>(hash_fnv1a(element.name + property.name), helper));
+                auto result = userData.insert(std::pair<uint32_t, ParsingHelper>(ply_hash_fnv1a(element.name + property.name), helper));
                 if (result.second == false)
                 {
-                    throw std::invalid_argument("element-property key has already been requested: " + hash_fnv1a(element.name + property.name));
+                    throw std::invalid_argument("element-property key has already been requested: " + ply_hash_fnv1a(element.name + property.name));
                 }
             }
             else keys_not_found.push_back(key);
@@ -720,7 +720,7 @@ void PlyFile::PlyFileImpl::add_properties_to_element(const std::string & element
         for (auto key : propertyKeys)
         {
             PlyProperty newProp = (listType == Type::INVALID) ? PlyProperty(type, key) : PlyProperty(listType, type, key, listCount);
-            userData.insert(std::pair<uint32_t, ParsingHelper>(hash_fnv1a(elementKey + key), helper));
+            userData.insert(std::pair<uint32_t, ParsingHelper>(ply_hash_fnv1a(elementKey + key), helper));
             e.properties.push_back(newProp);
         }
     };

@@ -121,7 +121,6 @@
     <ClCompile Include="third-party\meshoptimizer\vfetchanalyzer.cpp" />
     <ClCompile Include="third-party\meshoptimizer\vfetchoptimizer.cpp" />
     <ClCompile Include="third-party\tinyobj\tiny_obj_loader.cc" />
-    <ClCompile Include="third-party\tinyply\tinyply.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\lib-polymer\lib-polymer.vcxproj">

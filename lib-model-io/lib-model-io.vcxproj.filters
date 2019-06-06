@@ -6,9 +6,6 @@
     <ClCompile Include="third-party\tinyobj\tiny_obj_loader.cc">
       <Filter>third-party</Filter>
     </ClCompile>
-    <ClCompile Include="third-party\tinyply\tinyply.cpp">
-      <Filter>third-party</Filter>
-    </ClCompile>
     <ClCompile Include="third-party\meshoptimizer\stripifier.cpp">
       <Filter>third-party\mesh-optimizer</Filter>
     </ClCompile>
