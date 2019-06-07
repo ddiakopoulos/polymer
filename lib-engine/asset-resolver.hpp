@@ -168,7 +168,7 @@ namespace polymer
 
             for (auto & mat : library->instances)
             {
-                if (auto * pbr = dynamic_cast<polymer_pbr_standard*>(mat.second.get()))
+                if (auto * pbr = dynamic_cast<polymer_pbr_standard*>(mat.second.instance.get()))
                 {
                     shader_names.push_back(pbr->shader.name);
 
@@ -181,7 +181,7 @@ namespace polymer
                     texture_names.push_back(pbr->occlusion.name);
                 }
 
-                if (auto * phong = dynamic_cast<polymer_blinn_phong_standard*>(mat.second.get()))
+                if (auto * phong = dynamic_cast<polymer_blinn_phong_standard*>(mat.second.instance.get()))
                 {
                     shader_names.push_back(phong->shader.name);
 

@@ -8,7 +8,7 @@ using namespace polymer;
 
 std::string process_includes_recursive(const std::string & source, const std::string & includeSearchPath, std::vector<std::string> & includes, int depth)
 {
-    if (depth > 4) throw std::runtime_error("exceeded max include recursion depth");
+    if (depth > 2) throw std::runtime_error("exceeded max include recursion depth");
 
     static const std::regex re("^[ ]*#[ ]*include[ ]+[\"<](.*)[\">].*");
     std::stringstream input;

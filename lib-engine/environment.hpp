@@ -440,11 +440,11 @@ namespace polymer
                 the_new_component.e = new_entity;
                 if (system_pointer->create(new_entity, get_typeid(type_name.c_str()), &the_new_component))
                 {
-                    log::get()->engine_log->info("created {} on {}", type_name, system_name);
+                    //log::get()->engine_log->info("created {} on {}", type_name, system_name);
                 }
                 else
                 {
-                    log::get()->engine_log->info("could not create {} on {}", type_name, system_name);
+                    //log::get()->engine_log->info("could not create {} on {}", type_name, system_name);
                 }
 
                 return true;

@@ -19,8 +19,22 @@ namespace polymer
     // this is where serialization/deserialization occurs.
     struct material_library
     {
+        enum class instance_type
+        {
+            serializable,
+            procedural
+        };
+
+        struct material_instance
+        {
+            std::string name;
+            std::string origin_path;
+            std::shared_ptr<base_material> instance;
+            instance_type type {instance_type::serializable};
+        };
+
         static const std::string kDefaultMaterialId;
-        std::map<std::string, std::shared_ptr<base_material>> instances;
+        std::map<std::string, material_instance> instances;
 
         material_library();
         ~material_library();
@@ -29,16 +43,16 @@ namespace polymer
         template<typename T> void register_material(const std::string & name, std::shared_ptr<T> mat);
 
         // Removes from local instances and deletes handle from global table
-        void remove_material(const std::string & name);
+        void remove_material(const std::string & key);
 
         // Deserializes *.material file from disk, importing into the local instances and creating a handle in the global table
         void import_material(const std::string & path);
 
         // Serializes a named material instance into a *.material file onto disk
-        void export_material(const std::string & name, const std::string & path);
+        void export_material(const std::string & key);
        
         // Batch export all named instances, equivalent to calling `export_material(...)` on every known material
-        void export_all(const std::string & to_path);
+        void export_all();
     };
 
     template<typename T>
@@ -50,8 +64,16 @@ namespace polymer
             log::get()->engine_log->info("material list already contains {}", name);
             return;
         }
+
+        // register_material is only used as a programmatic api, thus the instances don't need to retain
+        // any other information used for serialization
+        material_instance inst;
+        inst.type = instance_type::procedural;
+        inst.name = name;
+        inst.instance = mat;
+        instances[name] = inst;
+
         create_handle_for_asset(name.c_str(), std::dynamic_pointer_cast<base_material>(mat));
-        instances[name] = mat;
     }
 }
 

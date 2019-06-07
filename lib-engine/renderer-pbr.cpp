@@ -472,6 +472,25 @@ void pbr_renderer::render_frame(const render_payload & scene)
 {
     assert(settings.cameraCount == scene.views.size());
 
+    // @fixme - refactor to make optional
+    auto validate_materials = [this, scene]()
+    {
+        for (const auto & render_comp : scene.render_components)
+        {
+            // In some workflows, it's useful to hand edit scene files and materials
+            // but this often results in a typo, forgotten copy-and-paste, or other
+            // types of human-introduced issues. Formerly, we would crash below
+            // when trying to sort materials, but this is now an explicit check. 
+            if (!render_comp.material->material.get())
+            {
+                std::cout << "[pbr_renderer] material was not assigned - " << render_comp.material->material.name << std::endl;
+                throw std::runtime_error("unassigned material"); // could also possibly assign the default one
+            }
+        }
+    };
+
+    validate_materials();
+
     cpuProfiler.begin("render_frame");
 
     // Renderer default state

@@ -27,7 +27,7 @@ gl_shader_monitor::gl_shader_monitor(const std::string & root_path) : root_path(
                 //@todo use logger
                 std::cout << "Filesystem error: " << e.what() << std::endl;
             }
-            std::this_thread::sleep_for(std::chrono::milliseconds(250));
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
     });
 }
@@ -70,7 +70,6 @@ void gl_shader_monitor::walk_asset_dir()
     {
         const size_t root_len = root.string().length(), ext_len = entry.path().extension().string().length();
         auto path = entry.path().string(), name = path.substr(root_len + 1, path.size() - root_len - ext_len - 1);
-        for (auto & chr : path) if (chr == '\\') chr = '/';
 
         for (auto & asset : assets)
         {
@@ -83,6 +82,7 @@ void gl_shader_monitor::walk_asset_dir()
                 scanned_file == get_filename_with_extension(asset.second->geomPath))
             {
                 auto writeTime = duration_cast<seconds>(write_time(path).time_since_epoch()).count();
+
                 if (writeTime > asset.second->writeTime)
                 {
                     asset.second->writeTime = writeTime;

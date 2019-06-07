@@ -141,6 +141,7 @@ public:
             {
                 const entity e = selected_entities[i];
                 const transform updated_pose = to_linalg(gizmo_transform) * relative_transforms[i];
+                const float3 local_scale = get_transform_system()->get_local_transform(e)->local_scale;
 
                 // Does this have a parent?
                 if (get_transform_system()->get_parent(e) != kInvalidEntity)
@@ -151,13 +152,13 @@ public:
                     const transform parent_pose = get_transform_system()->get_local_transform(parent_entity)->local_pose;
                     const transform child_local_pose = parent_pose.inverse() * updated_pose;
 
-                    get_transform_system()->set_local_transform(e, child_local_pose);
+                    get_transform_system()->set_local_transform(e, child_local_pose, local_scale);
                 }
                 else
                 {
                     // Note how we're setting the local transform. If this is a parent entity,
                     // local is already in worldspace. 
-                    get_transform_system()->set_local_transform(e, updated_pose);
+                    get_transform_system()->set_local_transform(e, updated_pose, local_scale);
                 }
             }
 
