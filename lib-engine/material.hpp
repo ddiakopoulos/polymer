@@ -107,6 +107,8 @@ namespace polymer
         virtual uint32_t id() override final;
         virtual void update_uniforms() override final;
 
+        void update_uniforms_shadow(GLuint handle);
+
         float2 texcoordScale{ 1.f, 1.f };
 
         texture_handle diffuse;

@@ -12,7 +12,28 @@ namespace polymer
 {
 
     void load_required_renderer_assets(const std::string & base_path, gl_shader_monitor & monitor)
-    {
+    {            
+        scoped_timer t("load_required_renderer_assets");
+
+        // The Polymer editor has a number of "intrinsic" mesh assets that are loaded from disk at runtime. These primarily
+        // add to the number of objects that can be quickly prototyped with, along with the usual set of procedural mesh functions
+        // included with Polymer.
+        {
+            for (auto & entry : recursive_directory_iterator(base_path))
+            {
+                const size_t root_len = base_path.length(), ext_len = entry.path().extension().string().length();
+                auto path = entry.path().string(), name = path.substr(root_len + 1, path.size() - root_len - ext_len - 1);
+                for (auto & chr : path) if (chr == '\\') chr = '/';
+
+                if (entry.path().extension().string() == ".mesh")
+                {
+                    auto geo_import = import_polymer_binary_model(path);
+                    create_handle_for_asset(std::string(get_filename_without_extension(path)).c_str(), make_mesh_from_geometry(geo_import));
+                    create_handle_for_asset(std::string(get_filename_without_extension(path)).c_str(), std::move(geo_import));
+                }
+            }
+        }
+
         try
         {
             // [utility] used for rendering debug meshes 

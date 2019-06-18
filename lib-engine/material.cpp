@@ -122,7 +122,6 @@ void polymer_blinn_phong_standard::resolve_variants()
     processed_defines.push_back("ENABLE_SHADOWS");
     processed_defines.push_back("TWO_CASCADES");
     processed_defines.push_back("USE_PCF_3X3");
-    processed_defines.push_back("USE_IMAGE_BASED_LIGHTING");
 
     // Material slots
     if (diffuse.assigned()) processed_defines.push_back("HAS_DIFFUSE_MAP");
@@ -175,6 +174,17 @@ void polymer_blinn_phong_standard::update_uniforms()
     if (compiled_shader->enabled("HAS_DIFFUSE_MAP")) program.texture("s_diffuse", bindpoint++, diffuse.get(), GL_TEXTURE_2D);
     if (compiled_shader->enabled("HAS_NORMAL_MAP")) program.texture("s_normal", bindpoint++, normal.get(), GL_TEXTURE_2D);
 
+    program.unbind();
+}
+
+void polymer_blinn_phong_standard::update_uniforms_shadow(GLuint handle)
+{
+    resolve_variants();
+    gl_shader & program = compiled_shader->shader;
+    if (!compiled_shader->enabled("ENABLE_SHADOWS")) throw std::runtime_error("should not be called unless ENABLE_SHADOWS is defined.");
+
+    program.bind();
+    program.texture("s_csmArray", bindpoint++, handle, GL_TEXTURE_2D_ARRAY);
     program.unbind();
 }
 

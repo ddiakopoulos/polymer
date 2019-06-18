@@ -4,6 +4,7 @@
 #define polymer_asset_handle_utils_hpp
 
 #include "asset-handle.hpp"
+#include "ecs/typeid.hpp"
 
 namespace polymer
 {
@@ -29,11 +30,17 @@ namespace polymer
     struct base_material;
     class gl_shader_asset;
 
-    typedef asset_handle<gl_texture_2d>                        texture_handle;
-    typedef asset_handle<gl_mesh>                              gpu_mesh_handle;
-    typedef asset_handle<geometry>                             cpu_mesh_handle;
-    typedef asset_handle<std::shared_ptr<base_material>>  material_handle;
-    typedef asset_handle<std::shared_ptr<gl_shader_asset>>     shader_handle;
+    typedef asset_handle<gl_texture_2d>                    texture_handle;
+    typedef asset_handle<gl_mesh>                          gpu_mesh_handle;
+    typedef asset_handle<geometry>                         cpu_mesh_handle;
+    typedef asset_handle<std::shared_ptr<base_material>>   material_handle;
+    typedef asset_handle<std::shared_ptr<gl_shader_asset>> shader_handle;
+
+    POLYMER_SETUP_TYPEID(texture_handle);
+    POLYMER_SETUP_TYPEID(gpu_mesh_handle);
+    POLYMER_SETUP_TYPEID(cpu_mesh_handle);
+    POLYMER_SETUP_TYPEID(material_handle);
+    POLYMER_SETUP_TYPEID(shader_handle);
 
 } // end namespace polymer
 

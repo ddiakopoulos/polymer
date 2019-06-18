@@ -240,10 +240,11 @@ namespace polymer
         procedural_skybox_component(entity e) : base_component(e) { }
     };
     POLYMER_SETUP_TYPEID(procedural_skybox_component);
+    POLYMER_SETUP_TYPEID(polymer::gl_hosek_sky);
 
     template<class F> void visit_fields(procedural_skybox_component & o, F f) {
         f("procedural_skybox", o.sky);
-        f("sun_directional_light", o.sun_directional_light);
+        f("sun_directional_light", o.sun_directional_light, entity_ref{});
     }
 
     inline void to_json(json & j, const procedural_skybox_component & p) {
@@ -438,6 +439,19 @@ namespace polymer
             {
                 component_t the_new_component = componentIterator.value();
                 the_new_component.e = new_entity;
+
+                //visit_fields(the_new_component, [&](const char * name, auto & field, auto... metadata)
+                //{ 
+                //    const auto field_name = get_typename<std::remove_reference_t<decltype(field)>>();
+                //
+                //    if (auto * use_entity_ref = unpack<entity_ref>(metadata...)) 
+                //    {
+                //        component["#" + name] = field;
+                //    }
+                //
+                //    std::cout << "Field name: " << name << ", " << field_name << std::endl;
+                //});
+
                 if (system_pointer->create(new_entity, get_typeid(type_name.c_str()), &the_new_component))
                 {
                     //log::get()->engine_log->info("created {} on {}", type_name, system_name);

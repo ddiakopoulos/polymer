@@ -10,6 +10,8 @@
 #include "logging.hpp"
 #include <unordered_map>
 
+//#define ASSET_DEBUG_SPAM
+
 namespace polymer
 {
 
@@ -78,7 +80,7 @@ namespace polymer
                     a = std::make_shared<polymer_unique_asset<T>>();
                     a->timestamp = system_time_ns();
                     a->assigned = false;
-                    log::get()->engine_log->info("asset type {} ({}) was default constructed", typeid(T).name(), name);
+                    log::get()->engine_log->info("[WARN] asset type {} ({}) was default constructed", typeid(T).name(), name);
                 }
                 handle = a;
 
@@ -102,7 +104,9 @@ namespace polymer
             handle->assigned = name.empty() || name == "empty" ? false : true;
             handle->timestamp = system_time_ns();
 
+            #ifdef ASSET_DEBUG_SPAM
             log::get()->engine_log->info("asset type {} with id {} was assigned", typeid(T).name(), name);
+            #endif
 
             return handle->asset;
         }
@@ -137,7 +141,9 @@ namespace polymer
             auto iter = table.find(asset_id);
             if (iter != table.end())
             {
+                #ifdef ASSET_DEBUG_SPAM
                 log::get()->engine_log->info("asset type {} with id {} was destroyed", typeid(T).name(), iter->first);
+                #endif
                 table.erase(iter);
                 return true;
             }

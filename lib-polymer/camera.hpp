@@ -19,7 +19,7 @@ namespace polymer
 
         float vfov{ 1.3f };
         float nearclip{ 0.01f };
-        float farclip{ 64.f };
+        float farclip{ 16.f };
 
         float4x4 get_view_matrix() const { return pose.view_matrix(); }
         float4x4 get_projection_matrix(float aspectRatio) const { return make_projection_matrix(vfov, aspectRatio, nearclip, farclip); }

@@ -342,18 +342,18 @@ void pbr_renderer::run_forward_pass(std::vector<const render_component *> & rend
         // @todo - handle other specific material requirements here
         if (auto * mr = dynamic_cast<polymer_pbr_standard*>(the_material))
         {
-            if (settings.shadowsEnabled)
-            {
-                // @todo - ideally compile this out from the shader if not using shadows
-                mr->update_uniforms_shadow(shadow->get_output_texture());
-            }
-
+            if (settings.shadowsEnabled) mr->update_uniforms_shadow(shadow->get_output_texture());
             if (scene.ibl_cubemap)
             {
                 mr->update_uniforms_ibl(scene.ibl_cubemap->ibl_irradianceCubemap.get(), 
                     scene.ibl_cubemap->ibl_radianceCubemap.get());
             }
         }
+
+        if (auto * mr = dynamic_cast<polymer_blinn_phong_standard*>(the_material))
+        {
+            if (settings.shadowsEnabled) mr->update_uniforms_shadow(shadow->get_output_texture());
+         }
 
         the_material->update_uniforms();
 

@@ -1,5 +1,6 @@
 #include "renderer_common.glsl"
 #include "colorspace_conversions.glsl"
+#include "cascaded_shadows.glsl"
 
 in vec3 v_world_position;
 in vec3 v_view_space_position;
@@ -16,6 +17,10 @@ uniform float u_specularStrength;
 
 uniform sampler2D s_diffuse;
 uniform sampler2D s_normal;
+
+#ifdef ENABLE_SHADOWS
+    uniform sampler2DArray s_csmArray;
+#endif
 
 out vec4 f_color;
 
@@ -58,6 +63,7 @@ void main()
     float NdotV = abs(dot(N, V)) + 0.001;
 
     vec3 Lo = vec3(0, 0, 0);
+    float shadowVisibility = 1;
 
     // Compute directional light
     if (sunlightActive > 0)
@@ -73,6 +79,16 @@ void main()
         vec3 diffuseContrib, specContrib;
         diffuseContrib += irradiance * lambert_diffuse(diffuseColor);
         specContrib += irradiance * blinn_phong_specular(NdotH, LdotH, u_specularColor, u_specularShininess) * u_specularStrength;
+
+        #ifdef ENABLE_SHADOWS
+            float shadowTerm = 1.0;
+            vec3 debugShadowColor;
+            const float slope_bias = 0.04;
+            const float normal_bias = 0.01;
+            vec3 biased_pos = get_biased_position(v_world_position, slope_bias, normal_bias, v_normal, L);
+            shadowTerm = calculate_csm_coefficient(s_csmArray, biased_pos, v_view_space_position, u_cascadesMatrix, u_cascadesPlane, debugShadowColor);
+            shadowVisibility = 1.0 - ((shadowTerm  * NdotL) * u_receiveShadow);
+        #endif
 
         Lo += diffuseContrib + specContrib;
     }
@@ -99,5 +115,5 @@ void main()
        	Lo += (diffuseContrib + specContrib) * attenuation;
     }
 
-    f_color = vec4(Lo, 1.0); 
+    f_color = vec4(Lo * shadowVisibility, 1.0); 
 }

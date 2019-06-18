@@ -10,27 +10,6 @@
 
 using namespace polymer;
 
-// The Polymer editor has a number of "intrinsic" mesh assets that are loaded from disk at runtime. These primarily
-// add to the number of objects that can be quickly prototyped with, along with the usual set of procedural mesh functions
-// included with Polymer.
-void load_editor_intrinsic_assets(path root)
-{
-    scoped_timer t("load_editor_intrinsic_assets");
-    for (auto & entry : recursive_directory_iterator(root))
-    {
-        const size_t root_len = root.string().length(), ext_len = entry.path().extension().string().length();
-        auto path = entry.path().string(), name = path.substr(root_len + 1, path.size() - root_len - ext_len - 1);
-        for (auto & chr : path) if (chr == '\\') chr = '/';
-
-        if (entry.path().extension().string() == ".mesh")
-        {
-            auto geo_import = import_polymer_binary_model(path);
-            create_handle_for_asset(std::string(get_filename_without_extension(path)).c_str(), make_mesh_from_geometry(geo_import));
-            create_handle_for_asset(std::string(get_filename_without_extension(path)).c_str(), std::move(geo_import));
-        }
-    }
-};
-
 scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
 {
     working_dir_on_launch = get_current_directory();
@@ -54,7 +33,6 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
     cam.farclip = 24;
     flycam.set_camera(&cam);
 
-    load_editor_intrinsic_assets("../assets/models/runtime/");
     load_required_renderer_assets("../assets", shaderMonitor);
 
     shaderMonitor.watch("wireframe",
@@ -206,7 +184,7 @@ void scene_editor_app::import_scene(const std::string & path)
 
         int width, height;
         glfwGetWindowSize(window, &width, &height);
-        scene.reset(orchestrator, { width, height }, false);
+        scene.reset(orchestrator, { width, height }, false); // don't create implicit objects if importing
 
         scene.import_environment(path, orchestrator);
        

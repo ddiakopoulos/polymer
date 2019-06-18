@@ -166,46 +166,64 @@ namespace polymer
             remove_duplicates(material_names);
             remove_duplicates(mesh_names);
 
-            for (auto & mat : library->instances)
+            auto collect_shaders_and_textures = [this]()
             {
-                if (auto * pbr = dynamic_cast<polymer_pbr_standard*>(mat.second.instance.get()))
+                for (auto & mat : library->instances)
                 {
-                    shader_names.push_back(pbr->shader.name);
+                    if (auto * pbr = dynamic_cast<polymer_pbr_standard*>(mat.second.instance.get()))
+                    {
+                        shader_names.push_back(pbr->shader.name);
 
-                    texture_names.push_back(pbr->albedo.name);
-                    texture_names.push_back(pbr->normal.name);
-                    texture_names.push_back(pbr->metallic.name);
-                    texture_names.push_back(pbr->roughness.name);
-                    texture_names.push_back(pbr->emissive.name);
-                    texture_names.push_back(pbr->height.name);
-                    texture_names.push_back(pbr->occlusion.name);
+                        texture_names.push_back(pbr->albedo.name);
+                        texture_names.push_back(pbr->normal.name);
+                        texture_names.push_back(pbr->metallic.name);
+                        texture_names.push_back(pbr->roughness.name);
+                        texture_names.push_back(pbr->emissive.name);
+                        texture_names.push_back(pbr->height.name);
+                        texture_names.push_back(pbr->occlusion.name);
+                    }
+
+                    if (auto * phong = dynamic_cast<polymer_blinn_phong_standard*>(mat.second.instance.get()))
+                    {
+                        shader_names.push_back(phong->shader.name);
+
+                        texture_names.push_back(phong->diffuse.name);
+                        texture_names.push_back(phong->normal.name);
+                    }
                 }
 
-                if (auto * phong = dynamic_cast<polymer_blinn_phong_standard*>(mat.second.instance.get()))
+                // IBLs 
+                if (auto * ibl_cubemap_component = scene->render_system->get_cubemap())
                 {
-                    shader_names.push_back(phong->shader.name);
-
-                    texture_names.push_back(phong->diffuse.name);
-                    texture_names.push_back(phong->normal.name);
+                    texture_names.push_back(ibl_cubemap_component->ibl_irradianceCubemap.name);
+                    texture_names.push_back(ibl_cubemap_component->ibl_radianceCubemap.name);
                 }
-            }
 
-            // IBLs 
-            if (auto * ibl_cubemap_component = scene->render_system->get_cubemap())
-            {
-                texture_names.push_back(ibl_cubemap_component->ibl_irradianceCubemap.name);
-                texture_names.push_back(ibl_cubemap_component->ibl_radianceCubemap.name);
-            }
+                remove_duplicates(shader_names);
+                remove_duplicates(texture_names);
+            };
 
-            remove_duplicates(shader_names);
-            remove_duplicates(texture_names);
-            
+            // 1st pass that grabs shaders and textures called for programmatically
+            collect_shaders_and_textures(); 
+
+            // Resolve known assets, including materials. 
             for (auto & path : search_paths)
             {
-                log::get()->engine_log->info("resolving directory " + path);
+                log::get()->engine_log->info("[1] resolving directory " + path);
                 walk_directory(path);
             }
 
+            // We need to collect shaders and textures again, because materials might define them and import them
+            collect_shaders_and_textures();
+
+            // Resolve known assets again, this time including shaders and textures that may
+            // have been identified by an imported material.
+            // @fixme - we need to remove already resolved assets from being imported a second time! 
+            for (auto & path : search_paths)
+            {
+                log::get()->engine_log->info("[2] resolving directory " + path);
+                walk_directory(path);
+            }
         }
 
         asset_resolver::asset_resolver(environment * scene, material_library * library) 
