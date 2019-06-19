@@ -46,6 +46,45 @@ namespace polymer
         return occurances;
     }
 
+    inline std::string to_lower(std::string str)
+    {
+        std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+        return str;
+    }
+
+    inline void to_lower(std::string & str) 
+    {
+        std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+    }
+
+    inline std::string to_upper(std::string str)
+    {
+        std::transform(str.begin(), str.end(), str.begin(), ::toupper);
+        return str;
+    }
+
+    inline void to_upper(std::string & str) 
+    {
+        std::transform(str.begin(), str.end(), str.begin(), ::toupper);
+    }
+
+    inline std::string ltrim(std::string str) 
+    {
+        str.erase(str.begin(), std::find_if(str.begin(), str.end(), std::not1(std::ptr_fun<int, int>(std::isspace))));
+        return str;
+    }
+
+    inline std::string rtrim(std::string str) 
+    {
+        str.erase(std::find_if(str.rbegin(), str.rend(), std::not1(std::ptr_fun<int, int>(std::isspace))).base(), str.end());
+        return str;
+    }
+
+    inline std::string trim(std::string str) 
+    {
+        return ltrim(rtrim(str));
+    }
+
     inline void normalize_path(std::string & path)
     {
         constexpr char separator = get_platform_separator();
@@ -60,7 +99,7 @@ namespace polymer
         return search.length() <= str.length() && std::equal(search.begin(), search.end(), str.begin());
     }
 
-    inline std::vector<std::string> split(const std::string & s, char delim) 
+    inline std::vector<std::string> split(const std::string & s, const char delim) 
     {
         std::vector<std::string> list;
         std::stringstream ss(s);
@@ -83,17 +122,19 @@ namespace polymer
     inline std::string get_extension(const std::string & path)
     {
         auto found = path.find_last_of('.');
-        if (found == std::string::npos) return "";
+        if (found == std::string::npos) return {};
         else return path.substr(found + 1);
     }
     
-    inline std::string get_filename_with_extension(std::string & path)
+    inline std::string get_filename_with_extension(const std::string & path)
     {
-        normalize_path(path);
+        std::string normalized_path = path;
+        normalize_path(normalized_path);
+
         constexpr char separator = get_platform_separator();
-        if (separator == '/') return path.substr(path.find_last_of("/") + 1);
-        else if (separator == '\\') return path.substr(path.find_last_of("\\") + 1);
-        return path;
+        if (separator == '/') return normalized_path.substr(normalized_path.find_last_of("/") + 1);
+        else if (separator == '\\') return normalized_path.substr(normalized_path.find_last_of("\\") + 1);
+        return normalized_path;
     }
     
     inline std::string get_filename_without_extension(const std::string & path)
