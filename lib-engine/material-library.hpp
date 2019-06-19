@@ -50,7 +50,7 @@ namespace polymer
 
         // Serializes a named material instance into a *.material file onto disk
         void export_material(const std::string & key);
-       
+
         // Batch export all named instances, equivalent to calling `export_material(...)` on every known material
         void export_all();
     };

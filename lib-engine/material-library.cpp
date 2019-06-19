@@ -13,30 +13,10 @@ using json = nlohmann::json;
 
 const std::string material_library::kDefaultMaterialId = "default-material";
 
-void material_library::search()
+material_library::material_library()
 {
-    for (const auto & path : search_paths)
-    {
-        for (auto & entry : recursive_directory_iterator(path))
-        {
-            const size_t root_len = path.length(), ext_len = entry.path().extension().string().length();
-            auto path = entry.path().string(), name = path.substr(root_len + 1, path.size() - root_len - ext_len - 1);
-            for (auto & chr : path) if (chr == '\\') chr = '/';
-
-            if (entry.path().extension().string() == ".material")
-            {
-                import_material(path);
-            }
-        }
-    }
-
-};
-
-material_library::material_library(const std::string & default_search_path)
-{
-    search_paths.push_back(default_search_path);
-
-    // Create an empty asset for textures. 
+    // Create an empty/null asset for textures. We use this when we want to clear texture handle slots when
+    // editing via the polymer scene editor ui.
     create_handle_for_asset("", gl_texture_2d());
 
     // Create a default material and create an asset handle for it (also add to local instances)
@@ -49,24 +29,12 @@ material_library::material_library(const std::string & default_search_path)
     inst.instance = default;
 
     instances[kDefaultMaterialId] = inst; 
-
-    search();
-
-    // Register all material instances with the asset system. Since everything is handle-based,
-    // we can do this wherever, so long as it's before the first rendered frame
-    for (auto & instance : instances)
-    {
-        create_handle_for_asset(instance.first.c_str(), static_cast<std::shared_ptr<base_material>>(instance.second));
-    }
 }
 
 material_library::~material_library()
 {
     //export_all();
-
-
-    // Should we also call material_handle::destroy(...) for all the material assets? 
-    instances.clear();
+    instances.clear(); // Should we also call material_handle::destroy(...) for all the material assets? 
 }
 
 void material_library::export_all()
@@ -134,16 +102,16 @@ void material_library::export_material(const std::string & key)
         json out_instance_doc;
         visit_subclasses(itr->second.instance.get(), [&](const char * name, auto * material_ptr)
         {
-        if (material_ptr)
-        {
-            std::string type_name = get_typename<std::remove_pointer<decltype(material_ptr)>::type>();
-            std::string material_type_id = "@" + type_name;
+            if (material_ptr)
+            {
+                std::string type_name = get_typename<std::remove_pointer<decltype(material_ptr)>::type>();
+                std::string material_type_id = "@" + type_name;
                 out_instance_doc[material_type_id] = *material_ptr;
-        }
-    });
+            }
+        });
 
         polymer::write_file_text(itr->second.origin_path + "/" + key + ".material", out_instance_doc.dump(4));
-}
+    }
 }
 
 void material_library::remove_material(const std::string & key)
@@ -159,10 +127,4 @@ void material_library::remove_material(const std::string & key)
     {
         log::get()->engine_log->info("{} was not found in the material list", key);
     }
-}
-
-void material_library::add_search_path(const std::string & search_path)
-{
-    search_paths.push_back(search_path);
-    search();
 }
