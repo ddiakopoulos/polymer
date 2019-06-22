@@ -33,7 +33,7 @@ material_library::material_library()
 
 material_library::~material_library()
 {
-    //export_all();
+    export_all();
     instances.clear(); // Should we also call material_handle::destroy(...) for all the material assets? 
 }
 
