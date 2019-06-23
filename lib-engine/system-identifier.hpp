@@ -7,9 +7,9 @@
 #include "ecs/core-ecs.hpp"
 #include "environment.hpp"
 
-////////////////////////
-//   name/id system   // 
-////////////////////////
+//////////////////////////////////
+//   name/id/tag/layer system   // 
+//////////////////////////////////
 
 namespace polymer
 {
@@ -19,6 +19,10 @@ namespace polymer
         std::unordered_map<entity, identifier_component> entity_to_name_;
         std::unordered_map<entity, poly_hash_value> entity_to_hash_;
         std::unordered_map<poly_hash_value, entity> hash_to_entity_;
+    
+        std::unordered_map<std::string, uint32_t> layers;
+        std::unordered_map<entity, std::string> entity_to_layer_key;
+        std::unordered_map<entity, std::vector<std::string>> entity_to_tag;
 
         template<class F> friend void visit_components(entity e, identifier_system * system, F f);
 
@@ -78,7 +82,7 @@ namespace polymer
             if (find_entity(name) != kInvalidEntity)
             {
                 log::get()->engine_log->info("[identifier system] an entity by the name {} already exists...", name);
-                return false; // fail silently
+                return false;
             }
 
             const auto h = hash(name.c_str());
@@ -98,12 +102,69 @@ namespace polymer
             const auto iter = hash_to_entity_.find(h);
             return iter != hash_to_entity_.end() ? iter->second : kInvalidEntity;
         }
+
+        bool create_layer(const std::string & layer_name, const uint32_t priority)
+        {
+            auto iter = layers.find(layer_name);
+            if (iter == layers.end())
+            {
+                layers[layer_name] = priority;
+                return true;
+            }
+            else
+            {
+                // layer already exists
+                return false;
+            }
+        }
+
+        bool assign_to_layer(const entity e, const std::string & layer_name)
+        {
+            if (e == kInvalidEntity) return false;
+
+            auto iter = layers.find(layer_name);
+            if (iter != layers.end())
+            {
+                entity_to_layer_key[e] = layer_name;
+                return true;
+            }
+            else
+            {
+                // couldn't find the layer
+                return false;
+            }
+        }
+
+        void assign_tag(const entity e, const std::string & tag)
+        {
+            auto & tags = entity_to_tag[e];
+            tags.push_back(tag);
+        }
+
+        std::vector<std::string> get_tags(const entity e)
+        {
+            return entity_to_tag[e];
+        }
+
+        std::vector<std::pair<std::string, uint32_t>> get_layers()
+        {
+            std::vector<std::pair<std::string, uint32_t>> the_layers;
+
+            for (auto & l : layers)
+            {
+                the_layers.push_back({ l.first, l.second });
+            }
+            return the_layers;
+        }
     };
 
     POLYMER_SETUP_TYPEID(identifier_system);
 
     // pass-through visit_fields for a string since the id system has no component type
-    template<class F> void visit_fields(std::string & str, F f) { f("id", str); }
+    template<class F> void visit_fields(std::string & str, F f) 
+    { 
+        f("id", str); 
+    }
 
     template<class F> void visit_components(entity e, identifier_system * system, F f)
     {
