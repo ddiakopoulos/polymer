@@ -1,13 +1,14 @@
 #pragma once
 
-#ifndef gizmo_controller_hpp
-#define gizmo_controller_hpp
+#ifndef polymer_editor_gizmo_controller_hpp
+#define polymer_editor_gizmo_controller_hpp
 
 #include "gl-gizmo.hpp"
 #include "gl-imgui.hpp"
 #include "environment.hpp"
 #include "ecs/core-ecs.hpp"
 #include "system-transform.hpp"
+#include "ui-actions.hpp"
 
 class gizmo_controller
 {
@@ -21,6 +22,7 @@ class gizmo_controller
 
     app_input_event last_event;
     bool stopped_dragging{ false };
+    bool started_dragging{ false };
     simple_cpu_timer cooldown_timer;
     bool gizmo_active{ false };
 
@@ -122,6 +124,7 @@ public:
     {
         gizmo.handle_input(event);
         if (event.drag == false && last_event.drag == true) stopped_dragging = true;
+        if (event.drag == true && last_event.drag == false) started_dragging = true;
         last_event = event;
     }
 
@@ -169,6 +172,7 @@ public:
             previous_gizmo_transform = gizmo_transform;
         }
 
+        // Finished the editing action
         if (stopped_dragging == true)
         {
             stopped_dragging = false;
@@ -195,4 +199,4 @@ public:
     }
 };
 
-#endif // end gizmo_controller_hpp
+#endif // end polymer_editor_gizmo_controller_hpp
