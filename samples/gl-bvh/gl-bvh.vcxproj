@@ -88,7 +88,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="bvh.cpp" />
     <ClCompile Include="gl-bvh.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -101,9 +100,6 @@
     <ProjectReference Include="..\..\third_party\glfw3\glfw3.vcxproj">
       <Project>{be423e72-28c2-4fb7-9fe1-42aa2f393bbc}</Project>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="bvh.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

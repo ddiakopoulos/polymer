@@ -1,10 +1,9 @@
 #include "lib-polymer.hpp"
+
 #include "gl-camera.hpp"
 #include "gl-texture-view.hpp"
 #include "gl-gizmo.hpp"
 #include "gl-imgui.hpp"
-
-#include "bvh.hpp"
 
 using namespace polymer;
 
@@ -99,29 +98,6 @@ sample_gl_bvh::sample_gl_bvh() : polymer_app(1280, 720, "sample-gl-bvh")
     boxMesh = make_cube_mesh();
     boxMesh.set_non_indexed(GL_LINES);
 
-    const uint32_t num_elements = 65536;
-
-    const float size = 256.f;
-    const float half_size = size * 0.5f;
-
-    //{
-    //    scoped_timer t("[sample_gl_bvh] create spheres");
-    //
-    //    for (int i = 0; i < num_elements; ++i)
-    //    {
-    //        //gen.random_float(size) - half_size,
-    //        const float3 position = { gen.random_float(size) - half_size, gen.random_float(size) - half_size, gen.random_float(size) - half_size };
-    //        const float radius = .25f;
-    //
-    //        debug_sphere s;
-    //        s.p = transform(quatf(linalg::identity), position);
-    //        s.radius = radius;
-    //
-    //        spheres.push_back(std::move(s));
-    //    }
-    //}
-
-
     auto spiral = make_spiral(96.f, 2.f);
     for (auto & v : spiral.vertices)
     {
@@ -169,30 +145,12 @@ sample_gl_bvh::sample_gl_bvh() : polymer_app(1280, 720, "sample-gl-bvh")
     for (int i = 0; i < bvh_objects.size(); ++i)
     {
         scene_accelerator.add(&bvh_objects[i]);
-        //scene_accelerator.insert_object(&bvh_objects[i]);
     }
 
     scene_accelerator.build();
 
     std::vector<bvh_node *> flat_node_list;
     scene_accelerator.get_flat_node_list(flat_node_list, nullptr);
-
-    //std::cout << "----------------------------------------------\n";
-    //
-    //for (bvh_node * node : flat_node_list)
-    //{
-    //    std::cout << "- Type: " << (int) node->type << std::endl;
-    //    std::cout << "- Extents: " << node->bounds << std::endl;
-    //    std::cout << "- Morton: " << node->morton << std::endl;
-    //
-    //    if (node->object)
-    //    {
-    //        auto the_sphere = static_cast<debug_sphere*>(node->object->user_data);
-    //        if (the_sphere) std::cout << "- Sphere: " << the_sphere->get_bounds() << std::endl;
-    //    }
-    //}
-    //
-    //std::cout << "----------------------------------------------\n";
 }
 
 uint32_t node_index{ 0 };
@@ -281,7 +239,6 @@ void sample_gl_bvh::on_draw()
                 if (the_sphere)
                 {
                     const auto leaf_model = make_translation_matrix(node->bounds.center()) * make_scaling_matrix(node->bounds.size());
-                    //const auto leaf_model = the_sphere->p.matrix() * make_scaling_matrix(the_sphere->radius);
 
                     if (selected_object == node->object)
                     {
@@ -294,7 +251,6 @@ void sample_gl_bvh::on_draw()
                    
                     shader->uniform("u_mvp", viewProjectionMatrix * leaf_model);
                     boxMesh.draw_elements();
-                    //sphereMesh.draw_elements();
                 }
             }
         }
@@ -319,25 +275,11 @@ void sample_gl_bvh::on_draw()
         }
     }
 
-    //if (frame_count % 1 == 0)
-    //{
-    //    spiral_position = (spiral_position + 1) % flat_node_list.size();
-    //}
-
     shader->unbind();
 
     if (gizmo) gizmo->draw();
 
     imgui->begin_frame();
-
-    //gui::imgui_fixed_window_begin("bvh-debug", { { 0, 0 },{ 320, height } });
-    //if (selected_node)
-    //{
-    //
-    //}
-    //gui::imgui_fixed_window_end();
-
-    // Render imgui
     imgui->end_frame();
 
     gl_check_error(__FILE__, __LINE__);

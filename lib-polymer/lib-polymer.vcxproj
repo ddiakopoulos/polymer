@@ -15,6 +15,7 @@
     <ClInclude Include="any.hpp" />
     <ClInclude Include="arcball.hpp" />
     <ClInclude Include="bit_mask.hpp" />
+    <ClInclude Include="bvh.hpp" />
     <ClInclude Include="camera.hpp" />
     <ClInclude Include="image-buffer.hpp" />
     <ClInclude Include="linalgx.h" />
