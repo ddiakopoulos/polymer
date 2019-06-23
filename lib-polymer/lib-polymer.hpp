@@ -34,6 +34,7 @@
 #include "movement_tracker.hpp"
 #include "algo_misc.hpp"
 #include "bvh.hpp"
+#include "oriented-bounding-box.hpp"
 
 #include "queue-spsc-bounded.hpp"
 #include "queue-spsc.hpp"

@@ -23,6 +23,7 @@
     <ClInclude Include="math-morton.hpp" />
     <ClInclude Include="math-sampling.hpp" />
     <ClInclude Include="memory-pool.hpp" />
+    <ClInclude Include="oriented-bounding-box.hpp" />
     <ClInclude Include="parabolic_pointer.hpp" />
     <ClInclude Include="property.hpp" />
     <ClInclude Include="queue-circular.hpp" />
