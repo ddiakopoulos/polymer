@@ -17,7 +17,7 @@ namespace polymer
         timepoint startTime, pauseTime;
 
         inline timepoint current_time_point() const { return std::chrono::high_resolution_clock::now(); }
-        inline timeduration running_time() const { return (isRunning) ? current_time_point() - startTime : pauseTime - startTime; }
+        inline timeduration running_time() const { return (isRunning) ? current_time_point() - startTime : timeduration::zero(); }
         template<typename unit> inline unit running_time() const { return std::chrono::duration_cast<unit>(running_time()); }
 
     public:

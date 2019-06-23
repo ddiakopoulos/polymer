@@ -68,7 +68,7 @@ namespace polymer
 
     class glfw_window
     {
-        bool isDragging{ false };
+        uint32_t drag_count { 0 };
         void preprocess_input(app_input_event & event);
         void consume_character(uint32_t codepoint);
         void consume_key(int key, int action);

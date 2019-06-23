@@ -138,10 +138,18 @@ void glfw_window::preprocess_input(app_input_event & event)
 {
     if (event.type == app_input_event::MOUSE)
     {
-        if (event.is_down()) isDragging = true;
-        else if (event.is_up()) isDragging = false;
+        if (event.is_down()) drag_count++;
+        
+        if (event.is_up()) drag_count = 0;
     }
-    event.drag = isDragging;
+
+    if (event.type == app_input_event::CURSOR)
+    {
+        if (drag_count >= 1) drag_count++;
+    }
+
+    event.drag = drag_count > 1 ? true : false;
+
     on_input(event);
 }
 

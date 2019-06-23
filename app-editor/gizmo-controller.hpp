@@ -19,7 +19,11 @@ class gizmo_controller
     std::vector<entity> selected_entities;       // Array of selected objects
     std::vector<transform> relative_transforms;  // Pose of the objects relative to the selection
 
+    app_input_event last_event;
+    bool stopped_dragging{ false };
+    simple_cpu_timer cooldown_timer;
     bool gizmo_active{ false };
+
     environment * scene{ nullptr };
 
     polymer::transform_system * get_transform_system() { return scene->xform_system; }
@@ -106,7 +110,7 @@ public:
 
     void refresh()
     {
-        //compute_entity_transform();
+        compute_entity_transform();
     }
 
     bool active() const
@@ -117,6 +121,8 @@ public:
     void on_input(const app_input_event & event)
     {
         gizmo.handle_input(event);
+        if (event.drag == false && last_event.drag == true) stopped_dragging = true;
+        last_event = event;
     }
 
     void reset_input()
@@ -128,8 +134,6 @@ public:
     {
         gizmo.update(camera, viewport_size);
         tinygizmo::transform_gizmo("editor-controller", gizmo.gizmo_ctx, gizmo_transform);
-
-        gizmo_active = false;
 
         // Has the gizmo moved? 
         if (gizmo_transform != previous_gizmo_transform)
@@ -163,6 +167,22 @@ public:
             }
 
             previous_gizmo_transform = gizmo_transform;
+        }
+
+        if (stopped_dragging == true)
+        {
+            stopped_dragging = false;
+            cooldown_timer.reset();
+            cooldown_timer.start();
+        }
+        else if (last_event.drag == false)
+        {
+            gizmo_active = false;
+        }
+
+        if (cooldown_timer.milliseconds().count() > 0.f && cooldown_timer.milliseconds().count() <= 250)
+        {
+            gizmo_active = true; // keep the gizmo active
         }
     }
 
