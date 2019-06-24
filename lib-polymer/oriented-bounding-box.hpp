@@ -72,7 +72,7 @@ namespace polymer
         if (points.size() == 0) throw std::invalid_argument("not enough points for PCA");
         float3 com;
         for (const auto & p : points) com += p;
-        com /= (float)points.size();
+        com /= (float) points.size();
         float3x3 cov;
         for (const auto & p : points) cov += outerprod(p - com, p - com);
         cov /= (float)points.size();
@@ -86,7 +86,7 @@ namespace polymer
         float3 center;
         quatf orientation;
 
-        oriented_bounding_box(float3 center, float3 halfExtents, float4 orientation) 
+        oriented_bounding_box(float3 center, float3 halfExtents, quatf orientation) 
             : center(center), half_ext(halfExtents), orientation(orientation) { }
 
         float calc_radius() const { return length(half_ext); };
@@ -196,6 +196,13 @@ namespace polymer
         }
 
     };
+
+    inline oriented_bounding_box make_oriented_bounding_box(std::vector<float3> & vertices)
+    {
+        auto pca = make_principal_axes(vertices);
+        auto s2 = sqrt(pca.second) * 2.f;  // 2 * standard deviation
+        return {pca.first.position, s2, pca.first.orientation};
+    }
 }
 
 #endif // polymer_obb_hpp
