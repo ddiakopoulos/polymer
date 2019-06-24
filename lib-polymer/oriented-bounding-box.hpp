@@ -7,6 +7,87 @@
 
 namespace polymer
 {    
+    // PCA implementation kindly borrowed from Stan Melax' geometric.h utilities
+    // MIT License https://github.com/melax/sandbox/blob/master/include/geometric.h
+
+    /*
+    namespace pca_impl
+    {
+        inline float3 diagonal_3x3(const float3x3 & m)
+        {
+            return{ m.x.x, m.y.y, m.z.z };
+        }
+
+        // returns angle that rotates m into diagonal matrix d where d01==d10==0 and d00>d11 (the eigenvalues)
+        inline float make_diagonalized_matrix(const float2x2 & m)
+        {
+            float d = m.y.y - m.x.x;
+            return atan2f(d + sqrtf(d*d + 4.f*m.x.y*m.y.x), 2.f * m.x.y);
+        }
+
+        // Input must be a symmetric matrix.
+        // returns orientation of the principle axes.
+        // returns quaternion q such that its corresponding column major matrix Q 
+        // Diagonal matrix D = transpose(Q) * A * (Q); thus  A == Q*D*QT
+        // The directions of q (cols of Q) are the eigenvectors D's diagonal is the eigenvalues
+        // As per 'col' convention if float3x3 Q = qgetmatrix(q); then Q*v = q*v*conj(q)
+        inline float4 make_diagonalized_matrix(const float3x3 & A)
+        {
+            int maxsteps = 24;  // certainly wont need that many.
+            int i;
+            quatf q(0, 0, 0, 1);
+            for (i = 0; i < maxsteps; ++i)
+            {
+                float3x3 Q = qmat(q); // Q*v == q*v*conj(q)
+                float3x3 D = mul(transpose(Q), A, Q);  // A = Q*D*Q^T
+                float3 offdiag(D[1][2], D[0][2], D[0][1]); // elements not on the diagonal
+                float3 om(fabsf(offdiag.x), fabsf(offdiag.y), fabsf(offdiag.z)); // mag of each offdiag elem
+                int k = (om.x > om.y&&om.x > om.z) ? 0 : (om.y > om.z) ? 1 : 2; // index of largest element of offdiag
+                int k1 = (k + 1) % 3;
+                int k2 = (k + 2) % 3;
+                if (offdiag[k] == 0.0f) break;  // diagonal already
+                float thet = (D[k2][k2] - D[k1][k1]) / (2.0f*offdiag[k]);
+                float sgn = (thet > 0.0f) ? 1.0f : -1.0f;
+                thet *= sgn; // make it positive
+                float t = sgn / (thet + ((thet < 1.E6f) ? sqrtf(thet*thet + 1.0f) : thet)); // sign(T)/(|T|+sqrt(T^2+1))
+                float c = 1.0f / sqrtf(t*t + 1.0f); //  c= 1/(t^2+1) , t=s/c 
+                if (c == 1.0f) break;  // no room for improvement - reached machine precision.
+                quatf jr(0, 0, 0, 0); // jacobi rotation for this iteration.
+                jr[k] = sgn * sqrtf((1.0f - c) / 2.0f);  // using 1/2 angle identity sin(a/2) = sqrt((1-cos(a))/2)  
+                jr[k] *= -1.0f; // note we want a final result semantic that takes D to A, not A to D
+                jr.w = sqrtf(1.0f - (jr[k] * jr[k]));
+                if (jr.w == 1.0f) break; // reached limits of floating point precision
+                q = qmul(q, jr);
+                q = normalize(q);
+            }
+            float h = 1.f / sqrtf(2.f);  // M_SQRT2
+            auto e = [&q, &A]() {return diagonal_3x3(mul(transpose(qmat(q)), A, qmat(q))); };  // current ordering of eigenvals of q
+            q =  (e().x < e().z) ? qmul(q, float4(0, h, 0, h)) : q;
+            q =  (e().y < e().z) ? qmul(q, float4(h, 0, 0, h)) : q;
+            q =  (e().x < e().y) ? qmul(q, float4(0, 0, h, h)) : q; // size order z,y,x so xy spans a planeish spread
+            q = (qzdir(q).z < 0) ? qmul(q, float4(1, 0, 0, 0)) : q;
+            q = (qydir(q).y < 0) ? qmul(q, float4(0, 0, 1, 0)) : q;
+            q = (q.w < 0) ? -q : q;
+            auto M = transpose(qmat(q)) * A * qmat(q);   // to test result
+            return q;
+        }
+    }
+
+    // Returns principal axes as a pose and population's variance along pose's local x,y,z
+    inline std::pair<transform, float3> make_principal_axes(const std::vector<float3> & points)
+    {
+        if (points.size() == 0) throw std::invalid_argument("not enough points for PCA");
+        float3 com;
+        float3x3 cov;
+        for (const auto & p : points) com += p;
+        com /= (float)points.size();
+        for (const auto & p : points)cov += outerprod(p - com, p - com);
+        cov /= (float)points.size();
+        auto q = pca_impl::Diagonalizer(cov);
+        return std::make_pair<transform, float3>({ com, q }, pca_impl::diagonal_3x3(transpose(qmat(q) * cov * qmat(q)));
+    }
+    */
+
     struct oriented_bounding_box
     {
         float3 half_ext;
