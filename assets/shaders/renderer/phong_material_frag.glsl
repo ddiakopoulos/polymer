@@ -14,6 +14,7 @@ uniform vec3 u_diffuseColor;
 uniform vec3 u_specularColor;
 uniform float u_specularShininess;
 uniform float u_specularStrength;
+uniform float u_opacity = 1;
 
 uniform sampler2D s_diffuse;
 uniform sampler2D s_normal;
@@ -115,5 +116,5 @@ void main()
        	Lo += (diffuseContrib + specContrib) * attenuation;
     }
 
-    f_color = vec4(Lo * shadowVisibility, 1.0); 
+    f_color = vec4(Lo * shadowVisibility, u_opacity); 
 }

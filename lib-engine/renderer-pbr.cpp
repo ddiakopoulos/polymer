@@ -300,7 +300,7 @@ void pbr_renderer::run_shadow_pass(const view_data & view, const render_payload 
 
     for (const render_component & r : scene.render_components)
     {
-        if (r.material->cast_shadow)
+        if (r.material->material.get()->cast_shadows)
         {
             const float4x4 modelMatrix = (r.world_transform->world_pose.matrix() * make_scaling_matrix(r.local_transform->local_scale));
             shadow->update_shadow_matrix(modelMatrix);
@@ -580,7 +580,7 @@ void pbr_renderer::render_frame(const render_payload & scene)
         // @fixme - why is this so expensive? Adds an additional ~2ms to the sort
         auto lid = lhs->material->material.get()->id();
         auto rid = rhs->material->material.get()->id();
-        if (lid != rid) return lid > rid;
+        if (lid != rid) return lid < rid;
 
         const float lDist = distance(shadowAndCullingView.pose.position, lhs->world_transform->world_pose.position);
         const float rDist = distance(shadowAndCullingView.pose.position, rhs->world_transform->world_pose.position);

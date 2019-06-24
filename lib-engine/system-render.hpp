@@ -27,7 +27,7 @@ namespace polymer
         std::unordered_map<entity, mesh_component> meshes;
         std::unordered_map<entity, material_component> materials;
         std::unordered_map<entity, point_light_component> point_lights;
-        std::unordered_map<entity, directional_light_component> directional_lights;
+        directional_light_component directional_light;
 
         procedural_skybox_component the_procedural_skybox;
         cubemap_component the_cubemap;
@@ -132,9 +132,7 @@ namespace polymer
 
         directional_light_component * get_directional_light_component(entity e)
         {
-            auto iter = directional_lights.find(e);
-            if (iter != directional_lights.end()) return &iter->second;
-            return nullptr;
+            return &directional_light;
         }
 
         procedural_skybox_component * get_procedural_skybox() 
@@ -168,7 +166,7 @@ namespace polymer
             }
             else if (hash == get_typeid<directional_light_component>()) 
             { 
-                directional_lights[e] = *static_cast<directional_light_component *>(data); 
+                directional_light = *static_cast<directional_light_component *>(data); 
                 return true; 
             }
             else if (hash == get_typeid<procedural_skybox_component>())
@@ -187,7 +185,7 @@ namespace polymer
         mesh_component * create(entity e, mesh_component && c) { meshes[e] = std::move(c); return &meshes[e]; }
         material_component * create(entity e, material_component && c) { materials[e] = std::move(c); return &materials[e]; }
         point_light_component * create(entity e, point_light_component && c) { point_lights[e] = std::move(c); return &point_lights[e]; }
-        directional_light_component * create(entity e, directional_light_component && c) { directional_lights[e] = std::move(c); return &directional_lights[e]; }
+        directional_light_component * create(entity e, directional_light_component && c) { directional_light = std::move(c); return &directional_light; }
         procedural_skybox_component * create(entity e, procedural_skybox_component && c) { the_procedural_skybox = std::move(c); return &the_procedural_skybox; }
         cubemap_component * create(entity e, cubemap_component && c) { the_cubemap = std::move(c); return &the_cubemap; }
 
@@ -198,7 +196,7 @@ namespace polymer
                 meshes.clear();
                 materials.clear();
                 point_lights.clear();
-                directional_lights.clear();
+                directional_light = directional_light_component(kInvalidEntity);
                 return;
             }
 
@@ -210,9 +208,6 @@ namespace polymer
 
             auto ptLightIter = point_lights.find(e);
             if (ptLightIter != point_lights.end()) point_lights.erase(ptLightIter);
-
-            auto dirLightIter = directional_lights.find(e);
-            if (dirLightIter != directional_lights.end()) directional_lights.erase(dirLightIter);
 
             if (the_procedural_skybox.get_entity() == e) the_procedural_skybox = {};
             if (the_cubemap.get_entity() == e) the_cubemap = {};

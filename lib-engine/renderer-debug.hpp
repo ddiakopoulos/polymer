@@ -30,6 +30,7 @@ namespace polymer
         {
             debug_renderer_material = std::make_shared<polymer_procedural_material>();
             debug_renderer_material->shader = shader_handle("debug-renderer");
+            debug_renderer_material->cast_shadows = false;
             env->mat_library->register_material("debug-renderer-material", debug_renderer_material);
 
             dbg_renderer_ent = env->track_entity(orch->create_entity());

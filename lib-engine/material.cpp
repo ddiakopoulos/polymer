@@ -38,7 +38,7 @@ uint32_t polymer_default_material::id()
 }
 
 /////////////////////////////
-//   Special FX Material   //
+//   Procedural Material   //
 /////////////////////////////
 
 polymer_procedural_material::polymer_procedural_material() {}
@@ -81,6 +81,7 @@ void polymer_procedural_material::update_uniforms()
 polymer_wireframe_material::polymer_wireframe_material()
 {
     shader = shader_handle("renderer-wireframe");
+    cast_shadows = false;
 }
 
 void polymer_wireframe_material::use()
@@ -166,9 +167,9 @@ void polymer_blinn_phong_standard::update_uniforms()
     program.uniform("u_specularColor", specularColor);
     program.uniform("u_specularShininess", specularShininess);
     program.uniform("u_specularStrength", specularStrength);
+    program.uniform("u_opacity", opacity);
 
     program.uniform("u_texCoordScale", float2(texcoordScale));
-
     bindpoint = 0;
 
     if (compiled_shader->enabled("HAS_DIFFUSE_MAP")) program.texture("s_diffuse", bindpoint++, diffuse.get(), GL_TEXTURE_2D);

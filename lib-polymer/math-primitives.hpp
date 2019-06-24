@@ -75,6 +75,9 @@ namespace polymer
         float height() const { return _max.y - _min.y; }
         float depth() const { return _max.z - _min.z; }
 
+        void scale(const float s)  { _min *= s; _max *= s;}
+        void scale(const float3 s) { _min *= s; _max *= s;}
+
         bool contains(float3 point) const
         {
             if (point.x < _min.x || point.x > _max.x) return false;
