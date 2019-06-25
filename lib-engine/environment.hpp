@@ -401,6 +401,7 @@ namespace polymer
         polymer::mesh_component * mesh{ nullptr };
         polymer::world_transform_component * world_transform{ nullptr };
         polymer::local_transform_component * local_transform{ nullptr };
+        uint32_t render_sort_order {0};
     };
     POLYMER_SETUP_TYPEID(render_component);
 

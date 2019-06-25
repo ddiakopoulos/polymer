@@ -73,11 +73,10 @@ namespace polymer
 
         void draw_sphere(const transform & local_to_world, const float scale = 1.f, const float3 color = float3(1, 1, 1))
         {
-            auto unit_sphere = make_sphere(1.f);
+            auto unit_sphere = make_sphere(scale);
 
             for (auto & v : unit_sphere.vertices)
             {
-                v *= scale;
                 auto tV = local_to_world.transform_coord(v);
                 vertices.push_back({ tV, color });
             }

@@ -18,6 +18,7 @@ render_component polymer::assemble_render_component(environment & env, const ent
     r.mesh = env.render_system->get_mesh_component(e);
     r.world_transform = const_cast<world_transform_component*>(env.xform_system->get_world_transform(e));
     r.local_transform = const_cast<local_transform_component*>(env.xform_system->get_local_transform(e));
+    r.render_sort_order = env.render_system->get_render_priority(e);
     return r;
 }
 

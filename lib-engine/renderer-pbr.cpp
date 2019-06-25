@@ -574,28 +574,36 @@ void pbr_renderer::render_frame(const render_payload & scene)
     perScene.set_buffer_data(sizeof(b), &b, GL_STREAM_DRAW);
 
     // We follow the sorting strategy outlined here: http://realtimecollisiondetection.net/blog/?p=86
-    auto materialSortFunc = [this, scene, shadowAndCullingView](const render_component * lhs, const render_component * rhs)
-    {
-        // Sort by material (expensive shader state change)
-        // @fixme - why is this so expensive? Adds an additional ~2ms to the sort
-        auto lid = lhs->material->material.get()->id();
-        auto rid = rhs->material->material.get()->id();
-        if (lid != rid) return lid < rid;
-
-        const float lDist = distance(shadowAndCullingView.pose.position, lhs->world_transform->world_pose.position);
-        const float rDist = distance(shadowAndCullingView.pose.position, rhs->world_transform->world_pose.position);
-
-        // Otherwise sort by distance
-        return lDist < rDist;
-    };
+    //auto materialSortFunc = [this, scene, shadowAndCullingView](const render_component * lhs, const render_component * rhs)
+    //{
+    //    // Sort by material (expensive shader state change)
+    //    // @fixme - why is this so expensive? Adds an additional ~2ms to the sort
+    //    auto lid = lhs->material->material.get()->id();
+    //    auto rid = rhs->material->material.get()->id();
+    //    if (lid != rid) return lid < rid;
+    //
+    //    // Otherwise sort by distance
+    //    const float lDist = distance(shadowAndCullingView.pose.position, lhs->world_transform->world_pose.position);
+    //    const float rDist = distance(shadowAndCullingView.pose.position, rhs->world_transform->world_pose.position);
+    //    return lDist < rDist;
+    //};
 
     cpuProfiler.begin("sort-render_queue_material");
-    std::vector<const render_component *> render_queue_material(scene.render_components.size());
+
+    std::vector<const render_component *> render_queue(scene.render_components.size());
+    auto render_priority_sort = [this, scene, shadowAndCullingView](const render_component * lhs, const render_component * rhs)
+    {
+        const uint32_t lso = lhs->render_sort_order;
+        const uint32_t rso = rhs->render_sort_order;
+        return lso < rso;
+    };
+
     for (int i = 0; i < scene.render_components.size(); ++i) 
     { 
-        render_queue_material[i] = (&(scene.render_components[i]));
+        render_queue[i] = (&(scene.render_components[i]));
     }
-    std::sort(render_queue_material.begin(), render_queue_material.end(), materialSortFunc);
+    std::sort(render_queue.begin(), render_queue.end(), render_priority_sort);
+
     cpuProfiler.end("sort-render_queue_material");
 
     for (uint32_t camIdx = 0; camIdx < settings.cameraCount; ++camIdx)
@@ -641,7 +649,7 @@ void pbr_renderer::render_frame(const render_payload & scene)
 
         gpuProfiler.begin("run_forward_pass-" + std::to_string(camIdx));
         cpuProfiler.begin("run_forward_pass-" + std::to_string(camIdx));
-        run_forward_pass(render_queue_material, scene.views[camIdx], scene);
+        run_forward_pass(render_queue, scene.views[camIdx], scene);
         cpuProfiler.end("run_forward_pass-" + std::to_string(camIdx));
         gpuProfiler.end("run_forward_pass-" + std::to_string(camIdx));
 

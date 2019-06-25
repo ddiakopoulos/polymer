@@ -70,6 +70,7 @@ void polymer_procedural_material::update_uniforms()
 {
     if (update_uniform_func)
     {
+        resolve_variants();
         update_uniform_func();
     }
 }

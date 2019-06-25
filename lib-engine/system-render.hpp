@@ -28,6 +28,7 @@ namespace polymer
         std::unordered_map<entity, material_component> materials;
         std::unordered_map<entity, point_light_component> point_lights;
         directional_light_component directional_light;
+        std::unordered_map<entity, uint32_t> render_priority;
 
         procedural_skybox_component the_procedural_skybox;
         cubemap_component the_cubemap;
@@ -211,6 +212,18 @@ namespace polymer
 
             if (the_procedural_skybox.get_entity() == e) the_procedural_skybox = {};
             if (the_cubemap.get_entity() == e) the_cubemap = {};
+        }
+
+        void set_render_priority(const entity e, const uint32_t priority)
+        {
+            render_priority[e] = priority;
+        }
+
+        uint32_t get_render_priority(const entity e)
+        {
+            auto priIter = render_priority.find(e);
+            if (priIter != render_priority.end()) return priIter->second;
+            return 0;
         }
 
         renderer_settings get_settings() const { return settings; }

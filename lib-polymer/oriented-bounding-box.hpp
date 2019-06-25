@@ -53,8 +53,8 @@ namespace polymer
                 q = q * quatf(jr);
                 q = normalize(q);
             }
-            float h = 1.f / POLYMER_SQRT_2;
-            auto e = [&q, &A]() {return diagonal(transpose(qmat(q) *  A * qmat(q))); };  // current ordering of eigenvals of q
+            float h = 1.f / (float) POLYMER_SQRT_2;
+            auto e = [&q, &A]() { return diagonal(transpose(qmat(q) *  A * qmat(q))); };  // current ordering of eigenvals of q
             q =  (e().x < e().z) ? q * quatf(0, h, 0, h) : q;
             q =  (e().y < e().z) ? q * quatf(h, 0, 0, h) : q;
             q =  (e().x < e().y) ? q * quatf(0, 0, h, h) : q; // size order z,y,x so xy spans a planeish spread
