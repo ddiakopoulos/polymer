@@ -82,6 +82,71 @@ namespace polymer
         
         return cube;
     }
+
+    inline geometry make_cube(const float3 s)
+    {
+        geometry cube;
+        
+        const struct CubeVertex { float3 position; float3 normal; float2 texCoord; } verts[] =
+        {
+            // -X
+            { { -s.x, -s.y, -s.z }, { -1, 0, 0 }, { 0, 0 } },
+            { { -s.x, -s.y, +s.z }, { -1, 0, 0 }, { 1, 0 } },
+            { { -s.x, +s.y, +s.z }, { -1, 0, 0 }, { 1, 1 } },
+            { { -s.x, +s.y, -s.z }, { -1, 0, 0 }, { 0, 1 } },
+
+            // +X            
+            { { +s.x, -s.y, +s.z }, { +1, 0, 0 }, { 0, 0 } },
+            { { +s.x, -s.y, -s.z }, { +1, 0, 0 }, { 1, 0 } },
+            { { +s.x, +s.y, -s.z }, { +1, 0, 0 }, { 1, 1 } },
+            { { +s.x, +s.y, +s.z }, { +1, 0, 0 }, { 0, 1 } },
+
+            // -Y            
+            { { -s.x, -s.y, -s.z }, { 0, -1, 0 }, { 0, 0 } },
+            { { +s.x, -s.y, -s.z }, { 0, -1, 0 }, { 1, 0 } },
+            { { +s.x, -s.y, +s.z }, { 0, -1, 0 }, { 1, 1 } },
+            { { -s.x, -s.y, +s.z }, { 0, -1, 0 }, { 0, 1 } },
+
+            // +Y            
+            { { +s.x, +s.y, -s.z }, { 0, +1, 0 }, { 0, 0 } },
+            { { -s.x, +s.y, -s.z }, { 0, +1, 0 }, { 1, 0 } },
+            { { -s.x, +s.y, +s.z }, { 0, +1, 0 }, { 1, 1 } },
+            { { +s.x, +s.y, +s.z }, { 0, +1, 0 }, { 0, 1 } },
+
+            // -Z            
+            { { -s.x, -s.y, -s.z }, { 0, 0, -1 }, { 0, 0 } },
+            { { -s.x, +s.y, -s.z }, { 0, 0, -1 }, { 1, 0 } },
+            { { +s.x, +s.y, -s.z }, { 0, 0, -1 }, { 1, 1 } },
+            { { +s.x, -s.y, -s.z }, { 0, 0, -1 }, { 0, 1 } },
+
+            // +Z            
+            { { -s.x, +s.y, +s.z }, { 0, 0, +1 }, { 0, 0 } },
+            { { -s.x, -s.y, +s.z }, { 0, 0, +1 }, { 1, 0 } },
+            { { +s.x, -s.y, +s.z }, { 0, 0, +1 }, { 1, 1 } },
+            { { +s.x, +s.y, +s.z }, { 0, 0, +1 }, { 0, 1 } },
+        };
+        
+        std::vector<uint4> quads = { { 0, 1, 2, 3 }, { 4, 5, 6, 7 }, { 8, 9, 10, 11 }, { 12, 13, 14, 15 }, { 16, 17, 18, 19 }, { 20, 21, 22, 23 } };
+        
+        for(auto & q : quads)
+        {
+            cube.faces.push_back({q.x,q.y,q.z});
+            cube.faces.push_back({q.x,q.z,q.w});
+        }
+        
+        for (int i = 0; i < 24; ++i)
+        {
+            cube.vertices.push_back(verts[i].position);
+            cube.normals.push_back(verts[i].normal);
+            cube.texcoord0.push_back(verts[i].texCoord);
+        }
+        
+        compute_bounds(cube);
+        compute_normals(cube, false);
+        compute_tangents(cube);
+        
+        return cube;
+    }
     
     inline geometry make_sphere(float radius)
     {

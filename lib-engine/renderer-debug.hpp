@@ -61,11 +61,11 @@ namespace polymer
 
         void draw_box(const transform & local_to_world, const aabb_3d & local_bounds, const float3 color = float3(1, 1, 1))
         {
-            auto unit_cube = make_cube();
+            auto unit_cube = make_cube(local_bounds.size() * 0.5f);
 
             for (auto & v : unit_cube.vertices)
             {
-                v *= local_bounds.size() / 2.f; // scale
+                //v *= ; // / 2.f; // scale
                 auto tV = local_to_world.transform_coord(v); // translate
                 vertices.push_back({ tV, color });
             }
@@ -73,7 +73,38 @@ namespace polymer
 
         void draw_sphere(const transform & local_to_world, const float scale = 1.f, const float3 color = float3(1, 1, 1))
         {
-            auto unit_sphere = make_sphere(scale);
+
+            auto make_wireframe_sphere = [this, scale, local_to_world]()
+            {
+                geometry g;
+                const float dr = to_radians(360.0f / 90.f);
+
+                for (float r = 0.f; r < POLYMER_TAU; r += dr) 
+                {
+                    float sin_r0 = std::sin(r);
+                    float cos_r0 = std::cos(r);
+                    float sin_r1 = std::sin(r + dr);
+                    float cos_r1 = std::cos(r + dr);
+
+                    float3 v0_x(0.0f, sin_r0 * scale, cos_r0 * scale);
+                    float3 v1_x(0.0f, sin_r1 * scale, cos_r1 * scale);
+                    float3 v0_y(sin_r0 * scale, 0.0f, cos_r0 * scale);
+                    float3 v1_y(sin_r1 * scale, 0.0f, cos_r1 * scale);
+                    float3 v0_z(sin_r0 * scale, cos_r0 * scale, 0.0f);
+                    float3 v1_z(sin_r1 * scale, cos_r1 * scale, 0.0f);
+
+                    g.vertices.push_back(float3(v0_x.x, v0_x.y, v0_x.z)); 
+                    g.vertices.push_back(float3(v1_x.x, v1_x.y, v1_x.z));
+                    g.vertices.push_back(float3(v0_y.x, v0_y.y, v0_y.z)); 
+                    g.vertices.push_back(float3(v1_y.x, v1_y.y, v1_y.z));
+                    g.vertices.push_back(float3(v0_z.x, v0_z.y, v0_z.z)); 
+                    g.vertices.push_back(float3(v1_z.x, v1_z.y, v1_z.z));
+                }
+
+                return g;
+            };
+
+            auto unit_sphere = make_wireframe_sphere();
 
             for (auto & v : unit_sphere.vertices)
             {
