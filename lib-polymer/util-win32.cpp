@@ -1,8 +1,4 @@
-// Adapted from https://github.com/sgorsten/editor/blob/master/src/editor/xplat.h
-
-#include "win32.hpp"
-#include <cassert>
-#include <sstream>
+#include "util-win32.hpp"
 
 #ifndef UNICODE
     #define UNICODE
@@ -19,8 +15,6 @@
 #include <direct.h>
 #include <Shlwapi.h>
 
-using namespace polymer;
-
 #pragma comment(lib, "Shlwapi.lib")
 
 std::wstring utf8_to_windows(const std::string & str)
@@ -33,6 +27,7 @@ std::wstring utf8_to_windows(const std::string & str)
     return win;
 }
 
+// Adapted from https://github.com/sgorsten/editor/blob/master/src/editor/xplat.h
 std::string windows_file_dialog(const std::string & filter_type, const std::string & extension, bool must_exist)
 {
     std::ostringstream ss;

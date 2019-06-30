@@ -102,7 +102,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="editor-app.cpp" />
-    <ClCompile Include="win32.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="asset-browser.hpp" />
@@ -110,7 +109,6 @@
     <ClInclude Include="editor-inspector-ui.hpp" />
     <ClInclude Include="material-editor.hpp" />
     <ClInclude Include="gizmo-controller.hpp" />
-    <ClInclude Include="win32.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

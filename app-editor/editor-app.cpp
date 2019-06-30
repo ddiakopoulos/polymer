@@ -4,7 +4,7 @@
 #include "editor-inspector-ui.hpp"
 #include "serialization.hpp"
 #include "logging.hpp"
-#include "win32.hpp"
+#include "util-win32.hpp"
 #include "model-io.hpp"
 #include "renderer-util.hpp"
 

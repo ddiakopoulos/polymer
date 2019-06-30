@@ -59,10 +59,12 @@
     <ClInclude Include="thread-pool.hpp" />
     <ClInclude Include="trajectory.hpp" />
     <ClInclude Include="simple_animator.hpp" />
+    <ClInclude Include="util-win32.hpp" />
     <ClInclude Include="util.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="lib-polymer.cpp" />
+    <ClCompile Include="util-win32.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{992E85A7-B590-477B-A1B2-8A04AAAD0E10}</ProjectGuid>

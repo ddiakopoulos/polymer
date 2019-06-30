@@ -11,7 +11,7 @@
 #include "editor-inspector-ui.hpp"
 #include "arcball.hpp"
 #include "gl-texture-view.hpp"
-#include "win32.hpp"
+#include "util-win32.hpp"
 
 template<typename AssetHandleType>
 bool draw_listbox(const std::string & label, ImGuiTextFilter & filter, int & selection)

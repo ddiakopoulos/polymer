@@ -2,11 +2,9 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="editor-app.cpp" />
-    <ClCompile Include="win32.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="editor-app.hpp" />
-    <ClInclude Include="win32.hpp" />
     <ClInclude Include="material-editor.hpp" />
     <ClInclude Include="editor-inspector-ui.hpp" />
     <ClInclude Include="gizmo-controller.hpp" />
