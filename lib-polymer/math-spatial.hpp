@@ -221,8 +221,7 @@ namespace polymer
         return std::acos((2.f * pow(dot(a, b), 2.f))  - 1.f);
     }
 
-    // Returns an arbitrary unit-length vector orthogonal to v, ensuring
-    // non-colinearity.
+    // Returns an arbitrary unit-length vector orthogonal to v, ensuring non-colinearity.
     inline float3 orth(const float3 & v)
     {
         auto argmaxIdx = [](const float * a, int count)

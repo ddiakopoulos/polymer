@@ -150,6 +150,40 @@ namespace polymer
         return o << "{" << b.min() << " to " << b.max() << "}";
     }
    
+    // Clip the coordinates of a point, p, against a box. The result, q, is the closest point to p that is inside the box.
+    inline float3 clip(const float3 & p, const aabb_3d & box)
+    {
+        float3 q;
+
+        for (int i = 0; i < 3; i++)
+        {
+            if (p[i] < box.min()[i])      q[i] = box.min()[i];
+            else if (p[i] > box.max()[i]) q[i] = box.max()[i];
+            else                          q[i] = p[i];
+        }
+
+        return q;
+    }
+
+    // Find the point, q, on the surface of the box, that is closest to point p.
+    inline float3 closest_point_on_box(const float3 & p, const aabb_3d & box)
+    {
+        float3 q = clip(p, box);
+
+        if (q == p)
+        {
+            const float3 d1 = p - box.min();
+            const float3 d2 = box.max() - p;
+            const float3 d ((d1.x < d2.x)? d1.x: d2.x, (d1.y < d2.y)? d1.y: d2.y, (d1.z < d2.z)? d1.z: d2.z);
+
+            if (d.x < d.y && d.x < d.z) q.x = (d1.x < d2.x) ? box.min().x : box.max().x;
+            else if (d.y < d.z)         q.y = (d1.y < d2.y) ? box.min().y : box.max().y;
+            else                        q.z = (d1.z < d2.z) ? box.min().z : box.max().z;
+        }
+
+        return q;
+    }
+
     ////////////////
     //   sphere   //
     ////////////////
