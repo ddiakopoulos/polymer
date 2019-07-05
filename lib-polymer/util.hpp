@@ -10,6 +10,7 @@
 #include <memory>
 #include <chrono>
 #include <mutex>
+#include <functional>
 
 #if (defined(__linux) || defined(__unix) || defined(__posix) || defined(__LINUX__) || defined(__linux__))
     #define POLYMER_PLATFORM_LINUX 1
@@ -224,6 +225,38 @@ namespace polymer
         
         return str;
     }
+
+    class periodic_function 
+    {
+        typedef std::chrono::steady_clock::duration timeduration;
+
+        timeduration remaining;
+        timeduration period;
+        std::function<void()> func;
+
+    public:
+
+        periodic_function(timeduration period, std::function<void()> func) 
+            : period(period), remaining(period), func(func)
+        {
+            remaining = period;
+        }
+
+        void update(const timeduration dt)
+        {
+            remaining -= dt;
+            if (remaining <= std::chrono::steady_clock::duration::zero())
+            {
+                func();
+                while (remaining < std::chrono::steady_clock::duration::zero())
+                {
+                    remaining += period;
+                }
+            }
+        }
+
+        void reset() { remaining = period; }
+    };
 
     struct as_string
     {
