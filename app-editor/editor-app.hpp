@@ -16,7 +16,7 @@
 #include "system-collision.hpp"
 
 #include "material.hpp"
-#include "uniforms.hpp"
+#include "renderer-uniforms.hpp"
 #include "asset-handle-utils.hpp"
 #include "environment.hpp"
 #include "arcball.hpp"

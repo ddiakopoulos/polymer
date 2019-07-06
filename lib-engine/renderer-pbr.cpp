@@ -613,6 +613,16 @@ void pbr_renderer::render_frame(const render_payload & scene)
         v.view = scene.views[camIdx].viewMatrix;
         v.viewProj = scene.views[camIdx].viewProjMatrix;
         v.eyePos = float4(scene.views[camIdx].pose.position, 1);
+
+        const float one_minus_far_near = 1.0f - scene.views[camIdx].farClip / scene.views[camIdx].nearClip;
+        const float far_near = scene.views[camIdx].farClip / scene.views[camIdx].nearClip;
+
+        // x = 1-far/near, y = far/near, z = x/far, w = y/far
+        v.zBufferParams = float4(one_minus_far_near, far_near, one_minus_far_near / scene.views[camIdx].farClip, far_near / scene.views[camIdx].farClip);
+
+        // x = 1 or -1 (-1 if projection is flipped), y = near plane, z = far plane, w = 1/far plane
+        v.projectionParams = float4(1, scene.views[camIdx].nearClip, scene.views[camIdx].farClip, 1.f / scene.views[camIdx].farClip);
+
         perView.set_buffer_data(sizeof(v), &v, GL_STREAM_DRAW);
 
         // Render into multisampled fbo

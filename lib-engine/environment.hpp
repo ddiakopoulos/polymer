@@ -10,7 +10,7 @@
 #include "gl-camera.hpp"
 #include "gl-procedural-sky.hpp"
 
-#include "uniforms.hpp"
+#include "renderer-uniforms.hpp"
 #include "material.hpp"
 #include "material-library.hpp"
 #include "asset-handle-utils.hpp"

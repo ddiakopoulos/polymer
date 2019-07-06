@@ -5,7 +5,7 @@
 
 #include "math-core.hpp"
 #include "simple_timer.hpp"
-#include "uniforms.hpp"
+#include "renderer-uniforms.hpp"
 #include "queue-circular.hpp"
 #include "human_time.hpp"
 #include "profiling.hpp"

@@ -7,7 +7,7 @@
 #include "gl-api.hpp"
 #include "gl-imgui.hpp"
 #include "material.hpp"
-#include "uniforms.hpp"
+#include "renderer-uniforms.hpp"
 #include "asset-handle-utils.hpp"
 #include "serialization.hpp"
 #include "imgui/imgui_internal.h"

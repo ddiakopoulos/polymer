@@ -107,7 +107,6 @@
     </ClInclude>
     <ClInclude Include="logging.hpp" />
     <ClInclude Include="profiling.hpp" />
-    <ClInclude Include="uniforms.hpp" />
     <ClInclude Include="asset-resolver.hpp">
       <Filter>assets</Filter>
     </ClInclude>
@@ -184,6 +183,7 @@
     <ClInclude Include="xr-interaction.hpp" />
     <ClInclude Include="ui-actions.hpp" />
     <ClInclude Include="hmd-base.hpp" />
+    <ClInclude Include="renderer-uniforms.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="gfx">
