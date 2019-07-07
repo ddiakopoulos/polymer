@@ -104,7 +104,7 @@ namespace
 
     inline void gl_check_error(const char * file, int32_t line)
     {
-//#if defined(_DEBUG) || defined(DEBUG)
+#if defined(_DEBUG) || defined(DEBUG)
         GLint error = glGetError();
         if (error)
         {
@@ -120,7 +120,7 @@ namespace
             printf("GL error : %s, line %d : %s\n", file, line, errorStr);
             error = 0;
         }
-//#endif
+#endif
     }
 
     inline size_t gl_size_bytes(GLenum type)

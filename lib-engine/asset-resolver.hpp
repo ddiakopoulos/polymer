@@ -50,8 +50,10 @@ namespace polymer
         else return name;
     }
 
-    // The purpose of an asset resolver is to match an asset_handle to an asset on disk. This is done
-    // for scene objects (meshes, geometry) and materials (shaders, textures, cubemaps). 
+    // The purpose of an asset resolver is to match an asset_handle to a file on disk. This is done
+    // for scene objects (meshes, geometry) and materials (shaders, textures, cubemaps). The asset
+    // resolver works in two passes, namely because materials require other shaders and textures
+    // and we need to resolve those too. 
     class asset_resolver
     {
         environment * scene;
@@ -64,6 +66,8 @@ namespace polymer
         std::vector<std::string> texture_names;
 
         std::vector<std::string> search_paths;
+
+        std::unordered_map<uint32_t, bool> resolved;
 
         // fixme - what to do if we find multiples? 
         void walk_directory(path root)
@@ -80,16 +84,27 @@ namespace polymer
                 std::string filename_no_ext = get_filename_without_extension(path);
                 std::transform(filename_no_ext.begin(), filename_no_ext.end(), filename_no_ext.begin(), ::tolower);
 
-                auto report_resolved_asset = [&](const std::string & name, const std::string & type_id)
+                // returns true if not in the cache
+                auto asset_resolve_cache = [&](const std::string & name, const std::string & type_id) -> bool
                 {
-                    // std::cout << ">> \tResolved " << "(" << type_id << ") " << name << std::endl;
-                    log::get()->engine_log->info("resolved {} ({})", name, type_id);
+                    const uint32_t key = poly_hash_fnv1a(type_id + "/" + name);
+                    auto iter = resolved.find(key);
+
+                    if (iter == resolved.end())
+                    {
+                        resolved[key] = true;
+                        log::get()->engine_log->info("resolved {} ({})", name, type_id);
+                        return true;
+                    }
+                    return false;
                 };
 
                 if (ext == "material")
                 {
-                    library->import_material(path);
-                    report_resolved_asset(name, "material");
+                    if (asset_resolve_cache(name, "material"))
+                    {
+                        library->import_material(path);
+                    }
                 }
                 else if (ext == "png" || ext == "tga" || ext == "jpg" || ext == "jpeg")
                 {
@@ -97,8 +112,11 @@ namespace polymer
                     {
                         if (name == filename_no_ext)
                         {
-                            create_handle_for_asset(name.c_str(), load_image(path, false));
-                            report_resolved_asset(name, typeid(gl_texture_2d).name());
+                            if (asset_resolve_cache(name, typeid(gl_texture_2d).name()))
+                            {
+                                create_handle_for_asset(name.c_str(), load_image(path, false));
+                            }
+ 
                         }
                     }
                 }
@@ -108,10 +126,13 @@ namespace polymer
                     {
                         if (name == filename_no_ext)
                         {
-                            auto cubemap_binary = read_file_binary(path);
-                            gli::texture_cube cubemap_as_gli_cubemap(gli::load_dds((char *)cubemap_binary.data(), cubemap_binary.size()));
-                            create_handle_for_asset(filename_no_ext.c_str(), load_cubemap(cubemap_as_gli_cubemap));
-                            report_resolved_asset(name, "dds-cubemap");
+                            if (asset_resolve_cache(name, "dds-cubemap"))
+                            {
+                                auto cubemap_binary = read_file_binary(path);
+                                gli::texture_cube cubemap_as_gli_cubemap(gli::load_dds((char *)cubemap_binary.data(), cubemap_binary.size()));
+                                create_handle_for_asset(filename_no_ext.c_str(), load_cubemap(cubemap_as_gli_cubemap));
+
+                            }
                         }
                     }
                 }
@@ -128,15 +149,16 @@ namespace polymer
 
                             for (auto & m : imported_models)
                             {
-                                auto & mesh = m.second;
-                                rescale_geometry(mesh, 1.f);
+                                if (asset_resolve_cache(name, typeid(gl_mesh).name()))
+                                {
+                                    auto & mesh = m.second;
+                                    rescale_geometry(mesh, 1.f);
 
-                                const std::string handle_id = filename_no_ext + "/" + m.first;
+                                    const std::string handle_id = filename_no_ext + "/" + m.first;
 
-                                create_handle_for_asset(handle_id.c_str(), make_mesh_from_geometry(mesh));
-                                create_handle_for_asset(handle_id.c_str(), std::move(mesh));
-
-                                report_resolved_asset(name, typeid(gl_mesh).name());
+                                    create_handle_for_asset(handle_id.c_str(), make_mesh_from_geometry(mesh));
+                                    create_handle_for_asset(handle_id.c_str(), std::move(mesh));
+                                }
                             }
                         }
                     }
@@ -203,7 +225,7 @@ namespace polymer
                 remove_duplicates(texture_names);
             };
 
-            // 1st pass that grabs shaders and textures called for programmatically
+            // First Pass. Grab shaders and textures programmatically defined.
             collect_shaders_and_textures(); 
 
             // Resolve known assets, including materials. 
@@ -213,7 +235,7 @@ namespace polymer
                 walk_directory(path);
             }
 
-            // We need to collect shaders and textures again, because materials might define them and import them
+            // Second Pass. Collect shaders and textures again, because materials might define them and import them.
             collect_shaders_and_textures();
 
             // Resolve known assets again, this time including shaders and textures that may
@@ -227,9 +249,7 @@ namespace polymer
         }
 
         asset_resolver::asset_resolver(environment * scene, material_library * library) 
-            : scene(scene), library(library)
-        {
-        }
+            : scene(scene), library(library) {}
 
         void add_search_path(const std::string & search_path)
         {
