@@ -149,7 +149,7 @@ namespace polymer
         gpu_mesh_handle mesh;
         mesh_component() {};
         mesh_component(entity e) : base_component(e) {}
-        mesh_component(entity e, gpu_mesh_handle handle) : base_component(e), mesh(handle) {}
+        mesh_component(entity e, gpu_mesh_handle & handle) : base_component(e), mesh(handle) {}
         void set_mesh_render_mode(const GLenum mode) { if (mode != GL_TRIANGLE_STRIP) mesh.get().set_non_indexed(mode); }
         void draw() const { mesh.get().draw_elements(); }
     };

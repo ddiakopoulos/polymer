@@ -78,20 +78,15 @@ struct material_editor_window final : public glfw_window
         environment & scene,
         std::shared_ptr<gizmo_controller> selector,
         entity_orchestrator & orch)
-        : glfw_window(context, w, h, title, samples), scene(scene), selector(selector)
+            : glfw_window(context, w, h, title, samples), scene(scene), selector(selector)
     {
         glfwMakeContextCurrent(window);
 
         fullscreen_surface.reset(new simple_texture_view());
 
-        // Create debug sphere asset and assign to a handle
-        // These are created on the this gl context and cached as global variables in the asset table. It will be re-assigned
-        // every time this window is opened so we don't need to worry about cleaning up the handle asset.
-        create_handle_for_asset("debug-sphere", make_mesh_from_geometry(make_icosasphere(3)));
-
         renderer_settings previewSettings;
         previewSettings.renderSize = int2(w, previewHeight);
-        previewSettings.msaaSamples = 8;
+        previewSettings.msaaSamples = samples;
         previewSettings.performanceProfiling = false;
         previewSettings.useDepthPrepass = false;
         previewSettings.tonemapEnabled = false;
@@ -100,10 +95,16 @@ struct material_editor_window final : public glfw_window
         preview_renderer.reset(new pbr_renderer(previewSettings));
 
         // Create a debug entity
-        debug_sphere = orch.create_entity();
+        debug_sphere = 778899;
+
+        // Create debug sphere asset and assign to a handle
+        // These are created on the this gl context and cached as global variables in the asset table. It will be re-assigned
+        // every time this window is opened so we don't need to worry about cleaning up the handle asset.
+        auto icosa = make_mesh_from_geometry(make_icosasphere(4));
+        auto debug_sphere_handle = create_handle_for_asset("material-debug-sphere", std::move(icosa)); // calls destruct on old
 
         mesh_comp.reset(new mesh_component(debug_sphere));
-        mesh_comp->mesh = gpu_mesh_handle("debug-sphere");
+        mesh_comp->mesh = debug_sphere_handle;
 
         material_comp.reset(new material_component(debug_sphere));
         material_comp->material = material_handle(material_library::kDefaultMaterialId);
@@ -121,8 +122,6 @@ struct material_editor_window final : public glfw_window
 
         previewCam.pose = lookat_rh(float3(0, 0.25f, 2), float3(0, 0.001f, 0));
         auxImgui.reset(new gui::imgui_instance(window, true));
-
-        std::cout << get_current_directory() << std::endl;
 
         auto fontAwesomeBytes = read_file_binary("../assets/fonts/font_awesome_4.ttf");
         auxImgui->append_icon_font(fontAwesomeBytes);
@@ -160,8 +159,9 @@ struct material_editor_window final : public glfw_window
         fullscreen_surface.reset();
         preview_renderer.reset();
         auxImgui.reset();
+        mesh_comp.reset();
 
-        gpu_mesh_handle::destroy("debug-sphere");
+        gpu_mesh_handle::destroy("material-debug-sphere");
 
         if (window)
         {
@@ -176,6 +176,8 @@ struct material_editor_window final : public glfw_window
         if (!glfwWindowShouldClose(window))
         {
             glfwMakeContextCurrent(window);
+
+            gl_check_error(__FILE__, __LINE__);
 
             int width, height;
             glfwGetWindowSize(window, &width, &height);
@@ -390,6 +392,8 @@ struct material_editor_window final : public glfw_window
                 glViewport(0, 0, width, previewHeight);
                 fullscreen_surface->draw(preview_renderer->get_color_texture(0));
             }
+
+            gl_check_error(__FILE__, __LINE__);
 
             glFlush();
 

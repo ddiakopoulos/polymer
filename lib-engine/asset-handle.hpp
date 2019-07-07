@@ -144,6 +144,7 @@ namespace polymer
                 #ifdef ASSET_DEBUG_SPAM
                 log::get()->engine_log->info("asset type {} with id {} was destroyed", typeid(T).name(), iter->first);
                 #endif
+                iter->second.reset();
                 table.erase(iter);
                 return true;
             }

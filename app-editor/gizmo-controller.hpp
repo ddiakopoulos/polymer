@@ -87,7 +87,7 @@ public:
 
     std::vector<entity> get_selection()
     {
-        return selected_entities;
+        return (selected_entities.size() ? selected_entities : std::vector<entity>{});
     }
 
     void set_selection(const std::vector<entity> & new_selection)

@@ -208,30 +208,13 @@ void scene_editor_app::import_scene(const std::string & path)
 
 void scene_editor_app::open_material_editor()
 {
-    if (!material_editor)
-    {
-       material_editor.reset(new material_editor_window(get_shared_gl_context(), 500, 1200, "", 1, scene, gizmo, orchestrator));
-    }
-    else if (!material_editor->get_window())
-    {
-        // Workaround since there's no convenient way to reset the material_editor when it's been closed
-        material_editor.reset(new material_editor_window(get_shared_gl_context(), 500, 1200, "", 1, scene, gizmo, orchestrator));
-    }
-
+    material_editor.reset(new material_editor_window(get_shared_gl_context(), 500, 1200, "", 1, scene, gizmo, orchestrator));
     glfwMakeContextCurrent(window);
 }
 
 void scene_editor_app::open_asset_browser()
 {
-    if (!asset_browser)
-    {
-        asset_browser.reset(new asset_browser_window(get_shared_gl_context(), 800, 400, "assets", 1));
-    }
-    else if (!asset_browser->get_window())
-    {
-        asset_browser.reset(new asset_browser_window(get_shared_gl_context(), 800, 400, "assets", 1));
-    }
-
+    asset_browser.reset(new asset_browser_window(get_shared_gl_context(), 800, 400, "assets", 1));
     glfwMakeContextCurrent(window);
 }
 
@@ -732,8 +715,19 @@ void scene_editor_app::on_draw()
         open_asset_browser();
     }
 
-    if (material_editor && material_editor->get_window()) material_editor->run();
-    if (asset_browser && asset_browser->get_window()) asset_browser->run();
+    if (material_editor && material_editor->get_window())
+    {
+        material_editor->run();
+        glfwMakeContextCurrent(window);
+    }
+
+    if (asset_browser && asset_browser->get_window())
+    {
+        asset_browser->run();
+        glfwMakeContextCurrent(window);
+    }
+
+    gl_check_error(__FILE__, __LINE__);
 
     glfwSwapBuffers(window);
 }

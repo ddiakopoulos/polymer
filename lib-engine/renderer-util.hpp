@@ -14,6 +14,15 @@ namespace polymer
     void load_required_renderer_assets(const std::string & base_path, gl_shader_monitor & monitor)
     {            
         scoped_timer t("load_required_renderer_assets");
+        
+        //auto cubemap_binary = read_file_binary(path);
+        //gli::texture_cube cubemap_as_gli_cubemap(gli::load_dds((char *)cubemap_binary.data(), cubemap_binary.size()));
+        //create_handle_for_asset(filename_no_ext.c_str(), load_cubemap(cubemap_as_gli_cubemap));
+        // assets\textures\envmaps
+        //base_path + "/shaders/renderer/renderer_vert.glsl",
+        //create_handle_for_asset("");
+        //texture_handle ibl_radianceCubemap{ "default-radiance-cubemap" };
+        //texture_handle ibl_irradianceCubemap{ "default-irradiance-cubemap" };
 
         // The Polymer editor has a number of "intrinsic" mesh assets that are loaded from disk at runtime. These primarily
         // add to the number of objects that can be quickly prototyped with, along with the usual set of procedural mesh functions

@@ -104,7 +104,7 @@ namespace
 
     inline void gl_check_error(const char * file, int32_t line)
     {
-#if defined(_DEBUG) || defined(DEBUG)
+//#if defined(_DEBUG) || defined(DEBUG)
         GLint error = glGetError();
         if (error)
         {
@@ -120,7 +120,7 @@ namespace
             printf("GL error : %s, line %d : %s\n", file, line, errorStr);
             error = 0;
         }
-#endif
+//#endif
     }
 
     inline size_t gl_size_bytes(GLenum type)
@@ -142,10 +142,11 @@ class gl_handle
 public:
     gl_handle() {}
     gl_handle(GLuint h) : handle(h) {}
-    ~gl_handle() { if (handle) factory_t::destroy(handle); }
+    ~gl_handle() { if (handle) { factory_t::destroy(handle); handle = 0; } }
     gl_handle(const gl_handle & r) = delete;
-    gl_handle & operator = (gl_handle && r) { std::swap(handle, r.handle); return *this; }
-    gl_handle(gl_handle && r) { *this = std::move(r); }
+    gl_handle & operator = (gl_handle & r) = delete;
+    gl_handle & operator = (gl_handle && r) { handle = r.handle; r.handle = 0; return *this; }
+    gl_handle(gl_handle && r) { handle = r.handle; r.handle = 0; }
     operator GLuint () const { if (!handle) factory_t::create(handle); return handle; }
     gl_handle & operator = (GLuint & other) { handle = other; return *this; } // assumes ownership
     GLuint id() const { if (!handle) factory_t::create(handle); return handle; };
@@ -542,7 +543,6 @@ public:
      
     gl_mesh() = default;
     ~gl_mesh() = default;
-
     gl_mesh(gl_mesh && r) { *this = std::move(r); }
     gl_mesh(const gl_mesh & r) = delete;
     gl_mesh & operator = (gl_mesh && r) = default;
@@ -577,6 +577,8 @@ public:
                 else glDrawArrays(drawMode, 0, static_cast<GLsizei>(vertexBuffer.size / vertexStride));
             }
             glBindVertexArray(0);
+
+            gl_check_error(__FILE__, __LINE__);
         }
     }
 
@@ -593,7 +595,6 @@ public:
 
         submesh & idx = indexBuffers[submesh_index];
         idx.count = count;
-        idx.indexBuffer = {};
         idx.indexBuffer.set_buffer_data(size * count, data, usage);
     }
 
