@@ -24,7 +24,7 @@ namespace polymer
         float4x4 get_view_matrix() const { return pose.view_matrix(); }
         float4x4 get_projection_matrix(float aspectRatio) const { return make_projection_matrix(vfov, aspectRatio, nearclip, farclip); }
 
-        float3 get_view_direction() const { return -pose.zdir(); }
+        float3 get_view_direction() const { return normalize(-pose.zdir()); }
         float3 get_eye_point() const { return pose.position; }
 
         void look_at(const float3 & target) { pose = lookat_rh(pose.position, target); }

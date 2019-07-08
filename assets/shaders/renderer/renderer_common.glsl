@@ -6,10 +6,10 @@
 #define RCP_4PI 1.0 / (4 * PI)
 #define DEFAULT_GAMMA 2.2
 
-#define TWO_CASCADES // fixme
-
 const int MAX_POINT_LIGHTS = 4;
+
 const int NUM_CASCADES = 2;
+#define TWO_CASCADES // fixme
 
 struct DirectionalLight
 {
