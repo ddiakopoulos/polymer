@@ -7,47 +7,52 @@
 
 namespace polymer
 {
-      
+ 
+    // A cubic spline as a piecewise curve with a continuous second derivative.
+    // https://www.math.ucla.edu/~baker/149.1.02w/handouts/dd_splines.pdf
     class bezier_spline
     {
-        
-        void calculate_length()
-        {
-            arcLengths.resize(num_steps);
-            arcLengths[0] = 0.0f;
-            float3 start = p0;
-            for (size_t i = 1; i < num_steps; i++)
-            {
-                float t = float(i) / float(num_steps - 1);
-                float3 end = point(t);
-                float length = distance(start, end);
-                arcLengths[i] = arcLengths[i - 1] + length;
-                start = end;
-            }
-        }
-        
         float3 p0, p1, p2, p3;
         std::vector<float> arcLengths;
         
     public:
         
-        size_t num_steps;
+        size_t num_steps {32};
+    
+        bezier_spline() {};
 
-        bezier_spline(float3 p0, float3 p1, float3 p2, float3 p3, const size_t num_steps = 32) : num_steps(num_steps)
+        bezier_spline(const float3 & p0, const float3 & p1, const float3 & p2, const float3 & p3, const size_t num_steps = 32) : num_steps(num_steps)
         {
             set_control_points(p0, p1, p2, p3);
         }
         
-        void set_control_points(float3 p0, float3 p1, float3 p2, float3 p3)
+        // anchor, handle, handle, anchor
+        void set_control_points(const float3 & p0, const float3 & p1, const float3 & p2, const float3 & p3)
         {
             this->p0 = p0;
             this->p1 = p1;
             this->p2 = p2;
             this->p3 = p3;
-            calculate_length();
+
+            arcLengths.resize(num_steps);
+            arcLengths[0] = 0.f;
+            float3 start = p0;
+            for (size_t i = 1; i < num_steps; i++)
+            {
+                float t = float(i) / float(num_steps - 1);
+                float3 end = evaluate(t);
+                float length = distance(start, end);
+                arcLengths[i] = arcLengths[i - 1] + length;
+                start = end;
+            }
+        }
+
+        std::array<float3, 4> get_control_points() const 
+        {
+            return {p0, p1, p2, p3};
         }
         
-        float3 point(const float t) const
+        float3 evaluate(const float t) const
         {
             float t2 = t * t;
             float t3 = t2 * t;
@@ -121,6 +126,16 @@ namespace polymer
             float length = end - start;
             float fraction = (targetLength - start) / length;
             return (index + fraction) / float(arcLengths.size() - 1);
+        }
+
+        // Convert the parameteric control points into polynomial coefficients
+        float4 get_cubic_coefficients(const int dimension)
+        {
+            float a = -p0[dimension] + 3.0f * p1[dimension] - 3.0f * p2[dimension] + p3[dimension];
+            float b =  3.0f * p0[dimension] - 6.0f * p1[dimension] + 3.0f * p2[dimension];
+            float c = -3.0f * p0[dimension] + 3.0f * p1[dimension];
+            float d = p0[dimension];
+            return { a, b, c, d };
         }
         
     };

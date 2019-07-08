@@ -646,7 +646,7 @@ namespace polymer
         for (int i = 0; i <= numSegments; i++)
         {
             float t = (float)i / (float)numSegments;
-            float3 point = curve.point(t);
+            float3 point = curve.evaluate(t);
            
             float3 tang = normalize(curve.derivative(t));
             float3 norm = float3(0.0f, 1.0f, 0.0f);

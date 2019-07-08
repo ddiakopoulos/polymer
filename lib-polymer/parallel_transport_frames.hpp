@@ -35,7 +35,7 @@ namespace polymer
         for (int i = 0; i < segments; ++i)
         {
             const float t = float(i) * dt;
-            points.push_back(curve.point(t));
+            points.push_back(curve.evaluate(t));
             tangents.push_back(normalize(curve.derivative(t)));
         }
 
