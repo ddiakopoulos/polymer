@@ -17,11 +17,12 @@ namespace polymer
         
     public:
         
-        size_t num_steps {32};
+        size_t num_steps {64};
     
         bezier_spline() {};
 
-        bezier_spline(const float3 & p0, const float3 & p1, const float3 & p2, const float3 & p3, const size_t num_steps = 32) : num_steps(num_steps)
+        bezier_spline(const float3 & p0, const float3 & p1, const float3 & p2, const float3 & p3, const size_t num_steps = 64) 
+            : num_steps(num_steps)
         {
             set_control_points(p0, p1, p2, p3);
         }
@@ -100,7 +101,7 @@ namespace polymer
             return arcLengths[arcLengths.size() - 1];
         }
         
-        float get_length_parameter(float t)
+        float get_length_parameter(const float t)
         {
             float targetLength = t * arcLengths[arcLengths.size() - 1];
             

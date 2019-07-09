@@ -70,7 +70,10 @@ void sample_gl_spline_2d::on_input(const app_input_event & event)
     {
         if (event.value[0] == GLFW_MOUSE_BUTTON_LEFT && event.action == GLFW_RELEASE)
         {
-            control_points.push_back(float3(event.cursor.x,event.cursor.y, 0));
+            if (control_points.size() < 4)
+            {
+                control_points.push_back(float3(event.cursor.x, event.cursor.y, 0));
+            }
         }
     }
 
@@ -79,6 +82,7 @@ void sample_gl_spline_2d::on_input(const app_input_event & event)
         if (event.value[0] == GLFW_KEY_SPACE && event.action == GLFW_RELEASE)
         {
             control_points.clear();
+            curve = {};
         }
     }
 
@@ -86,24 +90,23 @@ void sample_gl_spline_2d::on_input(const app_input_event & event)
     {
         if (control_points.size() == 4)
         {
+            // https://pomax.github.io/bezierinfo/#yforx
             // The root finder is based on normal x/y coordinates,
             // so we can "trick" it by giving it "t" values as x
             // values, and "x" values as y values. Since it won't
             // even look at the x dimension, we can also just leave it.
-
             bezier_spline copy;
-            auto ctrl_pts = curve.get_control_points();
+            const auto ctrl_pts = curve.get_control_points();
             copy.set_control_points(
                 float3(ctrl_pts[0].x, ctrl_pts[0].x - event.cursor.x, 0),
                 float3(ctrl_pts[1].x, ctrl_pts[1].x - event.cursor.x, 0),
                 float3(ctrl_pts[2].x, ctrl_pts[2].x - event.cursor.x, 0),
                 float3(ctrl_pts[3].x, ctrl_pts[3].x - event.cursor.x, 0));
 
-            auto x_coeffs = copy.get_cubic_coefficients(1);
-            std::vector<double> solutions = { 0.f, 0.f, 0.f };
-            //std::cout << "X: " << x_coeffs << std::endl;
+            auto y_coeffs = copy.get_cubic_coefficients(1);
 
-            int num_solutions = solve_cubic(x_coeffs.x, x_coeffs.y, x_coeffs.z, x_coeffs.w, solutions[0], solutions[1], solutions[2]);
+            std::vector<double> solutions = { 0.f, 0.f, 0.f };
+            int num_solutions = solve_cubic(y_coeffs.x, y_coeffs.y, y_coeffs.z, y_coeffs.w, solutions[0], solutions[1], solutions[2]);
             //std::cout << "Num Solutions: " << num_solutions << std::endl;
             //std::cout << "A:             " << solutions[0] << std::endl;
             //std::cout << "B:             " << solutions[1] << std::endl;
@@ -113,7 +116,7 @@ void sample_gl_spline_2d::on_input(const app_input_event & event)
             {
                 if (s >= -1.f && s <= 1.f)
                 {
-                    current_solution = s;
+                    current_solution = (float) s;
                     std::cout << "Solution: " << s << std::endl;
                 }
             }
@@ -140,7 +143,7 @@ void sample_gl_spline_2d::on_draw()
     glfwGetWindowSize(window, &width, &height);
 
     glViewport(0, 0, width, height);
-    glClearColor(0.25f, 0.25f, 0.25f, 1.0f);
+    glClearColor(16.f / 255.f, 13.f / 255.f, 40.f / 255.f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glEnable(GL_CULL_FACE);
@@ -149,24 +152,18 @@ void sample_gl_spline_2d::on_draw()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    // Render the offscreen nvg surface
     {
         NVGcontext * nvg = surface->pre_draw(window, 0);
         const float2 size = surface->surface_size();
 
         nvgSave(nvg);
 
-        nvgBeginPath(nvg);
-        nvgRect(nvg, 0, 0, size.x, size.y);
-        nvgFillColor(nvg, nvgRGBAf(0.2f, 0.2f, 0.2f, 1.f));
-        nvgFill(nvg);
-
         // Draw control points
         for (auto & pt : control_points)
         {
             nvgBeginPath(nvg);
-            nvgEllipse(nvg, pt.x, pt.y, 5, 5);
-            nvgFillColor(nvg, nvgRGBAf(0.8f, 0.2f, 0.2f, 1.f));
+            nvgEllipse(nvg, pt.x, pt.y, 24, 24);
+            nvgFillColor(nvg, nvgRGBAf(238.f / 255.f, 91.f / 255.f, 94.f / 255.f, 1.f));
             nvgFill(nvg);
         }
 
@@ -175,8 +172,8 @@ void sample_gl_spline_2d::on_draw()
         {
             auto pt = curve.evaluate(t);
             nvgBeginPath(nvg);
-            nvgEllipse(nvg, pt.x, pt.y, 2, 2);
-            nvgFillColor(nvg, nvgRGBAf(0.8f, 0.8f, 0.2f, 1.f));
+            nvgEllipse(nvg, pt.x, pt.y, 8, 8);
+            nvgFillColor(nvg, nvgRGBAf(252.f / 255.f, 231.f / 255.f, 169.f / 255.f, 1.f));
             nvgFill(nvg);
         }
 
@@ -184,11 +181,11 @@ void sample_gl_spline_2d::on_draw()
         {
             auto pt = curve.evaluate(std::abs(current_solution));
             nvgBeginPath(nvg);
-            nvgEllipse(nvg, pt.x, pt.y, 6, 6);
-            nvgFillColor(nvg, nvgRGBAf(0.8f, 0.4f, 0.5f, 1.f));
+            nvgEllipse(nvg, pt.x, pt.y, 16, 16);
+            nvgFillColor(nvg, nvgRGBAf(184.f / 255.f, 55.f / 255.f, 125.f / 255.f, 1.f));
             nvgFill(nvg);
 
-            surface->draw_text_quick(std::to_string(std::abs(current_solution)), 24, float2(pt.x, pt.y - 60), nvgRGBAf(1, 1, 1, 1));
+            surface->draw_text_quick(std::to_string(std::abs(current_solution)), 28, float2(pt.x, pt.y - 58), nvgRGBAf(1, 1, 1, 1));
         }
 
         nvgRestore(nvg);
