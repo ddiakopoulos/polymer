@@ -24,7 +24,9 @@ namespace polymer
     class gl_shader_monitor
     {
         std::unordered_map<std::string, std::shared_ptr<gl_shader_asset>> assets;
-        std::string root_path;
+
+        std::vector<std::string> search_paths;
+
         std::thread watch_thread;
         std::mutex watch_mutex;
         std::atomic<bool> watch_should_exit{ false };
@@ -36,6 +38,8 @@ namespace polymer
         // This must be constructed on the gl thread
         gl_shader_monitor(const std::string & asset_path);
         ~gl_shader_monitor();
+
+        void add_search_path(const std::string & path);
 
         // Call this regularly on the gl thread
         void handle_recompile();

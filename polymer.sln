@@ -56,6 +56,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gl-bvh", "samples\gl-bvh\gl
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gl-spline-2d", "samples\gl-spline-2d\gl-spline-2d.vcxproj", "{4BD1E2E8-2417-44E7-B75D-78EB475DF2B6}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "engine-procedural-material", "samples\engine-procedural-material\engine-procedural-material.vcxproj", "{77B7CE8A-8666-44CF-8C23-3512E4C918DC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -146,6 +148,10 @@ Global
 		{4BD1E2E8-2417-44E7-B75D-78EB475DF2B6}.Debug|x64.Build.0 = Debug|x64
 		{4BD1E2E8-2417-44E7-B75D-78EB475DF2B6}.Release|x64.ActiveCfg = Release|x64
 		{4BD1E2E8-2417-44E7-B75D-78EB475DF2B6}.Release|x64.Build.0 = Release|x64
+		{77B7CE8A-8666-44CF-8C23-3512E4C918DC}.Debug|x64.ActiveCfg = Debug|x64
+		{77B7CE8A-8666-44CF-8C23-3512E4C918DC}.Debug|x64.Build.0 = Debug|x64
+		{77B7CE8A-8666-44CF-8C23-3512E4C918DC}.Release|x64.ActiveCfg = Release|x64
+		{77B7CE8A-8666-44CF-8C23-3512E4C918DC}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -172,6 +178,7 @@ Global
 		{12628B4B-9C5C-4453-9745-E5FB26D2DF44} = {0B054E41-2F3E-4230-8488-B44C3643F315}
 		{3A3D9E39-B36D-461B-A579-E3A8C6B49D89} = {0B054E41-2F3E-4230-8488-B44C3643F315}
 		{4BD1E2E8-2417-44E7-B75D-78EB475DF2B6} = {0B054E41-2F3E-4230-8488-B44C3643F315}
+		{77B7CE8A-8666-44CF-8C23-3512E4C918DC} = {0B054E41-2F3E-4230-8488-B44C3643F315}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {E2D0793D-BD41-4F42-A6AA-DAB3D17A46BE}

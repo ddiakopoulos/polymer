@@ -40,7 +40,7 @@ namespace polymer
         ~material_library();
 
         // Use this function to programmatically register new materials in the instance table and the global asset handle table
-        template<typename T> void register_material(const std::string & name, std::shared_ptr<T> mat);
+        template<typename T> material_handle register_material(const std::string & name, std::shared_ptr<T> mat);
 
         // Removes from local instances and deletes handle from global table
         void remove_material(const std::string & key);
@@ -56,13 +56,12 @@ namespace polymer
     };
 
     template<typename T>
-    void material_library::register_material(const std::string & name, std::shared_ptr<T> mat)
+    material_handle material_library::register_material(const std::string & name, std::shared_ptr<T> mat)
     {
         const auto itr = instances.find(name);
         if (itr != instances.end())
         {
-            log::get()->engine_log->info("material list already contains {}", name);
-            return;
+            log::get()->engine_log->info("[warn] material list already contains, replacing existing {}", name);
         }
 
         // register_material is only used as a programmatic api, thus the instances don't need to retain
@@ -73,7 +72,7 @@ namespace polymer
         inst.instance = mat;
         instances[name] = inst;
 
-        create_handle_for_asset(name.c_str(), std::dynamic_pointer_cast<base_material>(mat));
+        return create_handle_for_asset(name.c_str(), std::dynamic_pointer_cast<base_material>(mat));
     }
 }
 

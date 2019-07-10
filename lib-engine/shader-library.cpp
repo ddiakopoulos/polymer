@@ -11,9 +11,11 @@ system_clock::time_point write_time(const std::string & file_path)
     catch (...) { return system_clock::time_point::min(); };
 }
 
-gl_shader_monitor::gl_shader_monitor(const std::string & root_path) : root_path(root_path)
+gl_shader_monitor::gl_shader_monitor(const std::string & root_path) 
 {
-    watch_thread = std::thread([this, root_path]()
+    search_paths.push_back(root_path);
+
+    watch_thread = std::thread([this]()
     {
         while (!watch_should_exit)
         {
@@ -36,6 +38,11 @@ gl_shader_monitor::~gl_shader_monitor()
 {
     watch_should_exit = true;
     if (watch_thread.joinable()) watch_thread.join();
+}
+
+void gl_shader_monitor::add_search_path(const std::string & search_path)
+{
+    search_paths.push_back(search_path);
 }
 
 void gl_shader_monitor::watch(const std::string & name, const std::string & vert_path, const std::string & frag_path)
@@ -64,53 +71,55 @@ void gl_shader_monitor::watch(const std::string & name, const std::string & vert
 
 void gl_shader_monitor::walk_asset_dir()
 {
-    const path root = root_path;
-
-    for (auto & entry : recursive_directory_iterator(root))
+    for (auto & sp : search_paths)
     {
-        const size_t root_len = root.string().length(), ext_len = entry.path().extension().string().length();
-        auto path = entry.path().string(), name = path.substr(root_len + 1, path.size() - root_len - ext_len - 1);
+        const path root = sp;
 
-        for (auto & asset : assets)
+        for (auto & entry : recursive_directory_iterator(root))
         {
-            // Compare file names + extension instead of paths directly
-            const auto scanned_file = get_filename_with_extension(path);
+            const size_t root_len = root.string().length(), ext_len = entry.path().extension().string().length();
+            auto path = entry.path().string(), name = path.substr(root_len + 1, path.size() - root_len - ext_len - 1);
 
-            // Regular shader assets
-            if (scanned_file == get_filename_with_extension(asset.second->vertexPath)   || 
-                scanned_file == get_filename_with_extension(asset.second->fragmentPath) ||
-                scanned_file == get_filename_with_extension(asset.second->geomPath))
+            for (auto & asset : assets)
             {
-                auto writeTime = duration_cast<seconds>(write_time(path).time_since_epoch()).count();
+                // Compare file names + extension instead of paths directly
+                const auto scanned_file = get_filename_with_extension(path);
 
-                if (writeTime > asset.second->writeTime)
-                {
-                    asset.second->writeTime = writeTime;
-                    asset.second->shouldRecompile = true;
-                    //@todo use logger
-                    std::cout << "Processed Asset: " << asset.first << std::endl;
-                }
-            }
-
-            // Each shader keeps a list of the files it includes. gl_shader_monitor watches a base path,
-            // so we should be able to recompile shaders dependent on common includes
-            for (std::string includePath : asset.second->includes)
-            {
-                if (get_filename_with_extension(path) == get_filename_with_extension(includePath))
+                // Regular shader assets
+                if (scanned_file == get_filename_with_extension(asset.second->vertexPath) ||
+                    scanned_file == get_filename_with_extension(asset.second->fragmentPath) ||
+                    scanned_file == get_filename_with_extension(asset.second->geomPath))
                 {
                     auto writeTime = duration_cast<seconds>(write_time(path).time_since_epoch()).count();
+
                     if (writeTime > asset.second->writeTime)
                     {
                         asset.second->writeTime = writeTime;
                         asset.second->shouldRecompile = true;
-
                         //@todo use logger
-                        std::cout << "Processed Include: " << includePath << std::endl;
-                        break;
+                        std::cout << "Processed Asset: " << asset.first << std::endl;
+                    }
+                }
+
+                // Each shader keeps a list of the files it includes. gl_shader_monitor watches a base path,
+                // so we should be able to recompile shaders dependent on common includes
+                for (std::string includePath : asset.second->includes)
+                {
+                    if (get_filename_with_extension(path) == get_filename_with_extension(includePath))
+                    {
+                        auto writeTime = duration_cast<seconds>(write_time(path).time_since_epoch()).count();
+                        if (writeTime > asset.second->writeTime)
+                        {
+                            asset.second->writeTime = writeTime;
+                            asset.second->shouldRecompile = true;
+
+                            //@todo use logger
+                            std::cout << "Processed Include: " << includePath << std::endl;
+                            break;
+                        }
                     }
                 }
             }
-
         }
     }
 }
