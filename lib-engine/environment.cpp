@@ -99,13 +99,14 @@ void environment::import_environment(const std::string & import_path, entity_orc
     manual_timer t;
     t.start();
 
+    remap_table.clear();
+
     // Leave this up to applications; user-created objects in code might be part of 
     // the non-serialized scene, etc.
     //destroy(kAllEntities);
 
     const std::string json_txt = read_file_text(import_path);
     const json env_doc = json::parse(json_txt);
-    std::unordered_map<entity, entity> remap_table;
 
     // Remap
     for (auto entityIterator = env_doc.begin(); entityIterator != env_doc.end(); ++entityIterator)
@@ -281,6 +282,8 @@ void environment::export_environment(const std::string & export_path)
 
 void environment::reset(entity_orchestrator & o, int2 default_renderer_resolution, bool create_default_entities)
 {
+    remap_table.clear();
+
     destroy(kAllEntities);
 
     // Create an event manager

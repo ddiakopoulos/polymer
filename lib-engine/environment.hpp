@@ -391,8 +391,11 @@ namespace polymer
     };
     POLYMER_SETUP_TYPEID(world_transform_component);
 
+    //////////////////////////
+    //   render_component   //
+    //////////////////////////
+
     /// @todo - render_component submission groups
-    /// @todo - render_component sort order
     struct render_component : public base_component
     {
         render_component() {};
@@ -427,6 +430,7 @@ namespace polymer
     class environment
     {
         std::vector<entity> active_entities;
+        std::unordered_map<entity, entity> remap_table; // for serialization only
 
         template<typename component_t, typename system_t> bool create_component_on_system(
             const entity new_entity,
@@ -441,26 +445,32 @@ namespace polymer
                 component_t the_new_component = componentIterator.value();
                 the_new_component.e = new_entity;
 
-                //visit_fields(the_new_component, [&](const char * name, auto & field, auto... metadata)
-                //{ 
-                //    const auto field_name = get_typename<std::remove_reference_t<decltype(field)>>();
-                //
-                //    if (auto * use_entity_ref = unpack<entity_ref>(metadata...)) 
-                //    {
-                //        component["#" + name] = field;
-                //    }
-                //
-                //    std::cout << "Field name: " << name << ", " << field_name << std::endl;
-                //});
-
                 if (system_pointer->create(new_entity, get_typeid(type_name.c_str()), &the_new_component))
                 {
+                    // So what's this nonsense? 
+                    visit_fields(the_new_component, [&the_new_component, this](const char * name, auto & field, auto... metadata)
+                    {
+                        const auto field_name = get_typename<std::remove_reference_t<decltype(field)>>();
+
+                        if (auto * use_entity_ref = unpack<entity_ref>(metadata...))
+                        {   
+                            entity deserialized_entity = kInvalidEntity;
+                            std::memcpy(&deserialized_entity, &field, sizeof(entity));
+                            std::cout << "Deserialized: " << deserialized_entity << std::endl;
+                            entity remapped_entity = remap_table[deserialized_entity];
+                            std::cout << "Remapped to: " << remap_table[deserialized_entity] << std::endl;
+                            std::memcpy(&field, &remapped_entity, sizeof(entity));
+                            std::cout << "entity_ref: " << name << ", " << field_name  << " // val: " << remapped_entity << std::endl;
+                        }
+
+                        //std::cout << "Field name: " << name << ", " << field_name << std::endl;
+                    });
+
+
                     //log::get()->engine_log->info("created {} on {}", type_name, system_name);
                 }
-                else
-                {
-                    //log::get()->engine_log->info("could not create {} on {}", type_name, system_name);
-                }
+                else { /* log::get()->engine_log->info("could not create {} on {}", type_name, system_name); */ }
+
 
                 return true;
             }
