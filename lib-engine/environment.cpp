@@ -127,10 +127,7 @@ void environment::import_environment(const std::string & import_path, entity_orc
         {
             new_entity = remap_table[parsed_entity];
         }
-        else
-        {
-            throw std::runtime_error("scene file might be broken (hand-edited?) because it contains duplicate entity IDs");
-        }
+        else throw std::runtime_error("scene file is broken since it contains duplicate entities (hand-edited?)");
 
         const json & comp = entityIterator.value();
 
@@ -148,14 +145,14 @@ void environment::import_environment(const std::string & import_path, entity_orc
                 {
                     if (system_pointer)
                     {
-                        if (create_component_on_system<identifier_component>(new_entity, type_name, system_pointer, componentIterator)) {}
-                        else if (create_component_on_system<mesh_component>(new_entity, type_name, system_pointer, componentIterator)) {}
-                        else if (create_component_on_system<geometry_component>(new_entity, type_name, system_pointer, componentIterator)) {}
-                        else if (create_component_on_system<material_component>(new_entity, type_name, system_pointer, componentIterator)) {}
-                        else if (create_component_on_system<point_light_component>(new_entity, type_name, system_pointer, componentIterator)) {}
-                        else if (create_component_on_system<directional_light_component>(new_entity, type_name, system_pointer, componentIterator)) {}
-                        else if (create_component_on_system<procedural_skybox_component>(new_entity, type_name, system_pointer, componentIterator)) {}
-                        else if (create_component_on_system<cubemap_component>(new_entity, type_name, system_pointer, componentIterator)) {}
+                        if (inflate_serialized_component<identifier_component>(new_entity, type_name, system_pointer, componentIterator)) {}
+                        else if (inflate_serialized_component<mesh_component>(new_entity, type_name, system_pointer, componentIterator)) {}
+                        else if (inflate_serialized_component<geometry_component>(new_entity, type_name, system_pointer, componentIterator)) {}
+                        else if (inflate_serialized_component<material_component>(new_entity, type_name, system_pointer, componentIterator)) {}
+                        else if (inflate_serialized_component<point_light_component>(new_entity, type_name, system_pointer, componentIterator)) {}
+                        else if (inflate_serialized_component<directional_light_component>(new_entity, type_name, system_pointer, componentIterator)) {}
+                        else if (inflate_serialized_component<procedural_skybox_component>(new_entity, type_name, system_pointer, componentIterator)) {}
+                        else if (inflate_serialized_component<cubemap_component>(new_entity, type_name, system_pointer, componentIterator)) {}
                         else if (type_name == get_typename<local_transform_component>())
                         {
                             local_transform_component c = componentIterator.value();

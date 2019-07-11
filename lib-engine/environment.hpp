@@ -432,7 +432,7 @@ namespace polymer
         std::vector<entity> active_entities;
         std::unordered_map<entity, entity> remap_table; // for serialization only
 
-        template<typename component_t, typename system_t> bool create_component_on_system(
+        template<typename component_t, typename system_t> bool inflate_serialized_component(
             const entity new_entity,
             const std::string & type_name,
             system_t * system_pointer,
@@ -447,30 +447,23 @@ namespace polymer
 
                 if (system_pointer->create(new_entity, get_typeid(type_name.c_str()), &the_new_component))
                 {
-                    // So what's this nonsense? 
+                    // So what's this nonsense? If a field has an `entity_ref` attribute, it means that the entity refers to another entity. 
+                    // The implication for serialization is that we need to remap the old entity value to the new one. 
+                    // Due to the use of auto and this template, the compiler is very unclear about the type of the field 
+                    // in the ` if (use_entity_ref) ... ` block. Thus, we resort to memcpy to avoid even uglier hacks. 
                     visit_fields(the_new_component, [&the_new_component, this](const char * name, auto & field, auto... metadata)
                     {
-                        const auto field_name = get_typename<std::remove_reference_t<decltype(field)>>();
-
                         if (auto * use_entity_ref = unpack<entity_ref>(metadata...))
                         {   
                             entity deserialized_entity = kInvalidEntity;
                             std::memcpy(&deserialized_entity, &field, sizeof(entity));
-                            std::cout << "Deserialized: " << deserialized_entity << std::endl;
                             entity remapped_entity = remap_table[deserialized_entity];
-                            std::cout << "Remapped to: " << remap_table[deserialized_entity] << std::endl;
                             std::memcpy(&field, &remapped_entity, sizeof(entity));
-                            std::cout << "entity_ref: " << name << ", " << field_name  << " // val: " << remapped_entity << std::endl;
                         }
-
-                        //std::cout << "Field name: " << name << ", " << field_name << std::endl;
                     });
-
-
                     //log::get()->engine_log->info("created {} on {}", type_name, system_name);
                 }
                 else { /* log::get()->engine_log->info("could not create {} on {}", type_name, system_name); */ }
-
 
                 return true;
             }
