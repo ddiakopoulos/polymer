@@ -11,7 +11,7 @@
 
 using namespace polymer;
 
-struct sample_engine_scene final : public polymer_app
+struct sample_engine_procedural_scene final : public polymer_app
 {
     perspective_camera cam;
     fps_camera_controller flycam;
@@ -23,8 +23,8 @@ struct sample_engine_scene final : public polymer_app
     render_payload payload;
     environment scene;
 
-    sample_engine_scene();
-    ~sample_engine_scene();
+    sample_engine_procedural_scene();
+    ~sample_engine_procedural_scene();
 
     void on_window_resize(int2 size) override;
     void on_input(const app_input_event & event) override;
@@ -32,7 +32,7 @@ struct sample_engine_scene final : public polymer_app
     void on_draw() override;
 };
 
-sample_engine_scene::sample_engine_scene() : polymer_app(1280, 720, "sample-engine-scene")
+sample_engine_procedural_scene::sample_engine_procedural_scene() : polymer_app(1280, 720, "sample-engine-procedural-scene")
 {
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
@@ -107,16 +107,16 @@ sample_engine_scene::sample_engine_scene() : polymer_app(1280, 720, "sample-engi
     scene.resolver->resolve();
 }
 
-sample_engine_scene::~sample_engine_scene() {}
+sample_engine_procedural_scene::~sample_engine_procedural_scene() {}
 
-void sample_engine_scene::on_window_resize(int2 size) {}
+void sample_engine_procedural_scene::on_window_resize(int2 size) {}
 
-void sample_engine_scene::on_input(const app_input_event & event)
+void sample_engine_procedural_scene::on_input(const app_input_event & event)
 {
     flycam.handle_input(event);
 }
 
-void sample_engine_scene::on_update(const app_update_event & e)
+void sample_engine_procedural_scene::on_update(const app_update_event & e)
 {
     int width, height;
     glfwGetWindowSize(window, &width, &height);
@@ -124,7 +124,7 @@ void sample_engine_scene::on_update(const app_update_event & e)
     shaderMonitor->handle_recompile();
 }
 
-void sample_engine_scene::on_draw()
+void sample_engine_procedural_scene::on_draw()
 {
     glfwMakeContextCurrent(window);
 
@@ -158,7 +158,7 @@ int main(int argc, char * argv[])
 {
     try
     {
-        sample_engine_scene app;
+        sample_engine_procedural_scene app;
         app.main_loop();
     }
     catch (const std::exception & e)

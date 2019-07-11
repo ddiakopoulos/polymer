@@ -2,7 +2,6 @@
 
 #include "lib-engine.hpp"
 #include "lib-polymer.hpp"
-#include "physics-controller.hpp"
 
 using namespace polymer;
 
@@ -12,7 +11,7 @@ struct viewport_t
     GLuint texture;
 };
 
-struct openvr_sample_app : public polymer_app
+struct engine_vr_sandbox : public polymer_app
 {
     gl_shader_monitor shaderMonitor{ "../../assets/" };
 
@@ -34,8 +33,8 @@ struct openvr_sample_app : public polymer_app
     render_payload payload;
     environment scene;
 
-    openvr_sample_app();
-    ~openvr_sample_app();
+    engine_vr_sandbox();
+    ~engine_vr_sandbox();
 
     void on_window_resize(int2 size) override;
     void on_input(const app_input_event & event) override;

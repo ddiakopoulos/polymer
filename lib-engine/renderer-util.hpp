@@ -36,6 +36,11 @@ namespace polymer
 
         try
         {
+            monitor.watch("no-op",
+                base_path + "/shaders/renderer/no_op_vert.glsl",
+                base_path + "/shaders/renderer/no_op_frag.glsl",
+                base_path + "/shaders/renderer");
+
             // [utility] used for rendering debug meshes 
             monitor.watch("debug-renderer",
                 base_path + "/shaders/renderer/renderer_vert.glsl",

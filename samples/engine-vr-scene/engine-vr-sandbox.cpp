@@ -1,8 +1,9 @@
-#include "engine-openvr-scene.hpp"
+#include "engine-vr-sandbox.hpp"
 
 using namespace polymer::xr;
 
-openvr_sample_app::openvr_sample_app() : polymer_app(1280, 800, "sample-engine-openvr-scene")
+engine_vr_sandbox::engine_vr_sandbox() 
+    : polymer_app(1280, 800, "sample-engine-vr-sandbox")
 {
     int windowWidth, windowHeight;
     glfwGetWindowSize(window, &windowWidth, &windowHeight);
@@ -18,25 +19,7 @@ openvr_sample_app::openvr_sample_app() : polymer_app(1280, 800, "sample-engine-o
         orchestrator.reset(new entity_orchestrator());
         load_required_renderer_assets("../../assets", shaderMonitor);
 
-        shaderMonitor.watch("unlit-texture",
-            "../../assets/shaders/renderer/renderer_vert.glsl",
-            "../../assets/shaders/renderer/unlit_texture_frag.glsl",
-            "../../assets/shaders/renderer");
 
-        shaderMonitor.watch("unlit-vertex-color",
-            "../../assets/shaders/renderer/renderer_vert.glsl",
-            "../../assets/shaders/renderer/unlit_vertex_color_frag.glsl",
-            "../../assets/shaders/renderer");
-
-        shaderMonitor.watch("xr-laser",
-            "../../assets/shaders/renderer/renderer_vert.glsl",
-            "../../assets/shaders/renderer/xr_laser_frag.glsl",
-            "../../assets/shaders/renderer");
-
-        shaderMonitor.watch("no-op",
-            "../../assets/shaders/renderer/no_op_vert.glsl",
-            "../../assets/shaders/renderer/no_op_frag.glsl",
-            "../../assets/shaders/renderer");
 
         // Setup for the recommended eye target size
         const uint2 eye_target_size = hmd->get_recommended_render_target_size();
@@ -103,23 +86,23 @@ openvr_sample_app::openvr_sample_app() : polymer_app(1280, 800, "sample-engine-o
     scene.resolver->resolve();
 }
 
-openvr_sample_app::~openvr_sample_app()
+engine_vr_sandbox::~engine_vr_sandbox()
 {
     hmd.reset();
 }
 
-void openvr_sample_app::on_window_resize(int2 size)
+void engine_vr_sandbox::on_window_resize(int2 size)
 {
     int windowWidth, windowHeight;
     glfwGetWindowSize(window, &windowWidth, &windowHeight);
 }
 
-void openvr_sample_app::on_input(const app_input_event & event) 
+void engine_vr_sandbox::on_input(const app_input_event & event) 
 {
     desktop_imgui->update_input(event);
 }
 
-void openvr_sample_app::on_update(const app_update_event & e)
+void engine_vr_sandbox::on_update(const app_update_event & e)
 {
     shaderMonitor.handle_recompile();
 
@@ -139,7 +122,7 @@ void openvr_sample_app::on_update(const app_update_event & e)
     vr_imgui->set_surface_transform(left_controller_xform);
 }
 
-void openvr_sample_app::on_draw()
+void engine_vr_sandbox::on_draw()
 {
     glfwMakeContextCurrent(window);
 
@@ -225,7 +208,7 @@ int main(int argc, char * argv[])
 {
     try
     {
-        openvr_sample_app app;
+        engine_vr_sandbox app;
         app.main_loop();
     }
     catch (const std::exception & e)
