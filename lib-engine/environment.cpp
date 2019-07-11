@@ -145,7 +145,7 @@ void environment::import_environment(const std::string & import_path, entity_orc
                 {
                     if (system_pointer)
                     {
-                        if (inflate_serialized_component<identifier_component>(new_entity, type_name, system_pointer, componentIterator)) {}
+                        if      (inflate_serialized_component<identifier_component>(new_entity, type_name, system_pointer, componentIterator)) {}
                         else if (inflate_serialized_component<mesh_component>(new_entity, type_name, system_pointer, componentIterator)) {}
                         else if (inflate_serialized_component<geometry_component>(new_entity, type_name, system_pointer, componentIterator)) {}
                         else if (inflate_serialized_component<material_component>(new_entity, type_name, system_pointer, componentIterator)) {}
@@ -153,19 +153,7 @@ void environment::import_environment(const std::string & import_path, entity_orc
                         else if (inflate_serialized_component<directional_light_component>(new_entity, type_name, system_pointer, componentIterator)) {}
                         else if (inflate_serialized_component<procedural_skybox_component>(new_entity, type_name, system_pointer, componentIterator)) {}
                         else if (inflate_serialized_component<cubemap_component>(new_entity, type_name, system_pointer, componentIterator)) {}
-                        else if (type_name == get_typename<local_transform_component>())
-                        {
-                            local_transform_component c = componentIterator.value();
-                            c.e = new_entity;
-
-                            if (auto xform_system = dynamic_cast<transform_system*>(system_pointer))
-                            {
-                                if (xform_system->create(new_entity, c.local_pose, c.local_scale)) 
-                                { 
-                                    log::get()->import_log->info("[visit_systems] created {} on {}", type_name, system_name); 
-                                }
-                            }
-                        }
+                        else if (inflate_serialized_component<local_transform_component>(new_entity, type_name, system_pointer, componentIterator)) {}
                         else throw std::runtime_error("`type_name` does not match any known component type...");
                     }
                 });

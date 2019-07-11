@@ -108,7 +108,10 @@ namespace polymer
         { 
             if (hash != get_typeid<local_transform_component>()) { return false; }
             auto new_component = static_cast<local_transform_component *>(data);
-            return create(e, new_component->local_pose, new_component->local_scale, new_component->parent, new_component->children);
+            // Note that we don't populate new_component->parent, new_component->children. Because this
+            // create method is only called by the de-serialization system, parents and children are handled 
+            // as a post-processing/finalization step after all entities have been created.
+            return create(e, new_component->local_pose, new_component->local_scale);
         }
 
         bool create(entity e, 
