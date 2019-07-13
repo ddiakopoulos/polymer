@@ -70,6 +70,7 @@ struct sample_gl_particle_hull final : public polymer_app
     std::shared_ptr<color_modifier> color_mod;
 
     gl_mesh convex_hull_mesh;
+    geometry convex_hull_model;
     std::future<quickhull::convex_hull> hullFuture;
 
     gl_mesh sphere_mesh;
@@ -106,11 +107,11 @@ sample_gl_particle_hull::sample_gl_particle_hull() : polymer_app(1280, 720, "sam
     particle_system.add_modifier(grav_mod);
     particle_system.add_modifier(color_mod);
 
+    pt_emitter.pose.position = float3(0, 2, 0);
+
     particle_tex = load_image("../../assets/textures/particle_alt_large.png");
     glTextureParameteriEXT(particle_tex, GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
     glTextureParameteriEXT(particle_tex, GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-
-    pt_emitter.pose.position = float3(0, 1, 0);
 
     shaderMonitor.reset(new gl_shader_monitor("../../assets"));
 
@@ -136,9 +137,16 @@ void sample_gl_particle_hull::on_input(const app_input_event & event)
 {
     flycam.handle_input(event);
 
+    // Pause particle simulation
     if (event.type == app_input_event::KEY && event.value[0] == GLFW_KEY_SPACE && event.action == GLFW_RELEASE)
     {
         pause = !pause;
+    }
+
+    // Export particle pointcloud convex hull to disk as *.obj mesh
+    else if (event.type == app_input_event::KEY && event.value[0] == GLFW_KEY_E && event.action == GLFW_RELEASE)
+    {
+        export_obj_model("convex_hull", "gl-particles-hull.obj", convex_hull_model);
     }
 }
 
@@ -151,15 +159,6 @@ void sample_gl_particle_hull::on_update(const app_update_event & e)
     last_update = e;
 
     if (!pause) pt_emitter.emit(particle_system);
-}
-
-inline gl_mesh make_convex_hull_mesh(std::vector<float3> & vertices, std::vector<size_t> & indices)
-{
-    gl_mesh mesh;
-    mesh.set_vertices(vertices, GL_STREAM_DRAW);
-    mesh.set_attribute(0, 3, GL_FLOAT, GL_FALSE, sizeof(float3), ((float*)0) + 0);
-    mesh.set_elements(reinterpret_cast<std::vector<uint3>&>(indices), GL_STREAM_DRAW);
-    return mesh;
 }
 
 void sample_gl_particle_hull::on_draw()
@@ -210,7 +209,19 @@ void sample_gl_particle_hull::on_draw()
         if (status != std::future_status::timeout)
         {
             auto the_hull = hullFuture.get();
-            convex_hull_mesh = make_convex_hull_mesh(the_hull.getVertexBuffer(), the_hull.getIndexBuffer());
+
+            auto vertices = the_hull.getVertexBuffer();
+            auto indices = the_hull.getIndexBuffer();
+            std::vector<uint3> faces;
+            for (int idx = 0; idx < indices.size(); idx += 3) faces.push_back({ (uint32_t)indices[idx + 0], (uint32_t)indices[idx + 1] ,(uint32_t)indices[idx + 2] });
+    
+            convex_hull_model.vertices = vertices;
+            convex_hull_model.faces = faces;
+
+            convex_hull_mesh.set_vertices(convex_hull_model.vertices, GL_STREAM_DRAW);
+            convex_hull_mesh.set_attribute(0, 3, GL_FLOAT, GL_FALSE, sizeof(float3), ((float*)0) + 0);
+            convex_hull_mesh.set_elements(convex_hull_model.faces, GL_STREAM_DRAW);
+
             hullFuture = {};
         }
     }
