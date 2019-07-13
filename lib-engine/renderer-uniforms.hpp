@@ -33,12 +33,18 @@ namespace uniforms
         ALIGNED(16) float3    direction;
         ALIGNED(16) float3    position;
         ALIGNED(16) float3    attenuation; // constant, linear, quadratic
-        float                 cutoff;
+        float                 cutoff{ 0.f };
     };
+
+    /// @todo
+    struct photometric_light {};
+    struct rectangle_area_light {};
+    struct sphere_area_light {};
+    struct tube_area_light {};
 
     struct per_scene
     {
-        static const int      binding = 0;
+        static const int      binding{ 0 };
         directional_light     directional_light;
         point_light           point_lights[MAX_POINT_LIGHTS];
         float                 time;
@@ -54,7 +60,7 @@ namespace uniforms
 
     struct per_view
     {
-        static const int      binding = 1;
+        static const int      binding{ 1 };
         ALIGNED(16) float4x4  view;
         ALIGNED(16) float4x4  viewProj;
         ALIGNED(16) float4    eyePos;
@@ -64,7 +70,7 @@ namespace uniforms
 
     struct per_object
     {
-        static const int      binding = 2;
+        static const int      binding{ 2 };
         ALIGNED(16) float4x4  modelMatrix;
         ALIGNED(16) float4x4  modelMatrixIT;
         ALIGNED(16) float4x4  modelViewMatrix;
