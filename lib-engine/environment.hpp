@@ -502,6 +502,10 @@ namespace polymer
 
     render_component assemble_render_component(environment & env, const entity e);
 
+    entity make_standard_scene_object(entity_orchestrator * orch, environment * env,
+        const std::string & name, const transform & pose, const float3 & scale,
+        const material_handle & mh, const gpu_mesh_handle & gmh, const cpu_mesh_handle & cmh);
+
 } // end namespace polymer
 
 #endif // end polymer_environment_hpp

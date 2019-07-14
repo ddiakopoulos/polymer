@@ -22,6 +22,30 @@ render_component polymer::assemble_render_component(environment & env, const ent
     return r;
 }
 
+entity polymer::make_standard_scene_object(entity_orchestrator * orch, environment * env,
+    const std::string & name, const transform & pose, const float3 & scale,
+    const material_handle & mh, const gpu_mesh_handle & gmh, const cpu_mesh_handle & cmh)
+{
+    const entity e = env->track_entity(orch->create_entity());
+
+    env->identifier_system->create(e, name);
+    env->xform_system->create(e, pose, scale);
+
+    polymer::mesh_component mesh_component(e);
+    mesh_component.mesh = gmh;
+    env->render_system->create(e, std::move(mesh_component));
+
+    polymer::geometry_component geom_component(e);
+    geom_component.geom = cmh;
+    env->collision_system->create(e, std::move(geom_component));
+
+    polymer::material_component material_component(e);
+    material_component.material = mh;
+    env->render_system->create(e, std::move(material_component));
+
+    return e;
+}
+
 entity environment::track_entity(entity e) 
 { 
     log::get()->engine_log->info("[environment] created tracked entity {}", e);
