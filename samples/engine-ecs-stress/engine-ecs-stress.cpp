@@ -36,7 +36,7 @@ struct sample_engine_ecs final : public polymer_app
     void on_draw() override;
 };
 
-sample_engine_ecs::sample_engine_ecs() : polymer_app(1920, 1080, "sample-ecs-stress")
+sample_engine_ecs::sample_engine_ecs() : polymer_app(1280, 720, "sample-ecs-stress")
 {
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
