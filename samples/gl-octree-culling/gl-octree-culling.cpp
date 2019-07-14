@@ -84,6 +84,7 @@ sample_gl_octree_culling::sample_gl_octree_culling() : polymer_app(1280, 720, "s
 
     cam.look_at({ 0, 9.5f, -6.0f }, { 0, 0.1f, 0 });
     flycam.set_camera(&cam);
+    cam.farclip = 256;
 
     gizmo.reset(new gl_gizmo());
     xform.position = { 0.1f, 0.1f, 0.1f };
@@ -216,6 +217,7 @@ void sample_gl_octree_culling::on_draw()
         visibleObjects += node->objects.size();
     }
 
+    std::cout << "Num Visible Objects: " << visibleObjects << "\n";
     shader->unbind();
 
     if (gizmo) gizmo->draw();

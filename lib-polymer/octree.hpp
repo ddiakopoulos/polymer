@@ -88,6 +88,13 @@ namespace polymer
 
     };
 
+    enum class visibility : uint32_t
+    {
+        inside,
+        intersect,
+        outside
+    };
+
     template<typename T>
     struct octree
     {
@@ -102,12 +109,6 @@ namespace polymer
             return linalg::all(less(node.size(), other.size()));
         }
 
-        enum class visibility : uint32_t
-        {
-            inside,
-            intersect,
-            outside
-        };
 
         std::unique_ptr<octant<T>> root;
         uint32_t maxDepth{ 8 };

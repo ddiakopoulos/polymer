@@ -24,6 +24,7 @@ struct sample_engine_ecs final : public polymer_app
     std::unique_ptr<entity_orchestrator> orchestrator;
     std::unique_ptr<simple_texture_view> fullscreen_surface;
 
+    std::vector<entity> new_entities;
     render_payload payload;
     environment scene;
 
@@ -36,7 +37,7 @@ struct sample_engine_ecs final : public polymer_app
     void on_draw() override;
 };
 
-sample_engine_ecs::sample_engine_ecs() : polymer_app(1280, 720, "sample-ecs-stress")
+sample_engine_ecs::sample_engine_ecs() : polymer_app(1920, 1080, "sample-ecs-stress")
 {
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
@@ -71,7 +72,6 @@ sample_engine_ecs::sample_engine_ecs() : polymer_app(1280, 720, "sample-ecs-stre
     };
 
     uniform_random_gen rand;
-    std::vector<entity> new_entities;
 
     // Configuring an entity at runtime programmatically
     for (uint32_t entity_index = 0; entity_index < 16384; ++entity_index)
@@ -89,19 +89,6 @@ sample_engine_ecs::sample_engine_ecs() : polymer_app(1280, 720, "sample-ecs-stre
             name, pose, scale, material_handle(material_library::kDefaultMaterialId), geometry, geometry);
 
         new_entities.push_back(e);
-    }
-
-    // Second pass to assemble render components separately, since `assemble_render_component` will
-    // grab pointers to components that were probably shuffled around as we inserted
-    // a bunch of them into the underlying component pool in transform_system.
-    for (uint32_t i = 0; i < new_entities.size(); ++i)
-    {
-        const auto e = new_entities[i];
-
-        // Assemble a render_component (gather components so the renderer does not have to interface
-        // with many systems). Ordinarily this assembly is done per-frame in the update loop, but
-        // this is a fully static scene.
-        payload.render_components.emplace_back(assemble_render_component(scene, e));
     }
 
     payload.clear_color = float4(0.85f, 0.85f, 0.85f, 1.f);
@@ -140,13 +127,32 @@ void sample_engine_ecs::on_draw()
     int width, height;
     glfwGetWindowSize(window, &width, &height);
 
+    imgui->begin_frame();
+
     const uint32_t viewIndex = 0;
     const float4x4 projectionMatrix = cam.get_projection_matrix(float(width) / float(height));
     const float4x4 viewMatrix = cam.get_view_matrix();
     const float4x4 viewProjectionMatrix = projectionMatrix * viewMatrix;
+    const frustum camera_frustum(viewProjectionMatrix);
 
     payload.views.clear();
     payload.views.emplace_back(view_data(viewIndex, cam.pose, projectionMatrix));
+
+    payload.render_components.clear();
+
+    {
+        const std::vector<entity> visible_entity_list = scene.collision_system->get_visible_entities(camera_frustum);
+        ImGui::Text("Visible Entities %i", visible_entity_list.size());
+
+        {
+            for (size_t i = 0; i < visible_entity_list.size(); ++i)
+            {
+                const auto e = visible_entity_list[i];
+                payload.render_components.emplace_back(assemble_render_component(scene, e));
+            }
+        }
+    }
+
     scene.render_system->get_renderer()->render_frame(payload);
 
     glUseProgram(0);
@@ -157,8 +163,6 @@ void sample_engine_ecs::on_draw()
     glEnable(GL_DEPTH_TEST);
 
     fullscreen_surface->draw(scene.render_system->get_renderer()->get_color_texture(viewIndex));
-
-    imgui->begin_frame();
 
     ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
     for (auto & t : scene.render_system->get_renderer()->cpuProfiler.get_data())

@@ -15,6 +15,7 @@
 #include "math-core.hpp"
 #include "math-morton.hpp"
 #include "util.hpp"
+#include "octree.hpp"
 
 #define POLYMER_BVH_DEBUG_SPAM
 
@@ -292,6 +293,13 @@ namespace polymer
             return results.size() ? true : false;
         }
 
+        std::vector<scene_object*> find_visible_nodes(const frustum & camera_frustum)
+        {
+            std::vector<scene_object*> visible_set;
+            find_visible_nodes_internal(root, camera_frustum, visible_set);
+            return visible_set;
+        }
+
     private: 
 
         void intersect_internal(bvh_node * node, const ray & ray, std::vector<std::pair<scene_object*, float>> & results) const
@@ -303,7 +311,7 @@ namespace polymer
 
                 if (hit)
                 {
-                    if ((node->type == bvh_node_type::leaf) && node->object)
+                    if (node->type == bvh_node_type::leaf && node->object)
                     {
                         results.emplace_back(std::make_pair(node->object, outMinT));
                     }
@@ -313,6 +321,26 @@ namespace polymer
                         intersect_internal(node->right, ray, results);
                     }
                 }
+            }
+        }
+
+        void find_visible_nodes_internal(bvh_node * node, const frustum & camera_frustum, std::vector<scene_object*> & objects) const
+        {
+            if (node)
+            {
+                if (camera_frustum.intersects(node->bounds.center(), node->bounds.size()))
+                {
+                    if (node->type == bvh_node_type::leaf && node->object) 
+                    {
+                        objects.emplace_back(node->object);
+                    }
+                    else
+                    {
+                        find_visible_nodes_internal(node->left, camera_frustum, objects);
+                        find_visible_nodes_internal(node->right, camera_frustum, objects);
+                    }
+                }
+
             }
         }
 

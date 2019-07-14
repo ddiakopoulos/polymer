@@ -9,6 +9,7 @@
 #include "ecs/core-ecs.hpp"
 #include "system-transform.hpp"
 #include "environment.hpp"
+#include "bvh.hpp"
 
 namespace polymer
 {
@@ -23,12 +24,15 @@ namespace polymer
         box,
     };
 
-    // todo - need to support proxy mesh (sphere or box)
-    // todo - accelerate using spatial data structure (use existing octree?)
+    /// @todo - need to support proxy mesh (sphere or box)
+    /// @todo - accelerate using spatial data structure (use existing octree?)
     class collision_system final : public base_system
     {
         std::unordered_map<entity, geometry_component> meshes;
         transform_system * xform_system{ nullptr };
+
+        std::unique_ptr<bvh_tree> scene_accelerator;
+        std::vector<scene_object> bvh_objects;
 
         template<class F> friend void visit_components(entity e, collision_system * system, F f);
         friend class asset_resolver;
@@ -158,6 +162,56 @@ namespace polymer
         {
             auto iter = meshes.find(e);
             if (iter != meshes.end()) meshes.erase(e);
+        }
+
+        std::vector<entity> get_visible_entities(const frustum & camera_frustum)
+        {
+            if (!scene_accelerator)
+            {
+                if (!xform_system)
+                {
+                    base_system * xform_base = orchestrator->get_system(get_typeid<transform_system>());
+                    xform_system = dynamic_cast<transform_system *>(xform_base);
+                    assert(xform_system != nullptr);
+                }
+
+                scene_accelerator.reset(new bvh_tree());
+
+                /// @todo - parallelizable
+                for (auto & m : meshes)
+                {
+                    const geometry & geom = m.second.geom.get();
+                    const auto local_bounds = compute_bounds(geom);
+
+                    const auto world_transform = xform_system->get_world_transform(m.second.get_entity())->world_pose;
+                    const auto min_world = world_transform.transform_coord(local_bounds.min());
+                    const auto max_world = world_transform.transform_coord(local_bounds.max());
+                    const aabb_3d world_bounds(min_world, max_world);
+
+                    scene_object obj;
+                    obj.bounds = world_bounds;
+                    obj.user_data = &m.second;
+                    bvh_objects.emplace_back(std::move(obj));
+                }
+
+                for (int i = 0; i < bvh_objects.size(); ++i)
+                {
+                    scene_accelerator->add(&bvh_objects[i]);
+                }
+
+                scene_accelerator->build();
+            }
+
+            auto visible_bvh_nodes = scene_accelerator->find_visible_nodes(camera_frustum);
+
+            std::vector<entity> visible_entities;
+            for (auto & n : visible_bvh_nodes)
+            {
+                geometry_component * gc = static_cast<geometry_component *>(n->user_data);
+                visible_entities.push_back(gc->get_entity());
+            }
+
+            return visible_entities;
         }
     };
     POLYMER_SETUP_TYPEID(collision_system);
