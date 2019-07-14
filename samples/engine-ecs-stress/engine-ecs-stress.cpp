@@ -36,7 +36,7 @@ struct sample_engine_ecs final : public polymer_app
     void on_draw() override;
 };
 
-sample_engine_ecs::sample_engine_ecs() : polymer_app(1280, 720, "sample-ecs-stress")
+sample_engine_ecs::sample_engine_ecs() : polymer_app(1920, 1080, "sample-ecs-stress")
 {
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
@@ -55,9 +55,20 @@ sample_engine_ecs::sample_engine_ecs() : polymer_app(1280, 720, "sample-ecs-stre
 
     scene.reset(*orchestrator, {width, height}, true);
 
-    auto icosa = make_icosasphere(1);
-    create_handle_for_asset("debug-icosahedron", make_mesh_from_geometry(icosa));
-    create_handle_for_asset("debug-icosahedron", std::move(icosa));
+    std::vector<std::string> geometry_options
+    {
+        "tetrahedron-uniform",
+        "cube-uniform",
+        "capsule-uniform",
+        "cylinder-hollow-twosides",
+        "dome",
+        "sphere-uniform",
+        "cone-uniform",
+        "torus-knot",
+        "pyramid",
+        "hexagon-uniform",
+        "cube-rounded",
+    };
 
     uniform_random_gen rand;
     std::vector<entity> new_entities;
@@ -65,12 +76,17 @@ sample_engine_ecs::sample_engine_ecs() : polymer_app(1280, 720, "sample-ecs-stre
     // Configuring an entity at runtime programmatically
     for (uint32_t entity_index = 0; entity_index < 16384; ++entity_index)
     {
-        const transform pose = transform(float3(rand.random_float() * 100.f, rand.random_float() * 100.f, rand.random_float() * 100.f));
-        const float3 scale = float3(rand.random_float(0.1f, 0.5f));
+        float dist_multiplier = 256.f;
+        const float3 random_position = float3(rand.random_float() * dist_multiplier, rand.random_float() * dist_multiplier, rand.random_float() * dist_multiplier);
+        const float3 random_axis = normalize(float3(rand.random_float(), rand.random_float(), rand.random_float()));
+        const quatf random_quat = make_rotation_quat_axis_angle(random_axis, rand.random_float_sphere());
+        const transform pose = transform(normalize(random_quat), random_position);
+        const float3 scale = float3(rand.random_float(0.1f, 3.0f));
         const std::string name = "debug-icosahedron-" + std::to_string(entity_index);
 
+        auto geometry = geometry_options[rand.random_int(0, (int32_t) geometry_options.size() - 1)];
         const entity e = make_standard_scene_object(orchestrator.get(), &scene,
-            name, pose, scale, material_handle(material_library::kDefaultMaterialId), "debug-icosahedron", "debug-icosahedron");
+            name, pose, scale, material_handle(material_library::kDefaultMaterialId), geometry, geometry);
 
         new_entities.push_back(e);
     }
@@ -87,6 +103,8 @@ sample_engine_ecs::sample_engine_ecs() : polymer_app(1280, 720, "sample-ecs-stre
         // this is a fully static scene.
         payload.render_components.emplace_back(assemble_render_component(scene, e));
     }
+
+    payload.clear_color = float4(0.85f, 0.85f, 0.85f, 1.f);
 
     cam.look_at({ 0, 0, 2 }, { 0, 0.1f, 0 });
     flycam.set_camera(&cam);
@@ -134,7 +152,7 @@ void sample_engine_ecs::on_draw()
     glUseProgram(0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, width, height);
-    glClearColor(1.f, 0.25f, 0.25f, 1.0f);
+    glClearColor(0.25f, 0.25f, 0.25f, 1.0f);
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
 
