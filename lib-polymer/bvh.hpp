@@ -21,6 +21,60 @@
 
 namespace polymer
 {
+    
+    namespace simd
+    {
+        struct float4_simd
+        {
+            union
+            {
+                __m128 v;
+                float4 l;
+            };
+
+            inline float4_simd(const float3 & vector)
+            {
+                __m128 vx = _mm_load_ss(&vector.x);
+                __m128 vy = _mm_load_ss(&vector.y);
+                __m128 vz = _mm_load_ss(&vector.z);
+                __m128 vxy = _mm_unpacklo_ps(vx, vy);
+                v = _mm_movelh_ps(vxy, vz);
+            }
+
+            inline float4_simd(const float4_simd & f4) : l(f4.l) {}
+            inline float4_simd(const __m128 & src) : v(src) {}
+            inline float4_simd & operator = (const __m128 & other) { v = other; return *this; }
+            inline float4_simd operator >= (const float4_simd & b) const { return _mm_cmpge_ps(v, b.v); }
+            inline bool all() const { return _mm_movemask_ps(v) == 0xF; }
+        };
+
+        inline bool intersect_ray_box_avx2(const ray & ray, const aabb_3d & box, float & out_t)
+        {
+            float4_simd invDir = float4_simd(ray.inverse_direction());
+            float4_simd divDir = float4_simd(ray.origin / invDir.l.xyz());
+
+            float4_simd boxMin = float4_simd(box.min());
+            float4_simd boxMax = float4_simd(box.max());
+
+            float4_simd tmp1 = _mm_fmsub_ps(boxMin.v, invDir.v, divDir.v);
+            float4_simd tmp2 = _mm_fmsub_ps(boxMax.v, invDir.v, divDir.v);
+            float4_simd lmin = _mm_min_ps(tmp1.v, tmp2.v);
+            float4_simd lmax = _mm_max_ps(tmp1.v, tmp2.v);
+
+            float4_simd lx = _mm_shuffle_ps(lmin.v, lmax.v, _MM_SHUFFLE(0, 0, 0, 0));
+            float4_simd ly = _mm_shuffle_ps(lmin.v, lmax.v, _MM_SHUFFLE(1, 1, 1, 1));
+            float4_simd lz = _mm_shuffle_ps(lmin.v, lmax.v, _MM_SHUFFLE(2, 2, 2, 2));
+
+            lmin = _mm_max_ps(lx.v, _mm_max_ps(ly.v, lz.v));
+            lmax = _mm_min_ps(lx.v, _mm_min_ps(ly.v, lz.v));
+            out_t = lmin.l.x;
+
+            lmax = _mm_permutevar_ps(lmax.v, _mm_set_epi32(2, 2, 2, 2));
+            lmin = _mm_unpacklo_ps(lmin.v, _mm_setzero_ps());
+
+            return (lmax >= lmin).all();
+        }
+    } // end namespace simd
 
     #pragma warning(push)
     #pragma warning(disable : 4244)
@@ -307,9 +361,13 @@ namespace polymer
         void intersect_internal(bvh_node * node, const ray & ray, std::vector<std::pair<scene_object*, float>> & results) const
         {
             if (node)
-            {
+            {   
+                // Non-SIMD path
                 float outMinT, outMaxT;
                 const bool hit = intersect_ray_box(ray, node->bounds.min(), node->bounds.max(), &outMinT, &outMaxT);
+
+                //float outMinT;
+                //const bool hit = simd::intersect_ray_box_avx2(ray, node->bounds, outMinT);
 
                 if (hit)
                 {
