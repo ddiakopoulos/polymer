@@ -19,8 +19,6 @@ struct GLFWwindow;
  * [ ] draw indirect buffers
  * [ ] compute indirect buffers
  * [ ] compressed texture formats
- * [ ] occlusion queries
- * [ ] draw call sorting?
  * [ ] device capabilities (memory, etc)
  * [ ] profile begin/end (like bgfx)
  * [ ] threading strategy

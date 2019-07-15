@@ -25,7 +25,6 @@ namespace polymer
     };
 
     /// @todo - need to support proxy mesh (sphere or box)
-    /// @todo - accelerate using spatial data structure (use existing octree?)
     class collision_system final : public base_system
     {
         std::unordered_map<entity, geometry_component> meshes;
