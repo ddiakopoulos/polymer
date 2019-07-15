@@ -16,23 +16,20 @@ using namespace gui;
 
 constexpr const char basic_vert[] = R"(#version 330
     layout(location = 0) in vec3 vertex;
-    layout(location = 2) in vec3 inColor;
     uniform mat4 u_mvp;
-    out vec3 color;
+    out vec4 color;
     void main()
     {
         gl_Position = u_mvp * vec4(vertex.xyz, 1);
-        color = inColor;
     }
 )";
 
 constexpr const char basic_frag[] = R"(#version 330
-    in vec3 color;
     out vec4 f_color;
-    uniform vec3 u_color;
+    uniform vec4 u_color;
     void main()
     {
-        f_color = vec4(u_color, 1);
+        f_color = vec4(u_color);
     }
 )";
 
@@ -180,13 +177,21 @@ void sample_engine_performance::on_draw()
     const float4x4 viewProjectionMatrix = projectionMatrix * viewMatrix;
     const frustum camera_frustum(viewProjectionMatrix);
 
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     payload.views.clear();
     payload.views.emplace_back(view_data(viewIndex, cam.pose, projectionMatrix));
 
     payload.render_components.clear();
 
     {
+        simple_cpu_timer t;
+        t.start();
         const std::vector<entity> visible_entity_list = scene.collision_system->get_visible_entities(camera_frustum);
+        t.stop();
+
+        ImGui::Text("Frustum Cull Took %f ms", (float)t.elapsed_ms());
         ImGui::Text("Visible Entities %i", visible_entity_list.size());
 
         {
@@ -219,7 +224,7 @@ void sample_engine_performance::on_draw()
                     if (so)
                     {
                         const auto leaf_model = make_translation_matrix(node->bounds.center()) * make_scaling_matrix(node->bounds.size());
-                        boxDebugShader->uniform("u_color", float3(1, 0, 0));
+                        boxDebugShader->uniform("u_color", float4(1, 0, 0, 1));
                         boxDebugShader->uniform("u_mvp", viewProjectionMatrix * leaf_model);
                         boxDebugMesh.draw_elements();
                     }
@@ -233,12 +238,12 @@ void sample_engine_performance::on_draw()
 
                 if (node->type == bvh_node_type::root)
                 {
-                    boxDebugShader->uniform("u_color", float3(1, 1, 1));
+                    boxDebugShader->uniform("u_color", float4(1, 1, 1, 1));
                     boxDebugMesh.draw_elements();
                 }
                 else if (node->type == bvh_node_type::internal)
                 {
-                    boxDebugShader->uniform("u_color", float3(1, 1, 0));
+                    boxDebugShader->uniform("u_color", float4(1, 1, 0, 0.025f));
                     boxDebugMesh.draw_elements();
                 }
 
