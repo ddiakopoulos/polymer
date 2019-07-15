@@ -41,19 +41,24 @@ namespace polymer
 
     typedef runtime_mesh geometry;
 
-    inline aabb_3d compute_bounds(const geometry & g)
+    inline aabb_3d compute_bounds(const std::vector<float3> & vertices)
     {
         aabb_3d bounds;
 
         bounds._min = float3(std::numeric_limits<float>::infinity());
         bounds._max = -bounds.min();
 
-        for (const auto & vertex : g.vertices)
+        for (const auto & vertex : vertices)
         {
             bounds._min = linalg::min(bounds.min(), vertex);
             bounds._max = linalg::max(bounds.max(), vertex);
         }
         return bounds;
+    }
+
+    inline aabb_3d compute_bounds(const geometry & g)
+    {
+        return compute_bounds(g.vertices);
     }
 
     // Lengyel, Eric. "Computing Tangent Space Basis Vectors for an Arbitrary Mesh".

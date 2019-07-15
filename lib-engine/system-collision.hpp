@@ -24,19 +24,18 @@ namespace polymer
         box,
     };
 
-    /// @todo - need to support proxy mesh (sphere or box)
     class collision_system final : public base_system
     {
         std::unordered_map<entity, geometry_component> meshes;
         transform_system * xform_system{ nullptr };
 
-        std::unique_ptr<bvh_tree> scene_accelerator;
-        std::vector<scene_object> bvh_objects;
-
         template<class F> friend void visit_components(entity e, collision_system * system, F f);
         friend class asset_resolver;
 
     public:
+
+        std::unique_ptr<bvh_tree> scene_accelerator;
+        std::vector<scene_object> bvh_objects;
 
         collision_system(entity_orchestrator * orch) : base_system(orch)
         {
@@ -45,13 +44,7 @@ namespace polymer
 
         entity_hit_result raycast(const ray & world_ray, const raycast_type type = raycast_type::mesh)
         {
-            // Potential cross-orchestrator issues here
-            if (!xform_system)
-            {
-                base_system * xform_base = orchestrator->get_system(get_typeid<transform_system>());
-                xform_system = dynamic_cast<transform_system *>(xform_base);
-                assert(xform_system != nullptr);
-            }
+            setup_acceleration();
 
             auto raycast_mesh = [&](entity e) -> raycast_result
             {
@@ -72,62 +65,28 @@ namespace polymer
                 return { hit, outT, outNormal, outUv };
             };
 
-            auto raycast_box = [&](entity e) -> raycast_result
-            {
-                if (!xform_system->has_transform(e)) return {};
-                const runtime_mesh & geometry = meshes[e].geom.get();
-                if (geometry.vertices.empty()) return {};
-
-                const transform meshPose = xform_system->get_world_transform(e)->world_pose; // store bounds?
-                const float3 meshScale = xform_system->get_local_transform(e)->local_scale;
-
-                ray r = meshPose.inverse() * world_ray;
-                r.origin /= meshScale;
-                r.direction /= meshScale;
-
-                const aabb_3d mesh_bounds = compute_bounds(geometry);
-                float outMinT, outMaxT;
-                const bool hit = intersect_ray_box(r, mesh_bounds.min(), mesh_bounds.max(), &outMinT, &outMaxT);
-                return raycast_result(hit, outMaxT, {}, {});
-            };
-
-            float best_t = std::numeric_limits<float>::max();
+            // Raycasting onto a mesh is a two-step process. First, we find all the bounding boxes that
+            // collide with the ray, and then refine by testing each of the meshes in them for the best
+            // result (because the aabb isn't a tight fit). 
             entity hit_entity = kInvalidEntity;
             raycast_result out_result;
-
-            // fixme - we really need an environment-wide spatial data structure for this
-            if (type == raycast_type::mesh)
+            std::vector<std::pair<scene_object*, float>> box_hit_results;
+            if (scene_accelerator->intersect(world_ray, box_hit_results))
             {
-                for (const auto & mesh : meshes)
-                {
-                    if (mesh.first == kInvalidEntity) continue;
+                float mesh_best_t = std::numeric_limits<float>::max();
 
-                    raycast_result res = raycast_mesh(mesh.first);
-                    if (res.hit)
-                    {
-                        if (res.distance < best_t)
-                        {
-                            best_t = res.distance;
-                            hit_entity = mesh.first;
-                            out_result = res;
-                        }
-                    }
-                }
-            }
-            else if (type == raycast_type::box)
-            {
-                for (const auto & mesh : meshes)
+                for (auto & box_hit : box_hit_results)
                 {
-                    if (mesh.first == kInvalidEntity) continue;
+                    geometry_component * gc = static_cast<geometry_component *>(box_hit.first->user_data);
+                    const raycast_result the_raycast = raycast_mesh(gc->get_entity());
 
-                    raycast_result res = raycast_box(mesh.first);
-                    if (res.hit)
+                    if (the_raycast.hit)
                     {
-                        if (res.distance < best_t)
+                        if (the_raycast.distance < mesh_best_t)
                         {
-                            best_t = res.distance;
-                            hit_entity = mesh.first;
-                            out_result = res;
+                            mesh_best_t = the_raycast.distance;
+                            out_result = the_raycast;
+                            hit_entity = gc->get_entity();
                         }
                     }
                 }
@@ -163,7 +122,12 @@ namespace polymer
             if (iter != meshes.end()) meshes.erase(e);
         }
 
-        std::vector<entity> get_visible_entities(const frustum & camera_frustum)
+        void queue_acceleration_rebuild()
+        {
+            scene_accelerator.reset();
+        }
+
+        void setup_acceleration()
         {
             if (!scene_accelerator)
             {
@@ -180,12 +144,19 @@ namespace polymer
                 for (auto & m : meshes)
                 {
                     const geometry & geom = m.second.geom.get();
-                    const auto local_bounds = compute_bounds(geom);
+                     
+                    auto local_scale = xform_system->get_local_transform(m.second.get_entity())->local_scale;
+                    auto world_transform = xform_system->get_world_transform(m.second.get_entity())->world_pose;
 
-                    const auto world_transform = xform_system->get_world_transform(m.second.get_entity())->world_pose;
-                    const auto min_world = world_transform.transform_coord(local_bounds.min());
-                    const auto max_world = world_transform.transform_coord(local_bounds.max());
-                    const aabb_3d world_bounds(min_world, max_world);
+                    // Construct a world-space axis-aligned box that encompasses the rotated and
+                    // scaled position of the mesh
+                    std::vector<float3> verts = geom.vertices;
+                    for (auto & v : verts)
+                    {
+                        v *= local_scale;
+                        v = world_transform.transform_coord(v);
+                    }
+                    const auto world_bounds = compute_bounds(verts);
 
                     scene_object obj;
                     obj.bounds = world_bounds;
@@ -200,6 +171,11 @@ namespace polymer
 
                 scene_accelerator->build();
             }
+        }
+
+        std::vector<entity> get_visible_entities(const frustum & camera_frustum)
+        {
+            setup_acceleration();
 
             auto visible_bvh_nodes = scene_accelerator->find_visible_nodes(camera_frustum);
 

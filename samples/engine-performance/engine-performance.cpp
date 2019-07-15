@@ -14,6 +14,29 @@
 using namespace polymer;
 using namespace gui;
 
+constexpr const char basic_vert[] = R"(#version 330
+    layout(location = 0) in vec3 vertex;
+    layout(location = 2) in vec3 inColor;
+    uniform mat4 u_mvp;
+    out vec3 color;
+    void main()
+    {
+        gl_Position = u_mvp * vec4(vertex.xyz, 1);
+        color = inColor;
+    }
+)";
+
+constexpr const char basic_frag[] = R"(#version 330
+    in vec3 color;
+    out vec4 f_color;
+    uniform vec3 u_color;
+    void main()
+    {
+        f_color = vec4(u_color, 1);
+    }
+)";
+
+
 struct sample_engine_performance final : public polymer_app
 {
     perspective_camera cam;
@@ -23,6 +46,10 @@ struct sample_engine_performance final : public polymer_app
     std::unique_ptr<gl_shader_monitor> shaderMonitor;
     std::unique_ptr<entity_orchestrator> orchestrator;
     std::unique_ptr<simple_texture_view> fullscreen_surface;
+
+    bool show_debug_view{ false };
+    std::unique_ptr<gl_shader> boxDebugShader;
+    gl_mesh boxDebugMesh;
 
     std::vector<entity> new_entities;
     render_payload payload;
@@ -56,13 +83,16 @@ sample_engine_performance::sample_engine_performance() : polymer_app(1920, 1080,
 
     scene.reset(*orchestrator, {width, height}, true);
 
+    boxDebugShader.reset(new gl_shader(basic_vert, basic_frag));
+    boxDebugMesh = make_cube_mesh();
+    boxDebugMesh.set_non_indexed(GL_LINES);
+
     std::vector<std::string> geometry_options
     {
         "tetrahedron-uniform",
         "cube-uniform",
         "capsule-uniform",
         "cylinder-hollow-twosides",
-        "dome",
         "sphere-uniform",
         "cone-uniform",
         "torus-knot",
@@ -73,16 +103,15 @@ sample_engine_performance::sample_engine_performance() : polymer_app(1920, 1080,
 
     uniform_random_gen rand;
 
-    // Configuring an entity at runtime programmatically
-    for (uint32_t entity_index = 0; entity_index < 16384; ++entity_index)
+    for (uint32_t entity_index = 0; entity_index < 16384; ++entity_index) // 16384
     {
-        float dist_multiplier = 256.f;
-        const float3 random_position = float3(rand.random_float() * dist_multiplier, rand.random_float() * dist_multiplier, rand.random_float() * dist_multiplier);
+        float dist_multiplier = 128.f;
+        const float3 random_position = float3(rand.random_float(-1, 1) * dist_multiplier, rand.random_float(-1, 1) * dist_multiplier, rand.random_float(-1, 1) * dist_multiplier);
         const float3 random_axis = normalize(float3(rand.random_float(), rand.random_float(), rand.random_float()));
         const quatf random_quat = make_rotation_quat_axis_angle(random_axis, rand.random_float_sphere());
         const transform pose = transform(normalize(random_quat), random_position);
-        const float3 scale = float3(rand.random_float(0.1f, 3.0f));
-        const std::string name = "debug-icosahedron-" + std::to_string(entity_index);
+        const float3 scale = float3(rand.random_float(0.1f, 2.5f));
+        const std::string name = "pickable-" + std::to_string(entity_index);
 
         auto geometry = geometry_options[rand.random_int(0, (int32_t) geometry_options.size() - 1)];
         const entity e = make_standard_scene_object(orchestrator.get(), &scene,
@@ -110,6 +139,22 @@ void sample_engine_performance::on_input(const app_input_event & event)
 {
     flycam.handle_input(event);
     imgui->update_input(event);
+
+    // Raycast for editor/gizmo selection on mouse up
+    if (event.type == app_input_event::MOUSE && event.action == GLFW_RELEASE && event.value[0] == GLFW_MOUSE_BUTTON_LEFT)
+    {
+        const ray r = cam.get_world_ray(event.cursor, float2(static_cast<float>(event.windowSize.x), static_cast<float>(event.windowSize.y)));
+
+        if (length(r.direction) > 0)
+        {
+            entity_hit_result result = scene.collision_system->raycast(r);
+            if (result.r.hit)
+            {
+                auto mat_comp = scene.render_system->get_material_component(result.e);
+                mat_comp->material = "renderer-wireframe";
+            }
+        }
+    }
 }
 
 void sample_engine_performance::on_update(const app_update_event & e)
@@ -155,6 +200,54 @@ void sample_engine_performance::on_draw()
 
     scene.render_system->get_renderer()->render_frame(payload);
 
+    if (show_debug_view)
+    {
+        std::vector<bvh_node *> selected_subtree;
+        scene.collision_system->scene_accelerator->get_flat_node_list(selected_subtree);
+
+        boxDebugShader->bind();
+
+        for (int i = 0; i < selected_subtree.size(); ++i)
+        {
+            bvh_node * node = selected_subtree[i];
+            if (node->type == bvh_node_type::leaf)
+            {
+                if (node->object)
+                {
+                    const auto so = static_cast<scene_object*>(node->object->user_data);
+
+                    if (so)
+                    {
+                        const auto leaf_model = make_translation_matrix(node->bounds.center()) * make_scaling_matrix(node->bounds.size());
+                        boxDebugShader->uniform("u_color", float3(1, 0, 0));
+                        boxDebugShader->uniform("u_mvp", viewProjectionMatrix * leaf_model);
+                        boxDebugMesh.draw_elements();
+                    }
+                }
+            }
+            else
+            {
+                const auto internal_node_model = make_translation_matrix(node->bounds.center()) * make_scaling_matrix(node->bounds.size());
+
+                boxDebugShader->uniform("u_mvp", viewProjectionMatrix * internal_node_model);
+
+                if (node->type == bvh_node_type::root)
+                {
+                    boxDebugShader->uniform("u_color", float3(1, 1, 1));
+                    boxDebugMesh.draw_elements();
+                }
+                else if (node->type == bvh_node_type::internal)
+                {
+                    boxDebugShader->uniform("u_color", float3(1, 1, 0));
+                    boxDebugMesh.draw_elements();
+                }
+
+            }
+        }
+
+        boxDebugShader->unbind();
+    }
+
     glUseProgram(0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, width, height);
@@ -165,16 +258,9 @@ void sample_engine_performance::on_draw()
     fullscreen_surface->draw(scene.render_system->get_renderer()->get_color_texture(viewIndex));
 
     ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-    for (auto & t : scene.render_system->get_renderer()->cpuProfiler.get_data())
-    {
-        ImGui::Text("CPU: %s - %f", t.first.c_str(), t.second);
-    }
-
-    for (auto & t : scene.render_system->get_renderer()->gpuProfiler.get_data())
-    {
-        ImGui::Text("GPU: %s - %f", t.first.c_str(), t.second);
-    }
-
+    ImGui::Checkbox("Show Debug", &show_debug_view);
+    for (auto & t : scene.render_system->get_renderer()->cpuProfiler.get_data()) ImGui::Text("CPU: %s - %f", t.first.c_str(), t.second);
+    for (auto & t : scene.render_system->get_renderer()->gpuProfiler.get_data()) ImGui::Text("GPU: %s - %f", t.first.c_str(), t.second);
     imgui->end_frame();
 
     gl_check_error(__FILE__, __LINE__);

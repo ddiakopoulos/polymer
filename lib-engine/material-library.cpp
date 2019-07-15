@@ -23,6 +23,10 @@ material_library::material_library()
     std::shared_ptr<polymer_default_material> default = std::make_shared<polymer_default_material>();
     create_handle_for_asset(kDefaultMaterialId.c_str(), static_cast<std::shared_ptr<base_material>>(default));
 
+    // Create a wireframe material and create an asset handle for it (also add to local instances)
+    std::shared_ptr<polymer_wireframe_material> wireframe = std::make_shared<polymer_wireframe_material>();
+    create_handle_for_asset("renderer-wireframe", static_cast<std::shared_ptr<base_material>>(wireframe));
+
     material_instance inst;
     inst.name = kDefaultMaterialId;
     inst.type = instance_type::procedural;

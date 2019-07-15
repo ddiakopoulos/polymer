@@ -281,6 +281,8 @@ namespace polymer
 
         bool intersect(const ray & ray, std::vector<std::pair<scene_object*, float>> & results) const
         {
+            scoped_timer t("bvh-intersect");
+
             results.reserve(objects.size());
 
             intersect_internal(root, ray, results);
