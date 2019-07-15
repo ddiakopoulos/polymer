@@ -15,8 +15,21 @@ xr_input_focus xr_input_processor::recompute_focus(const vr_controller & control
     const ray controller_ray = ray(controller.t.position, -qzdir(controller.t.orientation));
     const entity_hit_result box_result = the_scene->collision_system->raycast(controller_ray, raycast_type::box);
 
+    auto is_focuable = [this](const entity what)
+    {
+        bool result = false;
+        for (const auto& e : focusable_entities)
+        {
+            if (what == e) return true;
+        }
+        return false;
+    };
+
     if (box_result.r.hit)
     {
+        // Can we focus on this thing?
+        if (is_focuable(box_result.e))
+        {
         // Refine if hit the mesh
         const entity_hit_result mesh_result = the_scene->collision_system->raycast(controller_ray, raycast_type::mesh);
         if (mesh_result.r.hit)
@@ -29,7 +42,12 @@ xr_input_focus xr_input_processor::recompute_focus(const vr_controller & control
             return { controller_ray, box_result, true }; // "soft focus"
         }
     }
-    return { controller_ray, {} };
+        else
+        {
+            return { controller_ray, {} }; // no focus
+}
+    }
+    return { controller_ray, {} }; // no focus
 }
 
 xr_input_processor::xr_input_processor(entity_system_manager * esm, scene * the_scene, hmd_base * hmd) : the_scene(the_scene), hmd(hmd) {}
@@ -257,7 +275,6 @@ void xr_controller_system::handle_event(const xr_input_event & event)
 
 void xr::xr_controller_system::update_laser_geometry(const float distance)
 {
-
     auto front_plane = make_plane(laser_line_thickness, distance, 4, 24, false);
 
     auto back_plane = make_plane(laser_line_thickness, distance, 4, 24, false);
@@ -295,21 +312,12 @@ void xr_controller_system::process(const float dt)
         hmd->get_controller(vr_controller_role::right_hand).buttons[vr_button::xy]
     };
 
-    auto check_ignored = [this](const entity what)
-    {
-        bool result = false;
-        for (const auto & e : ignored_entities)
-        {
-            if (what == e) return true;
-        }
-        return false;
-    };
 
     if (render_styles.size() && render_styles.top() == controller_render_style_t::laser_to_entity)
     {
         const xr_input_focus focus = processor->get_focus();
 
-        if (focus.result.e != kInvalidEntity && check_ignored(focus.result.e) == false)
+        if (focus.result.e != kInvalidEntity)
         {
             // Hard focus ends on the object hit
             if (focus.soft == false)
@@ -389,11 +397,6 @@ void xr_controller_system::process(const float dt)
             }
         }
     }
-}
-
-void xr_controller_system::add_focus_ignore(const entity ignored_entity)
-{
-    ignored_entities.push_back(ignored_entity);
 }
 
 ////////////////////////////////////////

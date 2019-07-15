@@ -87,6 +87,8 @@ namespace xr {
         xr_input_focus last_focus;
         xr_input_focus recompute_focus(const vr_controller & controller);
 
+        std::vector<entity> focusable_entities;
+
     public:
 
         xr_input_processor(entity_system_manager * esm, scene * the_scene, hmd_base * hmd);
@@ -95,6 +97,8 @@ namespace xr {
         vr_controller get_controller(const vr_controller_role hand);
         xr_input_focus get_focus() const;
         void process(const float dt);
+
+        void add_focusable(const entity focusable);
 
         // The dominant hand changes depending on which controller last pressed the primary trigger.
         // This function can pin the dominant hand. For instance, if we attach some 
@@ -137,14 +141,12 @@ namespace xr {
         float3 target_location;
         float3 laser_color {172.f/255.f, 54.f/255.f, 134.f/255.f};
         float laser_alpha{ 0.f };
-        float laser_line_thickness{ 0.0075f };
-        float laser_fade_seconds{ 0.25f };
+        float laser_line_thickness{ 0.0065f };
+        float laser_fade_seconds{ 0.0625f };
         float laser_alpha_on_teleport{ 0.f };
-        float laser_fixed_draw_distance{ 2.f };
+        float laser_fixed_draw_distance{ 3.f };
         void update_laser_geometry(const float distance);
         std::stack<controller_render_style_t> render_styles;
-
-        std::vector<entity> ignored_entities;
 
         polymer::event_manager_sync::connection xr_input;
         void handle_event(const xr_input_event & event);
@@ -155,7 +157,6 @@ namespace xr {
         ~xr_controller_system();
         std::vector<entity> get_renderables() const;
         void process(const float dt);
-        void add_focus_ignore(const entity ignored_entity); 
         const entity get_entity_for_controller(vr_controller_role role) const { return (role == vr_controller_role::left_hand ? left_controller : right_controller); }
     };
 

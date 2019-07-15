@@ -89,7 +89,7 @@ void polymer_wireframe_material::use()
 {
     resolve_variants();
     compiled_shader->shader.bind();
-    compiled_shader->shader.uniform("u_color", color);
+    compiled_shader->shader.uniform("u_color", float4(color.xyz(), opacity));
 }
 
 void polymer_wireframe_material::resolve_variants()

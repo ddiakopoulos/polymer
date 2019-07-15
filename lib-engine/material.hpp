@@ -79,7 +79,7 @@ namespace polymer
 
     struct polymer_wireframe_material final : public base_material
     {
-        float4 color{ 1, 1, 1, 0.5f};
+        float4 color{ 1, 1, 1, 1}; // opacity is actually taken from base_material
         polymer_wireframe_material();
         virtual void use() override final;
         virtual void resolve_variants() override final;
