@@ -7,6 +7,7 @@
 #include "util-win32.hpp"
 #include "model-io.hpp"
 #include "renderer-util.hpp"
+#include "renderer-debug.hpp"
 
 using namespace polymer;
 
@@ -30,7 +31,7 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
     igm->add_font(droidSansTTFBytes);
 
     cam.look_at({ 0, 5.f, -5.f }, { 0, 3.5f, 0 });
-    cam.farclip = 24;
+    cam.farclip = 64;
     flycam.set_camera(&cam);
 
     load_required_renderer_assets("../assets", shaderMonitor);
@@ -45,12 +46,14 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
 
     scene.reset(orchestrator, { width, height }, true);
 
+    global_debug_mesh_manager::get()->initialize_resources(&orchestrator, &scene);
+
     gizmo.reset(new gizmo_controller(&scene));
 }
 
 void scene_editor_app::on_drop(std::vector<std::string> filepaths)
 {
-    for (auto path : filepaths)
+    for (const auto & path : filepaths)
     {
         const std::string ext = get_extension(path);
         if (ext == "json") import_scene(path);
@@ -170,7 +173,6 @@ void scene_editor_app::on_input(const app_input_event & event)
                     }
                 }
             }
-
         }
     }
 }
@@ -204,6 +206,8 @@ void scene_editor_app::import_scene(const std::string & path)
     {
         throw std::invalid_argument("path was empty...?");
     }
+
+    global_debug_mesh_manager::get()->initialize_resources(&orchestrator, &scene);
 }
 
 void scene_editor_app::open_material_editor()
@@ -303,6 +307,9 @@ void scene_editor_app::on_draw()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    global_debug_mesh_manager::get()->upload();
+    global_debug_mesh_manager::get()->clear();
+
     const float4x4 projectionMatrix = cam.get_projection_matrix(float(width) / float(height));
     const float4x4 viewMatrix = cam.get_view_matrix();
     const float4x4 viewProjectionMatrix = (projectionMatrix * viewMatrix);
@@ -354,6 +361,8 @@ void scene_editor_app::on_draw()
                 renderer_payload.point_lights.push_back(pt_light_c);
             }
         }
+
+        renderer_payload.render_components.push_back(assemble_render_component(scene, global_debug_mesh_manager::get()->get_entity()));
 
         // Add single-viewport camera
         renderer_payload.views.push_back(view_data(0, cam.pose, projectionMatrix));
@@ -649,6 +658,8 @@ void scene_editor_app::on_draw()
             if (ImGui::TreeNode("Rendering"))
             {
                 ImGui::Checkbox("Show Floor Grid", &show_grid);
+
+                ImGui::SliderFloat("Far Clip", &cam.farclip, 2.f, 256.f);
 
                 renderer_settings lastSettings = scene.render_system->get_renderer()->settings;
                 if (build_imgui(im_ui_ctx, "Renderer", *scene.render_system->get_renderer()))
