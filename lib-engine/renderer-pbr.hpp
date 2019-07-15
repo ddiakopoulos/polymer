@@ -35,8 +35,8 @@ namespace polymer
 
     public:
 
-        float resolution = 4096;        // cascade resolution
-        float splitLambda = 0.675f;     // frustum split constant
+        float resolution = 4096;    // cascade resolution
+        float splitLambda = 0.095f; // frustum split constant
 
         std::vector<float2> splitPlanes;
         std::vector<float> nearPlanes;
@@ -59,7 +59,7 @@ namespace polymer
     template<class F> void visit_fields(stable_cascaded_shadows & o, F f)
     {
         f("shadowmap_resolution", o.resolution);
-        f("cascade_split",        o.splitLambda, range_metadata<float>{ 0.1f, 1.0f });
+        f("cascade_split",        o.splitLambda, range_metadata<float>{ 0.05f, 1.0f });
     }
 
     ////////////////////////////////////////

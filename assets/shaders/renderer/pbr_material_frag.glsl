@@ -135,11 +135,6 @@ void compute_cook_torrance(LightingInfo data, float attenuation, out vec3 diffus
     specularContribution = ((F * G * D) / ((4.0 * data.NdotL * data.NdotV) + 0.001)) * attenuation;
 }
 
-void compute_ibl(LightingInfo data, vec3 n, vec3 refl)
-{
-
-}
-
 void main()
 {   
     // Surface properties

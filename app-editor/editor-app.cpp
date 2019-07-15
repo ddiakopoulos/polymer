@@ -31,7 +31,7 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
     igm->add_font(droidSansTTFBytes);
 
     cam.look_at({ 0, 5.f, -5.f }, { 0, 3.5f, 0 });
-    cam.farclip = 64;
+    cam.farclip = 24;
     flycam.set_camera(&cam);
 
     load_required_renderer_assets("../assets", shaderMonitor);
