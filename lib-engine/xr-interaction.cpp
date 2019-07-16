@@ -247,8 +247,6 @@ std::vector<entity> xr_controller_system::get_renderables() const
 
 void xr_controller_system::handle_event(const xr_input_event & event)
 {
-    // todo - can this entity be pointed at? (list for system)
-
     // Draw laser on focus of any type
     if (event.type == xr_button_event::focus_begin)
     {
@@ -275,8 +273,8 @@ void xr_controller_system::handle_event(const xr_input_event & event)
 
 void xr::xr_controller_system::update_laser_geometry(const float distance)
 {
+    /// @fixme - the laser geometry can be cached
     auto front_plane = make_plane(laser_line_thickness, distance, 4, 24, false);
-
     auto back_plane = make_plane(laser_line_thickness, distance, 4, 24, false);
     for (auto & v : back_plane.vertices) v = transform_coord(make_rotation_matrix({0, 0, 1.f}, (float) POLYMER_PI), v);
     for (auto & f : back_plane.faces) f = {f.z, f.y, f.x};

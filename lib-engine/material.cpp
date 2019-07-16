@@ -48,6 +48,7 @@ void polymer_procedural_material::use()
     if (!shader.assigned()) return;
     resolve_variants();
     compiled_shader->shader.bind();
+    compiled_shader->shader.uniform("u_opacity", opacity);
 }
 
 void polymer_procedural_material::resolve_variants()

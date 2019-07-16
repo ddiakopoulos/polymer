@@ -7,7 +7,7 @@ in vec2 v_texcoord;
 in vec3 v_tangent;
 in vec3 v_bitangent;
 
-uniform vec4 u_color = vec4(1, 1, 1, 0.25);
+uniform vec4 u_color = vec4(1, 1, 1, 0.5);
 
 in vec3 triangleDist;
 out vec4 f_color;
