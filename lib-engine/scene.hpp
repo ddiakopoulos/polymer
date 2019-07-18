@@ -423,6 +423,31 @@ namespace polymer
         f("local_transform_component", o.local_transform);
     }
 
+    ///////////////////////////////
+    //   boilerplate reference   //
+    ///////////////////////////////
+
+    // Boilerplate for creating a new scene component type
+    /// struct new_component : public base_component
+    /// {
+    ///     new_component() {};
+    ///     new_component(entity e) : base_component(e) {}
+    /// };
+    /// POLYMER_SETUP_TYPEID(new_component);
+    /// 
+    /// template<class F> void visit_fields(new_component & o, F f) {}
+    /// 
+    /// inline void to_json(json & j, const new_component & p) {
+    ///     visit_fields(const_cast<new_component&>(p), [&j](const char * name, auto & field, auto... metadata) { j.push_back({ name, field }); });
+    /// }
+    /// 
+    /// inline void from_json(const json & archive, new_component & m) {
+    ///     visit_fields(m, [&archive](const char * name, auto & field, auto... metadata) {
+    ///         if (auto * no_serialize = unpack<serializer_hidden>(metadata...)) return;
+    ///         field = archive.at(name).get<std::remove_reference_t<decltype(field)>>();
+    ///     });
+    /// };
+
     ///////////////
     //   scene   //
     ///////////////
@@ -488,7 +513,7 @@ namespace polymer
         polymer::transform_system * xform_system; 
         polymer::identifier_system * identifier_system;
 
-        void import_environment(const std::string & path, entity_system_manager & o);
+        void import_environment(const std::string & path, entity_system_manager & esm);
         void export_environment(const std::string & path);
 
         entity track_entity(entity e);        
@@ -496,7 +521,7 @@ namespace polymer
         void copy(entity src, entity dest);
         void destroy(entity e);
 
-        void reset(entity_system_manager & o, int2 default_renderer_resolution, bool create_default_entities = false);
+        void reset(entity_system_manager & esm, int2 default_renderer_resolution, bool create_default_entities = false);
     };
 
     template<class F> void visit_systems(scene * p, F f)
