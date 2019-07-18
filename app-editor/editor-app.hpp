@@ -18,7 +18,7 @@
 #include "material.hpp"
 #include "renderer-uniforms.hpp"
 #include "asset-handle-utils.hpp"
-#include "environment.hpp"
+#include "scene.hpp"
 #include "arcball.hpp"
 #include "asset-resolver.hpp"
 #include "ui-actions.hpp"
@@ -55,8 +55,8 @@ struct scene_editor_app final : public polymer_app
     std::shared_ptr<gizmo_controller> gizmo;
 
     render_payload renderer_payload;
-    entity_orchestrator orchestrator;
-    environment scene;
+    entity_system_manager the_entity_system_manager;
+    scene the_scene;
 
     void draw_entity_scenegraph(const entity e);
 

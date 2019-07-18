@@ -3,7 +3,7 @@
 #ifndef imgui_utils_hpp
 #define imgui_utils_hpp
 
-#include "environment.hpp"
+#include "scene.hpp"
 #include "gl-api.hpp"
 #include "gl-imgui.hpp"
 #include "material.hpp"
@@ -189,7 +189,7 @@ build_imgui(imgui_ui_context & ctx, const char * label, T & object)
 }
 
 // todo - we should be using component pools to make this logic easer
-inline bool inspect_entity(imgui_ui_context & ctx, const char * label, entity e, environment & env)
+inline bool inspect_entity(imgui_ui_context & ctx, const char * label, entity e, scene & env)
 {
     bool r = false;
 

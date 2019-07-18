@@ -9,7 +9,7 @@
 #include "gl-texture-view.hpp"
 #include "shader-library.hpp"
 #include "splines.hpp"
-#include "environment.hpp"
+#include "scene.hpp"
 
 using namespace polymer;
 using namespace gui;

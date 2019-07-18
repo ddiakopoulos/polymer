@@ -7,7 +7,7 @@
 #include "ecs/core-ecs.hpp"
 #include "ecs/component-pool.hpp"
 #include "serialization.hpp"
-#include "environment.hpp"
+#include "scene.hpp"
 
 namespace polymer
 {
@@ -97,7 +97,7 @@ namespace polymer
         polymer_component_pool<local_transform_component> scene_graph_transforms{ 256 };
         polymer_component_pool<world_transform_component> world_transforms{ 256 };
 
-        transform_system(entity_orchestrator * f) : base_system(f)
+        transform_system(entity_system_manager * f) : base_system(f)
         {
             register_system_for_type(this, get_typeid<local_transform_component>());
         }

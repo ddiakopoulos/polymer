@@ -6,7 +6,7 @@
 #include "lib-engine.hpp"
 
 #include "ecs/core-ecs.hpp"
-#include "environment.hpp"
+#include "scene.hpp"
 #include "renderer-util.hpp"
 
 using namespace polymer;
@@ -17,11 +17,11 @@ struct sample_engine_procedural_material final : public polymer_app
     fps_camera_controller flycam;
 
     std::unique_ptr<gl_shader_monitor> shader_monitor;
-    std::unique_ptr<entity_orchestrator> orchestrator;
+    std::unique_ptr<entity_system_manager> the_entity_system_manager;
     std::unique_ptr<simple_texture_view> fullscreen_surface;
 
     render_payload payload;
-    environment scene;
+    scene scene;
 
     sample_engine_procedural_material();
     ~sample_engine_procedural_material();
@@ -45,11 +45,11 @@ sample_engine_procedural_material::sample_engine_procedural_material() : polymer
     shader_monitor->add_search_path("assets/"); // local
 
     fullscreen_surface.reset(new simple_texture_view());
-    orchestrator.reset(new entity_orchestrator());
+    the_entity_system_manager.reset(new entity_system_manager());
 
     load_required_renderer_assets("../../assets/", *shader_monitor);
 
-    scene.reset(*orchestrator, {width, height}, true);
+    scene.reset(*the_entity_system_manager, {width, height}, true);
 
     auto gpu_mesh = create_handle_for_asset("debug-icosahedron", make_mesh_from_geometry(make_icosasphere(4)));
     auto cpu_mesh = create_handle_for_asset("debug-icosahedron", make_icosasphere(4));
@@ -60,7 +60,7 @@ sample_engine_procedural_material::sample_engine_procedural_material() : polymer
         "../../assets/shaders/renderer");
 
     {
-        const entity debug_icosa = scene.track_entity(orchestrator->create_entity());
+        const entity debug_icosa = scene.track_entity(the_entity_system_manager->create_entity());
 
         scene.identifier_system->create(debug_icosa, "debug-icosahedron");
         scene.xform_system->create(debug_icosa, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });

@@ -25,7 +25,7 @@
 #include "string_utils.hpp"
 #include "renderer-pbr.hpp"
 #include "system-collision.hpp"
-#include "environment.hpp"
+#include "scene.hpp"
 #include "system-render.hpp"
 
 #include "../lib-model-io/model-io.hpp"
@@ -33,7 +33,6 @@
 
 namespace polymer
 {
-
     template <typename T>
     inline void remove_duplicates(std::vector<T> & vec)
     {
@@ -56,7 +55,7 @@ namespace polymer
     // and we need to resolve those too. 
     class asset_resolver
     {
-        environment * scene;
+        scene * scene;
         material_library * library;
 
         // Unresolved asset names
@@ -248,8 +247,8 @@ namespace polymer
             }
         }
 
-        asset_resolver::asset_resolver(environment * scene, material_library * library) 
-            : scene(scene), library(library) {}
+        asset_resolver::asset_resolver(polymer::scene * the_scene, material_library * library)
+            : scene(the_scene), library(library) {}
 
         void add_search_path(const std::string & search_path)
         {

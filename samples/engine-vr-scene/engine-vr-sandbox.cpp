@@ -16,7 +16,7 @@ engine_vr_sandbox::engine_vr_sandbox()
         hmd.reset(new openvr_hmd());
         glfwSwapInterval(0);
 
-        orchestrator.reset(new entity_orchestrator());
+        the_entity_system_manager.reset(new entity_system_manager());
         load_required_renderer_assets("../../assets", shaderMonitor);
 
 
@@ -24,7 +24,7 @@ engine_vr_sandbox::engine_vr_sandbox()
         // Setup for the recommended eye target size
         const uint2 eye_target_size = hmd->get_recommended_render_target_size();
 
-        scene.reset(*orchestrator, {eye_target_size.x, eye_target_size.y}, true);
+        scene.reset(*the_entity_system_manager, {eye_target_size.x, eye_target_size.y}, true);
 
         renderer_settings settings;
         settings.renderSize = int2(eye_target_size.x, eye_target_size.y);
@@ -42,18 +42,18 @@ engine_vr_sandbox::engine_vr_sandbox()
             auto wiref_mat = std::make_shared<polymer_wireframe_material>();
             scene.mat_library->register_material("renderer-wireframe", wiref_mat);
 
-            floor = scene.track_entity(orchestrator->create_entity());
+            floor = scene.track_entity(the_entity_system_manager->create_entity());
             scene.identifier_system->create(floor, "floor-mesh");
             scene.xform_system->create(floor, transform(make_rotation_quat_axis_angle({ 1, 0, 0 }, ((float) POLYMER_PI / 2.f)), { 0, -0.01f, 0 }), { 1.f, 1.f, 1.f });
             scene.render_system->create(floor, material_component(floor, material_handle("renderer-wireframe")));
             scene.render_system->create(floor, mesh_component(floor, gpu_mesh_handle("floor-mesh")));
         }
 
-        input_processor.reset(new xr_input_processor(orchestrator.get(), &scene, hmd.get()));
-        controller_system.reset(new xr_controller_system(orchestrator.get(), &scene, hmd.get(), input_processor.get()));
-        gizmo_system.reset(new xr_gizmo_system(orchestrator.get(), &scene, hmd.get(), input_processor.get()));
+        input_processor.reset(new xr_input_processor(the_entity_system_manager.get(), &scene, hmd.get()));
+        controller_system.reset(new xr_controller_system(the_entity_system_manager.get(), &scene, hmd.get(), input_processor.get()));
+        gizmo_system.reset(new xr_gizmo_system(the_entity_system_manager.get(), &scene, hmd.get(), input_processor.get()));
 
-        vr_imgui.reset(new xr_imgui_system(orchestrator.get(), &scene, hmd.get(), input_processor.get(), { 256, 256 }, window));
+        vr_imgui.reset(new xr_imgui_system(the_entity_system_manager.get(), &scene, hmd.get(), input_processor.get(), { 256, 256 }, window));
 
         gui::make_light_theme();
     }

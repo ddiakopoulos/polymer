@@ -16,7 +16,7 @@
 #include "gl-imgui.hpp"
 #include "gl-renderable-grid.hpp"
 #include "shader-library.hpp"
-#include "environment.hpp"
+#include "scene.hpp"
 
 using namespace polymer;
 using namespace gui;

@@ -27,7 +27,6 @@
     </ClCompile>
     <ClCompile Include="openvr-hmd.cpp" />
     <ClCompile Include="openvr-camera.cpp" />
-    <ClCompile Include="environment.cpp" />
     <ClCompile Include="renderer-pbr.cpp" />
     <ClCompile Include="..\third_party\tinyexr\tinyexr.cc">
       <Filter>third-party\tinyexr</Filter>
@@ -46,6 +45,7 @@
     </ClCompile>
     <ClCompile Include="xr-interaction.cpp" />
     <ClCompile Include="hmd-base.cpp" />
+    <ClCompile Include="scene.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="gfx\gl\gl-api.hpp">
@@ -140,7 +140,6 @@
       <Filter>gfx\gl</Filter>
     </ClInclude>
     <ClInclude Include="system-transform.hpp" />
-    <ClInclude Include="environment.hpp" />
     <ClInclude Include="system-identifier.hpp" />
     <ClInclude Include="system-collision.hpp" />
     <ClInclude Include="system-util.hpp" />
@@ -184,6 +183,7 @@
     <ClInclude Include="ui-actions.hpp" />
     <ClInclude Include="hmd-base.hpp" />
     <ClInclude Include="renderer-uniforms.hpp" />
+    <ClInclude Include="scene.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="gfx">

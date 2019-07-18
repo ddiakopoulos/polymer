@@ -5,7 +5,7 @@
 #include "logging.hpp"
 #include "file_io.hpp"
 #include "json.hpp"
-#include "environment.hpp"
+#include "scene.hpp"
 #include "string_utils.hpp"
 
 using namespace polymer;

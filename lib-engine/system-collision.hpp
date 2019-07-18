@@ -8,7 +8,7 @@
 #include "ecs/typeid.hpp"
 #include "ecs/core-ecs.hpp"
 #include "system-transform.hpp"
-#include "environment.hpp"
+#include "scene.hpp"
 #include "bvh.hpp"
 
 namespace polymer
@@ -37,7 +37,7 @@ namespace polymer
         std::unique_ptr<bvh_tree> scene_accelerator;
         std::vector<scene_object> bvh_objects;
 
-        collision_system(entity_orchestrator * orch) : base_system(orch)
+        collision_system(entity_system_manager * esm) : base_system(esm)
         {
             register_system_for_type(this, get_typeid<geometry_component>());
         }
@@ -133,7 +133,7 @@ namespace polymer
             {
                 if (!xform_system)
                 {
-                    base_system * xform_base = orchestrator->get_system(get_typeid<transform_system>());
+                    base_system * xform_base = esm->get_system(get_typeid<transform_system>());
                     xform_system = dynamic_cast<transform_system *>(xform_base);
                     assert(xform_system != nullptr);
                 }

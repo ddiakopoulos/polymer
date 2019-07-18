@@ -3,7 +3,7 @@
 #ifndef polymer_asset_import_utils_hpp
 #define polymer_asset_import_utils_hpp
 
-#include "environment.hpp"
+#include "scene.hpp"
 #include "asset-resolver.hpp"
 
 namespace polymer
@@ -11,32 +11,32 @@ namespace polymer
 
     inline entity create_model(const std::string & geom_handle,
         const std::string & mesh_handle,
-        environment & env,
-        entity_orchestrator & orch)
+        scene & the_scene,
+        entity_system_manager & orch)
     {
-        const entity e = env.track_entity(orch.create_entity());
+        const entity e = the_scene.track_entity(orch.create_entity());
 
-        env.identifier_system->create(e, mesh_handle);
-        env.xform_system->create(e, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
+        the_scene.identifier_system->create(e, mesh_handle);
+        the_scene.xform_system->create(e, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
 
         polymer::material_component model_mat(e);
         model_mat.material = material_handle(material_library::kDefaultMaterialId);
-        env.render_system->create(e, std::move(model_mat));
+        the_scene.render_system->create(e, std::move(model_mat));
 
         polymer::mesh_component model_mesh(e);
         model_mesh.mesh = gpu_mesh_handle(mesh_handle);
-        env.render_system->create(e, std::move(model_mesh));
+        the_scene.render_system->create(e, std::move(model_mesh));
 
         polymer::geometry_component model_geom(e);
         model_geom.geom = cpu_mesh_handle(mesh_handle);
-        env.collision_system->create(e, std::move(model_geom));
+        the_scene.collision_system->create(e, std::move(model_geom));
 
         return e;
     }
 
     inline std::vector<entity> import_asset_runtime(const std::string & filepath,
-        environment & env,
-        entity_orchestrator & orch)
+        scene & the_scene,
+        entity_system_manager & esm)
     {
 
         // Keep a list of all the entities we create as part of the import process
@@ -70,19 +70,19 @@ namespace polymer
             create_handle_for_asset(handle_id.c_str(), make_mesh_from_geometry(mesh));
             create_handle_for_asset(handle_id.c_str(), std::move(mesh));
 
-            if (num_models == 1) created_entities.push_back(create_model(handle_id, handle_id, env, orch));
-            else children.push_back(create_model(handle_id, handle_id, env, orch));
+            if (num_models == 1) created_entities.push_back(create_model(handle_id, handle_id, the_scene, esm));
+            else children.push_back(create_model(handle_id, handle_id, the_scene, esm));
         }
 
         if (children.size())
         {
-            const entity root_entity = env.track_entity(orch.create_entity());
+            const entity root_entity = the_scene.track_entity(esm.create_entity());
             created_entities.push_back(root_entity);
-            env.identifier_system->create(root_entity, "root/" + name_no_ext);
-            env.xform_system->create(root_entity, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
+            the_scene.identifier_system->create(root_entity, "root/" + name_no_ext);
+            the_scene.xform_system->create(root_entity, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
             for (const entity child : children)
             {
-                env.xform_system->add_child(root_entity, child);
+                the_scene.xform_system->add_child(root_entity, child);
                 created_entities.push_back(child);
             }
         }

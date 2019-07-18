@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef polymer_environment_hpp
-#define polymer_environment_hpp
+#ifndef polymer_scene_hpp
+#define polymer_scene_hpp
 
 #include "geometry.hpp"
 
@@ -49,10 +49,6 @@ namespace polymer
     };
 }
 
-//////////////////////////
-//   Scene Definition   //
-//////////////////////////
-
 namespace linalg
 {
     using json = nlohmann::json;
@@ -87,7 +83,7 @@ namespace polymer
     template<class F> void visit_fields(polymer::transform & o, F f) { f("position", o.position); f("orientation", o.orientation); }
 
     // Polymer Asset Handles
-    inline void to_json(json & archive, const texture_handle & m)  { archive = m.name == "empty" ? "" : m.name; }
+    inline void to_json(json & archive, const texture_handle & m) { archive = m.name == "empty" ? "" : m.name; }
     inline void from_json(const json & archive, texture_handle & m) { m = texture_handle(archive.get<std::string>()); }
 
     inline void to_json(json & archive, const gpu_mesh_handle & m) { archive = m.name == "empty" ? "" : m.name; }
@@ -99,18 +95,27 @@ namespace polymer
     inline void to_json(json & archive, const material_handle & m) { archive = m.name == "empty" ? "" : m.name; }
     inline void from_json(const json & archive, material_handle & m) { m = material_handle(archive.get<std::string>()); }
 
-    inline void to_json(json & archive, const shader_handle & m)   { archive = m.name == "empty" ? "" : m.name; }
+    inline void to_json(json & archive, const shader_handle & m) { archive = m.name == "empty" ? "" : m.name; }
     inline void from_json(const json & archive, shader_handle & m) { m = shader_handle(archive.get<std::string>()); }
 
     // Polymer Primitive Types
-    inline void to_json(json & archive, const aabb_2d & m)   { archive = json{ { "min", m._min },{ "max", m._max } }; }
+    inline void to_json(json & archive, const aabb_2d & m) { archive = json{ { "min", m._min },{ "max", m._max } }; }
     inline void from_json(const json & archive, aabb_2d & p) { p._min = archive.at("min").get<float2>(); p._max = archive.at("max").get<float2>(); }
 
-    inline void to_json(json & archive, const aabb_3d & m)   { archive = json{ { "min", m._min },{ "max", m._max } }; }
+    inline void to_json(json & archive, const aabb_3d & m) { archive = json{ { "min", m._min },{ "max", m._max } }; }
     inline void from_json(const json & archive, aabb_3d & p) { p._min = archive.at("min").get<float3>(); p._max = archive.at("max").get<float3>(); }
 
     inline void to_json(json & archive, const transform & m) { archive = json{ { "position", m.position },{ "orientation", m.orientation } }; }
     inline void from_json(const json & archive, transform & p) { p.position = archive.at("position").get<float3>(); p.orientation = archive.at("orientation").get<quatf>(); }
+
+}
+
+//////////////////////////
+//   Scene Definition   //
+//////////////////////////
+
+namespace polymer
+{
 
     //////////////////////////////
     //   identifier_component   //
@@ -418,9 +423,9 @@ namespace polymer
         f("local_transform_component", o.local_transform);
     }
 
-    /////////////////////
-    //   environment   //
-    /////////////////////
+    ///////////////
+    //   scene   //
+    ///////////////
 
     class render_system;
     class collision_system;
@@ -429,7 +434,7 @@ namespace polymer
     struct material_library;
     class asset_resolver;
 
-    class environment
+    class scene
     {
         std::vector<entity> active_entities;
         std::unordered_map<entity, entity> remap_table; // for serialization only
@@ -483,7 +488,7 @@ namespace polymer
         polymer::transform_system * xform_system; 
         polymer::identifier_system * identifier_system;
 
-        void import_environment(const std::string & path, entity_orchestrator & o);
+        void import_environment(const std::string & path, entity_system_manager & o);
         void export_environment(const std::string & path);
 
         entity track_entity(entity e);        
@@ -491,10 +496,10 @@ namespace polymer
         void copy(entity src, entity dest);
         void destroy(entity e);
 
-        void reset(entity_orchestrator & o, int2 default_renderer_resolution, bool create_default_entities = false);
+        void reset(entity_system_manager & o, int2 default_renderer_resolution, bool create_default_entities = false);
     };
 
-    template<class F> void visit_systems(environment * p, F f)
+    template<class F> void visit_systems(scene * p, F f)
     {
         f("identifier_system", p->identifier_system);
         f("transform_system", p->xform_system);
@@ -502,12 +507,12 @@ namespace polymer
         f("collision_system", p->collision_system);
     }
 
-    render_component assemble_render_component(environment & env, const entity e);
+    render_component assemble_render_component(scene & env, const entity e);
 
-    entity make_standard_scene_object(entity_orchestrator * orch, environment * env,
+    entity make_standard_scene_object(entity_system_manager * esm, scene * env,
         const std::string & name, const transform & pose, const float3 & scale,
         const material_handle & mh, const gpu_mesh_handle & gmh, const cpu_mesh_handle & cmh);
 
 } // end namespace polymer
 
-#endif // end polymer_environment_hpp
+#endif // end polymer_scene_hpp

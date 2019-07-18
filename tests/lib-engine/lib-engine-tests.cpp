@@ -199,10 +199,10 @@ namespace polymer
 
     TEST_CASE("transform system has_transform")
     {
-        entity_orchestrator orchestrator;
-        transform_system * system = orchestrator.create_system<transform_system>(&orchestrator);
+        entity_system_manager the_entity_system_manager;
+        transform_system * system = the_entity_system_manager.create_system<transform_system>(&the_entity_system_manager);
 
-        entity root = orchestrator.create_entity();
+        entity root = the_entity_system_manager.create_entity();
         REQUIRE_FALSE(system->has_transform(root));
 
         system->create(root, transform(), float3(1));
@@ -211,23 +211,23 @@ namespace polymer
 
     TEST_CASE("transform system double add")
     {
-        entity_orchestrator orchestrator;
-        transform_system * system = orchestrator.create_system<transform_system>(&orchestrator);
+        entity_system_manager the_entity_system_manager;
+        transform_system * system = the_entity_system_manager.create_system<transform_system>(&the_entity_system_manager);
 
-        entity root = orchestrator.create_entity();
+        entity root = the_entity_system_manager.create_entity();
         REQUIRE(system->create(root, transform(), float3(1)));
         REQUIRE_FALSE(system->create(root, transform(), float3(1)));
     }
 
     TEST_CASE("transform system destruction")
     {
-        entity_orchestrator orchestrator;
-        transform_system * system = orchestrator.create_system<transform_system>(&orchestrator);
+        entity_system_manager the_entity_system_manager;
+        transform_system * system = the_entity_system_manager.create_system<transform_system>(&the_entity_system_manager);
 
         std::vector<entity> entities;
         for (int i = 0; i < 32; ++i)
         {
-            entity e = orchestrator.create_entity();
+            entity e = the_entity_system_manager.create_entity();
             system->create(e, transform(), float3(1));
             entities.push_back(e);
             REQUIRE(system->has_transform(e));
@@ -248,12 +248,12 @@ namespace polymer
         transform p2(make_rotation_quat_axis_angle({ 1, 1, 0 }, (float) POLYMER_PI / 0.5f), float3(3.f, 0, 0));
         transform p3(make_rotation_quat_axis_angle({ 0, 1, -1 }, (float) POLYMER_PI), float3(0, 1.f, 4.f));
 
-        entity_orchestrator orchestrator;
-        transform_system * system = orchestrator.create_system<transform_system>(&orchestrator);
+        entity_system_manager the_entity_system_manager;
+        transform_system * system = the_entity_system_manager.create_system<transform_system>(&the_entity_system_manager);
 
-        entity root = orchestrator.create_entity();
-        entity child1 = orchestrator.create_entity();
-        entity child2 = orchestrator.create_entity();
+        entity root = the_entity_system_manager.create_entity();
+        entity child1 = the_entity_system_manager.create_entity();
+        entity child2 = the_entity_system_manager.create_entity();
 
         system->create(root, transform(), float3(1));
         system->create(child1, transform(), float3(1));
@@ -286,12 +286,12 @@ namespace polymer
         const transform p2(make_rotation_quat_axis_angle({ 1, 1, 0 }, (float) POLYMER_PI / 0.5f), float3(3.f, 0, 0));
         const transform p3(make_rotation_quat_axis_angle({ 0, 1, -1 }, (float) POLYMER_PI), float3(0, 1.f, 4.f));
 
-        entity_orchestrator orchestrator;
-        transform_system * system = orchestrator.create_system<transform_system>(&orchestrator);
+        entity_system_manager the_entity_system_manager;
+        transform_system * system = the_entity_system_manager.create_system<transform_system>(&the_entity_system_manager);
 
-        entity root = orchestrator.create_entity();
-        entity child1 = orchestrator.create_entity();
-        entity child2 = orchestrator.create_entity();
+        entity root = the_entity_system_manager.create_entity();
+        entity child1 = the_entity_system_manager.create_entity();
+        entity child2 = the_entity_system_manager.create_entity();
 
         system->create(root, p1, float3(1));
         system->create(child1, p2, float3(1));
@@ -330,8 +330,8 @@ namespace polymer
 
     TEST_CASE("transform system performance testing")
     {
-        entity_orchestrator orchestrator;
-        transform_system * system = orchestrator.create_system<transform_system>(&orchestrator);
+        entity_system_manager the_entity_system_manager;
+        transform_system * system = the_entity_system_manager.create_system<transform_system>(&the_entity_system_manager);
         uniform_random_gen gen;
 
         double timer = 0.f;
@@ -350,12 +350,12 @@ namespace polymer
             scoped_timer t("create 16384 entities with 4 children each (65535 total)");
             for (int i = 0; i < 16384; ++i)
             {
-                auto rootEntity = orchestrator.create_entity();
+                auto rootEntity = the_entity_system_manager.create_entity();
                 system->create(rootEntity, random_pose(), float3(1));
 
                 for (int c = 0; c < 4; ++c)
                 {
-                    auto childEntity = orchestrator.create_entity();
+                    auto childEntity = the_entity_system_manager.create_entity();
                     system->create(childEntity, random_pose(), float3(1));
                     system->add_child(rootEntity, childEntity);
                 }
@@ -367,12 +367,12 @@ namespace polymer
 
     TEST_CASE("transform system performance testing 2")
     {
-        entity_orchestrator orchestrator;
-        transform_system * system = orchestrator.create_system<transform_system>(&orchestrator);
+        entity_system_manager the_entity_system_manager;
+        transform_system * system = the_entity_system_manager.create_system<transform_system>(&the_entity_system_manager);
 
         for (int i = 0; i < 65536; ++i)
         {
-            auto rootEntity = orchestrator.create_entity();
+            auto rootEntity = the_entity_system_manager.create_entity();
             system->create(rootEntity, transform(), float3(1));
         }
 
@@ -480,12 +480,12 @@ namespace polymer
 
     TEST_CASE("identifier_system unified tests")
     {
-        entity_orchestrator orchestrator;
-        identifier_system * system = orchestrator.create_system<identifier_system>(&orchestrator);
+        entity_system_manager the_entity_system_manager;
+        identifier_system * system = the_entity_system_manager.create_system<identifier_system>(&the_entity_system_manager);
 
-        const entity e1 = orchestrator.create_entity();
-        const entity e2 = orchestrator.create_entity();
-        const entity e3 = orchestrator.create_entity();
+        const entity e1 = the_entity_system_manager.create_entity();
+        const entity e2 = the_entity_system_manager.create_entity();
+        const entity e3 = the_entity_system_manager.create_entity();
 
         REQUIRE_FALSE(system->create(0, "oops"));
 

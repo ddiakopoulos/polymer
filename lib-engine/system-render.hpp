@@ -10,7 +10,7 @@
 #include "ecs/core-ecs.hpp"
 #include "system-transform.hpp"
 #include "system-identifier.hpp"
-#include "environment.hpp"
+#include "scene.hpp"
 #include "renderer-pbr.hpp"
 
 namespace polymer
@@ -38,16 +38,16 @@ namespace polymer
 
         template<class F> friend void visit_components(entity e, render_system * system, F f);
 
-        void initialize_procedural_skybox(entity_orchestrator * orch)
+        void initialize_procedural_skybox(entity_system_manager * esm)
         {
-            the_procedural_skybox = procedural_skybox_component(orch->create_entity());
-            the_procedural_skybox.sun_directional_light = orch->create_entity();
+            the_procedural_skybox = procedural_skybox_component(esm->create_entity());
+            the_procedural_skybox.sun_directional_light = esm->create_entity();
 
-            transform_system * transform_sys = dynamic_cast<transform_system *>(orch->get_system(get_typeid<transform_system>()));
+            transform_system * transform_sys = dynamic_cast<transform_system *>(esm->get_system(get_typeid<transform_system>()));
             transform_sys->create(the_procedural_skybox.get_entity(), transform(), {});
             transform_sys->create(the_procedural_skybox.sun_directional_light, transform(), {});
 
-            identifier_system * identifier_sys = dynamic_cast<identifier_system *>(orch->get_system(get_typeid<identifier_system>()));
+            identifier_system * identifier_sys = dynamic_cast<identifier_system *>(esm->get_system(get_typeid<identifier_system>()));
             identifier_sys->create(the_procedural_skybox.get_entity(), "procedural-skybox");
             identifier_sys->create(the_procedural_skybox.sun_directional_light, "procedural-skybox-sun");
 
@@ -65,14 +65,14 @@ namespace polymer
             the_procedural_skybox.sky.onParametersChanged();
         }
 
-        void initialize_cubemap(entity_orchestrator * orch)
+        void initialize_cubemap(entity_system_manager * esm)
         {
-            the_cubemap = cubemap_component(orch->create_entity());
+            the_cubemap = cubemap_component(esm->create_entity());
 
-            transform_system * transform_sys = dynamic_cast<transform_system *>(orch->get_system(get_typeid<transform_system>()));
+            transform_system * transform_sys = dynamic_cast<transform_system *>(esm->get_system(get_typeid<transform_system>()));
             transform_sys->create(the_cubemap.get_entity(), transform(), {});
 
-            identifier_system * identifier_sys = dynamic_cast<identifier_system *>(orch->get_system(get_typeid<identifier_system>()));
+            identifier_system * identifier_sys = dynamic_cast<identifier_system *>(esm->get_system(get_typeid<identifier_system>()));
             identifier_sys->create(the_cubemap.get_entity(), "ibl-cubemap");
         }
 
@@ -80,7 +80,8 @@ namespace polymer
 
         transform_system * xform_system{ nullptr };
 
-        render_system(renderer_settings s, bool create_default_entities, entity_orchestrator * orch) : base_system(orch), settings(s)
+        render_system(renderer_settings s, bool create_default_entities, entity_system_manager * esm) 
+            : base_system(esm), settings(s)
         {
             register_system_for_type(this, get_typeid<mesh_component>());
             register_system_for_type(this, get_typeid<material_component>());
@@ -97,8 +98,8 @@ namespace polymer
             // and associated already.
             if (create_default_entities)
             {
-                initialize_procedural_skybox(orch);
-                initialize_cubemap(orch);
+                initialize_procedural_skybox(esm);
+                initialize_cubemap(esm);
             }
         }
 
@@ -240,7 +241,7 @@ namespace polymer
         if (auto ptr = system->get_point_light_component(e))
         {
             // hack hack
-            transform_system * transform_sys = dynamic_cast<transform_system *>(system->orchestrator->get_system(get_typeid<transform_system>()));
+            transform_system * transform_sys = dynamic_cast<transform_system *>(system->esm->get_system(get_typeid<transform_system>()));
             auto pt_light_xform = transform_sys->get_world_transform(e);
             ptr->data.position = pt_light_xform->world_pose.position;
             f("point light component", *ptr);

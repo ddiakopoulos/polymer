@@ -16,16 +16,15 @@
 namespace polymer
 {
     ////////////////
-    //   Entity   //
+    //   entity   //
     ////////////////
 
-    // An entity is an uniquely identifiable object in the Polymer runtime.
     using entity = uint64_t;
     constexpr entity kInvalidEntity = 0;
     constexpr entity kAllEntities = std::numeric_limits<uint64_t>::max();
 
     ////////////////////////
-    //   Base Component   //
+    //   base_component   //
     ////////////////////////
 
     // Provide a consistent way to retrieve an entity to which a component belongs. 
@@ -33,7 +32,7 @@ namespace polymer
     {
         entity e{ kInvalidEntity };
         friend struct component_hash;
-        friend class environment; // for serialization and cloning operations to modify e directly
+        friend class scene; // for serialization and cloning operations to modify e directly
     public:
         explicit base_component(entity e = kInvalidEntity) : e(e) { }
         entity get_entity() const { return e; }
@@ -43,19 +42,19 @@ namespace polymer
     // Hash functor for components so they can be used in unordered containers. 
     struct component_hash { entity operator()(const base_component & c) const { return c.e; } };
 
-    /////////////////////
-    //   Base System   //
-    /////////////////////
+    ////////////////////
+    //   base_system  //
+    ////////////////////
 
     /// Systems are responsible for storing the component data instances associated with entities.
     /// They also perform all the logic for manipulating and processing their Components.
-    /// This base class provides an API for an entity_orchestrator to associate components with entities in a data-driven manner.
-    class entity_orchestrator;
+    /// This base class provides an API for an entity_system_manager to associate components with entities in a data-driven manner.
+    class entity_system_manager;
     struct base_system : public non_copyable
     {
-        entity_orchestrator * orchestrator;
+        entity_system_manager * esm;
 
-        explicit base_system(entity_orchestrator * o) : orchestrator(o) {}
+        explicit base_system(entity_system_manager * esm) : esm(esm) {}
         virtual ~base_system() {}
 
         // Associates component with the entity using serialized data. The void pointer 
@@ -71,11 +70,11 @@ namespace polymer
         void register_system_for_type(poly_typeid system_type, poly_typeid component_type);
     };
 
-    /////////////////////////////
-    //   Entity Orchestrator   //
-    /////////////////////////////
+    ///////////////////////////////
+    //   entity_system_manager   //
+    ///////////////////////////////
 
-    class entity_orchestrator
+    class entity_system_manager : public non_copyable, public non_movable
     {
         std::mutex createMutex;
         std::unordered_map<poly_typeid, poly_typeid> system_type_map; // system-to-component-type
@@ -123,7 +122,7 @@ namespace polymer
 
     inline void base_system::register_system_for_type(poly_typeid system_type, poly_typeid component_type) 
     { 
-        orchestrator->register_system_for_type(system_type, component_type);
+        esm->register_system_for_type(system_type, component_type);
     }
 
 } // end namespace polymer

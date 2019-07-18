@@ -6,7 +6,7 @@
 #include "lib-engine.hpp"
 
 #include "ecs/core-ecs.hpp"
-#include "environment.hpp"
+#include "scene.hpp"
 #include "renderer-util.hpp"
 
 using namespace polymer;
@@ -17,11 +17,11 @@ struct sample_engine_procedural_scene final : public polymer_app
     fps_camera_controller flycam;
 
     std::unique_ptr<gl_shader_monitor> shaderMonitor;
-    std::unique_ptr<entity_orchestrator> orchestrator;
+    std::unique_ptr<entity_system_manager> the_entity_system_manager;
     std::unique_ptr<simple_texture_view> fullscreen_surface;
 
     render_payload payload;
-    environment scene;
+    scene scene;
 
     sample_engine_procedural_scene();
     ~sample_engine_procedural_scene();
@@ -43,11 +43,11 @@ sample_engine_procedural_scene::sample_engine_procedural_scene() : polymer_app(1
 
     shaderMonitor.reset(new gl_shader_monitor("../../assets/"));
     fullscreen_surface.reset(new simple_texture_view());
-    orchestrator.reset(new entity_orchestrator());
+    the_entity_system_manager.reset(new entity_system_manager());
 
     load_required_renderer_assets("../../assets/", *shaderMonitor);
 
-    scene.reset(*orchestrator, {width, height}, true);
+    scene.reset(*the_entity_system_manager, {width, height}, true);
 
     create_handle_for_asset("debug-icosahedron", make_mesh_from_geometry(make_icosasphere(3))); // gpu mesh
     create_handle_for_asset("debug-icosahedron", make_icosasphere(3)); // cpu mesh
@@ -55,7 +55,7 @@ sample_engine_procedural_scene::sample_engine_procedural_scene() : polymer_app(1
     // This describes how to configure a renderable entity programmatically, at runtime.
     {
         // Create a new entity to represent an icosahedron that we will render
-        const entity debug_icosa = scene.track_entity(orchestrator->create_entity());
+        const entity debug_icosa = scene.track_entity(the_entity_system_manager->create_entity());
 
         // Give the icosa a name and default transform and scale
         scene.identifier_system->create(debug_icosa, "debug-icosahedron");

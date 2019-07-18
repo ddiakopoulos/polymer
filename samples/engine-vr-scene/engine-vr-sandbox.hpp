@@ -17,7 +17,7 @@ struct engine_vr_sandbox : public polymer_app
 
     std::unique_ptr<openvr_hmd> hmd;
     std::unique_ptr<gui::imgui_instance> desktop_imgui;
-    std::unique_ptr<entity_orchestrator> orchestrator;
+    std::unique_ptr<entity_system_manager> the_entity_system_manager;
 
     std::unique_ptr<polymer::xr::xr_input_processor> input_processor;
     std::unique_ptr<polymer::xr::xr_controller_system> controller_system;
@@ -31,7 +31,7 @@ struct engine_vr_sandbox : public polymer_app
     entity floor;
 
     render_payload payload;
-    environment scene;
+    scene scene;
 
     engine_vr_sandbox();
     ~engine_vr_sandbox();

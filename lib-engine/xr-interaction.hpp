@@ -10,7 +10,7 @@
 #include "hmd-base.hpp"
 #include "renderer-pbr.hpp"
 
-#include "environment.hpp"
+#include "scene.hpp"
 #include "system-collision.hpp"
 #include "system-transform.hpp"
 #include "system-identifier.hpp"
@@ -78,7 +78,7 @@ namespace xr {
     // todo - double buffer xr_input_event state for safety
     class xr_input_processor
     {
-        environment * env{ nullptr };
+        scene * the_scene{ nullptr };
         hmd_base * hmd{ nullptr };
 
         vr_controller_role dominant_hand{ vr_controller_role::right_hand };
@@ -89,7 +89,7 @@ namespace xr {
 
     public:
 
-        xr_input_processor(entity_orchestrator * orch, environment * env, hmd_base * hmd);
+        xr_input_processor(entity_system_manager * esm, scene * the_scene, hmd_base * hmd);
         ~xr_input_processor();
         vr_controller_role get_dominant_hand() const;
         vr_controller get_controller(const vr_controller_role hand);
@@ -122,7 +122,7 @@ namespace xr {
 
     class xr_controller_system
     {
-        environment * env{ nullptr };
+        scene * the_scene{ nullptr };
         hmd_base * hmd{ nullptr };
         xr_input_processor * processor{ nullptr };
 
@@ -151,7 +151,7 @@ namespace xr {
 
     public:
 
-        xr_controller_system(entity_orchestrator * orch, environment * env, hmd_base * hmd, xr_input_processor * processor);
+        xr_controller_system(entity_system_manager * esm, scene * the_scene, hmd_base * hmd, xr_input_processor * processor);
         ~xr_controller_system();
         std::vector<entity> get_renderables() const;
         void process(const float dt);
@@ -165,7 +165,7 @@ namespace xr {
 
     class xr_imgui_system : public gui::imgui_surface
     {
-        environment * env{ nullptr };
+        scene * the_scene{ nullptr };
         hmd_base * hmd{ nullptr };
         xr_input_processor * processor{ nullptr };
 
@@ -178,7 +178,7 @@ namespace xr {
 
     public:
 
-        xr_imgui_system(entity_orchestrator * orch, environment * env, hmd_base * hmd, xr_input_processor * processor, const uint2 size, GLFWwindow * window);
+        xr_imgui_system(entity_system_manager * esm, scene * the_scene, hmd_base * hmd, xr_input_processor * processor, const uint2 size, GLFWwindow * window);
         ~xr_imgui_system();
         void set_surface_transform(const transform & t);
         std::vector<entity> get_renderables() const;
@@ -191,7 +191,7 @@ namespace xr {
 
     class xr_gizmo_system
     {
-        environment * env{ nullptr };
+        scene * the_scene{ nullptr };
         hmd_base * hmd{ nullptr };
         xr_input_processor * processor{ nullptr };
 
@@ -208,7 +208,7 @@ namespace xr {
 
     public:
 
-        xr_gizmo_system(entity_orchestrator * orch, environment * env, hmd_base * hmd, xr_input_processor * processor);
+        xr_gizmo_system(entity_system_manager * esm, scene * the_scene, hmd_base * hmd, xr_input_processor * processor);
         ~xr_gizmo_system();
         std::vector<entity> get_renderables() const;
         void process(const float dt);

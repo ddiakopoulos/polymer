@@ -6,7 +6,7 @@
 #include "math-core.hpp"
 #include "gl-api.hpp"
 #include "procedural_mesh.hpp"
-#include "environment.hpp"
+#include "scene.hpp"
 
 namespace polymer
 {
@@ -14,7 +14,7 @@ namespace polymer
     {
         friend class polymer::singleton<global_debug_mesh_manager>;
 
-        environment * env{ nullptr };
+        scene * the_scene{ nullptr };
 
         struct Vertex { float3 position; float3 color; };
         std::vector<Vertex> vertices;
@@ -26,22 +26,22 @@ namespace polymer
 
         global_debug_mesh_manager() = default;
 
-        void initialize_resources(entity_orchestrator * orch, environment * env)
+        void initialize_resources(entity_system_manager * esm, scene * the_scene)
         {
             debug_renderer_material = std::make_shared<polymer_procedural_material>();
             debug_renderer_material->shader = shader_handle("debug-renderer");
             debug_renderer_material->cast_shadows = false;
-            env->mat_library->register_material("debug-renderer-material", debug_renderer_material);
+            the_scene->mat_library->register_material("debug-renderer-material", debug_renderer_material);
 
-            dbg_renderer_ent = env->track_entity(orch->create_entity());
-            env->identifier_system->create(dbg_renderer_ent, "debug_renderer-" + std::to_string(dbg_renderer_ent));
-            env->xform_system->create(dbg_renderer_ent, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
+            dbg_renderer_ent = the_scene->track_entity(esm->create_entity());
+            the_scene->identifier_system->create(dbg_renderer_ent, "debug_renderer-" + std::to_string(dbg_renderer_ent));
+            the_scene->xform_system->create(dbg_renderer_ent, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
 
             auto mat_c = material_component(dbg_renderer_ent, material_handle("debug-renderer-material"));
             mat_c.cast_shadow = false;
             mat_c.receive_shadow = false;
-            env->render_system->create(dbg_renderer_ent, std::move(mat_c));
-            env->render_system->create(dbg_renderer_ent, mesh_component(dbg_renderer_ent, gpu_mesh_handle("debug-renderer")));
+            the_scene->render_system->create(dbg_renderer_ent, std::move(mat_c));
+            the_scene->render_system->create(dbg_renderer_ent, mesh_component(dbg_renderer_ent, gpu_mesh_handle("debug-renderer")));
         }
 
         void clear() { vertices.clear(); }

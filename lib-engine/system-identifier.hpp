@@ -5,7 +5,7 @@
 
 #include "ecs/typeid.hpp"
 #include "ecs/core-ecs.hpp"
-#include "environment.hpp"
+#include "scene.hpp"
 
 //////////////////////////////////
 //   name/id/tag/layer system   // 
@@ -26,7 +26,7 @@ namespace polymer
 
     public:
 
-        identifier_system(entity_orchestrator * orch) : base_system(orch)
+        identifier_system(entity_system_manager * esm) : base_system(esm)
         {
             register_system_for_type(this, get_typeid<identifier_component>());
         }

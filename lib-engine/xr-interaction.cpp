@@ -13,12 +13,12 @@ using namespace polymer::xr;
 xr_input_focus xr_input_processor::recompute_focus(const vr_controller & controller)
 {
     const ray controller_ray = ray(controller.t.position, -qzdir(controller.t.orientation));
-    const entity_hit_result box_result = env->collision_system->raycast(controller_ray, raycast_type::box);
+    const entity_hit_result box_result = the_scene->collision_system->raycast(controller_ray, raycast_type::box);
 
     if (box_result.r.hit)
     {
         // Refine if hit the mesh
-        const entity_hit_result mesh_result = env->collision_system->raycast(controller_ray, raycast_type::mesh);
+        const entity_hit_result mesh_result = the_scene->collision_system->raycast(controller_ray, raycast_type::mesh);
         if (mesh_result.r.hit)
         {
             return { controller_ray, mesh_result, false }; // "hard focus"
@@ -32,15 +32,8 @@ xr_input_focus xr_input_processor::recompute_focus(const vr_controller & control
     return { controller_ray, {} };
 }
 
-xr_input_processor::xr_input_processor(entity_orchestrator * orch, environment * env, hmd_base * hmd) : env(env), hmd(hmd) 
-{ 
-
-}
-
-xr_input_processor::~xr_input_processor()
-{
-
-}
+xr_input_processor::xr_input_processor(entity_system_manager * esm, scene * the_scene, hmd_base * hmd) : the_scene(the_scene), hmd(hmd) {}
+xr_input_processor::~xr_input_processor() {}
 
 vr_controller xr_input_processor::get_controller(const vr_controller_role hand)
 {
@@ -86,7 +79,7 @@ void xr_input_processor::process(const float dt)
             {
                 const xr_input_focus focus = recompute_focus(controller);
                 xr_input_event press = make_event(xr_button_event::press, src, focus, controller);
-                env->event_manager->send(press);
+                the_scene->event_manager->send(press);
                 log::get()->engine_log->info("xr_input_processor xr_button_event::press for entity {}", focus.result.e);
 
                 // Swap dominant hand based on last activated trigger button
@@ -102,7 +95,7 @@ void xr_input_processor::process(const float dt)
             {
                 const xr_input_focus focus = recompute_focus(controller);
                 xr_input_event release = make_event(xr_button_event::release, src, focus, controller);
-                env->event_manager->send(release);
+                the_scene->event_manager->send(release);
                 log::get()->engine_log->info("xr_input_processor xr_button_event::release for entity {}", focus.result.e);
             }
         }
@@ -119,7 +112,7 @@ void xr_input_processor::process(const float dt)
         if (active_focus != last_focus && active_focus.result.e != kInvalidEntity)
         {
             xr_input_event focus_gained = make_event(xr_button_event::focus_begin, src, active_focus, controller);
-            env->event_manager->send(focus_gained);
+            the_scene->event_manager->send(focus_gained);
             // todo - focus_end on old entity
 
             log::get()->engine_log->info("xr_input_processor xr_button_event::focus_begin for entity {}", active_focus.result.e);
@@ -129,7 +122,7 @@ void xr_input_processor::process(const float dt)
         if (last_focus.result.e != kInvalidEntity && active_focus.result.e == kInvalidEntity)
         {
             xr_input_event focus_lost = make_event(xr_button_event::focus_end, src, last_focus, controller);
-            env->event_manager->send(focus_lost);
+            the_scene->event_manager->send(focus_lost);
 
             log::get()->engine_log->info("xr_input_processor xr_button_event::focus_end for entity {}", last_focus.result.e);
         }
@@ -142,8 +135,8 @@ void xr_input_processor::process(const float dt)
 //   xr_controller_system implementation   //
 /////////////////////////////////////////////
 
-xr_controller_system::xr_controller_system(entity_orchestrator * orch, environment * env, hmd_base * hmd, xr_input_processor * processor)
-    : env(env), hmd(hmd), processor(processor)
+xr_controller_system::xr_controller_system(entity_system_manager * esm, scene * env, hmd_base * hmd, xr_input_processor * processor)
+    : the_scene(env), hmd(hmd), processor(processor)
 {
     // fixme - the min/max teleportation bounds in world space are defined by this bounding box. 
     arc_pointer.xz_plane_bounds = aabb_3d({ -24.f, -0.01f, -24.f }, { +24.f, +0.01f, +24.f });
@@ -153,7 +146,7 @@ xr_controller_system::xr_controller_system(entity_orchestrator * orch, environme
     env->mat_library->register_material("laser-pointer-mat", laser_pointer_material);
 
     // Setup the pointer entity (which is re-used between laser/arc styles)
-    pointer = env->track_entity(orch->create_entity());
+    pointer = env->track_entity(esm->create_entity());
     env->identifier_system->create(pointer, "xr-pointer");
     env->xform_system->create(pointer, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
     env->render_system->create(pointer, material_component(pointer, material_handle("laser-pointer-mat")));
@@ -166,14 +159,14 @@ xr_controller_system::xr_controller_system(entity_orchestrator * orch, environme
     env->mat_library->register_material("xr-controller-material-right", controller_material[1] );
 
     // Setup left controller
-    left_controller = env->track_entity(orch->create_entity());
+    left_controller = env->track_entity(esm->create_entity());
     env->identifier_system->create(left_controller, "xr-controller-root-left");
     env->xform_system->create(left_controller, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
     env->render_system->create(left_controller, material_component(left_controller, material_handle("xr-controller-material-left")));
     env->render_system->create(left_controller, mesh_component(left_controller));
 
     // Setup right controller
-    right_controller = env->track_entity(orch->create_entity());
+    right_controller = env->track_entity(esm->create_entity());
     env->identifier_system->create(right_controller, "xr-controller-root-right");
     env->xform_system->create(right_controller, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
     env->render_system->create(right_controller, material_component(right_controller, material_handle("xr-controller-material-right")));
@@ -276,13 +269,13 @@ void xr::xr_controller_system::update_laser_geometry(const float distance)
     auto & m = pointer_mesh_component->mesh.get();
     m = make_mesh_from_geometry(laser_geom, GL_STREAM_DRAW);
 
-    if (auto * tc = env->xform_system->get_local_transform(pointer))
+    if (auto * tc = the_scene->xform_system->get_local_transform(pointer))
     {
         // The mesh is in local space so we massage it through a transform 
         auto t = hmd->get_controller(processor->get_dominant_hand()).t;
         t = t * transform(make_rotation_quat_axis_angle({ 1, 0, 0 }, (float)POLYMER_PI / 2.f)); // coordinate 
         t = t * transform(quatf(0, 0, 0, 1), float3(0, -(distance * 0.5f), 0)); // translation
-        env->xform_system->set_local_transform(pointer, t);
+        the_scene->xform_system->set_local_transform(pointer, t);
     }
 }
 
@@ -292,9 +285,9 @@ void xr_controller_system::process(const float dt)
 
     // update left/right controller positions
     const transform lct = hmd->get_controller(vr_controller_role::left_hand).t;
-    env->xform_system->set_local_transform(left_controller, lct);
+    the_scene->xform_system->set_local_transform(left_controller, lct);
     const transform rct = hmd->get_controller(vr_controller_role::right_hand).t;
-    env->xform_system->set_local_transform(right_controller, rct);
+    the_scene->xform_system->set_local_transform(right_controller, rct);
 
     // touchpad state used for teleportation
     const std::vector<vr_button_state> touchpad_button_states = {
@@ -364,10 +357,10 @@ void xr_controller_system::process(const float dt)
                 auto & m = pointer_mesh_component->mesh.get();
                 m = make_mesh_from_geometry(make_parabolic_geometry(arc_curve, arc_pointer.forward, 0.1f, float3(laser_line_thickness)), GL_STREAM_DRAW);
                 target_location = arc_curve.back(); // world-space hit point
-                if (auto * tc = env->xform_system->get_local_transform(pointer))
+                if (auto * tc = the_scene->xform_system->get_local_transform(pointer))
                 {
                     // the arc mesh is constructed in world space, so we reset its transform
-                    env->xform_system->set_local_transform(pointer, {});
+                    the_scene->xform_system->set_local_transform(pointer, {});
                 }
             }
         }
@@ -392,7 +385,7 @@ void xr_controller_system::process(const float dt)
                 xr_teleport_event teleport_event;
                 teleport_event.world_position = target_pose.position;
                 teleport_event.timestamp = system_time_ns();
-                env->event_manager->send(teleport_event);
+                the_scene->event_manager->send(teleport_event);
             }
         }
     }
@@ -407,8 +400,8 @@ void xr_controller_system::add_focus_ignore(const entity ignored_entity)
 //   xr_imgui_system implementation   //
 ////////////////////////////////////////
 
-xr_imgui_system::xr_imgui_system(entity_orchestrator * orch, environment * env, hmd_base * hmd, xr_input_processor * processor, const uint2 size, GLFWwindow * window)
-    : env(env), hmd(hmd), processor(processor), imgui_surface(size, window)
+xr_imgui_system::xr_imgui_system(entity_system_manager * esm, scene * env, hmd_base * hmd, xr_input_processor * processor, const uint2 size, GLFWwindow * window)
+    : the_scene(env), hmd(hmd), processor(processor), imgui_surface(size, window)
 {
     // Setup the billboard entity
     auto mesh = make_fullscreen_quad_ndc_geom();
@@ -421,7 +414,7 @@ xr_imgui_system::xr_imgui_system(entity_orchestrator * orch, environment * env, 
     imgui_material->shader = shader_handle("unlit-texture");
     env->mat_library->register_material("imgui", imgui_material);
 
-    imgui_billboard = env->track_entity(orch->create_entity());
+    imgui_billboard = env->track_entity(esm->create_entity());
     env->identifier_system->create(imgui_billboard, "imgui-billboard");
     env->xform_system->create(imgui_billboard, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
     env->render_system->create(imgui_billboard, material_component(imgui_billboard, material_handle("imgui")));
@@ -451,9 +444,9 @@ void xr_imgui_system::handle_event(const xr_input_event & event)
 void xr_imgui_system::set_surface_transform(const transform & t)
 {
     // Update surface/billboard position
-    if (auto * tc = env->xform_system->get_local_transform(imgui_billboard))
+    if (auto * tc = the_scene->xform_system->get_local_transform(imgui_billboard))
     {
-        env->xform_system->set_local_transform(imgui_billboard, t);
+        the_scene->xform_system->set_local_transform(imgui_billboard, t);
     }
 }
 
@@ -494,29 +487,29 @@ std::vector<entity> xr_imgui_system::get_renderables() const
 //   xr_gizmo_system implementation   //
 ////////////////////////////////////////
 
-xr_gizmo_system::xr_gizmo_system(entity_orchestrator * orch, environment * env, hmd_base * hmd, xr_input_processor * processor)
-    : env(env), hmd(hmd), processor(processor)
+xr_gizmo_system::xr_gizmo_system(entity_system_manager * esm, scene * the_scene, hmd_base * hmd, xr_input_processor * processor)
+    : the_scene(the_scene), hmd(hmd), processor(processor)
 {
     auto unlit_material = std::make_shared<polymer_procedural_material>();
     unlit_material->shader = shader_handle("unlit-vertex-color");
-    env->mat_library->register_material("unlit-vertex-color-material", unlit_material);
+    the_scene->mat_library->register_material("unlit-vertex-color-material", unlit_material);
 
-    gizmo_entity = env->track_entity(orch->create_entity());
-    env->identifier_system->create(gizmo_entity, "gizmo-renderable");
-    env->xform_system->create(gizmo_entity, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
-    env->render_system->create(gizmo_entity, material_component(gizmo_entity, material_handle("unlit-vertex-color-material")));
-    env->render_system->create(gizmo_entity, mesh_component(gizmo_entity));
-    env->collision_system->create(gizmo_entity, geometry_component(gizmo_entity));
+    gizmo_entity = the_scene->track_entity(esm->create_entity());
+    the_scene->identifier_system->create(gizmo_entity, "gizmo-renderable");
+    the_scene->xform_system->create(gizmo_entity, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
+    the_scene->render_system->create(gizmo_entity, material_component(gizmo_entity, material_handle("unlit-vertex-color-material")));
+    the_scene->render_system->create(gizmo_entity, mesh_component(gizmo_entity));
+    the_scene->collision_system->create(gizmo_entity, geometry_component(gizmo_entity));
 
     // tinygizmo uses a callback to pass its world-space mesh back to users. The callback is triggered by
     // the process(...) function below. 
-    gizmo_ctx.render = [this, env](const tinygizmo::geometry_mesh & r)
+    gizmo_ctx.render = [this, the_scene](const tinygizmo::geometry_mesh & r)
     {
         const std::vector<tinygizmo::geometry_vertex> & verts = r.vertices;
         const std::vector<linalg::aliases::uint3> & tris = reinterpret_cast<const std::vector<linalg::aliases::uint3> &>(r.triangles);
 
         // For rendering
-        if (auto * mc = env->render_system->get_mesh_component(gizmo_entity))
+        if (auto * mc = the_scene->render_system->get_mesh_component(gizmo_entity))
         {
             auto & gizmo_gpu_mesh = mc->mesh.get();
 
@@ -529,7 +522,7 @@ xr_gizmo_system::xr_gizmo_system(entity_orchestrator * orch, environment * env, 
         }
 
         // For focus/defocus and pointing
-        if (auto * gc = env->collision_system->get_component(gizmo_entity))
+        if (auto * gc = the_scene->collision_system->get_component(gizmo_entity))
         {
             if (verts.size() != transient_gizmo_geom.vertices.size()) transient_gizmo_geom.vertices.resize(verts.size());
             if (tris.size() != transient_gizmo_geom.faces.size()) transient_gizmo_geom.faces.resize(tris.size());
@@ -549,7 +542,7 @@ xr_gizmo_system::xr_gizmo_system(entity_orchestrator * orch, environment * env, 
         }
     };
 
-    xr_input = env->event_manager->connect(this, [this](const xr_input_event & event)
+    xr_input = the_scene->event_manager->connect(this, [this](const xr_input_event & event)
     {
         handle_event(event);
     });

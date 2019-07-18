@@ -7,7 +7,7 @@
 #include "lib-engine.hpp"
 
 #include "ecs/core-ecs.hpp"
-#include "environment.hpp"
+#include "scene.hpp"
 #include "renderer-util.hpp"
 #include "gl-imgui.hpp"
 
@@ -41,7 +41,7 @@ struct sample_engine_performance final : public polymer_app
 
     std::unique_ptr<imgui_instance> imgui;
     std::unique_ptr<gl_shader_monitor> shaderMonitor;
-    std::unique_ptr<entity_orchestrator> orchestrator;
+    std::unique_ptr<entity_system_manager> the_entity_system_manager;
     std::unique_ptr<simple_texture_view> fullscreen_surface;
 
     bool show_debug_view{ false };
@@ -50,7 +50,7 @@ struct sample_engine_performance final : public polymer_app
 
     std::vector<entity> new_entities;
     render_payload payload;
-    environment scene;
+    scene scene;
 
     sample_engine_performance();
     ~sample_engine_performance();
@@ -74,11 +74,11 @@ sample_engine_performance::sample_engine_performance() : polymer_app(1920, 1080,
 
     shaderMonitor.reset(new gl_shader_monitor("../../assets/"));
     fullscreen_surface.reset(new simple_texture_view());
-    orchestrator.reset(new entity_orchestrator());
+    the_entity_system_manager.reset(new entity_system_manager());
 
     load_required_renderer_assets("../../assets/", *shaderMonitor);
 
-    scene.reset(*orchestrator, {width, height}, true);
+    scene.reset(*the_entity_system_manager, {width, height}, true);
 
     boxDebugShader.reset(new gl_shader(basic_vert, basic_frag));
     boxDebugMesh = make_cube_mesh();
@@ -111,7 +111,7 @@ sample_engine_performance::sample_engine_performance() : polymer_app(1920, 1080,
         const std::string name = "pickable-" + std::to_string(entity_index);
 
         auto geometry = geometry_options[rand.random_int(0, (int32_t) geometry_options.size() - 1)];
-        const entity e = make_standard_scene_object(orchestrator.get(), &scene,
+        const entity e = make_standard_scene_object(the_entity_system_manager.get(), &scene,
             name, pose, scale, material_handle(material_library::kDefaultMaterialId), geometry, geometry);
 
         new_entities.push_back(e);

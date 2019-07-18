@@ -126,7 +126,7 @@
     <ClInclude Include="material.hpp" />
     <ClInclude Include="material-library.hpp" />
     <ClInclude Include="profiling.hpp" />
-    <ClInclude Include="environment.hpp" />
+    <ClInclude Include="scene.hpp" />
     <ClInclude Include="renderer-util.hpp" />
     <ClInclude Include="serialization.hpp" />
     <ClInclude Include="shader.hpp" />
@@ -149,7 +149,7 @@
     <ClCompile Include="..\third_party\tinyexr\tinyexr.cc" />
     <ClCompile Include="..\third_party\tinygizmo\tiny-gizmo.cpp" />
     <ClCompile Include="ecs\core-events.cpp" />
-    <ClCompile Include="environment.cpp" />
+    <ClCompile Include="scene.cpp" />
     <ClCompile Include="hmd-base.cpp" />
     <ClCompile Include="openvr-camera.cpp" />
     <ClCompile Include="openvr-hmd.cpp" />

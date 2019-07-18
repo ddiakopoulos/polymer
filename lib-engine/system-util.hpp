@@ -6,7 +6,7 @@
 #include "ecs/core-ecs.hpp"
 #include "ecs/typeid.hpp"
 
-#include "environment.hpp"
+#include "scene.hpp"
 
 namespace polymer
 {

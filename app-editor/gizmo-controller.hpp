@@ -5,7 +5,7 @@
 
 #include "gl-gizmo.hpp"
 #include "gl-imgui.hpp"
-#include "environment.hpp"
+#include "scene.hpp"
 #include "ecs/core-ecs.hpp"
 #include "system-transform.hpp"
 #include "ui-actions.hpp"
@@ -26,9 +26,9 @@ class gizmo_controller
     simple_cpu_timer cooldown_timer;
     bool gizmo_active{ false };
 
-    environment * scene{ nullptr };
+    scene * the_scene{ nullptr };
 
-    polymer::transform_system * get_transform_system() { return scene->xform_system; }
+    polymer::transform_system * get_transform_system() { return the_scene->xform_system; }
 
     void compute_entity_transform()
     {
@@ -78,7 +78,7 @@ class gizmo_controller
 
 public:
 
-    gizmo_controller(environment * scene) : scene(scene) {}
+    gizmo_controller(scene * the_scene) : the_scene(the_scene) {}
 
     bool selected(entity e) const
     {

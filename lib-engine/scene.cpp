@@ -1,5 +1,4 @@
-#include "environment.hpp"
-
+#include "scene.hpp"
 #include "system-collision.hpp"
 #include "system-transform.hpp"
 #include "system-identifier.hpp"
@@ -11,53 +10,53 @@
 
 using namespace polymer;
 
-render_component polymer::assemble_render_component(environment & env, const entity e)
+render_component polymer::assemble_render_component(scene & the_scene, const entity e)
 {
     render_component r(e);
-    r.material = env.render_system->get_material_component(e);
-    r.mesh = env.render_system->get_mesh_component(e);
-    r.world_transform = const_cast<world_transform_component*>(env.xform_system->get_world_transform(e));
-    r.local_transform = const_cast<local_transform_component*>(env.xform_system->get_local_transform(e));
-    r.render_sort_order = env.render_system->get_render_priority(e);
+    r.material = the_scene.render_system->get_material_component(e);
+    r.mesh = the_scene.render_system->get_mesh_component(e);
+    r.world_transform = const_cast<world_transform_component*>(the_scene.xform_system->get_world_transform(e));
+    r.local_transform = const_cast<local_transform_component*>(the_scene.xform_system->get_local_transform(e));
+    r.render_sort_order = the_scene.render_system->get_render_priority(e);
     return r;
 }
 
-entity polymer::make_standard_scene_object(entity_orchestrator * orch, environment * env,
+entity polymer::make_standard_scene_object(entity_system_manager * esm, scene * the_scene,
     const std::string & name, const transform & pose, const float3 & scale,
     const material_handle & mh, const gpu_mesh_handle & gmh, const cpu_mesh_handle & cmh)
 {
-    const entity e = env->track_entity(orch->create_entity());
+    const entity e = the_scene->track_entity(esm->create_entity());
 
-    env->identifier_system->create(e, name);
-    env->xform_system->create(e, pose, scale);
+    the_scene->identifier_system->create(e, name);
+    the_scene->xform_system->create(e, pose, scale);
 
     polymer::mesh_component mesh_component(e);
     mesh_component.mesh = gmh;
-    env->render_system->create(e, std::move(mesh_component));
+    the_scene->render_system->create(e, std::move(mesh_component));
 
     polymer::geometry_component geom_component(e);
     geom_component.geom = cmh;
-    env->collision_system->create(e, std::move(geom_component));
+    the_scene->collision_system->create(e, std::move(geom_component));
 
     polymer::material_component material_component(e);
     material_component.material = mh;
-    env->render_system->create(e, std::move(material_component));
+    the_scene->render_system->create(e, std::move(material_component));
 
     return e;
 }
 
-entity environment::track_entity(entity e) 
+entity scene::track_entity(entity e) 
 { 
-    log::get()->engine_log->info("[environment] created tracked entity {}", e);
+    log::get()->engine_log->info("[scene] created tracked entity {}", e);
     active_entities.push_back(e); return e;
 }
 
-const std::vector<entity> & environment::entity_list() 
+const std::vector<entity> & scene::entity_list() 
 { 
     return active_entities; 
 }
 
-void environment::copy(entity src, entity dest)
+void scene::copy(entity src, entity dest)
 {
     visit_systems(this, [src, dest](const char * name, auto * system_pointer)
     {
@@ -76,10 +75,10 @@ void environment::copy(entity src, entity dest)
         }
     });
 
-    log::get()->engine_log->info("[environment] copied entity {} to {}", src, dest);
+    log::get()->engine_log->info("[scene] copied entity {} to {}", src, dest);
 }
 
-void environment::destroy(entity e)
+void scene::destroy(entity e)
 {
     if (e == kInvalidEntity) return;
 
@@ -94,7 +93,7 @@ void environment::destroy(entity e)
             });
         }
         active_entities.clear();
-        log::get()->engine_log->info("[environment] destroyed all active entities");
+        log::get()->engine_log->info("[scene] destroyed all active entities");
     }
     else
     {
@@ -118,7 +117,7 @@ void environment::destroy(entity e)
     }
 }
 
-void environment::import_environment(const std::string & import_path, entity_orchestrator & o)
+void scene::import_environment(const std::string & import_path, entity_system_manager & o)
 {
     manual_timer t;
     t.start();
@@ -239,12 +238,12 @@ void environment::import_environment(const std::string & import_path, entity_orc
     log::get()->engine_log->info("importing {} took {}ms", import_path, t.get());
 }
 
-void environment::export_environment(const std::string & export_path) 
+void scene::export_environment(const std::string & export_path) 
 {
     manual_timer t;
     t.start();
 
-    json environment;
+    json scene;
 
     // foreach entity (array)
     for (const auto & e : entity_list())
@@ -280,16 +279,16 @@ void environment::export_environment(const std::string & export_path)
             }
         });
 
-        environment[std::to_string(e)] = entity;
+        scene[std::to_string(e)] = entity;
     }
 
-    write_file_text(export_path, environment.dump(4));
+    write_file_text(export_path, scene.dump(4));
 
     t.stop();
     log::get()->engine_log->info("exporting {} took {}ms", export_path, t.get());
 }
 
-void environment::reset(entity_orchestrator & o, int2 default_renderer_resolution, bool create_default_entities)
+void scene::reset(entity_system_manager & o, int2 default_renderer_resolution, bool create_default_entities)
 {
     remap_table.clear();
 

@@ -16,7 +16,7 @@
 
 #include "ecs/typeid.hpp"
 #include "ecs/core-ecs.hpp"
-#include "environment.hpp"
+#include "scene.hpp"
 
 #undef near
 #undef far

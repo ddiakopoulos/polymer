@@ -7,7 +7,7 @@
 #include "renderer-pbr.hpp"
 #include "asset-handle-utils.hpp"
 #include "gizmo-controller.hpp"
-#include "environment.hpp"
+#include "scene.hpp"
 #include "editor-inspector-ui.hpp"
 #include "arcball.hpp"
 #include "gl-texture-view.hpp"
@@ -63,7 +63,7 @@ struct material_editor_window final : public glfw_window
     int assetSelection = -1;
     const uint32_t previewHeight = 420;
 
-    environment & scene;
+    scene & the_scene;
     std::shared_ptr<gizmo_controller> selector;
 
     entity inspected_entity{ kInvalidEntity };
@@ -75,10 +75,10 @@ struct material_editor_window final : public glfw_window
         int w, int h,
         const std::string & title,
         int samples,
-        environment & scene,
+        scene & the_scene,
         std::shared_ptr<gizmo_controller> selector,
-        entity_orchestrator & orch)
-            : glfw_window(context, w, h, title, samples), scene(scene), selector(selector)
+        entity_system_manager & orch)
+            : glfw_window(context, w, h, title, samples), the_scene(the_scene), selector(selector)
     {
         glfwMakeContextCurrent(window);
 
@@ -203,7 +203,7 @@ struct material_editor_window final : public glfw_window
                 entity selected_entity = selected_entities[0];
 
                 // We can only edit scene entities with a material component
-                if (auto * mc = scene.render_system->get_material_component(selected_entity))
+                if (auto * mc = the_scene.render_system->get_material_component(selected_entity))
                 {
                     inspected_entity = selected_entity;
                     uint32_t mat_idx = 0;
@@ -246,7 +246,7 @@ struct material_editor_window final : public glfw_window
 
             if (ImGui::Button(" " ICON_FA_PLUS " Create Material ", { 160, 24 })) ImGui::OpenPopup("Create Material");
             ImGui::SameLine();
-            if (ImGui::Button(" " ICON_FA_FILE " Save Materials ", { 160, 24 })) scene.mat_library->export_all(); // @tofix - export path?
+            if (ImGui::Button(" " ICON_FA_FILE " Save Materials ", { 160, 24 })) the_scene.mat_library->export_all(); // @tofix - export path?
 
             if (ImGui::BeginPopupModal("Create Material", NULL, ImGuiWindowFlags_AlwaysAutoResize))
             {
@@ -273,17 +273,17 @@ struct material_editor_window final : public glfw_window
                         if (materialTypeSelection == 0) // pbr
                         {
                             auto new_material = std::make_shared<polymer_pbr_standard>();
-                            scene.mat_library->register_material(stringBuffer, new_material);
+                            the_scene.mat_library->register_material(stringBuffer, new_material);
                         }
                         else if (materialTypeSelection == 1) // blinn-phong
                         {
                             auto new_material = std::make_shared<polymer_blinn_phong_standard>();
-                            scene.mat_library->register_material(stringBuffer, new_material);
+                            the_scene.mat_library->register_material(stringBuffer, new_material);
                         }
                         else if (materialTypeSelection == 2) // wireframe
                         {
                             auto new_material = std::make_shared<polymer_wireframe_material>();
-                            scene.mat_library->register_material(stringBuffer, new_material);
+                            the_scene.mat_library->register_material(stringBuffer, new_material);
                         }
                         // todo - 3 = fx material
                     }
@@ -361,7 +361,7 @@ struct material_editor_window final : public glfw_window
                         if (inspected_entity)
                         {
                             // Set the inspected entity to the default material
-                            auto mc = scene.render_system->get_material_component(inspected_entity);
+                            auto mc = the_scene.render_system->get_material_component(inspected_entity);
                             mc->material = material_handle(material_library::kDefaultMaterialId);
                         }
 
@@ -371,7 +371,7 @@ struct material_editor_window final : public glfw_window
                         // This item must have been selected, so we must force unselect it
                         assetSelection = -1;
 
-                        scene.mat_library->remove_material(material_handle_name);
+                        the_scene.mat_library->remove_material(material_handle_name);
                         ImGui::CloseCurrentPopup();
                     }
 

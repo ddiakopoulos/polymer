@@ -7,7 +7,7 @@
 #include "renderer-pbr.hpp"
 #include "asset-handle-utils.hpp"
 #include "gizmo-controller.hpp"
-#include "environment.hpp"
+#include "scene.hpp"
 #include "editor-inspector-ui.hpp"
 #include "arcball.hpp"
 #include "gl-texture-view.hpp"
