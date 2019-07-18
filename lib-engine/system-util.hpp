@@ -12,17 +12,13 @@ namespace polymer
 {
     template<class F> void enumerate_components(F f)
     {
-        f(get_typename<identifier_component>(), get_typeid<identifier_component>());
-        f(get_typename<local_transform_component>(), get_typeid<local_transform_component>());
         f(get_typename<mesh_component>(), get_typeid<mesh_component>());
         f(get_typename<material_component>(), get_typeid<material_component>());
         f(get_typename<geometry_component>(), get_typeid<geometry_component>());
         f(get_typename<point_light_component>(), get_typeid<point_light_component>());
         f(get_typename<directional_light_component>(), get_typeid<directional_light_component>());
-        f(get_typename<local_transform_component>(), get_typeid<local_transform_component>());
-        /// [reference] f(get_typename<procedural_skybox_component>(), get_typeid<procedural_skybox_component>()); created by the render_system
-        /// [reference] f(get_typename<cubemap_component>(), get_typeid<cubemap_component>()); created by the render_system
     }
+
 } // end namespace polymer
 
 #endif // end polymer_system_utils_hpp

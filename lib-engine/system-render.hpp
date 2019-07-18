@@ -133,7 +133,8 @@ namespace polymer
 
         directional_light_component * get_directional_light_component(entity e)
         {
-            return &directional_light;
+            if (directional_light.get_entity() == e) return &directional_light;
+            return nullptr;
         }
 
         procedural_skybox_component * get_procedural_skybox() 

@@ -137,18 +137,20 @@ void sample_engine_performance::on_input(const app_input_event & event)
     flycam.handle_input(event);
     imgui->update_input(event);
 
-    // Raycast for editor/gizmo selection on mouse up
-    if (event.type == app_input_event::MOUSE && event.action == GLFW_RELEASE && event.value[0] == GLFW_MOUSE_BUTTON_LEFT)
+    if (event.type == app_input_event::MOUSE && event.action == GLFW_RELEASE)
     {
-        const ray r = cam.get_world_ray(event.cursor, float2(static_cast<float>(event.windowSize.x), static_cast<float>(event.windowSize.y)));
-
-        if (length(r.direction) > 0)
+        if (event.value[0] == GLFW_MOUSE_BUTTON_LEFT)
         {
-            entity_hit_result result = scene.collision_system->raycast(r);
-            if (result.r.hit)
+            const ray r = cam.get_world_ray(event.cursor, float2(static_cast<float>(event.windowSize.x), static_cast<float>(event.windowSize.y)));
+
+            if (length(r.direction) > 0)
             {
-                auto mat_comp = scene.render_system->get_material_component(result.e);
-                mat_comp->material = "renderer-wireframe";
+                entity_hit_result result = scene.collision_system->raycast(r);
+                if (result.r.hit)
+                {
+                    auto mat_comp = scene.render_system->get_material_component(result.e);
+                    mat_comp->material = "renderer-wireframe";
+                }
             }
         }
     }

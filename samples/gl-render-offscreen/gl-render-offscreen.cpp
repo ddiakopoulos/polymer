@@ -120,6 +120,7 @@ void sample_gl_render_offscreen::on_input(const app_input_event & event)
     glfwGetWindowSize(window, &width, &height);
     flycam.handle_input(event);
 
+
     if (event.type == app_input_event::MOUSE && event.action == GLFW_RELEASE)
     {
         if (event.value[0] == GLFW_MOUSE_BUTTON_LEFT)

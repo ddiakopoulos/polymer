@@ -197,7 +197,7 @@ inline bool inspect_entity(imgui_ui_context & ctx, const char * label, entity e,
     {
         if (system_pointer)
         {
-            visit_components(e, system_pointer, [&r, &ctx](const char * component_name, auto & component_ref, auto... component_metadata)
+            visit_components(e, system_pointer, [name, e, &r, &ctx](const char * component_name, auto & component_ref, auto... component_metadata)
             {
                 if (auto * hidden = unpack<editor_hidden>(component_metadata...)) return;
 
