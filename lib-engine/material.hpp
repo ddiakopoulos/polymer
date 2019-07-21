@@ -23,12 +23,12 @@ namespace polymer
     
     struct base_material
     {
-        float opacity{ 1.f };
-        bool double_sided{ true };
-        bool depth_write{ true };
-        bool depth_read{ true };
-        bool cast_shadows{ true };
-        std::string blend_mode;
+        polymer::property<float> opacity{ 1.f };
+        polymer::property<bool> double_sided{ true };
+        polymer::property<bool> depth_write{ true };
+        polymer::property<bool> depth_read{ true };
+        polymer::property<bool> cast_shadows{ true };
+        polymer::property<std::string> blend_mode;
         mutable cached_variant compiled_shader{ nullptr };  // cached on first access (because needs to happen on GL thread)
         shader_handle shader;                               // typically set during object inflation / deserialization
         virtual void update_uniforms() {}                   // generic interface for overriding specific uniform sets
@@ -174,9 +174,11 @@ namespace polymer
         void update_uniforms_shadow(GLuint handle);
         void update_uniforms_ibl(GLuint irradiance, GLuint radiance);
 
+
         float3 baseAlbedo{1.f, 1.f, 1.f};
 
-        float roughnessFactor{ 0.04f };
+        polymer::property<float> roughnessFactor{ 0.04f };
+
         float metallicFactor{ 1.f };
 
         float3 baseEmissive{ 0.f, 0.f, 0.f };
@@ -210,7 +212,7 @@ namespace polymer
         //f("blend_factor", o.blend_mode);
 
         f("base_albedo", o.baseAlbedo);
-        f("roughness_factor", o.roughnessFactor, range_metadata<float>{ 0.04f, 1.f });
+        f("roughness_factor", o.roughnessFactor.raw(), range_metadata<float>{ 0.04f, 1.f });
         f("metallic_factor", o.metallicFactor, range_metadata<float>{ 0.f, 1.f });
         f("base_emissive", o.baseEmissive);
         f("emissive_strength", o.emissiveStrength, range_metadata<float>{ 0.f, 1.f });

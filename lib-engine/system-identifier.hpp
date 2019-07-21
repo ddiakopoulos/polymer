@@ -42,6 +42,12 @@ namespace polymer
             return set_name(e, new_name);
         }
 
+        virtual bool create(entity e, poly_typeid hash, void * data, void *& out_data) override final
+        {
+            out_data = nullptr;
+            return create(e, hash, data);
+        }
+
         bool create(entity e, const std::string & name)
         {
             if (!get_name(e).empty()) throw std::runtime_error("duplicate names are not permitted");

@@ -38,7 +38,7 @@ namespace polymer
 
         template<class F> friend void visit_components(entity e, render_system * system, F f);
 
-        void initialize_procedural_skybox(entity_system_manager * esm)
+        void initialize_procedural_skybox_and_sun(entity_system_manager * esm)
         {
             the_procedural_skybox = procedural_skybox_component(esm->create_entity());
             the_procedural_skybox.sun_directional_light = esm->create_entity();
@@ -76,12 +76,7 @@ namespace polymer
             identifier_sys->create(the_cubemap.get_entity(), "ibl-cubemap");
         }
 
-    public:
-
-        transform_system * xform_system{ nullptr };
-
-        render_system(renderer_settings s, bool create_default_entities, entity_system_manager * esm) 
-            : base_system(esm), settings(s)
+        void construct()
         {
             register_system_for_type(this, get_typeid<mesh_component>());
             register_system_for_type(this, get_typeid<material_component>());
@@ -89,18 +84,34 @@ namespace polymer
             register_system_for_type(this, get_typeid<directional_light_component>());
             register_system_for_type(this, get_typeid<procedural_skybox_component>());
             register_system_for_type(this, get_typeid<cubemap_component>());
-
             renderer.reset(new pbr_renderer(settings));
+        }
 
-            // We only need to create the skybox and cubemap sometimes, like a brand
-            // new scene or a fully procedural application that doesn't use serialization.
-            // If we import a serialized scene, components for these will be created
-            // and associated already.
-            if (create_default_entities)
-            {
-                initialize_procedural_skybox(esm);
-                initialize_cubemap(esm);
-            }
+    public:
+
+        transform_system * xform_system{ nullptr };
+
+        render_system(renderer_settings s, entity_system_manager * esm) 
+            : base_system(esm), settings(s)
+        {
+            construct();
+        }
+
+        // We only need to create the skybox and cubemap sometimes, like a brand
+        // new scene or a fully procedural application that doesn't use serialization.
+        // If we import a serialized scene, components for these will be created
+        // and associated already.
+        render_system(renderer_settings s, entity_system_manager * esm, scene * the_scene)
+            : base_system(esm), settings(s)
+        {
+            construct();
+
+            initialize_procedural_skybox_and_sun(esm);
+            initialize_cubemap(esm);
+
+            the_scene->track_entity(directional_light.get_entity());
+            the_scene->track_entity(the_procedural_skybox.get_entity());
+            the_scene->track_entity(the_cubemap.get_entity());
         }
 
         pbr_renderer * get_renderer() { return renderer.get(); }
@@ -138,51 +149,63 @@ namespace polymer
             return nullptr;
         }
 
-        procedural_skybox_component * get_procedural_skybox() 
+        procedural_skybox_component * get_procedural_skybox_component(entity e)
         {   
-            if (the_procedural_skybox.get_entity() != kInvalidEntity) return &the_procedural_skybox;
+            if (the_procedural_skybox.get_entity() == e) return &the_procedural_skybox;
             return nullptr;
         }
 
-        cubemap_component * get_cubemap()
+        cubemap_component * get_cubemap_component(entity e)
         {
-            if (the_cubemap.get_entity() != kInvalidEntity) return &the_cubemap;
+            if (the_cubemap.get_entity() == e) return &the_cubemap;
             return nullptr;
         }
 
-        virtual bool create(entity e, poly_typeid hash, void * data) override final 
+        virtual bool create(entity e, poly_typeid hash, void * data, void *& out_data) override final
         { 
-            if (hash == get_typeid<mesh_component>()) 
+            if (hash == get_typeid<mesh_component>() && get_mesh_component(e) == nullptr) 
             {
                 meshes[e] = *static_cast<mesh_component *>(data);
+                out_data = &meshes[e];
                 return true;
             }
-            else if (hash == get_typeid<material_component>()) 
+            else if (hash == get_typeid<material_component>() && get_material_component(e) == nullptr)
             { 
                 materials[e] = *static_cast<material_component *>(data); 
+                out_data = &materials[e];
                 return true;
             }
-            else if (hash == get_typeid<point_light_component>()) 
+            else if (hash == get_typeid<point_light_component>() && get_point_light_component(e) == nullptr)
             { 
                 point_lights[e] = *static_cast<point_light_component *>(data); 
+                out_data = &point_lights[e];
                 return true;
             }
-            else if (hash == get_typeid<directional_light_component>()) 
+            else if (hash == get_typeid<directional_light_component>() && get_directional_light_component(e) == nullptr)
             { 
                 directional_light = *static_cast<directional_light_component *>(data); 
+                out_data = &directional_light;
                 return true; 
             }
-            else if (hash == get_typeid<procedural_skybox_component>())
+            else if (hash == get_typeid<procedural_skybox_component>() && get_procedural_skybox_component(e) == nullptr)
             {
-                the_procedural_skybox = std::move(*static_cast<procedural_skybox_component *>(data));
+                the_procedural_skybox = *static_cast<procedural_skybox_component *>(data);
+                out_data = &the_procedural_skybox;
                 return true;
             }
             else if (hash == get_typeid<cubemap_component>())
             {
-                the_cubemap = std::move(*static_cast<cubemap_component *>(data));
+                the_cubemap = *static_cast<cubemap_component *>(data);
+                out_data = &the_cubemap;
                 return true;
             }
             return false;
+        }
+
+        virtual bool create(entity e, poly_typeid hash, void * data) override final
+        {
+            void * out_data = nullptr;
+            return create(e, hash, data, out_data);
         }
 
         mesh_component * create(entity e, mesh_component && c) { meshes[e] = std::move(c); return &meshes[e]; }

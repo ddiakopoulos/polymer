@@ -12,6 +12,8 @@ using namespace polymer;
 
 bool openvr_tracked_camera::initialize(vr::IVRSystem * vr_system)
 {
+    if (!vr_system) return false;
+
     hmd = vr_system;
 
     trackedCamera = vr::VRTrackedCamera();
@@ -65,11 +67,11 @@ bool openvr_tracked_camera::start()
     uint32_t frameHeight = 0;
     uint32_t framebufferSize = 0;
 
-    intrin.width = frameWidth;
-    intrin.height = frameHeight;
-
     if (trackedCamera->GetCameraFrameSize(vr::k_unTrackedDeviceIndex_Hmd, vr::VRTrackedCameraFrameType_MaximumUndistorted, &frameWidth, &frameHeight, &framebufferSize) != vr::VRTrackedCameraError_None)
     {
+        intrin.width = frameWidth;
+        intrin.height = frameHeight;
+
         std::cout << "GetCameraFrameSize() failed" << std::endl;
         return false;
     }

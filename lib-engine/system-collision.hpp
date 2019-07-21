@@ -96,11 +96,17 @@ namespace polymer
             else return { kInvalidEntity, raycast_result() };
         }
 
-        virtual bool create(entity e, poly_typeid hash, void * data) override final 
+        virtual bool create(entity e, poly_typeid hash, void * data) override final
         { 
             if (hash != get_typeid<geometry_component>()) { return false; }
             meshes[e] = *static_cast<geometry_component *>(data);
             return true;
+        }
+
+        virtual bool create(entity e, poly_typeid hash, void * data, void *& out_data) override final
+        {
+            out_data = nullptr;
+            return create(e, hash, data);
         }
         
         bool create(entity e, geometry_component && c)

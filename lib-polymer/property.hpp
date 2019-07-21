@@ -33,8 +33,7 @@ namespace polymer
         mutable T _cached_value;
         mutable bool cache_dirty {true};
 
-        // @todo - in the future, maybe we can also provide the old value 
-        // alongside the new one
+        /// @todo - we can also provide the old value alongside the new one
         void notify_listeners()
         {
             for (auto & listener : listeners) 
@@ -48,7 +47,10 @@ namespace polymer
         property() = default;
         property(const T & default_value) : _cached_value(default_value) {}
         ~property() = default;
-        property(const property & r) {}
+        property(const property & r) {} // fixme
+
+        property & operator = (T & other) { _cached_value = other._cached_value; return *this; }
+
         property & operator = (property && r) noexcept 
         {
             listeners = std::move(r.listeners);
@@ -62,7 +64,7 @@ namespace polymer
         void kernel_set(std::function<T(T v)> set_kernel) { _set_kernel = set_kernel; }
         void kernel_get(std::function<T()> get_kernel) { _get_kernel = get_kernel; }
 
-        void set(const T new_value)
+        void set(const T & new_value)
         {
             if (_set_kernel) { _cached_value = _set_kernel(new_value); }
             else { _cached_value = new_value; }
@@ -71,7 +73,7 @@ namespace polymer
 
         T value() const
         {
-            if (_get_kernel && cache_dirty == true) 
+            if (_get_kernel && cache_dirty) 
             {
                 _cached_value = _get_kernel();
                 cache_dirty = false;
@@ -93,10 +95,7 @@ namespace polymer
                 T new_value = polymer::any_cast<T>(property);
                 set(new_value);
             }
-            catch (const std::exception & e)
-            {
-                std::cerr << "caught any_cast exception: " << e.what() << std::endl;
-            }
+            catch (const std::exception & e) { std::cerr << "caught any_cast exception: " << e.what() << std::endl; }
         }
 
         virtual polymer::any get_value() override final { return polymer::make_any<T>(value()); }

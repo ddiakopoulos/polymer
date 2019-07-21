@@ -40,11 +40,13 @@ namespace polymer
             pauseTime = startTime;
         }
 
+        // Note: this function will only return a valid result after a start()->stop() cycle
         double elapsed_ms() const
         {
             return (std::chrono::duration<float>(pauseTime - startTime).count() * 1000.0);
         }
 
+        // If started, this will return the amount of time elapsed since calling start()
         std::chrono::milliseconds milliseconds() const
         {
             return running_time<std::chrono::milliseconds>();

@@ -61,6 +61,9 @@ namespace polymer
         // and hash type is to subvert the need for a heavily templated component system. 
         virtual bool create(entity e, poly_typeid hash, void * data) { return false; };
 
+        // Where the serialization system needs to mutate some aspect of the newly created component
+        virtual bool create(entity e, poly_typeid hash, void * data, void *& out_data) { return false; };
+
         // Destroys all of an entity's associated components
         virtual void destroy(entity e) {};
 

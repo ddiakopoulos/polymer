@@ -55,7 +55,7 @@ namespace polymer
     // and we need to resolve those too. 
     class asset_resolver
     {
-        scene * scene;
+        scene * the_scene;
         material_library * library;
 
         // Unresolved asset names
@@ -169,19 +169,19 @@ namespace polymer
 
         void resolve()
         {
-            assert(scene != nullptr);
+            assert(the_scene != nullptr);
             assert(library != nullptr);
 
             // Material Names
-            for (auto & m : scene->render_system->materials)
+            for (auto & m : the_scene->render_system->materials)
                 material_names.push_back(m.second.material.name);
 
             // GPU Geometry
-            for (auto & m : scene->render_system->meshes)
+            for (auto & m : the_scene->render_system->meshes)
                 mesh_names.push_back(m.second.mesh.name);
 
             // CPU Geometry (same list as GPU)
-            for (auto & m : scene->collision_system->meshes)
+            for (auto & m : the_scene->collision_system->meshes)
                 mesh_names.push_back(m.second.geom.name);
 
             remove_duplicates(material_names);
@@ -214,10 +214,10 @@ namespace polymer
                 }
 
                 // IBLs 
-                if (auto * ibl_cubemap_component = scene->render_system->get_cubemap())
+                if (the_scene->render_system->the_cubemap.get_entity() != kInvalidEntity)
                 {
-                    texture_names.push_back(ibl_cubemap_component->ibl_irradianceCubemap.name);
-                    texture_names.push_back(ibl_cubemap_component->ibl_radianceCubemap.name);
+                    texture_names.push_back(the_scene->render_system->the_cubemap.ibl_irradianceCubemap.name);
+                    texture_names.push_back(the_scene->render_system->the_cubemap.ibl_radianceCubemap.name);
                 }
 
                 remove_duplicates(shader_names);
@@ -248,7 +248,7 @@ namespace polymer
         }
 
         asset_resolver::asset_resolver(polymer::scene * the_scene, material_library * library)
-            : scene(the_scene), library(library) {}
+            : the_scene(the_scene), library(library) {}
 
         void add_search_path(const std::string & search_path)
         {

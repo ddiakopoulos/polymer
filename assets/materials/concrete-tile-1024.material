@@ -21,7 +21,7 @@
         "occlusion_handle": "",
         "occulusion_strength": 1.0,
         "program_handle": "pbr-forward-lighting",
-        "roughness_factor": 1.0,
+        "roughness_factor": 0.03999999910593033,
         "roughness_handle": "concrete_tile_roughness",
         "shadow_opacity": 1.0,
         "specularLevel": 0.0,

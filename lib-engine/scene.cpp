@@ -267,10 +267,6 @@ void scene::export_environment(const std::string & export_path)
                     visit_fields(component_ref, [&](const char * name, auto & field, auto... metadata)
                     { 
                         if (auto * no_serialize = unpack<serializer_hidden>(metadata...)) return;
-
-                        //if (auto * use_entity_ref = unpack<entity_ref>(metadata...)) component["#" + name] = field;
-                        //else 
-
                         component[name] = field;
                     });
 
@@ -288,7 +284,7 @@ void scene::export_environment(const std::string & export_path)
     log::get()->engine_log->info("exporting {} took {}ms", export_path, t.get());
 }
 
-void scene::reset(entity_system_manager & o, int2 default_renderer_resolution, bool create_default_entities)
+void scene::reset(entity_system_manager & entity_sys_mgr, int2 default_renderer_resolution, bool create_default_entities)
 {
     remap_table.clear();
 
@@ -298,28 +294,20 @@ void scene::reset(entity_system_manager & o, int2 default_renderer_resolution, b
     event_manager.reset(new polymer::event_manager_async());
 
     // Create or reset other required systems for scenes to work. We don't have any kind
-    // of dependency injection system, so systems are roughly created in order
-    // of their importance
-    xform_system = o.create_system<polymer::transform_system>(&o);
-    identifier_system = o.create_system<polymer::identifier_system>(&o);
-    collision_system = o.create_system<polymer::collision_system>(&o);
+    // of dependency injection system, so systems are roughly created in order of their importance
+    xform_system = entity_sys_mgr.create_system<polymer::transform_system>(&entity_sys_mgr);
+    identifier_system = entity_sys_mgr.create_system<polymer::identifier_system>(&entity_sys_mgr);
+    collision_system = entity_sys_mgr.create_system<polymer::collision_system>(&entity_sys_mgr);
 
     // Create or reset the renderer
     renderer_settings initialSettings;
     initialSettings.renderSize = default_renderer_resolution;
-    render_system = o.create_system<polymer::render_system>(initialSettings, create_default_entities, &o);
 
-    // @todo - less than ideal that we have to remember to add tracked entities. Systems should
-    // be able to do it.
-    if (create_default_entities)
-    {
-        track_entity(render_system->get_procedural_skybox()->get_entity());
-        track_entity(render_system->get_procedural_skybox()->sun_directional_light);
-        track_entity(render_system->get_cubemap()->get_entity());
-    }
+    if (create_default_entities) render_system = entity_sys_mgr.create_system<polymer::render_system>(initialSettings, &entity_sys_mgr, this);
+    else render_system = entity_sys_mgr.create_system<polymer::render_system>(initialSettings, &entity_sys_mgr);
 
     // Create a material library
-    mat_library.reset(new polymer::material_library()); // must include trailing slash
+    mat_library.reset(new polymer::material_library());
 
     // Resolving assets is the last thing we should do
     resolver.reset(new polymer::asset_resolver(this, mat_library.get()));

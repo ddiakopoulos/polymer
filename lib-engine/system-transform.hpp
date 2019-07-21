@@ -104,7 +104,7 @@ namespace polymer
 
         ~transform_system() override { }
 
-        bool create(entity e, poly_typeid hash, void * data) override final 
+        bool create(entity e, poly_typeid hash, void * data) override final
         { 
             if (hash != get_typeid<local_transform_component>()) { return false; }
             auto new_component = static_cast<local_transform_component *>(data);
@@ -112,6 +112,12 @@ namespace polymer
             // create method is only called by the de-serialization system, parents and children are handled 
             // as a post-processing/finalization step after all entities have been created.
             return create(e, new_component->local_pose, new_component->local_scale);
+        }
+
+        virtual bool create(entity e, poly_typeid hash, void * data, void *& out_data) override final
+        { 
+            out_data = nullptr;
+            return create(e, hash, data);
         }
 
         bool create(entity e, 

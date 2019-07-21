@@ -92,7 +92,7 @@ sample_engine_procedural_material::sample_engine_procedural_material() : polymer
     flycam.set_camera(&cam);
 
     // Add a default skybox
-    if (auto proc_skybox = scene.render_system->get_procedural_skybox())
+    if (auto proc_skybox = scene.render_system->get_procedural_skybox_component())
     {
         payload.procedural_skybox = proc_skybox;
         if (auto sunlight = scene.render_system->get_directional_light_component(proc_skybox->sun_directional_light))
@@ -102,7 +102,7 @@ sample_engine_procedural_material::sample_engine_procedural_material() : polymer
     }
 
     // Add a default cubemap
-    if (auto ibl_cubemap = scene.render_system->get_cubemap())
+    if (auto ibl_cubemap = scene.render_system->get_cubemap_component())
     {
         payload.ibl_cubemap = ibl_cubemap;
     }

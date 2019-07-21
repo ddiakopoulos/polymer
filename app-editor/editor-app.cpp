@@ -69,7 +69,7 @@ void scene_editor_app::on_window_resize(int2 size)
         renderer_settings settings;
         settings.renderSize = size;
         the_scene.render_system->reconfigure(settings);
-        // scene.render_system->get_procedural_skybox()->onParametersChanged(); // @tofix - reconfigure directional light
+        // scene.render_system->get_procedural_skybox_component()->onParametersChanged(); // @tofix - reconfigure directional light
     }
 }
 
@@ -264,7 +264,8 @@ void scene_editor_app::draw_entity_scenegraph(const entity e)
 
     const bool selected = gizmo->selected(e);
     std::string name = the_scene.identifier_system->get_name(e);
-    name = name.empty() ? "<unnamed entity>" : name;
+    std::string entity_as_string = "[" + std::to_string(e) + "] ";
+    name = name.empty() ? entity_as_string + "<unnamed entity>" : entity_as_string + name;
 
     if (ImGui::Selectable(name.c_str(), selected))
     {
@@ -339,18 +340,26 @@ void scene_editor_app::on_draw()
             }
         }
 
-        if (auto proc_skybox = the_scene.render_system->get_procedural_skybox())
+        // Only one IBL
+        for (auto & e : the_scene.entity_list())
         {
-            renderer_payload.procedural_skybox = proc_skybox;
-            if (auto sunlight = the_scene.render_system->get_directional_light_component(proc_skybox->sun_directional_light))
+            if (auto * cubemap = the_scene.render_system->get_cubemap_component(e))
             {
-                renderer_payload.sunlight = sunlight;
+                renderer_payload.ibl_cubemap = cubemap;
             }
         }
 
-        if (auto ibl_cubemap = the_scene.render_system->get_cubemap())
+        // Only one skybox
+        for (auto & e : the_scene.entity_list())
         {
-            renderer_payload.ibl_cubemap = ibl_cubemap;
+            if (auto * proc_skybox = the_scene.render_system->get_procedural_skybox_component(e))
+            {
+                renderer_payload.procedural_skybox = proc_skybox;
+                if (auto sunlight = the_scene.render_system->get_directional_light_component(proc_skybox->sun_directional_light))
+                {
+                    renderer_payload.sunlight = sunlight;
+                }
+            }
         }
 
         // Gather point lights
@@ -592,7 +601,7 @@ void scene_editor_app::on_draw()
                     {
                         if (system_pointer)
                         {
-                            if      (type_name == get_typename<mesh_component>()) system_pointer->create(selection, get_typeid<mesh_component>(), &mesh_component(selection));
+                            if (type_name == get_typename<mesh_component>()) system_pointer->create(selection, get_typeid<mesh_component>(), &mesh_component(selection));
                             else if (type_name == get_typename<material_component>()) system_pointer->create(selection, get_typeid<material_component>(), &material_component(selection));
                             else if (type_name == get_typename<geometry_component>()) system_pointer->create(selection, get_typeid<geometry_component>(), &geometry_component(selection));
                             else if (type_name == get_typename<point_light_component>()) system_pointer->create(selection, get_typeid<point_light_component>(), &point_light_component(selection));

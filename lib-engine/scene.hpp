@@ -231,7 +231,8 @@ namespace polymer
 
     inline void from_json(const json & archive, geometry_component & m) {
         visit_fields(m, [&archive](const char * name, auto & field, auto... metadata) {
-            field = archive.at(name).get<std::remove_reference_t<decltype(field)>>();
+            try { field = archive.at(name).get<std::remove_reference_t<decltype(field)>>(); }
+            catch (const std::exception & e) { std::cerr << "from_json exception: " << e.what() << std::endl; }
         });
     };
     
@@ -355,9 +356,9 @@ namespace polymer
         });
     };
 
-    ///////////////////////////////////////////////////////////////
-    //   local_transform_component & world_transform_component   //
-    ///////////////////////////////////////////////////////////////
+    ///////////////////////////////////
+    //   local_transform_component   //
+    ///////////////////////////////////
 
     struct local_transform_component : public base_component
     {
@@ -390,6 +391,11 @@ namespace polymer
         });
     };
 
+    ///////////////////////////////////
+    //   world_transform_component   //
+    ///////////////////////////////////
+
+    // Note: not intended for serialization
     struct world_transform_component : public base_component
     {
         world_transform_component() {};
@@ -428,6 +434,7 @@ namespace polymer
     ///////////////////////////////
 
     // Boilerplate for creating a new scene component type
+
     /// struct new_component : public base_component
     /// {
     ///     new_component() {};
@@ -443,8 +450,8 @@ namespace polymer
     /// 
     /// inline void from_json(const json & archive, new_component & m) {
     ///     visit_fields(m, [&archive](const char * name, auto & field, auto... metadata) {
-    ///         if (auto * no_serialize = unpack<serializer_hidden>(metadata...)) return;
-    ///         field = archive.at(name).get<std::remove_reference_t<decltype(field)>>();
+    ///         try { field = archive.at(name).get<std::remove_reference_t<decltype(field)>>(); }
+    ///         catch (const std::exception & e) { std::cerr << "from_json exception: " << e.what() << std::endl; }
     ///     });
     /// };
 
@@ -474,25 +481,33 @@ namespace polymer
 
             if (type_name == get_typename<component_t>())
             {
-                component_t the_new_component = componentIterator.value();
-                the_new_component.e = new_entity;
+                // @tofix - inefficient
+                component_t deserialized_component = componentIterator.value();
+                deserialized_component.e = new_entity;
 
-                if (system_pointer->create(new_entity, get_typeid(type_name.c_str()), &the_new_component))
+                void * data_ptr = nullptr;
+                if (system_pointer->create(new_entity, get_typeid(type_name.c_str()), &deserialized_component, data_ptr))
                 {
+                    // std::cout << "[inflate_serialized_component] created new component: " << new_entity << " / " << type_name << std::endl;
+
                     // So what's this nonsense? If a field has an `entity_ref` attribute, it means that the entity refers to another entity. 
                     // The implication for serialization is that we need to remap the old entity value to the new one. 
                     // Due to the use of auto and this template, the compiler is very unclear about the type of the field 
                     // in the ` if (use_entity_ref) ... ` block. Thus, we resort to memcpy to avoid even uglier hacks. 
-                    visit_fields(the_new_component, [&the_new_component, this](const char * name, auto & field, auto... metadata)
+                    if (data_ptr)
                     {
-                        if (auto * use_entity_ref = unpack<entity_ref>(metadata...))
-                        {   
-                            entity deserialized_entity = kInvalidEntity;
-                            std::memcpy(&deserialized_entity, &field, sizeof(entity));
-                            entity remapped_entity = remap_table[deserialized_entity];
-                            std::memcpy(&field, &remapped_entity, sizeof(entity));
-                        }
-                    });
+                        component_t & cast_component = *(static_cast<component_t*>(data_ptr));
+                        visit_fields(cast_component, [this](const char * name, auto & field, auto... metadata)
+                        {
+                            if (auto * use_entity_ref = unpack<entity_ref>(metadata...))
+                            {
+                                entity deserialized_entity = kInvalidEntity;
+                                std::memcpy(&deserialized_entity, &field, sizeof(entity));
+                                entity remapped_entity = remap_table[deserialized_entity];
+                                std::memcpy(&field, &remapped_entity, sizeof(entity));
+                            }
+                        });
+                    }
                     //log::get()->engine_log->info("created {} on {}", type_name, system_name);
                 }
                 else { /* log::get()->engine_log->info("could not create {} on {}", type_name, system_name); */ }
