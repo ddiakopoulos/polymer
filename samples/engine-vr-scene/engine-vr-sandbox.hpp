@@ -31,7 +31,7 @@ struct engine_vr_sandbox : public polymer_app
     entity floor;
 
     render_payload payload;
-    scene scene;
+    scene the_scene;
 
     engine_vr_sandbox();
     ~engine_vr_sandbox();

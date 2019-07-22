@@ -19,41 +19,39 @@ engine_vr_sandbox::engine_vr_sandbox()
         the_entity_system_manager.reset(new entity_system_manager());
         load_required_renderer_assets("../../assets", shaderMonitor);
 
-
-
         // Setup for the recommended eye target size
         const uint2 eye_target_size = hmd->get_recommended_render_target_size();
 
-        scene.reset(*the_entity_system_manager, {eye_target_size.x, eye_target_size.y}, true);
+        the_scene.reset(*the_entity_system_manager, {eye_target_size.x, eye_target_size.y}, true);
 
         renderer_settings settings;
         settings.renderSize = int2(eye_target_size.x, eye_target_size.y);
         settings.cameraCount = 2;
         settings.performanceProfiling = true;
-        scene.render_system->reconfigure(settings);
+        the_scene.render_system->reconfigure(settings);
 
         // Setup hidden area mesh
-        scene.render_system->get_renderer()->set_stencil_mask(0, hmd->get_stencil_mask(vr_eye::left_eye));
-        scene.render_system->get_renderer()->set_stencil_mask(1, hmd->get_stencil_mask(vr_eye::right_eye));
+        the_scene.render_system->get_renderer()->set_stencil_mask(0, hmd->get_stencil_mask(vr_eye::left_eye));
+        the_scene.render_system->get_renderer()->set_stencil_mask(1, hmd->get_stencil_mask(vr_eye::right_eye));
 
         {
             create_handle_for_asset("floor-mesh", make_mesh_from_geometry(make_plane(48, 48, 24, 24))); // gpu mesh
 
             auto wiref_mat = std::make_shared<polymer_wireframe_material>();
-            scene.mat_library->register_material("renderer-wireframe", wiref_mat);
+            the_scene.mat_library->register_material("renderer-wireframe", wiref_mat);
 
-            floor = scene.track_entity(the_entity_system_manager->create_entity());
-            scene.identifier_system->create(floor, "floor-mesh");
-            scene.xform_system->create(floor, transform(make_rotation_quat_axis_angle({ 1, 0, 0 }, ((float) POLYMER_PI / 2.f)), { 0, -0.01f, 0 }), { 1.f, 1.f, 1.f });
-            scene.render_system->create(floor, material_component(floor, material_handle("renderer-wireframe")));
-            scene.render_system->create(floor, mesh_component(floor, gpu_mesh_handle("floor-mesh")));
+            floor = the_scene.track_entity(the_entity_system_manager->create_entity());
+            the_scene.identifier_system->create(floor, "floor-mesh");
+            the_scene.xform_system->create(floor, transform(make_rotation_quat_axis_angle({ 1, 0, 0 }, ((float) POLYMER_PI / 2.f)), { 0, -0.01f, 0 }), { 1.f, 1.f, 1.f });
+            the_scene.render_system->create(floor, material_component(floor, material_handle("renderer-wireframe")));
+            the_scene.render_system->create(floor, mesh_component(floor, gpu_mesh_handle("floor-mesh")));
         }
 
-        input_processor.reset(new xr_input_processor(the_entity_system_manager.get(), &scene, hmd.get()));
-        controller_system.reset(new xr_controller_system(the_entity_system_manager.get(), &scene, hmd.get(), input_processor.get()));
-        gizmo_system.reset(new xr_gizmo_system(the_entity_system_manager.get(), &scene, hmd.get(), input_processor.get()));
+        input_processor.reset(new xr_input_processor(the_entity_system_manager.get(), &the_scene, hmd.get()));
+        controller_system.reset(new xr_controller_system(the_entity_system_manager.get(), &the_scene, hmd.get(), input_processor.get()));
+        gizmo_system.reset(new xr_gizmo_system(the_entity_system_manager.get(), &the_scene, hmd.get(), input_processor.get()));
 
-        vr_imgui.reset(new xr_imgui_system(the_entity_system_manager.get(), &scene, hmd.get(), input_processor.get(), { 256, 256 }, window));
+        vr_imgui.reset(new xr_imgui_system(the_entity_system_manager.get(), &the_scene, hmd.get(), input_processor.get(), { 256, 256 }, window));
 
         gui::make_light_theme();
     }
@@ -66,24 +64,25 @@ engine_vr_sandbox::engine_vr_sandbox()
     eye_views.push_back(simple_texture_view()); // for the left view
     eye_views.push_back(simple_texture_view()); // for the right view
 
-    // Add a default skybox
-    if (auto proc_skybox = scene.render_system->get_procedural_skybox_component())
+    for (auto & e : the_scene.entity_list())
     {
-        payload.procedural_skybox = proc_skybox;
-        if (auto sunlight = scene.render_system->get_directional_light_component(proc_skybox->sun_directional_light))
+        if (auto * cubemap = the_scene.render_system->get_cubemap_component(e)) payload.ibl_cubemap = cubemap;
+    }
+
+    for (auto & e : the_scene.entity_list())
+    {
+        if (auto * proc_skybox = the_scene.render_system->get_procedural_skybox_component(e))
         {
-            payload.sunlight = sunlight;
+            payload.procedural_skybox = proc_skybox;
+            if (auto sunlight = the_scene.render_system->get_directional_light_component(proc_skybox->sun_directional_light))
+            {
+                payload.sunlight = sunlight;
+            }
         }
     }
 
-    // Add a default cubemap
-    if (auto ibl_cubemap = scene.render_system->get_cubemap_component())
-    {
-        payload.ibl_cubemap = ibl_cubemap;
-    }
-
-    scene.resolver->add_search_path("../../assets/");
-    scene.resolver->resolve();
+    the_scene.resolver->add_search_path("../../assets/");
+    the_scene.resolver->resolve();
 }
 
 engine_vr_sandbox::~engine_vr_sandbox()
@@ -107,7 +106,7 @@ void engine_vr_sandbox::on_update(const app_update_event & e)
     shaderMonitor.handle_recompile();
 
     hmd->update();
-    scene.event_manager->process();
+    the_scene.event_manager->process();
 
     input_processor->process(e.timestep_ms);
     controller_system->process(e.timestep_ms);
@@ -146,14 +145,14 @@ void engine_vr_sandbox::on_draw()
 
     // Render scene using payload
     payload.render_components.clear();
-    payload.render_components.push_back(assemble_render_component(scene, floor));
-    for (const entity & r : vr_imgui->get_renderables()) payload.render_components.push_back(assemble_render_component(scene, r));
-    for (const entity & r : controller_system->get_renderables()) payload.render_components.push_back(assemble_render_component(scene, r));
-    for (const entity & r : gizmo_system->get_renderables()) payload.render_components.push_back(assemble_render_component(scene, r));
-    scene.render_system->get_renderer()->render_frame(payload);
+    payload.render_components.push_back(assemble_render_component(the_scene, floor));
+    for (const entity & r : vr_imgui->get_renderables()) payload.render_components.push_back(assemble_render_component(the_scene, r));
+    for (const entity & r : controller_system->get_renderables()) payload.render_components.push_back(assemble_render_component(the_scene, r));
+    for (const entity & r : gizmo_system->get_renderables()) payload.render_components.push_back(assemble_render_component(the_scene, r));
+    the_scene.render_system->get_renderer()->render_frame(payload);
 
-    const uint32_t left_eye_texture = scene.render_system->get_renderer()->get_color_texture(0);
-    const uint32_t right_eye_texture = scene.render_system->get_renderer()->get_color_texture(1);
+    const uint32_t left_eye_texture = the_scene.render_system->get_renderer()->get_color_texture(0);
+    const uint32_t right_eye_texture = the_scene.render_system->get_renderer()->get_color_texture(1);
 
     // Submit to the HMD for presentation
     hmd->submit(left_eye_texture, right_eye_texture);
@@ -185,9 +184,9 @@ void engine_vr_sandbox::on_draw()
     const auto headPose = hmd->get_hmd_pose();
     desktop_imgui->begin_frame();
     ImGui::Text("Head Pose: %f, %f, %f", headPose.position.x, headPose.position.y, headPose.position.z);
-    if (scene.render_system->get_renderer()->settings.performanceProfiling)
+    if (the_scene.render_system->get_renderer()->settings.performanceProfiling)
     {
-        for (auto & t : scene.render_system->get_renderer()->gpuProfiler.get_data()) ImGui::Text("[Renderer GPU] %s %f ms", t.first.c_str(), t.second);
+        for (auto & t : the_scene.render_system->get_renderer()->gpuProfiler.get_data()) ImGui::Text("[Renderer GPU] %s %f ms", t.first.c_str(), t.second);
     }
     desktop_imgui->end_frame();
 
