@@ -47,19 +47,41 @@ namespace polymer
         property() = default;
         property(const T & default_value) : _cached_value(default_value) {}
         ~property() = default;
-        property(const property & r) {} // fixme
 
-        property & operator = (T & other) { _cached_value = other._cached_value; return *this; }
+        // Copy constructor
+        property(const property & r) 
+        {
+            listeners = r.listeners;
+            _set_kernel = r._set_kernel;
+            _get_kernel = r._get_kernel;
+            _cached_value = r._cached_value;
+        } 
 
+        // Copy assignment operator
+        property & operator = (T & other) 
+        { 
+            listeners = other.listeners;
+            _set_kernel = other._set_kernel;
+            _get_kernel = other._get_kernel;
+            _cached_value = other._cached_value; 
+            return *this; 
+        }
+
+        // Move constructor
+        property(property && r) 
+        { 
+            *this = std::move(r);
+        }
+
+        // Move assignment operator
         property & operator = (property && r) noexcept 
         {
             listeners = std::move(r.listeners);
             _set_kernel = std::move(r._set_kernel);
             _get_kernel = std::move(r._get_kernel);
-            _cached_value = std::move(_cached_value);
+            _cached_value = std::move(r._cached_value);
             return *this; 
         }
-        property(property && r) { *this = std::move(r); }
 
         void kernel_set(std::function<T(T v)> set_kernel) { _set_kernel = set_kernel; }
         void kernel_get(std::function<T()> get_kernel) { _get_kernel = get_kernel; }

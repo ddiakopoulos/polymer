@@ -1,166 +1,14 @@
 {
-    "2": {
-        "@geometry_component": {
-            "cpu_mesh_handle": "room/room"
-        },
-        "@identifier_component": {
-            "id": "room/room"
-        },
-        "@material_component": {
-            "cast_shadow": true,
-            "material_handle": "concrete-tile-1024",
-            "receive_shadow": true
-        },
-        "@mesh_component": {
-            "gpu_mesh_handle": "room/room"
-        },
-        "@local_transform_component": {
-            "children": [],
-            "local_pose": {
-                "orientation": {
-                    "w": 1.0,
-                    "x": 0.0,
-                    "y": 0.0,
-                    "z": 0.0
-                },
-                "position": {
-                    "x": 0.0,
-                    "y": 5.0,
-                    "z": 0.0
-                }
-            },
-            "local_scale": {
-                "x": 10.0,
-                "y": 10.0,
-                "z": 10.0
-            },
-            "parent": 6
-        }
-    },
-    "3": {
-        "@geometry_component": {
-            "cpu_mesh_handle": "floor-bevels/floor-bevels"
-        },
-        "@identifier_component": {
-            "id": "floor-bevels/floor-bevels"
-        },
-        "@material_component": {
-            "cast_shadow": true,
-            "material_handle": "concrete-tile-1024",
-            "receive_shadow": true
-        },
-        "@mesh_component": {
-            "gpu_mesh_handle": "floor-bevels/floor-bevels"
-        },
-        "@local_transform_component": {
-            "children": [],
-            "local_pose": {
-                "orientation": {
-                    "w": 1.0,
-                    "x": 0.0,
-                    "y": 0.0,
-                    "z": 0.0
-                },
-                "position": {
-                    "x": 0.0,
-                    "y": 0.5,
-                    "z": 0.0
-                }
-            },
-            "local_scale": {
-                "x": 10.0,
-                "y": 10.0,
-                "z": 10.0
-            },
-            "parent": 6
-        }
-    },
-    "4": {
-        "@geometry_component": {
-            "cpu_mesh_handle": "ceiling/ceiling"
-        },
-        "@identifier_component": {
-            "id": "ceiling/ceiling"
-        },
-        "@material_component": {
-            "cast_shadow": true,
-            "material_handle": "concrete-tile-1024",
-            "receive_shadow": true
-        },
-        "@mesh_component": {
-            "gpu_mesh_handle": "ceiling/ceiling"
-        },
-        "@local_transform_component": {
-            "children": [],
-            "local_pose": {
-                "orientation": {
-                    "w": 1.0,
-                    "x": 0.0,
-                    "y": 0.0,
-                    "z": 0.0
-                },
-                "position": {
-                    "x": 0.0,
-                    "y": 9.5,
-                    "z": 0.0
-                }
-            },
-            "local_scale": {
-                "x": 10.0,
-                "y": 10.0,
-                "z": 10.0
-            },
-            "parent": 6
-        }
-    },
-    "5": {
-        "@geometry_component": {
-            "cpu_mesh_handle": "floor/floor"
-        },
-        "@identifier_component": {
-            "id": "floor/floor"
-        },
-        "@material_component": {
-            "cast_shadow": true,
-            "material_handle": "concrete-tile-1024",
-            "receive_shadow": true
-        },
-        "@mesh_component": {
-            "gpu_mesh_handle": "floor/floor"
-        },
-        "@local_transform_component": {
-            "children": [],
-            "local_pose": {
-                "orientation": {
-                    "w": 1.0,
-                    "x": 0.0,
-                    "y": 0.0,
-                    "z": 0.0
-                },
-                "position": {
-                    "x": 0.0,
-                    "y": 0.0,
-                    "z": 0.0
-                }
-            },
-            "local_scale": {
-                "x": 10.0,
-                "y": 10.0,
-                "z": 10.0
-            },
-            "parent": 6
-        }
-    },
-    "6": {
+    "10": {
         "@identifier_component": {
             "id": "dev-room"
         },
         "@local_transform_component": {
             "children": [
-                5,
-                4,
-                3,
-                2
+                6,
+                7,
+                8,
+                9
             ],
             "local_pose": {
                 "orientation": {
@@ -183,23 +31,9 @@
             "parent": 0
         }
     },
-    "7": {
+    "11": {
         "@identifier_component": {
             "id": "magenta-pointlight"
-        },
-        "@point_light_component": {
-            "color": {
-                "x": 1.0,
-                "y": 0.75,
-                "z": 1.0
-            },
-            "enabled": true,
-            "position": {
-                "x": 0.2278885841369629,
-                "y": 4.15168571472168,
-                "z": -0.044480085372924805
-            },
-            "radius": 10.0
         },
         "@local_transform_component": {
             "children": [],
@@ -211,9 +45,9 @@
                     "z": 0.0
                 },
                 "position": {
-                    "x": 0.2278885841369629,
-                    "y": 4.15168571472168,
-                    "z": -0.044480085372924805
+                    "x": 0.0,
+                    "y": 5.0,
+                    "z": 0.0
                 }
             },
             "local_scale": {
@@ -222,9 +56,23 @@
                 "z": 1.0
             },
             "parent": 0
+        },
+        "@point_light_component": {
+            "color": {
+                "x": 1.0,
+                "y": 0.75,
+                "z": 1.0
+            },
+            "enabled": true,
+            "position": {
+                "x": 0.0,
+                "y": 5.0,
+                "z": 0.0
+            },
+            "radius": 12.0
         }
     },
-    "8": {
+    "12": {
         "@identifier_component": {
             "id": "procedural-skybox"
         },
@@ -260,10 +108,10 @@
                 },
                 "turbidity": 4.0
             },
-            "sun_directional_light": 9
+            "sun_directional_light": 13
         }
     },
-    "9": {
+    "13": {
         "@directional_light_component": {
             "amount": 1.0,
             "color": {
@@ -304,7 +152,81 @@
             "parent": 0
         }
     },
-    "10": {
+    "14": {
+        "@identifier_component": {
+            "id": "debug_renderer-14"
+        },
+        "@local_transform_component": {
+            "children": [],
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                }
+            },
+            "local_scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "parent": 0
+        },
+        "@material_component": {
+            "cast_shadow": false,
+            "material_handle": "debug-renderer-material",
+            "receive_shadow": false
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "debug-renderer"
+        }
+    },
+    "15": {
+        "@geometry_component": {
+            "cpu_mesh_handle": "dome",
+            "cpu_mesh_proxy_handle": ""
+        },
+        "@identifier_component": {
+            "id": "metallic-dome"
+        },
+        "@local_transform_component": {
+            "children": [],
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 0.0,
+                    "y": 0.983440637588501,
+                    "z": 0.0
+                }
+            },
+            "local_scale": {
+                "x": 2.0,
+                "y": 2.0,
+                "z": 2.0
+            },
+            "parent": 0
+        },
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "pure-metallic",
+            "receive_shadow": true
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "dome"
+        }
+    },
+    "5": {
         "@cubemap_component": {
             "force_draw": false,
             "ibl_irradiance_cubemap": "default-irradiance-cubemap",
@@ -334,6 +256,162 @@
                 "z": 0.0
             },
             "parent": 0
+        }
+    },
+    "6": {
+        "@geometry_component": {
+            "cpu_mesh_handle": "room/room",
+            "cpu_mesh_proxy_handle": ""
+        },
+        "@identifier_component": {
+            "id": "room/room"
+        },
+        "@local_transform_component": {
+            "children": [],
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 0.0,
+                    "y": 5.0,
+                    "z": 0.0
+                }
+            },
+            "local_scale": {
+                "x": 10.0,
+                "y": 10.0,
+                "z": 10.0
+            },
+            "parent": 10
+        },
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "concrete-tile-1024",
+            "receive_shadow": true
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "room/room"
+        }
+    },
+    "7": {
+        "@geometry_component": {
+            "cpu_mesh_handle": "floor-bevels/floor-bevels",
+            "cpu_mesh_proxy_handle": ""
+        },
+        "@identifier_component": {
+            "id": "floor-bevels/floor-bevels"
+        },
+        "@local_transform_component": {
+            "children": [],
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 0.0,
+                    "y": 0.5,
+                    "z": 0.0
+                }
+            },
+            "local_scale": {
+                "x": 10.0,
+                "y": 10.0,
+                "z": 10.0
+            },
+            "parent": 10
+        },
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "concrete-tile-1024",
+            "receive_shadow": true
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "floor-bevels/floor-bevels"
+        }
+    },
+    "8": {
+        "@geometry_component": {
+            "cpu_mesh_handle": "ceiling/ceiling",
+            "cpu_mesh_proxy_handle": ""
+        },
+        "@identifier_component": {
+            "id": "ceiling/ceiling"
+        },
+        "@local_transform_component": {
+            "children": [],
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 0.0,
+                    "y": 9.5,
+                    "z": 0.0
+                }
+            },
+            "local_scale": {
+                "x": 10.0,
+                "y": 10.0,
+                "z": 10.0
+            },
+            "parent": 10
+        },
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "concrete-tile-1024",
+            "receive_shadow": true
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "ceiling/ceiling"
+        }
+    },
+    "9": {
+        "@geometry_component": {
+            "cpu_mesh_handle": "floor/floor",
+            "cpu_mesh_proxy_handle": ""
+        },
+        "@identifier_component": {
+            "id": "floor/floor"
+        },
+        "@local_transform_component": {
+            "children": [],
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                }
+            },
+            "local_scale": {
+                "x": 10.0,
+                "y": 10.0,
+                "z": 10.0
+            },
+            "parent": 10
+        },
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "concrete-tile-1024",
+            "receive_shadow": true
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "floor/floor"
         }
     }
 }
