@@ -346,3 +346,22 @@ TEST_CASE("integral and floating point radix sort")
     radix_sorter.sort(int_list.data(), int_list.size());
     radix_sorter.sort(float_list.data(), float_list.size());
 }
+
+TEST_CASE("poly_guid to and from string")
+{
+    const poly_guid invalid;
+    REQUIRE(invalid.valid() == false);
+
+    const poly_guid direct("a00129fe-0fa6-4a67-8cd5-0c00b851664c");
+    REQUIRE(direct.valid() == true);
+
+    const poly_guid guid_a = make_guid();
+    REQUIRE(guid_a.valid() == true);
+
+    const poly_guid guid_from = { "c0e2e239-e00b-4b28-8047-f75ea9b7b7d8" };
+    REQUIRE(guid_from.as_string() == std::string("c0e2e239-e00b-4b28-8047-f75ea9b7b7d8"));
+
+    REQUIRE_FALSE(guid_a == guid_from);
+
+    std::cout << "guid string test" << guid_from << std::endl;
+}

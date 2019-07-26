@@ -19,6 +19,7 @@
 #include "any.hpp"
 #include "property.hpp"
 #include "thread-pool.hpp"
+#include "guid.hpp"
 
 #include "simple_animator.hpp"
 #include "trajectory.hpp"

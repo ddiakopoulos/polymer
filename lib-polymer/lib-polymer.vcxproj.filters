@@ -171,6 +171,9 @@
     <ClInclude Include="util-win32.hpp">
       <Filter>src\platform</Filter>
     </ClInclude>
+    <ClInclude Include="guid.hpp">
+      <Filter>src\tools</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="lib-polymer.cpp">

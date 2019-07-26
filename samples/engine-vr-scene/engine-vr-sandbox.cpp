@@ -43,7 +43,7 @@ engine_vr_sandbox::engine_vr_sandbox()
             floor = the_scene.track_entity(the_entity_system_manager->create_entity());
             the_scene.identifier_system->create(floor, "floor-mesh");
             the_scene.xform_system->create(floor, transform(make_rotation_quat_axis_angle({ 1, 0, 0 }, ((float) POLYMER_PI / 2.f)), { 0, -0.01f, 0 }), { 1.f, 1.f, 1.f });
-            the_scene.render_system->create(floor, material_component(floor, material_handle("renderer-wireframe")));
+            the_scene.render_system->create(floor, material_component(floor, material_handle("renderer-wireframe"))); 
             the_scene.render_system->create(floor, mesh_component(floor, gpu_mesh_handle("floor-mesh")));
         }
 
