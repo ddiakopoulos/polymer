@@ -25,7 +25,7 @@ namespace polymer
 {
     inline std::vector<float4x4> make_parallel_transport_frame_bezier(const std::array<transform, 4> controlPoints, const int segments)
     {
-        bezier_spline curve(controlPoints[0].position, controlPoints[1].position, controlPoints[2].position, controlPoints[3].position);
+        cubic_bezier curve(controlPoints[0].position, controlPoints[1].position, controlPoints[2].position, controlPoints[3].position);
 
         std::vector<float3> points;   // Points in spline
         std::vector<float3> tangents; // Tangents in spline (fwd dir)

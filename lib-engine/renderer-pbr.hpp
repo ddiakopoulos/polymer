@@ -7,7 +7,7 @@
 #include "simple-timer.hpp"
 #include "renderer-uniforms.hpp"
 #include "queue-circular.hpp"
-#include "human_time.hpp"
+#include "timestamp.hpp"
 #include "profiling.hpp"
 
 #include "gl-camera.hpp"

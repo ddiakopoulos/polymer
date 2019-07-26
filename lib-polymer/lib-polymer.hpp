@@ -20,6 +20,7 @@
 #include "property.hpp"
 #include "thread-pool.hpp"
 #include "guid.hpp"
+#include "timestamp.hpp"
 
 #include "simple-animator.hpp"
 #include "trajectory.hpp"

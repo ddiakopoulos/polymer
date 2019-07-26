@@ -2,7 +2,7 @@
 #include "util.hpp"
 #include "math-spatial.hpp"
 #include "gl-api.hpp"
-#include "human_time.hpp"
+#include "timestamp.hpp"
 #include "stb/stb_image_write.h"
 
 using namespace polymer;
@@ -215,8 +215,7 @@ void polymer_app::screenshot_impl()
     int width, height;
     glfwGetWindowSize(window, &width, &height);
     int2 size(width, height);
-    HumanTime t;
-    auto timestamp = t.make_timestamp();
+    auto timestamp = make_timestamp();
     std::vector<uint8_t> screenShot(size.x * size.y * 4);
     glReadPixels(0, 0, size.x, size.y, GL_RGBA, GL_UNSIGNED_BYTE, screenShot.data());
     auto flipped = screenShot;

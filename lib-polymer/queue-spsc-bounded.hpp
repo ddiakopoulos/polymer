@@ -12,7 +12,6 @@ namespace polymer
     template<typename T>
     class spsc_queue_bounded
     {
-
         typedef typename std::aligned_storage<sizeof(T), std::alignment_of<T>::value>::type aligned_t;
         typedef char cache_line_pad_t[64];
 

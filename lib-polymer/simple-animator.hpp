@@ -5,7 +5,6 @@
 
 #include "util.hpp"
 #include "math-common.hpp"
-#include "bit-mask.hpp"
 
 #include <list>
 #include <functional>

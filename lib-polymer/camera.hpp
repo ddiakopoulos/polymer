@@ -9,9 +9,6 @@
 
 namespace polymer
 {
-    ////////////////////////////
-    //   perspective_camera   //
-    ////////////////////////////
 
     struct perspective_camera
     {

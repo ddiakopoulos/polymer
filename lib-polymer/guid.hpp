@@ -3,8 +3,6 @@
 #ifndef polymer_guid_hpp
 #define polymer_guid_hpp
 
-// Loosely based on https://github.com/graeme-hill/crossguid
-
 #include <array>
 #include <functional>
 #include <iomanip>
@@ -15,11 +13,13 @@
 
 namespace polymer
 {
-    class poly_guid
+
+    // Loosely based on https://github.com/graeme-hill/crossguid
+    class guid
     {
         std::array<uint8_t, 16> byte_array{ {0} };
 
-        friend std::ostream & operator << (std::ostream & s, const poly_guid & guid)
+        friend std::ostream & operator << (std::ostream & s, const guid & guid)
         {
             std::ios_base::fmtflags f(s.flags());
 
@@ -50,14 +50,14 @@ namespace polymer
             return s;
         }
 
-        friend bool operator < (const poly_guid & lhs, const poly_guid & rhs) { return lhs.bytes() < rhs.bytes(); }
+        friend bool operator < (const guid & lhs, const guid & rhs) { return lhs.bytes() < rhs.bytes(); }
 
     public:
 
-        poly_guid(const std::array<uint8_t, 16> & bytes) : byte_array(bytes) {}
-        poly_guid(const uint8_t * bytes) { std::copy(bytes, bytes + 16, std::begin(byte_array)); }
+        guid(const std::array<uint8_t, 16> & bytes) : byte_array(bytes) {}
+        guid(const uint8_t * bytes) { std::copy(bytes, bytes + 16, std::begin(byte_array)); }
 
-        poly_guid(const std::string & guid_as_string)
+        guid(const std::string & guid_as_string)
         {
             auto hex_digit_to_char = [](const char ch) -> uint8_t
             {
@@ -116,15 +116,15 @@ namespace polymer
             }
         }
 
-        poly_guid() {};
-        poly_guid(const poly_guid & other) : byte_array(other.byte_array) {}
-        poly_guid & operator = (const poly_guid & other) { poly_guid(other).swap(*this); return *this; }
-        bool operator == (const poly_guid & other) const { return byte_array == other.byte_array; }
-        bool operator != (const poly_guid & other) const { return !((*this) == other); }
+        guid() {};
+        guid(const guid & other) : byte_array(other.byte_array) {}
+        guid & operator = (const guid & other) { guid(other).swap(*this); return *this; }
+        bool operator == (const guid & other) const { return byte_array == other.byte_array; }
+        bool operator != (const guid & other) const { return !((*this) == other); }
         operator std::string() const { return as_string(); }
         const std::array<uint8_t, 16> & bytes() const { return byte_array; }
-        void swap(poly_guid & other) { byte_array.swap(other.byte_array); }
-        bool valid() const { return *this != poly_guid(); }
+        void swap(guid & other) { byte_array.swap(other.byte_array); }
+        bool valid() const { return *this != guid(); }
 
         std::string as_string() const
         {
@@ -139,7 +139,7 @@ namespace polymer
         }
     };
 
-    inline poly_guid make_guid()
+    inline guid make_guid()
     {
         std::mt19937_64 rnd;
         std::uniform_int_distribution<uint32_t> dist(0, 255);
@@ -168,10 +168,10 @@ namespace polymer
 
 namespace std
 {
-    template <> inline void swap(polymer::poly_guid & lhs, polymer::poly_guid & rhs) noexcept { lhs.swap(rhs); }
-    template <> struct hash<polymer::poly_guid>
+    template <> inline void swap(polymer::guid & lhs, polymer::guid & rhs) noexcept { lhs.swap(rhs); }
+    template <> struct hash<polymer::guid>
     {
-        typedef polymer::poly_guid argument_type;
+        typedef polymer::guid argument_type;
         typedef std::size_t result_type;
         result_type operator()(argument_type const & guid) const
         {

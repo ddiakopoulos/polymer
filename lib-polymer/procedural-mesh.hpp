@@ -633,7 +633,7 @@ namespace polymer
     {
         geometry plane;
         
-        auto curve = bezier_spline(float3(0.0f, 0.0f, 0.0f), float3(0.667f, 0.25f, 0.0f), float3(1.33f, 0.25f, 0.0f), float3(2.0f, 0.0f, 0.0f));
+        auto curve = cubic_bezier(float3(0.0f, 0.0f, 0.0f), float3(0.667f, 0.25f, 0.0f), float3(1.33f, 0.25f, 0.0f), float3(2.0f, 0.0f, 0.0f));
         
         const int numSegments = static_cast<int>(curve.num_steps);
         const int numSlices = numSegments + 1;

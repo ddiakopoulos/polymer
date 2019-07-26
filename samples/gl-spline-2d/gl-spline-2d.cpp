@@ -23,7 +23,7 @@ struct sample_gl_spline_2d final : public polymer_app
     sample_gl_spline_2d();
     ~sample_gl_spline_2d();
 
-    bezier_spline curve;
+    cubic_bezier curve;
     std::vector<float3> control_points;
 
     float current_solution{ std::numeric_limits<float>::signaling_NaN() };
@@ -95,7 +95,7 @@ void sample_gl_spline_2d::on_input(const app_input_event & event)
             // so we can "trick" it by giving it "t" values as x
             // values, and "x" values as y values. Since it won't
             // even look at the x dimension, we can also just leave it.
-            bezier_spline copy;
+            cubic_bezier copy;
             const auto ctrl_pts = curve.get_control_points();
             copy.set_control_points(
                 float3(ctrl_pts[0].x, ctrl_pts[0].x - event.cursor.x, 0),

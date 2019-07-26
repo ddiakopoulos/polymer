@@ -10,7 +10,7 @@ namespace polymer
  
     // A cubic spline as a piecewise curve with a continuous second derivative.
     // https://www.math.ucla.edu/~baker/149.1.02w/handouts/dd_splines.pdf
-    class bezier_spline
+    class cubic_bezier
     {
         float3 p0, p1, p2, p3;
         std::vector<float> arcLengths;
@@ -19,9 +19,9 @@ namespace polymer
         
         size_t num_steps {64};
     
-        bezier_spline() {};
+        cubic_bezier() {};
 
-        bezier_spline(const float3 & p0, const float3 & p1, const float3 & p2, const float3 & p3, const size_t num_steps = 64) 
+        cubic_bezier(const float3 & p0, const float3 & p1, const float3 & p2, const float3 & p3, const size_t num_steps = 64) 
             : num_steps(num_steps)
         {
             set_control_points(p0, p1, p2, p3);

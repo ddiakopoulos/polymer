@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef polymer_misc_algorithms_hpp
 #define polymer_misc_algorithms_hpp
 

@@ -17,7 +17,6 @@ namespace polymer
     template<typename T>
     class movement_tracker
     {
-
         struct sample
         {
             double when;
