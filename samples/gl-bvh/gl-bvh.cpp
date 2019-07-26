@@ -4,6 +4,7 @@
 #include "gl-texture-view.hpp"
 #include "gl-gizmo.hpp"
 #include "gl-imgui.hpp"
+#include <sstream>
 
 using namespace polymer;
 
@@ -48,7 +49,7 @@ struct sample_gl_bvh final : public polymer_app
     fps_camera_controller flycam;
     uniform_random_gen gen;
 
-    bool show_debug = false;
+    bool show_debug = true;
 
     std::vector<scene_object> bvh_objects;
 
@@ -61,6 +62,8 @@ struct sample_gl_bvh final : public polymer_app
     bvh_tree scene_accelerator;
     bvh_node * selected_node{ nullptr };
     scene_object * selected_object{ nullptr };
+
+    uint32_t bvhInsertIdx = 0;
 
     std::unique_ptr<gl_gizmo> gizmo;
     tinygizmo::rigid_transform xform;
@@ -98,39 +101,41 @@ sample_gl_bvh::sample_gl_bvh() : polymer_app(1280, 720, "sample-gl-bvh")
     boxMesh = make_cube_mesh();
     boxMesh.set_non_indexed(GL_LINES);
 
-    auto spiral = make_spiral(96.f, 2.f);
+    auto spiral = make_spiral(16.f, 2.f);
     for (auto & v : spiral.vertices)
     {
         debug_sphere s1;
-        s1.radius = 0.05f;
+        s1.radius = 0.075f;
         s1.p.position = v * 10;
         spheres.push_back(std::move(s1));
     }
 
-    //debug_sphere s1;
-    //s1.radius = 0.5f;
-    //s1.p.position = { 2, -2, 2 };
-    //spheres.push_back(std::move(s1));
-    //
-    //debug_sphere s2;
-    //s2.radius = 0.5f;
-    //s2.p.position = { -2, -1, 2 };
-    //spheres.push_back(std::move(s2));
-    //
-    //debug_sphere s3;
-    //s3.radius = 0.5f;
-    //s3.p.position = { 2, 0, -2 };
-    //spheres.push_back(std::move(s3));
-    //
-    //debug_sphere s4;
-    //s4.radius = 0.5f;
-    //s4.p.position = { -2, 1, -2 };
-    //spheres.push_back(std::move(s4));
-    //
-    //debug_sphere s5;
-    //s5.radius = 0.5f;
-    //s5.p.position = { -0, 4, -0 };
-    //spheres.push_back(std::move(s5));
+    /*
+    debug_sphere s1;
+    s1.radius = 0.5f;
+    s1.p.position = { 2, -2, 2 };
+    spheres.push_back(std::move(s1));
+    
+    debug_sphere s2;
+    s2.radius = 0.5f;
+    s2.p.position = { -2, -1, 2 };
+    spheres.push_back(std::move(s2));
+    
+    debug_sphere s3;
+    s3.radius = 0.5f;
+    s3.p.position = { 2, 0, -2 };
+    spheres.push_back(std::move(s3));
+    
+    debug_sphere s4;
+    s4.radius = 0.5f;
+    s4.p.position = { -2, 1, -2 };
+    spheres.push_back(std::move(s4));
+    
+    debug_sphere s5;
+    s5.radius = 0.5f;
+    s5.p.position = { -0, 4, -0 };
+    spheres.push_back(std::move(s5));
+    */
 
     for (int i = 0; i < spheres.size(); ++i)
     {
@@ -146,11 +151,12 @@ sample_gl_bvh::sample_gl_bvh() : polymer_app(1280, 720, "sample-gl-bvh")
     {
         scene_accelerator.add(&bvh_objects[i]);
     }
-
+    
     scene_accelerator.build();
-
-    std::vector<bvh_node *> flat_node_list;
-    scene_accelerator.get_flat_node_list(flat_node_list, nullptr);
+    
+    std::stringstream output;
+    scene_accelerator.debug_print_tree(output);
+    std::cout << output.str() << std::endl;
 }
 
 uint32_t node_index{ 0 };
@@ -165,6 +171,11 @@ void sample_gl_bvh::on_input(const app_input_event & event)
         if (event.value[0] == GLFW_KEY_UP)    node_index++;
         if (event.value[0] == GLFW_KEY_DOWN)  node_index--;
         if (event.value[0] == GLFW_KEY_SPACE) show_debug = !show_debug;
+        if (event.value[0] == GLFW_KEY_1)
+        {
+            scene_accelerator.add(&bvh_objects[bvhInsertIdx++]);
+            scene_accelerator.refit();
+        }
     }
 
     if (event.type == app_input_event::MOUSE && event.action == GLFW_RELEASE)
@@ -220,10 +231,13 @@ void sample_gl_bvh::on_draw()
 
     std::vector<bvh_node *> all_nodes;
     scene_accelerator.get_flat_node_list(all_nodes, nullptr);
-
-    selected_node = all_nodes[node_index];
+    
     std::vector<bvh_node *> selected_subtree;
-    scene_accelerator.get_flat_node_list(selected_subtree, selected_node);
+    if (all_nodes.size())
+    {
+        selected_node = all_nodes[node_index];
+        scene_accelerator.get_flat_node_list(selected_subtree, selected_node);
+    }
 
     shader->bind();
 

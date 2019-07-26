@@ -16,6 +16,7 @@
 #include "math-morton.hpp"
 #include "util.hpp"
 #include "octree.hpp"
+#include <sstream>
 
 #define POLYMER_BVH_DEBUG_SPAM
 
@@ -125,14 +126,13 @@ namespace polymer
         std::vector<scene_object *> staged_objects;  // Newly added objects that are waiting to be added to the tree.
         std::vector<scene_object *> pending_updates; // Container of all dirty nodes that need to be updated / leaves that have moved or rotated.
 
-        float morton_scale{ 0.f };
-        float morton_offset{ 0.f };
+        float3 morton_scale{ 0.f };
+        float3 morton_offset{ 0.f };
 
         const uint64_t get_normalized_morton(const float3 & coordinate) const
         {
-            assert(morton_scale != 0.f);
-            const float3 transformed_coordinate = (transformed_coordinate + morton_offset) * morton_scale;
-            return morton_3d(transformed_coordinate);
+            assert(morton_scale != float3(0.f));
+            return morton_3d((coordinate + morton_offset) * morton_scale);
         }
 
         // @todo - can probably store an aabb containing the min/max bounds 
@@ -140,19 +140,21 @@ namespace polymer
         void compute_normalized_morton_scale()
         {
             // Find the minimum and maximum extents of objects in the tree
-            float min = std::numeric_limits<float>::max();
-            float max = std::numeric_limits<float>::min();;
+            float3 min = float3(std::numeric_limits<float>::max());
+            float3 max = float3(std::numeric_limits<float>::min());
             for (const scene_object * object : objects)
             {
-                const float3 center = object->bounds.center();
-                min = std::min(min, std::min(center.x(), std::min(center.y(), center.z())));
-                max = std::max(max, std::max(center.x(), std::max(center.y(), center.z())));
+                const aabb_3d bounds = object->bounds;
+                min = linalg::min(min, bounds.min());
+                max = linalg::max(max, bounds.max());
             }
 
             // Find the transform values needed to transform all values to the range 0.0 to 1.0
-            morton_scale = 1.f / std::max(0.0001f, (max - min));
-            morton_offset = (min < 0.f) ? -min : 0.f;
+            morton_scale = 1.f / linalg::max(0.0001f, (max - min));   // rescale
+            morton_offset = (min < float3(0.f)) ? -min : float3(0.f); // move up to positive range
         }
+
+        mutable uint64_t hit_test_count = 0;
 
     public:
 
@@ -191,7 +193,7 @@ namespace polymer
 
             if (object)
             {
-                bvh_node * leaf = find_parent(root, object);
+                bvh_node * leaf = find_parent_leaf_for_object(root, object);
 
                 // Must remove leaf node and organize the tree
                 if (leaf)
@@ -298,21 +300,29 @@ namespace polymer
 
         void build()
         {
-            rebuild();
+            rebuild_internal();
+        }
+
+        void refit()
+        {
+            refit_internal();
         }
 
         void get_flat_node_list(std::vector<bvh_node *> & list, bvh_node * node = nullptr)
         {   
-            if (node == nullptr) get_flat_node_list(list, root);
-            else
+            if (root)
             {
-                list.push_back(node);
-                if (node->left) get_flat_node_list(list, node->left);
-                if (node->right) get_flat_node_list(list, node->right);
+                if (node == nullptr) get_flat_node_list(list, root);
+                else
+                {
+                    list.push_back(node);
+                    if (node->left) get_flat_node_list(list, node->left);
+                    if (node->right) get_flat_node_list(list, node->right);
+                }
             }
         }
 
-        void debug_print_tree(std::ostream & output)
+        void debug_print_tree(std::stringstream & output)
         {
             std::size_t indent_level = 0;
             const auto print_recursive = [&, this](const auto & self, const bvh_node * node) -> void
@@ -335,16 +345,20 @@ namespace polymer
 
         bool intersect(const ray & ray, std::vector<std::pair<scene_object*, float>> & results) const
         {
-            scoped_timer t("bvh-intersect");
-
-            results.reserve(objects.size());
-
-            intersect_internal(root, ray, results);
-
-            std::sort(results.begin(), results.end(), [](auto & first, auto & second) -> bool
             {
-                return (first.second) < (second.second);
-            });
+                scoped_timer t("bvh-intersect");
+                results.reserve(objects.size()); // worst case
+
+                intersect_internal(root, ray, results);
+
+                std::sort(results.begin(), results.end(), [](auto & first, auto & second) -> bool
+                {
+                    return (first.second) < (second.second);
+                });
+            }
+
+            std::cout << "intersect count: " << hit_test_count << std::endl;
+            hit_test_count = 0;
 
             return results.size() ? true : false;
         }
@@ -366,6 +380,7 @@ namespace polymer
                 float outMinT, outMaxT;
                 const bool hit = intersect_ray_box(ray, node->bounds.min(), node->bounds.max(), &outMinT, &outMaxT);
 
+                // AVX2 SIMD path
                 //float outMinT;
                 //const bool hit = simd::intersect_ray_box_avx2(ray, node->bounds, outMinT);
 
@@ -381,6 +396,7 @@ namespace polymer
                         intersect_internal(node->right, ray, results);
                     }
                 }
+                hit_test_count++;
             }
         }
 
@@ -405,8 +421,8 @@ namespace polymer
         }
 
         // Completely rebuild the tree
-        // Call on initial tree construction or when a significant number of new objects have been added.
-        void rebuild()
+        // Call on initial tree construction or on demand.
+        void rebuild_internal()
         {
             destroy_recursive(root);
 
@@ -418,6 +434,19 @@ namespace polymer
             }
 
             build_internal();
+        }
+
+        void refit_internal()
+        {
+            for (auto & staged_obj : staged_objects)
+            {
+                objects.push_back(staged_obj);
+                insert_object(staged_obj);
+            }
+
+            staged_objects.clear();
+
+            fit_bounds_recursive(root);
         }
 
         void destroy_recursive(bvh_node * node) const
@@ -435,46 +464,60 @@ namespace polymer
         {
             if (object)
             {
+                compute_normalized_morton_scale();
+
                 const uint64_t morton = get_normalized_morton(object->bounds.center());
+                std::cout << "new morton is... " << morton << std::endl;
 
                 bvh_node * newLeafNode = new bvh_node();
                 newLeafNode->morton = morton;
                 newLeafNode->object = object;
                 newLeafNode->type = bvh_node_type::leaf;
             
-                // Insert into the root
-                //if (objects.size() < 2)
-                //{
+                // Either create the root, or insert the leaf at the left or right of the root
+                if (objects.size() < 2)
+                {
+                    // Create the root
                     if (root == nullptr)
                     {
+                        std::cout << "making root..." << std::endl;
                         root = new bvh_node();
                         root->type = bvh_node_type::root;
+                    }
 
-                        newLeafNode->parent = root;
+                    newLeafNode->parent = root;
 
-                        if (root->left == nullptr)
+                    if (root->left == nullptr)
+                    {
+                        std::cout << "left nullptr" << std::endl;
+                        root->left = newLeafNode;
+                    }
+                    else
+                    {
+                        if (root->left->morton < morton)
                         {
-                            root->left = newLeafNode;
+                            std::cout << "right nullptr" << std::endl;
+                            root->right = newLeafNode;
                         }
                         else
                         {
-                            if (root->left->morton < morton)
-                            {
-                                root->right = newLeafNode;
-                            }
-                            else
-                            {
-                                root->right = root->left;
-                                root->left = newLeafNode;
-                            }
+                            std::cout << "left/right" << std::endl;
+                            root->right = root->left;
+                            root->left = newLeafNode;
                         }
                     }
-                //}
+                }
                 else
                 {
-                    // Get the nearest leaf node
-                    bvh_node * nearestLeafNode = find_nearest(root, morton);
-                    bvh_node * nearestParent = nearestLeafNode->parent;
+                    // Insert into arbitrary location
+
+                    std::cout << "insert arbitrary" << std::endl;
+
+                    // Get the nearest node
+                    bvh_node * nearestNode = find_nearest(root, morton);
+                    bvh_node * nearestParent = nearestNode->parent != nullptr ? nearestNode->parent : root;
+
+                    //bvh_node * nearestParent = find_parent_leaf_for_object(root, object);
 
                     // Insert our new leaf into the internal parent of the one we just found.
                     // The parent will already have two children. So we will need to create
@@ -515,17 +558,23 @@ namespace polymer
         }
 
         // Finds the leaf node that owns the specified object in the tree.
-        bvh_node * find_parent(bvh_node * node, scene_object * object) const
+        bvh_node * find_parent_leaf_for_object(bvh_node * node, scene_object * object) const
         {
             bvh_node * parent = nullptr;
             if (node->type == bvh_node_type::leaf)
             {
-                if (node->object == object) parent = node;
+                if (node->object == object)
+                {
+                    parent = node;
+                }
             }
             else
             {
-                parent = find_parent(node->left, object);
-                if (parent == nullptr) parent = find_parent(node->right, object);
+                parent = find_parent_leaf_for_object(node->left, object);
+                if (parent == nullptr)
+                {
+                    parent = find_parent_leaf_for_object(node->right, object);
+                }
             }
             return parent;
         }
@@ -549,7 +598,7 @@ namespace polymer
             std::vector<bvh_morton_pair> sorted_pairs;
             {
                 #ifdef POLYMER_BVH_DEBUG_SPAM
-                scoped_timer t("[bvh_tree] compute and sort morton codes");
+                scoped_timer t("[bvh_tree] compute and sort morton codes - " + std::to_string(objects.size()) + " objects.");
                 #endif
 
                 compute_normalized_morton_scale();
@@ -557,8 +606,7 @@ namespace polymer
                 // Create and sort codes
                 for (scene_object * object : objects)
                 {
-                    const float3 center = object->bounds.center();
-                    const uint64_t morton_code = get_normalized_morton(center);
+                    const auto morton_code = get_normalized_morton(object->bounds.center());
                     sorted_pairs.push_back(std::make_pair(morton_code, object));
                 }
 
@@ -595,6 +643,7 @@ namespace polymer
                 #ifdef POLYMER_BVH_DEBUG_SPAM
                 scoped_timer t("[bvh_tree] fit_bounds_recursive(root)");
                 #endif
+                
                 fit_bounds_recursive(root);
             }
         }
@@ -680,7 +729,7 @@ namespace polymer
 
                     auto combined_bounds = node->left->bounds.add(node->right->bounds);
                     node->bounds = combined_bounds;
-                    node->morton = get_normalized_morton(combined_bounds.center());
+                    node->morton = get_normalized_morton(node->bounds.center());
                 }
                 else
                 {
@@ -691,7 +740,10 @@ namespace polymer
                     if (node->left)
                     {
                         node->bounds = node->left->bounds;
-                        if (node->right) node->bounds.surround(node->right->bounds);
+                        if (node->right)
+                        {
+                            node->bounds.surround(node->right->bounds);
+                        }
                         node->morton = get_normalized_morton(node->bounds.center());
                     }
                     else
