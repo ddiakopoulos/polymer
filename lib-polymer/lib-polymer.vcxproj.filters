@@ -36,58 +36,22 @@
     <ClInclude Include="math-core.hpp">
       <Filter>src\math-core</Filter>
     </ClInclude>
-    <ClInclude Include="algo_misc.hpp">
-      <Filter>src\math</Filter>
-    </ClInclude>
     <ClInclude Include="trajectory.hpp">
       <Filter>src\math</Filter>
     </ClInclude>
     <ClInclude Include="splines.hpp">
       <Filter>src\math</Filter>
     </ClInclude>
-    <ClInclude Include="solvers.hpp">
-      <Filter>src\math</Filter>
-    </ClInclude>
-    <ClInclude Include="simplex_noise.hpp">
-      <Filter>src\math</Filter>
-    </ClInclude>
-    <ClInclude Include="radix_sort.hpp">
-      <Filter>src\math</Filter>
-    </ClInclude>
-    <ClInclude Include="poisson_disk.hpp">
-      <Filter>src\math</Filter>
-    </ClInclude>
-    <ClInclude Include="parallel_transport_frames.hpp">
-      <Filter>src\math</Filter>
-    </ClInclude>
-    <ClInclude Include="one_euro.hpp">
-      <Filter>src\math</Filter>
-    </ClInclude>
     <ClInclude Include="octree.hpp">
       <Filter>src\math</Filter>
     </ClInclude>
-    <ClInclude Include="movement_tracker.hpp">
-      <Filter>src\math</Filter>
-    </ClInclude>
-    <ClInclude Include="procedural_mesh.hpp">
-      <Filter>src\tools</Filter>
-    </ClInclude>
     <ClInclude Include="geometry.hpp">
-      <Filter>src\tools</Filter>
-    </ClInclude>
-    <ClInclude Include="file_io.hpp">
-      <Filter>src\tools</Filter>
-    </ClInclude>
-    <ClInclude Include="bit_mask.hpp">
       <Filter>src\tools</Filter>
     </ClInclude>
     <ClInclude Include="arcball.hpp">
       <Filter>src\tools</Filter>
     </ClInclude>
     <ClInclude Include="util.hpp">
-      <Filter>src\tools</Filter>
-    </ClInclude>
-    <ClInclude Include="string_utils.hpp">
       <Filter>src\tools</Filter>
     </ClInclude>
     <ClInclude Include="linalg.h">
@@ -126,17 +90,8 @@
     <ClInclude Include="image-buffer.hpp">
       <Filter>src\tools</Filter>
     </ClInclude>
-    <ClInclude Include="quick_hull.hpp">
-      <Filter>src\math</Filter>
-    </ClInclude>
     <ClInclude Include="lib-polymer.hpp">
       <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="simple_timer.hpp">
-      <Filter>src\tools</Filter>
-    </ClInclude>
-    <ClInclude Include="parabolic_pointer.hpp">
-      <Filter>src\math</Filter>
     </ClInclude>
     <ClInclude Include="any.hpp">
       <Filter>src\tools</Filter>
@@ -156,9 +111,6 @@
     <ClInclude Include="math-sampling.hpp">
       <Filter>src\math-core</Filter>
     </ClInclude>
-    <ClInclude Include="simple_animator.hpp">
-      <Filter>src\math</Filter>
-    </ClInclude>
     <ClInclude Include="math-morton.hpp">
       <Filter>src\math-core</Filter>
     </ClInclude>
@@ -172,6 +124,54 @@
       <Filter>src\platform</Filter>
     </ClInclude>
     <ClInclude Include="guid.hpp">
+      <Filter>src\tools</Filter>
+    </ClInclude>
+    <ClInclude Include="one-euro.hpp">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="quick-hull.hpp">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="poisson-disk.hpp">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="simplex-noise.hpp">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="polynomial-solvers.hpp">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="simple-animator.hpp">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="radix-sort.hpp">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="parallel-transport-frames.hpp">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="parabolic-pointer.hpp">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="movement-tracker.hpp">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="algo-misc.hpp">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="bit-mask.hpp">
+      <Filter>src\tools</Filter>
+    </ClInclude>
+    <ClInclude Include="procedural-mesh.hpp">
+      <Filter>src\tools</Filter>
+    </ClInclude>
+    <ClInclude Include="string-utils.hpp">
+      <Filter>src\tools</Filter>
+    </ClInclude>
+    <ClInclude Include="file-io.hpp">
+      <Filter>src\tools</Filter>
+    </ClInclude>
+    <ClInclude Include="simple-timer.hpp">
       <Filter>src\tools</Filter>
     </ClInclude>
   </ItemGroup>

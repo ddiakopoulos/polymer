@@ -1,12 +1,12 @@
 #pragma once
 
-#ifndef procedural_mesh_h
-#define procedural_mesh_h
+#ifndef polymer_procedural_mesh_hpp
+#define polymer_procedural_mesh_hpp
 
 #include "math-core.hpp"
 #include "splines.hpp"
 #include "geometry.hpp"
-#include "algo_misc.hpp"
+#include "algo-misc.hpp"
 #include <assert.h>
 
 #if defined(POLYMER_PLATFORM_WINDOWS)
@@ -936,4 +936,4 @@ namespace polymer
 
 #pragma warning(pop)
 
-#endif // procedural_mesh_h
+#endif // polymer_procedural_mesh_hpp

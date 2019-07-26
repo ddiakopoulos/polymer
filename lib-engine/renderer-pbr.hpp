@@ -4,7 +4,7 @@
 #define polymer_renderer_pbr_hpp
 
 #include "math-core.hpp"
-#include "simple_timer.hpp"
+#include "simple-timer.hpp"
 #include "renderer-uniforms.hpp"
 #include "queue-circular.hpp"
 #include "human_time.hpp"

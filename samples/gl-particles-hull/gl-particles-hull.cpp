@@ -19,7 +19,6 @@
 #include "shader-library.hpp"
 #include "asset-handle.hpp"
 #include "asset-handle-utils.hpp"
-#include "quick_hull.hpp"
 #include "gl-particle-system.hpp"
 #include "../lib-model-io/model-io.hpp"
 

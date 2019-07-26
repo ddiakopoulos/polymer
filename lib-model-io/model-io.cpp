@@ -1,13 +1,13 @@
 #include "model-io.hpp"
 #include "fbx-importer.hpp"
 #include "model-io-util.hpp"
-#include "../lib-polymer/file_io.hpp"
+#include "../lib-polymer/file-io.hpp"
 
 #include "third-party/tinyobj/tiny_obj_loader.h"
 #include "third-party/meshoptimizer/meshoptimizer.h"
 
 #include <assert.h>
-#include "string_utils.hpp"
+#include "string-utils.hpp"
 #include <fstream>
 #include <ostream>
 

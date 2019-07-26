@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef parallel_transport_frames_hpp
-#define parallel_transport_frames_hpp
+#ifndef polymer_parallel_transport_frames_hpp
+#define polymer_parallel_transport_frames_hpp
 
 #include "util.hpp"
 #include "math-common.hpp"
@@ -97,4 +97,4 @@ namespace polymer
 
 } // end namespace polymer
 
-#endif // end parallel_transport_frames_hpp
+#endif // end polymer_parallel_transport_frames_hpp

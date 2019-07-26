@@ -3,8 +3,8 @@
 
 #pragma once
 
-#ifndef radix_sort_hpp
-#define radix_sort_hpp
+#ifndef polymer_radix_sort_hpp
+#define polymer_radix_sort_hpp
 
 #include <memory>
 #include <stdint.h>
@@ -93,4 +93,4 @@ namespace polymer
 
 } // end namespace polymer
 
-#endif // end radix_sort_hpp
+#endif // end polymer_radix_sort_hpp

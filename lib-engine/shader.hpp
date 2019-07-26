@@ -5,7 +5,7 @@
 
 #include "gl-api.hpp"
 #include "util.hpp"
-#include "string_utils.hpp"
+#include "string-utils.hpp"
 #include "gl-loaders.hpp"
 
 #include <regex>

@@ -3,8 +3,8 @@
 
 #pragma once
 
-#ifndef poisson_disk_sampling_h
-#define poisson_disk_sampling_h
+#ifndef polymer_poisson_disk_sampling_hpp
+#define polymer_poisson_disk_sampling_hpp
 
 #include "math-spatial.hpp"
 #include "util.hpp"

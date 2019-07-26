@@ -5,12 +5,12 @@
 
 #pragma once
 
-#ifndef trajectory_hpp
-#define trajectory_hpp
+#ifndef polymer_trajectory_hpp
+#define polymer_trajectory_hpp
 
 #include "util.hpp"
 #include "math-core.hpp"
-#include "solvers.hpp"
+#include "polynomial-solvers.hpp"
 
 namespace polymer
 {
@@ -246,4 +246,4 @@ namespace polymer
 
 } // end namespace polymer
 
-#endif // end trajectory_hpp
+#endif // end polymer_trajectory_hpp

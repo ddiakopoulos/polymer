@@ -12,7 +12,7 @@
 
 #include "queue-circular.hpp"
 #include "gfx/gl/gl-async-gpu-timer.hpp"
-#include "simple_timer.hpp"
+#include "simple-timer.hpp"
 
 namespace polymer
 {

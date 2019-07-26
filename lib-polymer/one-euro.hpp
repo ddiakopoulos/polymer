@@ -12,8 +12,8 @@
 
 #pragma once
 
-#ifndef one_euro_filter_h
-#define one_euro_filter_h
+#ifndef polymer_one_euro_hpp
+#define polymer_one_euro_hpp
 
 #include "math-common.hpp"
 
@@ -190,4 +190,4 @@ struct one_euro_filter_quat : public impl::one_euro_filter<impl::quaternion_filt
     }
 };
 
-#endif // end one_euro_filter_h
+#endif // end polymer_one_euro_hpp

@@ -2,9 +2,9 @@
 #define gl_mesh_util_hpp
 
 #include "math-core.hpp"
-#include "string_utils.hpp"
+#include "string-utils.hpp"
 #include "gl-api.hpp"
-#include "file_io.hpp"
+#include "file-io.hpp"
 #include "gl-loaders.hpp"
 #include "geometry.hpp"
 

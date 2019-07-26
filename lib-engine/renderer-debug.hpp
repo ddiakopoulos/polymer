@@ -5,7 +5,7 @@
 
 #include "math-core.hpp"
 #include "gl-api.hpp"
-#include "procedural_mesh.hpp"
+#include "procedural-mesh.hpp"
 #include "scene.hpp"
 
 namespace polymer

@@ -5,7 +5,7 @@
 
 #include "gl-api.hpp"
 #include "util.hpp"
-#include "algo_misc.hpp"
+#include "algo-misc.hpp"
 
 namespace polymer
 {

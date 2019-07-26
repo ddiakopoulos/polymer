@@ -10,14 +10,14 @@
 
 #pragma once
 
-#ifndef polymer_culling_octree_hpp
-#define polymer_culling_octree_hpp
+#ifndef polymer_octree_hpp
+#define polymer_octree_hpp
 
 #include "../lib-engine/gfx/gl/gl-api.hpp"
 
 #include "math-core.hpp"
 #include "util.hpp"
-#include "algo_misc.hpp"
+#include "algo-misc.hpp"
 
 #include <list>
 #include <memory>
@@ -302,4 +302,4 @@ namespace polymer
 
 } // end namespace polymer
 
-#endif // end polymer_culling_octree_hpp
+#endif // end polymer_octree_hpp

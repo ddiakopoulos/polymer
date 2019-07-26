@@ -5,7 +5,7 @@
 #include "system-render.hpp"
 #include "asset-resolver.hpp"
 
-#include "file_io.hpp"
+#include "file-io.hpp"
 #include "serialization.hpp"
 
 using namespace polymer;

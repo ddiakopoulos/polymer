@@ -1,9 +1,12 @@
-// Based on https://github.com/aavenel/mortonlib
+/*
+ * File: math-morton.hpp
+ * Free functions to produce 64 bit integer morton codes, based on https://github.com/aavenel/mortonlib
+ */
 
 #pragma once
 
-#ifndef polymer_math_morton_hpp
-#define polymer_math_morton_hpp
+#ifndef math_morton_hpp
+#define math_morton_hpp
 
 #include "math-core.hpp"
 
@@ -147,4 +150,4 @@ namespace polymer
 
 } // end namespace polymer
 
-#endif // end polymer_math_morton_hpp
+#endif // end math_morton_hpp

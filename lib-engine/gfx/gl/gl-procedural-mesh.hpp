@@ -1,7 +1,7 @@
 #ifndef gl_procedural_mesh_hpp
 #define gl_procedural_mesh_hpp
 
-#include "procedural_mesh.hpp"
+#include "procedural-mesh.hpp"
 #include "gl-mesh-util.hpp"
 
 #include <assert.h>

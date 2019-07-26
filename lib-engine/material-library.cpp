@@ -3,11 +3,11 @@
 #include "serialization.hpp"
 #include "asset-handle-utils.hpp"
 #include "logging.hpp"
-#include "file_io.hpp"
-#include "json.hpp"
+#include "file-io.hpp"
 #include "scene.hpp"
-#include "string_utils.hpp"
+#include "string-utils.hpp"
 
+#include "json.hpp"
 using namespace polymer;
 using json = nlohmann::json;
 

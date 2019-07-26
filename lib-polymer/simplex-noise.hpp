@@ -6,8 +6,8 @@
 
 #pragma once
 
-#ifndef simplex_noise_h
-#define simplex_noise_h
+#ifndef polymer_simplex_noise_hpp
+#define polymer_simplex_noise_hpp
 
 #include "util.hpp"
 
@@ -2073,4 +2073,4 @@ inline float noise_iq_fb(const float2 & v, uint8_t octaves, const float2x2 & mat
 
 #pragma warning(pop)
 
-#endif // end simplex_noise_h
+#endif // end polymer_simplex_noise_hpp

@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef string_utils_h
-#define string_utils_h
+#ifndef polymer_string_utils_hpp
+#define polymer_string_utils_hpp
 
 #include <string>
 #include <sstream>
@@ -174,4 +174,4 @@ namespace polymer
     
 }
 
-#endif // string_utils_h
+#endif // polymer_string_utils_hpp

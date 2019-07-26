@@ -11,10 +11,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="algo_misc.hpp" />
+    <ClInclude Include="algo-misc.hpp" />
     <ClInclude Include="any.hpp" />
     <ClInclude Include="arcball.hpp" />
-    <ClInclude Include="bit_mask.hpp" />
+    <ClInclude Include="bit-mask.hpp" />
     <ClInclude Include="bvh.hpp" />
     <ClInclude Include="camera.hpp" />
     <ClInclude Include="guid.hpp" />
@@ -25,10 +25,10 @@
     <ClInclude Include="math-sampling.hpp" />
     <ClInclude Include="memory-pool.hpp" />
     <ClInclude Include="oriented-bounding-box.hpp" />
-    <ClInclude Include="parabolic_pointer.hpp" />
+    <ClInclude Include="parabolic-pointer.hpp" />
     <ClInclude Include="property.hpp" />
     <ClInclude Include="queue-circular.hpp" />
-    <ClInclude Include="file_io.hpp" />
+    <ClInclude Include="file-io.hpp" />
     <ClInclude Include="geometry.hpp" />
     <ClInclude Include="lib-polymer.hpp" />
     <ClInclude Include="linalg.h" />
@@ -38,28 +38,28 @@
     <ClInclude Include="math-projection.hpp" />
     <ClInclude Include="math-ray.hpp" />
     <ClInclude Include="math-spatial.hpp" />
-    <ClInclude Include="movement_tracker.hpp" />
+    <ClInclude Include="movement-tracker.hpp" />
     <ClInclude Include="queue-mpmc-blocking.hpp" />
     <ClInclude Include="queue-mpmc-bounded.hpp" />
     <ClInclude Include="queue-mpsc-bounded.hpp" />
     <ClInclude Include="queue-mpsc.hpp" />
     <ClInclude Include="octree.hpp" />
-    <ClInclude Include="one_euro.hpp" />
-    <ClInclude Include="parallel_transport_frames.hpp" />
-    <ClInclude Include="poisson_disk.hpp" />
-    <ClInclude Include="procedural_mesh.hpp" />
-    <ClInclude Include="quick_hull.hpp" />
-    <ClInclude Include="radix_sort.hpp" />
-    <ClInclude Include="simplex_noise.hpp" />
-    <ClInclude Include="simple_timer.hpp" />
-    <ClInclude Include="solvers.hpp" />
+    <ClInclude Include="one-euro.hpp" />
+    <ClInclude Include="parallel-transport-frames.hpp" />
+    <ClInclude Include="poisson-disk.hpp" />
+    <ClInclude Include="procedural-mesh.hpp" />
+    <ClInclude Include="quick-hull.hpp" />
+    <ClInclude Include="radix-sort.hpp" />
+    <ClInclude Include="simplex-noise.hpp" />
+    <ClInclude Include="simple-timer.hpp" />
+    <ClInclude Include="polynomial-solvers.hpp" />
     <ClInclude Include="splines.hpp" />
     <ClInclude Include="queue-spsc-bounded.hpp" />
     <ClInclude Include="queue-spsc.hpp" />
-    <ClInclude Include="string_utils.hpp" />
+    <ClInclude Include="string-utils.hpp" />
     <ClInclude Include="thread-pool.hpp" />
     <ClInclude Include="trajectory.hpp" />
-    <ClInclude Include="simple_animator.hpp" />
+    <ClInclude Include="simple-animator.hpp" />
     <ClInclude Include="util-win32.hpp" />
     <ClInclude Include="util.hpp" />
   </ItemGroup>

@@ -7,9 +7,10 @@
 #include "math-core.hpp"
 #include "asset-handle-utils.hpp"
 #include "shader-library.hpp"
-#include "ecs/typeid.hpp"
-#include "json.hpp"
 #include "serialization.hpp"
+#include "ecs/typeid.hpp"
+
+#include "json.hpp"
 
 namespace polymer
 {

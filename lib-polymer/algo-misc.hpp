@@ -1,5 +1,5 @@
-#ifndef algo_misc_hpp
-#define algo_misc_hpp
+#ifndef polymer_misc_algorithms_hpp
+#define polymer_misc_algorithms_hpp
 
 #include "util.hpp"
 #include "math-core.hpp"
@@ -125,7 +125,6 @@ namespace polymer
 
     struct universal_layout_container
     {
-
         struct ucoord
         {
             float a, b;
@@ -174,4 +173,4 @@ namespace polymer
 
 } // end namespace polymer
 
-#endif // end algo_misc_hpp
+#endif // end polymer_misc_algorithms_hpp
