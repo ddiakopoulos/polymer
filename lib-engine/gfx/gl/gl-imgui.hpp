@@ -152,9 +152,6 @@ namespace gui
         s.Colors[ImGuiCol_ResizeGrip] = ImVec4(0.82f, 0.82f, 0.82f, 1.00f);
         s.Colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.90f, 0.11f, 0.05f, 0.67f);
         s.Colors[ImGuiCol_ResizeGripActive] = ImVec4(0.90f, 0.11f, 0.05f, 0.95f);
-        s.Colors[ImGuiCol_CloseButton] = ImVec4(0.60f, 0.60f, 0.60f, 0.50f);
-        s.Colors[ImGuiCol_CloseButtonHovered] = ImVec4(0.25f, 0.39f, 0.36f, 1.00f);
-        s.Colors[ImGuiCol_CloseButtonActive] = ImVec4(0.25f, 0.39f, 0.36f, 1.00f);
         s.Colors[ImGuiCol_TextSelectedBg] = ImVec4(0.90f, 0.11f, 0.05f, 0.9f);
         s.Colors[ImGuiCol_ModalWindowDarkening] = ImVec4(0.20f, 0.20f, 0.20f, 0.9f);
     }

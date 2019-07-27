@@ -255,7 +255,7 @@ void scene_editor_app::draw_entity_scenegraph(const entity e)
         {
             // Increase spacing to differentiate leaves from expanded contents.
             ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, ImGui::GetFontSize());
-            ImGui::SetNextTreeNodeOpen(true, ImGuiSetCond_FirstUseEver);
+            ImGui::SetNextTreeNodeOpen(true, ImGuiCond_FirstUseEver);
             open = ImGui::TreeNode("");
             if (!open) ImGui::PopStyleVar();
             ImGui::SameLine();
