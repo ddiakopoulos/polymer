@@ -70,21 +70,25 @@ namespace polymer
     inline std::pair<transform, float3> make_principal_axes(const std::vector<float3> & points)
     {
         if (points.size() == 0) throw std::invalid_argument("not enough points for PCA");
-        float3 com;
+        float3 com{ 0, 0, 0};
         for (const auto & p : points) com += p;
         com /= (float) points.size();
         float3x3 cov;
-        for (const auto & p : points) cov += outerprod(p - com, p - com);
+        for (const auto & p : points) cov += linalg::outerprod(p - com, p - com);
         cov /= (float)points.size();
         auto q = pca_impl::make_diagonalized_matrix(cov);
-        return std::make_pair<transform, float3>({ q, com }, diagonal(transpose(qmat(q) * cov * qmat(q))));
+
+        //(mul(transpose(qmat(q)), cov, qmat(q))));
+        return std::make_pair<transform, float3>({ q, com }, diagonal(transpose(qmat(q)) * cov * qmat(q)));
     }
 
     struct oriented_bounding_box
     {
-        float3 half_ext;
-        float3 center;
-        quatf orientation;
+        float3 half_ext{ 0.5f, 0.5f, 0.5f };
+        float3 center{ 0, 0, 0 };
+        quatf orientation{ 0, 0, 0, 1 };
+
+        oriented_bounding_box() {};
 
         oriented_bounding_box(float3 center, float3 halfExtents, quatf orientation) 
             : center(center), half_ext(halfExtents), orientation(orientation) { }
@@ -197,11 +201,11 @@ namespace polymer
 
     };
 
-    inline oriented_bounding_box make_oriented_bounding_box(std::vector<float3> & vertices)
+    inline oriented_bounding_box make_oriented_bounding_box(const std::vector<float3> & vertices)
     {
         auto pca = make_principal_axes(vertices);
         auto s2 = sqrt(pca.second) * 2.f;  // 2 * standard deviation
-        return {pca.first.position, s2, pca.first.orientation};
+        return {pca.first.position, s2, normalize(pca.first.orientation)};
     }
 }
 
