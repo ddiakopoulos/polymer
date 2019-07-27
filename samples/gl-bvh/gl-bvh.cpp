@@ -30,7 +30,7 @@ constexpr const char basic_frag[] = R"(#version 330
     }
 )";
 
-struct debug_sphere
+struct debug_object
 {
     transform p;
     float radius;
@@ -51,11 +51,11 @@ struct sample_gl_bvh final : public polymer_app
 
     bool show_debug = true;
 
-    std::vector<scene_object> bvh_objects;
-
     std::unique_ptr<imgui_instance> imgui;
-    std::unique_ptr<gl_shader> shader;
-    std::vector<debug_sphere> spheres;
+
+    std::vector<scene_object> bvh_objects;
+    std::unique_ptr<gl_shader> debug_shader;
+    std::vector<debug_object> scene_objects;
     gl_mesh sphereMesh;
     gl_mesh boxMesh;
 
@@ -95,7 +95,7 @@ sample_gl_bvh::sample_gl_bvh() : polymer_app(1280, 720, "sample-gl-bvh")
     gizmo.reset(new gl_gizmo());
     xform.position = { 0.1f, 0.1f, 0.1f };
 
-    shader.reset(new gl_shader(basic_vert, basic_frag));
+    debug_shader.reset(new gl_shader(basic_vert, basic_frag));
 
     sphereMesh = make_sphere_mesh(1.f);
     boxMesh = make_cube_mesh();
@@ -104,42 +104,42 @@ sample_gl_bvh::sample_gl_bvh() : polymer_app(1280, 720, "sample-gl-bvh")
     auto spiral = make_spiral(16.f, 2.f);
     for (auto & v : spiral.vertices)
     {
-        debug_sphere s1;
+        debug_object s1;
         s1.radius = 0.075f;
         s1.p.position = v * 10;
-        spheres.push_back(std::move(s1));
+        scene_objects.push_back(std::move(s1));
     }
 
     /*
-    debug_sphere s1;
+    debug_object s1;
     s1.radius = 0.5f;
     s1.p.position = { 2, -2, 2 };
-    spheres.push_back(std::move(s1));
+    scene_objects.push_back(std::move(s1));
     
-    debug_sphere s2;
+    debug_object s2;
     s2.radius = 0.5f;
     s2.p.position = { -2, -1, 2 };
-    spheres.push_back(std::move(s2));
+    scene_objects.push_back(std::move(s2));
     
-    debug_sphere s3;
+    debug_object s3;
     s3.radius = 0.5f;
     s3.p.position = { 2, 0, -2 };
-    spheres.push_back(std::move(s3));
+    scene_objects.push_back(std::move(s3));
     
-    debug_sphere s4;
+    debug_object s4;
     s4.radius = 0.5f;
     s4.p.position = { -2, 1, -2 };
-    spheres.push_back(std::move(s4));
+    scene_objects.push_back(std::move(s4));
     
-    debug_sphere s5;
+    debug_object s5;
     s5.radius = 0.5f;
     s5.p.position = { -0, 4, -0 };
-    spheres.push_back(std::move(s5));
+    scene_objects.push_back(std::move(s5));
     */
 
-    for (int i = 0; i < spheres.size(); ++i)
+    for (int i = 0; i < scene_objects.size(); ++i)
     {
-        auto & sphere = spheres[i];
+        auto & sphere = scene_objects[i];
 
         scene_object obj;
         obj.bounds = sphere.get_bounds();
@@ -153,10 +153,10 @@ sample_gl_bvh::sample_gl_bvh() : polymer_app(1280, 720, "sample-gl-bvh")
     }
     
     scene_accelerator.build();
-    
-    std::stringstream output;
-    scene_accelerator.debug_print_tree(output);
-    std::cout << output.str() << std::endl;
+
+    //std::stringstream output;
+    //scene_accelerator.debug_print_tree(output);
+    //std::cout << output.str() << std::endl;
 }
 
 uint32_t node_index{ 0 };
@@ -175,6 +175,10 @@ void sample_gl_bvh::on_input(const app_input_event & event)
         {
             scene_accelerator.add(&bvh_objects[bvhInsertIdx++]);
             scene_accelerator.refit();
+
+            std::stringstream output;
+            scene_accelerator.debug_print_tree(output);
+            std::cout << output.str() << std::endl;
         }
     }
 
@@ -239,7 +243,7 @@ void sample_gl_bvh::on_draw()
         scene_accelerator.get_flat_node_list(selected_subtree, selected_node);
     }
 
-    shader->bind();
+    debug_shader->bind();
 
     for (int i = 0; i < selected_subtree.size(); ++i)
     {
@@ -248,7 +252,7 @@ void sample_gl_bvh::on_draw()
         {
             if (node->object)
             {
-                auto the_sphere = static_cast<debug_sphere*>(node->object->user_data);
+                auto the_sphere = static_cast<debug_object*>(node->object->user_data);
 
                 if (the_sphere)
                 {
@@ -256,14 +260,14 @@ void sample_gl_bvh::on_draw()
 
                     if (selected_object == node->object)
                     {
-                        shader->uniform("u_color", float3(1, 0, 1));
+                        debug_shader->uniform("u_color", float3(1, 0, 1));
                     }
                     else
                     {
-                        shader->uniform("u_color", float3(1, 0, 0));
+                        debug_shader->uniform("u_color", float3(1, 0, 0));
                     }
                    
-                    shader->uniform("u_mvp", viewProjectionMatrix * leaf_model);
+                    debug_shader->uniform("u_mvp", viewProjectionMatrix * leaf_model);
                     boxMesh.draw_elements();
                 }
             }
@@ -273,23 +277,23 @@ void sample_gl_bvh::on_draw()
             float3 eps = { gen.random_float(0.01f), gen.random_float(0.01f), gen.random_float(0.01f) };
             const auto internal_node_model = make_translation_matrix(node->bounds.center()) * make_scaling_matrix(node->bounds.size());
 
-            shader->uniform("u_mvp", viewProjectionMatrix * internal_node_model);
+            debug_shader->uniform("u_mvp", viewProjectionMatrix * internal_node_model);
 
             if (node->type == bvh_node_type::root)
             {
-                shader->uniform("u_color", float3(1, 1, 1));
+                debug_shader->uniform("u_color", float3(1, 1, 1));
                 boxMesh.draw_elements();
             }
             else if (node->type == bvh_node_type::internal)
             {
-                shader->uniform("u_color", float3(1, 1, 0));
+                debug_shader->uniform("u_color", float3(1, 1, 0));
                 boxMesh.draw_elements();
             }
 
         }
     }
 
-    shader->unbind();
+    debug_shader->unbind();
 
     if (gizmo) gizmo->draw();
 

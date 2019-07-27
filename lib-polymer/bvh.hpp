@@ -357,7 +357,6 @@ namespace polymer
                 });
             }
 
-            std::cout << "intersect count: " << hit_test_count << std::endl;
             hit_test_count = 0;
 
             return results.size() ? true : false;
@@ -377,8 +376,8 @@ namespace polymer
             if (node)
             {   
                 // Non-SIMD path
-                float outMinT, outMaxT;
-                const bool hit = intersect_ray_box(ray, node->bounds.min(), node->bounds.max(), &outMinT, &outMaxT);
+                float outMinT;
+                const bool hit = intersect_ray_box(ray, node->bounds.min(), node->bounds.max(), &outMinT);
 
                 // AVX2 SIMD path
                 //float outMinT;
@@ -416,7 +415,6 @@ namespace polymer
                         find_visible_nodes_internal(node->right, camera_frustum, objects);
                     }
                 }
-
             }
         }
 
@@ -467,20 +465,18 @@ namespace polymer
                 compute_normalized_morton_scale();
 
                 const uint64_t morton = get_normalized_morton(object->bounds.center());
-                std::cout << "new morton is... " << morton << std::endl;
 
                 bvh_node * newLeafNode = new bvh_node();
                 newLeafNode->morton = morton;
                 newLeafNode->object = object;
                 newLeafNode->type = bvh_node_type::leaf;
-            
+
                 // Either create the root, or insert the leaf at the left or right of the root
-                if (objects.size() < 2)
+                if (objects.size() <= 2)
                 {
                     // Create the root
                     if (root == nullptr)
                     {
-                        std::cout << "making root..." << std::endl;
                         root = new bvh_node();
                         root->type = bvh_node_type::root;
                     }
@@ -489,19 +485,16 @@ namespace polymer
 
                     if (root->left == nullptr)
                     {
-                        std::cout << "left nullptr" << std::endl;
                         root->left = newLeafNode;
                     }
                     else
                     {
                         if (root->left->morton < morton)
                         {
-                            std::cout << "right nullptr" << std::endl;
                             root->right = newLeafNode;
                         }
                         else
                         {
-                            std::cout << "left/right" << std::endl;
                             root->right = root->left;
                             root->left = newLeafNode;
                         }
@@ -511,13 +504,9 @@ namespace polymer
                 {
                     // Insert into arbitrary location
 
-                    std::cout << "insert arbitrary" << std::endl;
-
                     // Get the nearest node
                     bvh_node * nearestNode = find_nearest(root, morton);
-                    bvh_node * nearestParent = nearestNode->parent != nullptr ? nearestNode->parent : root;
-
-                    //bvh_node * nearestParent = find_parent_leaf_for_object(root, object);
+                    bvh_node * nearestParent = (nearestNode->parent != nullptr) ? nearestNode->parent : root;
 
                     // Insert our new leaf into the internal parent of the one we just found.
                     // The parent will already have two children. So we will need to create
@@ -557,7 +546,7 @@ namespace polymer
             }
         }
 
-        // Finds the leaf node that owns the specified object in the tree.
+        // Finds the leaf node that owns the specified object in the tree
         bvh_node * find_parent_leaf_for_object(bvh_node * node, scene_object * object) const
         {
             bvh_node * parent = nullptr;
@@ -579,7 +568,7 @@ namespace polymer
             return parent;
         }
 
-        // Finds a node with the nearest morton code to the one specified.
+        // Finds a node with the nearest morton code to the one specified
         bvh_node * find_nearest(bvh_node * node, uint64_t const & morton) const
         {
             if (morton < node->morton) { if (node->left) return find_nearest(node->left, morton); }
