@@ -1,8 +1,8 @@
 //========================================================================
-// GLFW 3.3 - www.glfw.org
+// GLFW 3.4 - www.glfw.org
 //------------------------------------------------------------------------
 // Copyright (c) 2002-2006 Marcus Geelnard
-// Copyright (c) 2006-2016 Camilla Löwy <elmindreda@glfw.org>
+// Copyright (c) 2006-2018 Camilla Löwy <elmindreda@glfw.org>
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -24,6 +24,8 @@
 //    distribution.
 //
 //========================================================================
+// Please use C89 style variable declarations in this file because VS 2010
+//========================================================================
 
 #include "internal.h"
 #include "mappings.h"
@@ -35,8 +37,9 @@
 #include <assert.h>
 
 
-// The global variables below comprise all global data in GLFW.
-// Any other global variable is a bug.
+// The global variables below comprise all mutable global data in GLFW
+//
+// Any other global variable is a bug
 
 // Global state shared between compilation units of GLFW
 //
@@ -53,43 +56,8 @@ static _GLFWinitconfig _glfwInitHints =
     {
         GLFW_TRUE,  // macOS menu bar
         GLFW_TRUE   // macOS bundle chdir
-    },
-    {
-        "",         // X11 WM_CLASS name
-        ""          // X11 WM_CLASS class
     }
 };
-
-// Returns a generic string representation of the specified error
-//
-static const char* getErrorString(int code)
-{
-    switch (code)
-    {
-        case GLFW_NOT_INITIALIZED:
-            return "The GLFW library is not initialized";
-        case GLFW_NO_CURRENT_CONTEXT:
-            return "There is no current context";
-        case GLFW_INVALID_ENUM:
-            return "Invalid argument for enum parameter";
-        case GLFW_INVALID_VALUE:
-            return "Invalid value for parameter";
-        case GLFW_OUT_OF_MEMORY:
-            return "Out of memory";
-        case GLFW_API_UNAVAILABLE:
-            return "The requested API is unavailable";
-        case GLFW_VERSION_UNAVAILABLE:
-            return "The requested API version is unavailable";
-        case GLFW_PLATFORM_ERROR:
-            return "An undocumented platform-specific error occurred";
-        case GLFW_FORMAT_UNAVAILABLE:
-            return "The requested format is unavailable";
-        case GLFW_NO_WINDOW_CONTEXT:
-            return "The specified window has no context";
-        default:
-            return "ERROR: UNKNOWN GLFW ERROR";
-    }
-}
 
 // Terminate the library
 //
@@ -142,9 +110,48 @@ static void terminate(void)
 
 
 //////////////////////////////////////////////////////////////////////////
+//////                       GLFW internal API                      //////
+//////////////////////////////////////////////////////////////////////////
+
+char* _glfw_strdup(const char* source)
+{
+    const size_t length = strlen(source);
+    char* result = calloc(length + 1, 1);
+    strcpy(result, source);
+    return result;
+}
+
+float _glfw_fminf(float a, float b)
+{
+    if (a != a)
+        return b;
+    else if (b != b)
+        return a;
+    else if (a < b)
+        return a;
+    else
+        return b;
+}
+
+float _glfw_fmaxf(float a, float b)
+{
+    if (a != a)
+        return b;
+    else if (b != b)
+        return a;
+    else if (a > b)
+        return a;
+    else
+        return b;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
 //////                         GLFW event API                       //////
 //////////////////////////////////////////////////////////////////////////
 
+// Notifies shared code of an error
+//
 void _glfwInputError(int code, const char* format, ...)
 {
     _GLFWerror* error;
@@ -161,7 +168,30 @@ void _glfwInputError(int code, const char* format, ...)
         description[sizeof(description) - 1] = '\0';
     }
     else
-        strcpy(description, getErrorString(code));
+    {
+        if (code == GLFW_NOT_INITIALIZED)
+            strcpy(description, "The GLFW library is not initialized");
+        else if (code == GLFW_NO_CURRENT_CONTEXT)
+            strcpy(description, "There is no current context");
+        else if (code == GLFW_INVALID_ENUM)
+            strcpy(description, "Invalid argument for enum parameter");
+        else if (code == GLFW_INVALID_VALUE)
+            strcpy(description, "Invalid value for parameter");
+        else if (code == GLFW_OUT_OF_MEMORY)
+            strcpy(description, "Out of memory");
+        else if (code == GLFW_API_UNAVAILABLE)
+            strcpy(description, "The requested API is unavailable");
+        else if (code == GLFW_VERSION_UNAVAILABLE)
+            strcpy(description, "The requested API version is unavailable");
+        else if (code == GLFW_PLATFORM_ERROR)
+            strcpy(description, "A platform-specific error occurred");
+        else if (code == GLFW_FORMAT_UNAVAILABLE)
+            strcpy(description, "The requested format is unavailable");
+        else if (code == GLFW_NO_WINDOW_CONTEXT)
+            strcpy(description, "The specified window has no context");
+        else
+            strcpy(description, "ERROR: UNKNOWN GLFW ERROR");
+    }
 
     if (_glfw.initialized)
     {
@@ -260,27 +290,7 @@ GLFWAPI void glfwInitHint(int hint, int value)
     }
 
     _glfwInputError(GLFW_INVALID_ENUM,
-                    "Invalid integer type init hint 0x%08X", hint);
-}
-
-GLFWAPI void glfwInitHintString(int hint, const char* value)
-{
-    assert(value != NULL);
-
-    switch (hint)
-    {
-        case GLFW_X11_WM_CLASS_NAME:
-            strncpy(_glfwInitHints.x11.className, value,
-                    sizeof(_glfwInitHints.x11.className) - 1);
-            return;
-        case GLFW_X11_WM_CLASS_CLASS:
-            strncpy(_glfwInitHints.x11.classClass, value,
-                    sizeof(_glfwInitHints.x11.classClass) - 1);
-            return;
-    }
-
-    _glfwInputError(GLFW_INVALID_ENUM,
-                    "Invalid string type init hint 0x%08X", hint);
+                    "Invalid init hint 0x%08X", hint);
 }
 
 GLFWAPI void glfwGetVersion(int* major, int* minor, int* rev)
