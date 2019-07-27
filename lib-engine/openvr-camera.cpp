@@ -10,9 +10,12 @@ using namespace polymer;
 #undef near
 #undef far
 
-bool openvr_tracked_camera::initialize(vr::IVRSystem * vr_system)
+bool openvr_tracked_camera::initialize(vr::IVRSystem * vr_system, const uint32_t camera_index) 
 {
     if (!vr_system) return false;
+
+    index = camera_index;
+    assert(index < 2);
 
     hmd = vr_system;
 
@@ -44,12 +47,12 @@ bool openvr_tracked_camera::initialize(vr::IVRSystem * vr_system)
 
     vr::HmdVector2_t focalLength;
     vr::HmdVector2_t principalPoint;
-    error = trackedCamera->GetCameraIntrinsics(vr::k_unTrackedDeviceIndex_Hmd, vr::VRTrackedCameraFrameType_MaximumUndistorted, &focalLength, &principalPoint);
+    error = trackedCamera->GetCameraIntrinsics(vr::k_unTrackedDeviceIndex_Hmd, index, vr::VRTrackedCameraFrameType_MaximumUndistorted, &focalLength, &principalPoint);
 
     vr::HmdMatrix44_t trackedCameraProjection;
     float near = .01f;
     float far = 100.f;
-    error = trackedCamera->GetCameraProjection(vr::k_unTrackedDeviceIndex_Hmd, vr::VRTrackedCameraFrameType_MaximumUndistorted, near, far, &trackedCameraProjection);
+    error = trackedCamera->GetCameraProjection(vr::k_unTrackedDeviceIndex_Hmd, index, vr::VRTrackedCameraFrameType_MaximumUndistorted, near, far, &trackedCameraProjection);
 
     projectionMatrix = transpose(reinterpret_cast<const float4x4 &>(trackedCameraProjection));
 

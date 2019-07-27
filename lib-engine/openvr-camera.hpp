@@ -41,10 +41,11 @@ namespace polymer
         float4x4 projectionMatrix;
         camera_intrinsics intrin;
         tracked_camera_frame frame;
+        uint32_t index;
 
     public:
 
-        bool initialize(vr::IVRSystem * vr_system);
+        bool initialize(vr::IVRSystem * vr_system, const uint32_t camera_index);
         bool start();
         void stop();
         void capture();

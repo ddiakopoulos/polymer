@@ -144,7 +144,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\third_party\imgui\imgui.cpp" />
+    <ClCompile Include="..\third_party\imgui\imgui_demo.cpp" />
     <ClCompile Include="..\third_party\imgui\imgui_draw.cpp" />
+    <ClCompile Include="..\third_party\imgui\imgui_widgets.cpp" />
     <ClCompile Include="..\third_party\nanovg\nanovg.c" />
     <ClCompile Include="..\third_party\tinyexr\tinyexr.cc" />
     <ClCompile Include="..\third_party\tinygizmo\tiny-gizmo.cpp" />
