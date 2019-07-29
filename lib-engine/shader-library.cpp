@@ -26,10 +26,9 @@ gl_shader_monitor::gl_shader_monitor(const std::string & root_path)
             }
             catch (const std::exception & e)
             {
-                //@todo use logger
-                std::cout << "Filesystem error: " << e.what() << std::endl;
+                log::get()->import_log->info("filesystem exception {}", e.what());
             }
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            std::this_thread::sleep_for(std::chrono::milliseconds(polling_thread_frequency));
         }
     });
 }
@@ -96,14 +95,13 @@ void gl_shader_monitor::walk_asset_dir()
                     {
                         asset.second->writeTime = writeTime;
                         asset.second->shouldRecompile = true;
-                        //@todo use logger
-                        std::cout << "Processed Asset: " << asset.first << std::endl;
+                        log::get()->import_log->info("gl_shader_monitor updated program {}", asset.first);
                     }
                 }
 
                 // Each shader keeps a list of the files it includes. gl_shader_monitor watches a base path,
                 // so we should be able to recompile shaders dependent on common includes
-                for (std::string includePath : asset.second->includes)
+                for (const std::string & includePath : asset.second->includes)
                 {
                     if (get_filename_with_extension(path) == get_filename_with_extension(includePath))
                     {
@@ -112,9 +110,7 @@ void gl_shader_monitor::walk_asset_dir()
                         {
                             asset.second->writeTime = writeTime;
                             asset.second->shouldRecompile = true;
-
-                            //@todo use logger
-                            std::cout << "Processed Include: " << includePath << std::endl;
+                            log::get()->import_log->info("gl_shader_monitor updated include {}", includePath);
                             break;
                         }
                     }
@@ -124,8 +120,10 @@ void gl_shader_monitor::walk_asset_dir()
     }
 }
 
-void gl_shader_monitor::handle_recompile()
+void gl_shader_monitor::handle_recompile(const uint32_t polling_thread_frequency_milliseconds)
 {
+    polling_thread_frequency = polling_thread_frequency_milliseconds;
+
     try_locker locker(watch_mutex);
     for (auto & asset : assets)
     {

@@ -30,6 +30,7 @@ namespace polymer
         std::thread watch_thread;
         std::mutex watch_mutex;
         std::atomic<bool> watch_should_exit{ false };
+        std::atomic<int> polling_thread_frequency{ 100 };
 
         void walk_asset_dir();
 
@@ -42,7 +43,7 @@ namespace polymer
         void add_search_path(const std::string & path);
 
         // Call this regularly on the gl thread
-        void handle_recompile();
+        void handle_recompile(const uint32_t polling_thread_frequency_milliseconds = 100);
 
         // Watch vertex and fragment (no #includes)
         void watch(const std::string & name, const std::string & vert_path, const std::string & frag_path);

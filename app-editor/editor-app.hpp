@@ -38,7 +38,7 @@ struct scene_editor_app final : public polymer_app
     imgui_ui_context im_ui_ctx;
     undo_manager undo_mgr;
 
-    ImGui::editor_app_log log;
+    ImGui::editor_app_log editor_console_log;
     bool show_imgui = true;
     bool show_grid = false;
     bool should_open_material_window = false;

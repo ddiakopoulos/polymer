@@ -22,7 +22,7 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
     glfwGetWindowSize(window, &width, &height);
     glViewport(0, 0, width, height);
 
-    log::get()->replace_sink(std::make_shared<ImGui::spdlog_editor_sink>(log));
+    log::get()->set_engine_logger(std::make_shared<ImGui::spdlog_editor_sink>(editor_console_log));
 
     auto droidSansTTFBytes = read_file_binary("../assets/fonts/droid_sans.ttf");
 
@@ -707,7 +707,7 @@ void scene_editor_app::on_draw()
 
         gui::imgui_fixed_window_begin("Application Log", bottomLeftPane);
         {
-            log.Draw("-");
+            editor_console_log.Draw("-");
         }
         gui::imgui_fixed_window_end();
     }
