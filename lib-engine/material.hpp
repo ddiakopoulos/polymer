@@ -12,6 +12,9 @@
 
 #include "json.hpp"
 
+#include "nonstd/optional.hpp"
+#include "nonstd/variant.hpp"
+
 namespace polymer
 {
     using json = nlohmann::json;
@@ -124,12 +127,12 @@ namespace polymer
 
     template<class F> void visit_fields(polymer_blinn_phong_standard & o, F f)
     {
-        //f("opacity", o.opacity, range_metadata<float>{ 0.f, 1.f });
-        //f("double_sided", o.opacity);
-        //f("depth_write", o.opacity);
-        //f("depth_read", o.opacity);
-        //f("cast_shadows", o.opacity);
-        //f("blend_factor", o.blend_mode);
+        f("opacity", o.opacity.raw(), range_metadata<float>{ 0.f, 1.f });
+        f("double_sided", o.double_sided.raw());
+        f("depth_write", o.depth_write.raw());
+        f("depth_read", o.depth_read.raw());
+        f("cast_shadows", o.cast_shadows.raw());
+        f("blend_factor", o.blend_mode.raw());
 
         f("diffuse_color", o.diffuseColor);
         f("specular_color", o.specularColor);
@@ -144,6 +147,7 @@ namespace polymer
     }
 
     inline void to_json(json & j, const polymer_blinn_phong_standard & p) {
+
         visit_fields(const_cast<polymer_blinn_phong_standard&>(p), [&j](const char * name, auto & field, auto... metadata) {
             j[name] = field;
         });
@@ -151,7 +155,8 @@ namespace polymer
 
     inline void from_json(const json & archive, polymer_blinn_phong_standard & m) {
         visit_fields(m, [&archive](const char * name, auto & field, auto... metadata) {
-            field = archive.at(name).get<std::remove_reference_t<decltype(field)>>();
+            try { field = archive.at(name).get<std::remove_reference_t<decltype(field)>>(); }
+            catch (const std::exception & e) { log::get()->import_log->info("{} not found in json", e.what()); }
         });
     }
 
@@ -175,22 +180,28 @@ namespace polymer
         void update_uniforms_shadow(GLuint handle);
         void update_uniforms_ibl(GLuint irradiance, GLuint radiance);
 
+        typedef nonstd::variant< 
+            polymer::property<bool>,
+            polymer::property<int>, 
+            polymer::property<float>, 
+            polymer::property<float2>, 
+            polymer::property<float3>,
+            polymer::property<float4>,
+            polymer::property<std::string>> uniform_variant_t;
 
-        float3 baseAlbedo{1.f, 1.f, 1.f};
-
-        polymer::property<float> roughnessFactor{ 0.04f };
-
-        float metallicFactor{ 1.f };
-
-        float3 baseEmissive{ 0.f, 0.f, 0.f };
-        float emissiveStrength{ 1.f };
-
-        float specularLevel{ 0.01f };
-        float occlusionStrength{ 1.f };
-        float ambientStrength{ 1.f };
-
-        float shadowOpacity{ 1.f };
-        float2 texcoordScale{ 1.f, 1.f };
+        std::unordered_map<std::string, uniform_variant_t> uniform_table
+        {
+            {"u_albedo",            polymer::property<float3>({1.f, 1.f, 1.f}) },
+            {"u_roughness",         polymer::property<float>(0.04f) },
+            {"u_metallic",          polymer::property<float>(1.f) },
+            {"u_emissive",          polymer::property<float3>({1.f, 1.f, 1.f}) },
+            {"u_emissiveStrength",  polymer::property<float>(1.f) },
+            {"u_specularLevel",     polymer::property<float>(0.01f) },
+            {"u_occlusionStrength", polymer::property<float>(1.f) },
+            {"u_ambientStrength",   polymer::property<float>(1.f) },
+            {"u_shadowOpacity",     polymer::property<float>(1.f) },
+            {"u_texCoordScale",     polymer::property<float2>({1.f, 1.f}) }
+        };
 
         texture_handle albedo;
         texture_handle normal;
@@ -205,23 +216,22 @@ namespace polymer
 
     template<class F> void visit_fields(polymer_pbr_standard & o, F f)
     {
-        //f("opacity", o.opacity, range_metadata<float>{ 0.f, 1.f });
-        //f("double_sided", o.opacity);
-        //f("depth_write", o.opacity);
-        //f("depth_read", o.opacity);
-        //f("cast_shadows", o.opacity);
-        //f("blend_factor", o.blend_mode);
+        f("opacity", o.opacity.raw(), range_metadata<float>{ 0.f, 1.f });
+        f("double_sided", o.double_sided.raw());
+        f("depth_write", o.depth_write.raw());
+        f("depth_read", o.depth_read.raw());
+        f("cast_shadows", o.cast_shadows.raw());
+        f("blend_factor", o.blend_mode.raw());
 
-        f("base_albedo", o.baseAlbedo);
-        f("roughness_factor", o.roughnessFactor.raw(), range_metadata<float>{ 0.04f, 1.f });
-        f("metallic_factor", o.metallicFactor, range_metadata<float>{ 0.f, 1.f });
-        f("base_emissive", o.baseEmissive);
-        f("emissive_strength", o.emissiveStrength, range_metadata<float>{ 0.f, 1.f });
-        f("specularLevel", o.specularLevel, range_metadata<float>{ 0.f, 1.f });
-        f("occulusion_strength", o.occlusionStrength, range_metadata<float>{ 0.f, 1.f });
-        f("ambient_strength", o.ambientStrength, range_metadata<float>{ 0.f, 1.f });
-        f("shadow_opacity", o.shadowOpacity, range_metadata<float>{ 0.f, 1.f });
-        f("texcoord_scale", o.texcoordScale, range_metadata<float>{ -16.f, 16.f });
+        for (auto & uniform : o.uniform_table)
+        {
+            if (auto * val = nonstd::get_if<polymer::property<int>>(&uniform.second))    f(uniform.first.c_str(), (*val).raw());
+            if (auto * val = nonstd::get_if<polymer::property<float>>(&uniform.second))  f(uniform.first.c_str(), (*val).raw());
+            if (auto * val = nonstd::get_if<polymer::property<float2>>(&uniform.second)) f(uniform.first.c_str(), (*val).raw());
+            if (auto * val = nonstd::get_if<polymer::property<float3>>(&uniform.second)) f(uniform.first.c_str(), (*val).raw());
+            if (auto * val = nonstd::get_if<polymer::property<float4>>(&uniform.second)) f(uniform.first.c_str(), (*val).raw());
+        }
+
         f("albedo_handle", o.albedo);
         f("normal_handle", o.normal);
         f("metallic_handle", o.metallic);
@@ -242,17 +252,18 @@ namespace polymer
 
     inline void from_json(const json & archive, polymer_pbr_standard & m) {
         visit_fields(m, [&archive](const char * name, auto & field, auto... metadata) {
-            field = archive.at(name).get<std::remove_reference_t<decltype(field)>>();
+            try { field = archive.at(name).get<std::remove_reference_t<decltype(field)>>(); }
+            catch (const std::exception & e) { log::get()->import_log->info("{} not found in json", e.what()); }
         });
     }
 
     template<class F> void visit_subclasses(base_material * p, F f)
     {
-        f("polymer_default_material", dynamic_cast<polymer_default_material *>(p));
-        f("polymer_pbr_standard", dynamic_cast<polymer_pbr_standard *>(p));
-        f("polymer_blinn_phong_standard", dynamic_cast<polymer_blinn_phong_standard *>(p));
-        f("polymer_wireframe_material", dynamic_cast<polymer_wireframe_material *>(p));
-        f("polymer_procedural_material", dynamic_cast<polymer_procedural_material *>(p));
+        f("polymer_default_material",       dynamic_cast<polymer_default_material *>(p));
+        f("polymer_pbr_standard",           dynamic_cast<polymer_pbr_standard *>(p));
+        f("polymer_blinn_phong_standard",   dynamic_cast<polymer_blinn_phong_standard *>(p));
+        f("polymer_wireframe_material",     dynamic_cast<polymer_wireframe_material *>(p));
+        f("polymer_procedural_material",    dynamic_cast<polymer_procedural_material *>(p));
     }
 
 }

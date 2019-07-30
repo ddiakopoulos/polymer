@@ -108,15 +108,7 @@ namespace polymer
         procedural_skybox_component * procedural_skybox{ nullptr };
         cubemap_component * ibl_cubemap{ nullptr };
         float4 clear_color{ 1, 0, 0, 1 };
-        void reset()
-        {
-           views.clear();
-           render_components.clear();
-           point_lights.clear();
-           sunlight = nullptr;
-           procedural_skybox = nullptr;
-           ibl_cubemap = nullptr;
-        }
+        void reset() { *this = render_payload(); }
     };
 
     //////////////////////

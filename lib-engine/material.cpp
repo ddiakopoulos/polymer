@@ -246,17 +246,16 @@ void polymer_pbr_standard::update_uniforms()
     gl_shader & program = compiled_shader->shader;
     program.bind();
 
-    program.uniform("u_roughness", roughnessFactor);
-    program.uniform("u_metallic", metallicFactor);
     program.uniform("u_opacity", opacity);
-    program.uniform("u_albedo", baseAlbedo);
-    program.uniform("u_emissive", baseEmissive);
-    program.uniform("u_specularLevel", specularLevel);
-    program.uniform("u_occlusionStrength", occlusionStrength);
-    program.uniform("u_ambientStrength", ambientStrength);
-    program.uniform("u_emissiveStrength", emissiveStrength);
-    program.uniform("u_shadowOpacity", shadowOpacity);
-    program.uniform("u_texCoordScale", texcoordScale);
+
+    for (auto & uniform : uniform_table)
+    {
+        if (auto * val = nonstd::get_if<polymer::property<int>>(&uniform.second))    program.uniform(uniform.first, *val);
+        if (auto * val = nonstd::get_if<polymer::property<float>>(&uniform.second))  program.uniform(uniform.first, *val);
+        if (auto * val = nonstd::get_if<polymer::property<float2>>(&uniform.second)) program.uniform(uniform.first, *val);
+        if (auto * val = nonstd::get_if<polymer::property<float3>>(&uniform.second)) program.uniform(uniform.first, *val);
+        if (auto * val = nonstd::get_if<polymer::property<float4>>(&uniform.second)) program.uniform(uniform.first, *val);
+    }
 
     bindpoint = 0;
 
