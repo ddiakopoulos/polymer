@@ -17,9 +17,20 @@
 
 namespace polymer
 {
+    struct material_component;
+
     using json = nlohmann::json;
 
     typedef std::shared_ptr<polymer::shader_variant> cached_variant;
+
+    typedef nonstd::variant<
+        polymer::property<bool>,
+        polymer::property<int>,
+        polymer::property<float>,
+        polymer::property<float2>,
+        polymer::property<float3>,
+        polymer::property<float4>,
+        polymer::property<std::string>> uniform_variant_t;
 
     ///////////////////////
     //   base_material   //
@@ -35,7 +46,7 @@ namespace polymer
         polymer::property<std::string> blend_mode;
         mutable cached_variant compiled_shader{ nullptr };  // cached on first access (because needs to happen on GL thread)
         shader_handle shader;                               // typically set during object inflation / deserialization
-        virtual void update_uniforms() {}                   // generic interface for overriding specific uniform sets
+        virtual void update_uniforms(material_component * comp = nullptr) {} // generic interface for overriding specific uniform sets
         virtual void use() {}                               // generic interface for binding the program
         virtual void resolve_variants() = 0;                // all overridden functions need to call this to cache the shader
         virtual uint32_t id() = 0;                          // returns the gl handle, used for sorting materials by type to minimize state changes in the renderer
@@ -68,7 +79,7 @@ namespace polymer
         virtual void use() override final;
         virtual void resolve_variants() override final;
         virtual uint32_t id() override final;
-        virtual void update_uniforms() override final;
+        virtual void update_uniforms(material_component * comp = nullptr) override final;
         std::function<void()> update_uniform_func;
     };
     POLYMER_SETUP_TYPEID(polymer_procedural_material);
@@ -109,7 +120,7 @@ namespace polymer
         virtual void use() override final;
         virtual void resolve_variants() override final;
         virtual uint32_t id() override final;
-        virtual void update_uniforms() override final;
+        virtual void update_uniforms(material_component * comp = nullptr) override final;
 
         void update_uniforms_shadow(GLuint handle);
 
@@ -172,22 +183,13 @@ namespace polymer
 
         polymer_pbr_standard();
 
-        virtual void update_uniforms() override final;
+        virtual void update_uniforms(material_component * comp = nullptr) override final;
         virtual void use() override final;
         virtual void resolve_variants() override final;
         virtual uint32_t id() override final;
 
         void update_uniforms_shadow(GLuint handle);
         void update_uniforms_ibl(GLuint irradiance, GLuint radiance);
-
-        typedef nonstd::variant< 
-            polymer::property<bool>,
-            polymer::property<int>, 
-            polymer::property<float>, 
-            polymer::property<float2>, 
-            polymer::property<float3>,
-            polymer::property<float4>,
-            polymer::property<std::string>> uniform_variant_t;
 
         std::unordered_map<std::string, uniform_variant_t> uniform_table
         {

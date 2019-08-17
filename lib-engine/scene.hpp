@@ -178,11 +178,52 @@ namespace polymer
     //   material_component   //
     ////////////////////////////
 
+    struct uniform_override_t
+    {
+        std::unordered_map<std::string, uniform_variant_t> table;
+    };
+    POLYMER_SETUP_TYPEID(uniform_override_t);
+
+    template<class F> void visit_fields(uniform_override_t & o, F f) {
+        for (auto & uniform : o.table)
+        {
+            if (auto * val = nonstd::get_if<polymer::property<int>>(&uniform.second))    f(uniform.first.c_str(), (*val).raw());
+            if (auto * val = nonstd::get_if<polymer::property<float>>(&uniform.second))  f(uniform.first.c_str(), (*val).raw());
+            if (auto * val = nonstd::get_if<polymer::property<float2>>(&uniform.second)) f(uniform.first.c_str(), (*val).raw());
+            if (auto * val = nonstd::get_if<polymer::property<float3>>(&uniform.second)) f(uniform.first.c_str(), (*val).raw());
+            if (auto * val = nonstd::get_if<polymer::property<float4>>(&uniform.second)) f(uniform.first.c_str(), (*val).raw());
+        }
+    }
+
+    inline void to_json(json & j, const uniform_override_t & p) {
+        visit_fields(const_cast<uniform_override_t&>(p), [&j](const char * name, auto & field, auto... metadata) { j.push_back({ name, field }); });
+    }
+
+    inline void from_json(const json & archive, uniform_override_t & m) {
+
+        for (auto iter = archive.begin(); iter != archive.end(); ++iter)
+        {
+            try 
+            { 
+                m.table[iter.key().c_str()] = polymer::property<int>(iter.value().get<int>());
+                m.table[iter.key().c_str()] = polymer::property<float>(iter.value().get<float>());
+                m.table[iter.key().c_str()] = polymer::property<float2>(iter.value().get<float2>());
+                m.table[iter.key().c_str()] = polymer::property<float3>(iter.value().get<float3>());
+                m.table[iter.key().c_str()] = polymer::property<float4>(iter.value().get<float4>());
+            }
+            catch (const std::exception & e) 
+            { 
+                log::get()->import_log->info("{} uniform_override", e.what()); 
+            }
+        }
+    };
+
     struct material_component : public base_component
     {
         material_handle material{ material_library::kDefaultMaterialId };
         bool receive_shadow{ true };
         bool cast_shadow{ true };
+        uniform_override_t override_table;
         material_component() {};
         material_component(entity e) : base_component(e) {}
         material_component(entity e, material_handle handle) : base_component(e), material(handle) {}
@@ -192,16 +233,21 @@ namespace polymer
     template<class F> void visit_fields(material_component & o, F f) {
         f("material_handle", o.material);
         f("receive_shadow", o.receive_shadow);
-        f("cast_shadow", o.cast_shadow);
+        f("cast_shadow", o.cast_shadow); 
+        f("uniform_overrides", o.override_table);
     }
 
     inline void to_json(json & j, const material_component & p) {
-        visit_fields(const_cast<material_component&>(p), [&j](const char * name, auto & field, auto... metadata) { j.push_back({ name, field }); });
+        visit_fields(const_cast<material_component&>(p), [&j](const char * name, auto & field, auto... metadata) 
+        { 
+            j.push_back({ name, field }); 
+        });
     }
 
     inline void from_json(const json & archive, material_component & m) {
         visit_fields(m, [&archive](const char * name, auto & field, auto... metadata) {
-            field = archive.at(name).get<std::remove_reference_t<decltype(field)>>();
+            try { field = archive.at(name).get<std::remove_reference_t<decltype(field)>>(); }
+            catch (const std::exception & e) { log::get()->import_log->info("{} not found in json", e.what()); }
         });
     };
 

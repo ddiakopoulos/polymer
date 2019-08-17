@@ -4,6 +4,7 @@
 #include "asset-handle-utils.hpp"
 #include "shader.hpp"
 #include "shader-library.hpp"
+#include "scene.hpp"
 
 using namespace polymer;
 
@@ -67,7 +68,7 @@ uint32_t polymer_procedural_material::id()
     return compiled_shader->shader.handle();
 }
 
-void polymer_procedural_material::update_uniforms()
+void polymer_procedural_material::update_uniforms(material_component * comp)
 {
     if (update_uniform_func)
     {
@@ -136,13 +137,11 @@ void polymer_blinn_phong_standard::resolve_variants()
     if (!compiled_shader)
     {
         compiled_shader = shader.get()->get_variant(processed_defines);
-        return;
     }
     else if (compiled_shader->hash != variant_hash)
     {
         // We updated the set of defines and need to recompile
         compiled_shader = shader.get()->get_variant(processed_defines);
-        return;
     }
 }
 
@@ -159,7 +158,7 @@ void polymer_blinn_phong_standard::use()
     program.bind();
 }
 
-void polymer_blinn_phong_standard::update_uniforms()
+void polymer_blinn_phong_standard::update_uniforms(material_component * comp)
 {
     resolve_variants();
     gl_shader & program = compiled_shader->shader;
@@ -211,12 +210,12 @@ void polymer_pbr_standard::resolve_variants()
     processed_defines.push_back("USE_IMAGE_BASED_LIGHTING");
 
     // Material slots
-    if (albedo.assigned()) processed_defines.push_back("HAS_ALBEDO_MAP");
+    if (albedo.assigned())    processed_defines.push_back("HAS_ALBEDO_MAP");
     if (roughness.assigned()) processed_defines.push_back("HAS_ROUGHNESS_MAP");
-    if (metallic.assigned()) processed_defines.push_back("HAS_METALNESS_MAP");
-    if (normal.assigned()) processed_defines.push_back("HAS_NORMAL_MAP");
+    if (metallic.assigned())  processed_defines.push_back("HAS_METALNESS_MAP");
+    if (normal.assigned())    processed_defines.push_back("HAS_NORMAL_MAP");
     if (occlusion.assigned()) processed_defines.push_back("HAS_OCCLUSION_MAP");
-    if (emissive.assigned()) processed_defines.push_back("HAS_EMISSIVE_MAP");
+    if (emissive.assigned())  processed_defines.push_back("HAS_EMISSIVE_MAP");
 
     const auto variant_hash = shader.get()->hash(processed_defines);
 
@@ -224,13 +223,11 @@ void polymer_pbr_standard::resolve_variants()
     if (!compiled_shader)
     {
         compiled_shader = shader.get()->get_variant(processed_defines);
-        return;
     }
     else if (compiled_shader->hash != variant_hash)
     {
         // We updated the set of defines and need to recompile
         compiled_shader = shader.get()->get_variant(processed_defines);
-        return;
     }
 }
 
@@ -240,7 +237,7 @@ uint32_t polymer_pbr_standard::id()
     return compiled_shader->shader.handle();
 }
 
-void polymer_pbr_standard::update_uniforms()
+void polymer_pbr_standard::update_uniforms(material_component * comp)
 {
     resolve_variants();
     gl_shader & program = compiled_shader->shader;
@@ -248,6 +245,7 @@ void polymer_pbr_standard::update_uniforms()
 
     program.uniform("u_opacity", opacity);
 
+    // Update uniforms
     for (auto & uniform : uniform_table)
     {
         if (auto * val = nonstd::get_if<polymer::property<int>>(&uniform.second))    program.uniform(uniform.first, *val);
@@ -257,14 +255,24 @@ void polymer_pbr_standard::update_uniforms()
         if (auto * val = nonstd::get_if<polymer::property<float4>>(&uniform.second)) program.uniform(uniform.first, *val);
     }
 
+    // Update uniform overrides. This method can be greatly improved in the future.
+    for (auto & uniform_override : comp->override_table.table)
+    {
+        if (auto * val = nonstd::get_if<polymer::property<int>>(&uniform_override.second))    program.uniform(uniform_override.first, *val);
+        if (auto * val = nonstd::get_if<polymer::property<float>>(&uniform_override.second))  program.uniform(uniform_override.first, *val);
+        if (auto * val = nonstd::get_if<polymer::property<float2>>(&uniform_override.second)) program.uniform(uniform_override.first, *val);
+        if (auto * val = nonstd::get_if<polymer::property<float3>>(&uniform_override.second)) program.uniform(uniform_override.first, *val);
+        if (auto * val = nonstd::get_if<polymer::property<float4>>(&uniform_override.second)) program.uniform(uniform_override.first, *val);
+    }
+
     bindpoint = 0;
 
-    if (compiled_shader->enabled("HAS_ALBEDO_MAP")) program.texture("s_albedo", bindpoint++, albedo.get(), GL_TEXTURE_2D);
-    if (compiled_shader->enabled("HAS_NORMAL_MAP")) program.texture("s_normal", bindpoint++, normal.get(), GL_TEXTURE_2D);
+    if (compiled_shader->enabled("HAS_ALBEDO_MAP"))    program.texture("s_albedo",    bindpoint++, albedo.get(),    GL_TEXTURE_2D);
+    if (compiled_shader->enabled("HAS_NORMAL_MAP"))    program.texture("s_normal",    bindpoint++, normal.get(),    GL_TEXTURE_2D);
     if (compiled_shader->enabled("HAS_ROUGHNESS_MAP")) program.texture("s_roughness", bindpoint++, roughness.get(), GL_TEXTURE_2D);
-    if (compiled_shader->enabled("HAS_METALNESS_MAP")) program.texture("s_metallic", bindpoint++, metallic.get(), GL_TEXTURE_2D);
-    if (compiled_shader->enabled("HAS_EMISSIVE_MAP")) program.texture("s_emissive", bindpoint++, emissive.get(), GL_TEXTURE_2D);
-    if (compiled_shader->enabled("HAS_HEIGHT_MAP")) program.texture("s_height", bindpoint++, height.get(), GL_TEXTURE_2D);
+    if (compiled_shader->enabled("HAS_METALNESS_MAP")) program.texture("s_metallic",  bindpoint++, metallic.get(),  GL_TEXTURE_2D);
+    if (compiled_shader->enabled("HAS_EMISSIVE_MAP"))  program.texture("s_emissive",  bindpoint++, emissive.get(),  GL_TEXTURE_2D);
+    if (compiled_shader->enabled("HAS_HEIGHT_MAP"))    program.texture("s_height",    bindpoint++, height.get(),    GL_TEXTURE_2D);
     if (compiled_shader->enabled("HAS_OCCLUSION_MAP")) program.texture("s_occlusion", bindpoint++, occlusion.get(), GL_TEXTURE_2D);
 
     program.unbind();

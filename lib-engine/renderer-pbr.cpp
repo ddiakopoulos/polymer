@@ -353,12 +353,10 @@ void pbr_renderer::run_forward_pass(std::vector<const render_component *> & rend
         if (auto * mr = dynamic_cast<polymer_blinn_phong_standard*>(the_material))
         {
             if (settings.shadowsEnabled) mr->update_uniforms_shadow(shadow->get_output_texture());
-         }
+        }
 
-        the_material->update_uniforms();
-
+        the_material->update_uniforms(render_comp->material);
         the_material->use();
-
         render_comp->mesh->draw();
     }
 

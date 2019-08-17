@@ -330,7 +330,10 @@
         "@material_component": {
             "cast_shadow": true,
             "material_handle": "concrete-tile-1024",
-            "receive_shadow": true
+            "receive_shadow": true,
+            "uniform_overrides": {
+                "u_metallic": 1.0
+            }
         },
         "@mesh_component": {
             "gpu_mesh_handle": "floor-bevels/floor-bevels"

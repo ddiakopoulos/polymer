@@ -30,7 +30,8 @@ template<class T> struct range_metadata { T min, max; };
 struct editor_hidden {};
 struct input_field {};
 struct serializer_hidden {};
-struct entity_ref{};
+struct entity_ref {};
+struct tagged_set { std::string tag; };
 
 using json = nlohmann::json;
 

@@ -1,28 +1,34 @@
 {
     "@polymer_pbr_standard": {
         "albedo_handle": "concrete_tile_basecolor",
-        "u_ambientStrength": 1.0,
+        "blend_factor": "",
+        "cast_shadows": true,
+        "depth_read": true,
+        "depth_write": true,
+        "double_sided": true,
+        "emissive_handle": "",
+        "height_handle": "",
+        "metallic_handle": "",
+        "normal_handle": "concrete_tile_normal",
+        "occlusion_handle": "",
+        "opacity": 1.0,
+        "program_handle": "pbr-forward-lighting",
+        "roughness_handle": "concrete_tile_roughness",
         "u_albedo": {
             "x": 1.0,
             "y": 1.0,
             "z": 1.0
         },
+        "u_ambientStrength": 1.0,
         "u_emissive": {
             "x": 1.0,
             "y": 1.0,
             "z": 1.0
         },
-        "emissive_handle": "",
         "u_emissiveStrength": 0.0,
-        "height_handle": "",
         "u_metallic": 0.0,
-        "metallic_handle": "",
-        "normal_handle": "concrete_tile_normal",
-        "occlusion_handle": "",
         "u_occlusionStrength": 0.0,
-        "program_handle": "pbr-forward-lighting",
         "u_roughness": 1.0,
-        "roughness_handle": "concrete_tile_roughness",
         "u_shadowOpacity": 1.0,
         "u_specularLevel": 0.0,
         "u_texCoordScale": {
