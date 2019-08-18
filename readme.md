@@ -61,12 +61,12 @@ Polymer is released under the BSD 3-clause license. As a framework/engine, Polym
 If you use Polymer in a project that leads to publication or a public demo, we appreciate a citation. The BibTex entry is: 
 
 ```
-@Misc{Diakopoulos18,
+@Polymer{Diakopoulos19,
   author = {Dimitri Diakopoulos],
-  title = {Polymer: A Prototyping Framework for Spatial Computing},
-  year = {2019},
-  month = {01},
-  url = {https://github.com/ddiakopoulos/polymer/},
-  note = {\url{https://github.com/ddiakopoulos/polymer/}}
+  title  = {Polymer: A Prototyping Framework for Spatial Computing},
+  year   = {2019},
+  month  = {01},
+  url    = {https://github.com/ddiakopoulos/polymer/},
+  note   = {\url{https://github.com/ddiakopoulos/polymer/}}
 }
 ```
