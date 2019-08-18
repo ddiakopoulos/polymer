@@ -196,7 +196,11 @@ namespace polymer
     }
 
     inline void to_json(json & j, const uniform_override_t & p) {
-        visit_fields(const_cast<uniform_override_t&>(p), [&j](const char * name, auto & field, auto... metadata) { j.push_back({ name, field }); });
+        visit_fields(const_cast<uniform_override_t&>(p), [&j](const char * name, auto & field, auto... metadata) 
+        {   
+            j[name] = field;
+            //j.push_back({ name, field }); 
+        });
     }
 
     inline void from_json(const json & archive, uniform_override_t & m) {

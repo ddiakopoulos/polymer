@@ -28,7 +28,7 @@
         "u_emissiveStrength": 1.0,
         "u_metallic": 1.0,
         "u_occlusionStrength": 1.0,
-        "u_roughness": 0.03999999910593033,
+        "u_roughness": 0.0,
         "u_shadowOpacity": 1.0,
         "u_specularLevel": 0.07165999710559845,
         "u_texCoordScale": {

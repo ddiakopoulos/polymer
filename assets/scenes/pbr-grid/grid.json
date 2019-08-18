@@ -1,0 +1,1225 @@
+{
+    "1": {
+        "@identifier_component": {
+            "id": "procedural-skybox"
+        },
+        "@local_transform_component": {
+            "children": [],
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                }
+            },
+            "local_scale": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "parent": 0
+        },
+        "@procedural_skybox_component": {
+            "procedural_skybox": {
+                "albedo": 0.10000000149011612,
+                "normalized_sun_y": 1.149999976158142,
+                "sun_position_theta_phi": {
+                    "x": 0.8726646304130554,
+                    "y": 1.919862151145935
+                },
+                "turbidity": 4.0
+            },
+            "sun_directional_light": 2
+        }
+    },
+    "10": {
+        "@geometry_component": {
+            "cpu_mesh_handle": "sphere-uniform",
+            "cpu_mesh_proxy_handle": ""
+        },
+        "@identifier_component": {
+            "id": "pbr-grid-5"
+        },
+        "@local_transform_component": {
+            "children": [],
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 0.0,
+                    "y": 1.0,
+                    "z": 1.0
+                }
+            },
+            "local_scale": {
+                "x": 0.5,
+                "y": 0.5,
+                "z": 0.5
+            },
+            "parent": 0
+        },
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "pure-metallic",
+            "receive_shadow": true,
+            "uniform_overrides": {
+                "u_metallic": 0.0,
+                "u_roughness": 0.25
+            }
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "sphere-uniform"
+        }
+    },
+    "11": {
+        "@geometry_component": {
+            "cpu_mesh_handle": "sphere-uniform",
+            "cpu_mesh_proxy_handle": ""
+        },
+        "@identifier_component": {
+            "id": "pbr-grid-6"
+        },
+        "@local_transform_component": {
+            "children": [],
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 1.0,
+                    "y": 1.0,
+                    "z": 1.0
+                }
+            },
+            "local_scale": {
+                "x": 0.5,
+                "y": 0.5,
+                "z": 0.5
+            },
+            "parent": 0
+        },
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "pure-metallic",
+            "receive_shadow": true,
+            "uniform_overrides": {
+                "u_metallic": 0.25,
+                "u_roughness": 0.25
+            }
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "sphere-uniform"
+        }
+    },
+    "12": {
+        "@geometry_component": {
+            "cpu_mesh_handle": "sphere-uniform",
+            "cpu_mesh_proxy_handle": ""
+        },
+        "@identifier_component": {
+            "id": "pbr-grid-7"
+        },
+        "@local_transform_component": {
+            "children": [],
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 2.0,
+                    "y": 1.0,
+                    "z": 1.0
+                }
+            },
+            "local_scale": {
+                "x": 0.5,
+                "y": 0.5,
+                "z": 0.5
+            },
+            "parent": 0
+        },
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "pure-metallic",
+            "receive_shadow": true,
+            "uniform_overrides": {
+                "u_metallic": 0.5,
+                "u_roughness": 0.25
+            }
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "sphere-uniform"
+        }
+    },
+    "13": {
+        "@geometry_component": {
+            "cpu_mesh_handle": "sphere-uniform",
+            "cpu_mesh_proxy_handle": ""
+        },
+        "@identifier_component": {
+            "id": "pbr-grid-8"
+        },
+        "@local_transform_component": {
+            "children": [],
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 3.0,
+                    "y": 1.0,
+                    "z": 1.0
+                }
+            },
+            "local_scale": {
+                "x": 0.5,
+                "y": 0.5,
+                "z": 0.5
+            },
+            "parent": 0
+        },
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "pure-metallic",
+            "receive_shadow": true,
+            "uniform_overrides": {
+                "u_metallic": 0.75,
+                "u_roughness": 0.25
+            }
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "sphere-uniform"
+        }
+    },
+    "14": {
+        "@geometry_component": {
+            "cpu_mesh_handle": "sphere-uniform",
+            "cpu_mesh_proxy_handle": ""
+        },
+        "@identifier_component": {
+            "id": "pbr-grid-9"
+        },
+        "@local_transform_component": {
+            "children": [],
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 4.0,
+                    "y": 1.0,
+                    "z": 1.0
+                }
+            },
+            "local_scale": {
+                "x": 0.5,
+                "y": 0.5,
+                "z": 0.5
+            },
+            "parent": 0
+        },
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "pure-metallic",
+            "receive_shadow": true,
+            "uniform_overrides": {
+                "u_metallic": 1.0,
+                "u_roughness": 0.25
+            }
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "sphere-uniform"
+        }
+    },
+    "15": {
+        "@geometry_component": {
+            "cpu_mesh_handle": "sphere-uniform",
+            "cpu_mesh_proxy_handle": ""
+        },
+        "@identifier_component": {
+            "id": "pbr-grid-10"
+        },
+        "@local_transform_component": {
+            "children": [],
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 0.0,
+                    "y": 1.0,
+                    "z": 2.0
+                }
+            },
+            "local_scale": {
+                "x": 0.5,
+                "y": 0.5,
+                "z": 0.5
+            },
+            "parent": 0
+        },
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "pure-metallic",
+            "receive_shadow": true,
+            "uniform_overrides": {
+                "u_metallic": 0.0,
+                "u_roughness": 0.5
+            }
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "sphere-uniform"
+        }
+    },
+    "16": {
+        "@geometry_component": {
+            "cpu_mesh_handle": "sphere-uniform",
+            "cpu_mesh_proxy_handle": ""
+        },
+        "@identifier_component": {
+            "id": "pbr-grid-11"
+        },
+        "@local_transform_component": {
+            "children": [],
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 1.0,
+                    "y": 1.0,
+                    "z": 2.0
+                }
+            },
+            "local_scale": {
+                "x": 0.5,
+                "y": 0.5,
+                "z": 0.5
+            },
+            "parent": 0
+        },
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "pure-metallic",
+            "receive_shadow": true,
+            "uniform_overrides": {
+                "u_metallic": 0.25,
+                "u_roughness": 0.5
+            }
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "sphere-uniform"
+        }
+    },
+    "17": {
+        "@geometry_component": {
+            "cpu_mesh_handle": "sphere-uniform",
+            "cpu_mesh_proxy_handle": ""
+        },
+        "@identifier_component": {
+            "id": "pbr-grid-12"
+        },
+        "@local_transform_component": {
+            "children": [],
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 2.0,
+                    "y": 1.0,
+                    "z": 2.0
+                }
+            },
+            "local_scale": {
+                "x": 0.5,
+                "y": 0.5,
+                "z": 0.5
+            },
+            "parent": 0
+        },
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "pure-metallic",
+            "receive_shadow": true,
+            "uniform_overrides": {
+                "u_metallic": 0.5,
+                "u_roughness": 0.5
+            }
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "sphere-uniform"
+        }
+    },
+    "18": {
+        "@geometry_component": {
+            "cpu_mesh_handle": "sphere-uniform",
+            "cpu_mesh_proxy_handle": ""
+        },
+        "@identifier_component": {
+            "id": "pbr-grid-13"
+        },
+        "@local_transform_component": {
+            "children": [],
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 3.0,
+                    "y": 1.0,
+                    "z": 2.0
+                }
+            },
+            "local_scale": {
+                "x": 0.5,
+                "y": 0.5,
+                "z": 0.5
+            },
+            "parent": 0
+        },
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "pure-metallic",
+            "receive_shadow": true,
+            "uniform_overrides": {
+                "u_metallic": 0.75,
+                "u_roughness": 0.5
+            }
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "sphere-uniform"
+        }
+    },
+    "19": {
+        "@geometry_component": {
+            "cpu_mesh_handle": "sphere-uniform",
+            "cpu_mesh_proxy_handle": ""
+        },
+        "@identifier_component": {
+            "id": "pbr-grid-14"
+        },
+        "@local_transform_component": {
+            "children": [],
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 4.0,
+                    "y": 1.0,
+                    "z": 2.0
+                }
+            },
+            "local_scale": {
+                "x": 0.5,
+                "y": 0.5,
+                "z": 0.5
+            },
+            "parent": 0
+        },
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "pure-metallic",
+            "receive_shadow": true,
+            "uniform_overrides": {
+                "u_metallic": 1.0,
+                "u_roughness": 0.5
+            }
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "sphere-uniform"
+        }
+    },
+    "2": {
+        "@directional_light_component": {
+            "amount": 1.0,
+            "color": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "direction": {
+                "x": 0.604022741317749,
+                "y": 0.7660444378852844,
+                "z": -0.21984626352787018
+            },
+            "enabled": true
+        },
+        "@identifier_component": {
+            "id": "procedural-skybox-sun"
+        },
+        "@local_transform_component": {
+            "children": [],
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                }
+            },
+            "local_scale": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "parent": 0
+        }
+    },
+    "20": {
+        "@geometry_component": {
+            "cpu_mesh_handle": "sphere-uniform",
+            "cpu_mesh_proxy_handle": ""
+        },
+        "@identifier_component": {
+            "id": "pbr-grid-15"
+        },
+        "@local_transform_component": {
+            "children": [],
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 0.0,
+                    "y": 1.0,
+                    "z": 3.0
+                }
+            },
+            "local_scale": {
+                "x": 0.5,
+                "y": 0.5,
+                "z": 0.5
+            },
+            "parent": 0
+        },
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "pure-metallic",
+            "receive_shadow": true,
+            "uniform_overrides": {
+                "u_metallic": 0.0,
+                "u_roughness": 0.75
+            }
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "sphere-uniform"
+        }
+    },
+    "21": {
+        "@geometry_component": {
+            "cpu_mesh_handle": "sphere-uniform",
+            "cpu_mesh_proxy_handle": ""
+        },
+        "@identifier_component": {
+            "id": "pbr-grid-16"
+        },
+        "@local_transform_component": {
+            "children": [],
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 1.0,
+                    "y": 1.0,
+                    "z": 3.0
+                }
+            },
+            "local_scale": {
+                "x": 0.5,
+                "y": 0.5,
+                "z": 0.5
+            },
+            "parent": 0
+        },
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "pure-metallic",
+            "receive_shadow": true,
+            "uniform_overrides": {
+                "u_metallic": 0.25,
+                "u_roughness": 0.75
+            }
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "sphere-uniform"
+        }
+    },
+    "22": {
+        "@geometry_component": {
+            "cpu_mesh_handle": "sphere-uniform",
+            "cpu_mesh_proxy_handle": ""
+        },
+        "@identifier_component": {
+            "id": "pbr-grid-17"
+        },
+        "@local_transform_component": {
+            "children": [],
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 2.0,
+                    "y": 1.0,
+                    "z": 3.0
+                }
+            },
+            "local_scale": {
+                "x": 0.5,
+                "y": 0.5,
+                "z": 0.5
+            },
+            "parent": 0
+        },
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "pure-metallic",
+            "receive_shadow": true,
+            "uniform_overrides": {
+                "u_metallic": 0.5,
+                "u_roughness": 0.75
+            }
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "sphere-uniform"
+        }
+    },
+    "23": {
+        "@geometry_component": {
+            "cpu_mesh_handle": "sphere-uniform",
+            "cpu_mesh_proxy_handle": ""
+        },
+        "@identifier_component": {
+            "id": "pbr-grid-18"
+        },
+        "@local_transform_component": {
+            "children": [],
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 3.0,
+                    "y": 1.0,
+                    "z": 3.0
+                }
+            },
+            "local_scale": {
+                "x": 0.5,
+                "y": 0.5,
+                "z": 0.5
+            },
+            "parent": 0
+        },
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "pure-metallic",
+            "receive_shadow": true,
+            "uniform_overrides": {
+                "u_metallic": 0.75,
+                "u_roughness": 0.75
+            }
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "sphere-uniform"
+        }
+    },
+    "24": {
+        "@geometry_component": {
+            "cpu_mesh_handle": "sphere-uniform",
+            "cpu_mesh_proxy_handle": ""
+        },
+        "@identifier_component": {
+            "id": "pbr-grid-19"
+        },
+        "@local_transform_component": {
+            "children": [],
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 4.0,
+                    "y": 1.0,
+                    "z": 3.0
+                }
+            },
+            "local_scale": {
+                "x": 0.5,
+                "y": 0.5,
+                "z": 0.5
+            },
+            "parent": 0
+        },
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "pure-metallic",
+            "receive_shadow": true,
+            "uniform_overrides": {
+                "u_metallic": 1.0,
+                "u_roughness": 0.75
+            }
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "sphere-uniform"
+        }
+    },
+    "25": {
+        "@geometry_component": {
+            "cpu_mesh_handle": "sphere-uniform",
+            "cpu_mesh_proxy_handle": ""
+        },
+        "@identifier_component": {
+            "id": "pbr-grid-20"
+        },
+        "@local_transform_component": {
+            "children": [],
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 0.0,
+                    "y": 1.0,
+                    "z": 4.0
+                }
+            },
+            "local_scale": {
+                "x": 0.5,
+                "y": 0.5,
+                "z": 0.5
+            },
+            "parent": 0
+        },
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "pure-metallic",
+            "receive_shadow": true,
+            "uniform_overrides": {
+                "u_metallic": 0.0,
+                "u_roughness": 1.0
+            }
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "sphere-uniform"
+        }
+    },
+    "26": {
+        "@geometry_component": {
+            "cpu_mesh_handle": "sphere-uniform",
+            "cpu_mesh_proxy_handle": ""
+        },
+        "@identifier_component": {
+            "id": "pbr-grid-21"
+        },
+        "@local_transform_component": {
+            "children": [],
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 1.0,
+                    "y": 1.0,
+                    "z": 4.0
+                }
+            },
+            "local_scale": {
+                "x": 0.5,
+                "y": 0.5,
+                "z": 0.5
+            },
+            "parent": 0
+        },
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "pure-metallic",
+            "receive_shadow": true,
+            "uniform_overrides": {
+                "u_metallic": 0.25,
+                "u_roughness": 1.0
+            }
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "sphere-uniform"
+        }
+    },
+    "27": {
+        "@geometry_component": {
+            "cpu_mesh_handle": "sphere-uniform",
+            "cpu_mesh_proxy_handle": ""
+        },
+        "@identifier_component": {
+            "id": "pbr-grid-22"
+        },
+        "@local_transform_component": {
+            "children": [],
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 2.0,
+                    "y": 1.0,
+                    "z": 4.0
+                }
+            },
+            "local_scale": {
+                "x": 0.5,
+                "y": 0.5,
+                "z": 0.5
+            },
+            "parent": 0
+        },
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "pure-metallic",
+            "receive_shadow": true,
+            "uniform_overrides": {
+                "u_metallic": 0.5,
+                "u_roughness": 1.0
+            }
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "sphere-uniform"
+        }
+    },
+    "28": {
+        "@geometry_component": {
+            "cpu_mesh_handle": "sphere-uniform",
+            "cpu_mesh_proxy_handle": ""
+        },
+        "@identifier_component": {
+            "id": "pbr-grid-23"
+        },
+        "@local_transform_component": {
+            "children": [],
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 3.0,
+                    "y": 1.0,
+                    "z": 4.0
+                }
+            },
+            "local_scale": {
+                "x": 0.5,
+                "y": 0.5,
+                "z": 0.5
+            },
+            "parent": 0
+        },
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "pure-metallic",
+            "receive_shadow": true,
+            "uniform_overrides": {
+                "u_metallic": 0.75,
+                "u_roughness": 1.0
+            }
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "sphere-uniform"
+        }
+    },
+    "29": {
+        "@geometry_component": {
+            "cpu_mesh_handle": "sphere-uniform",
+            "cpu_mesh_proxy_handle": ""
+        },
+        "@identifier_component": {
+            "id": "pbr-grid-24"
+        },
+        "@local_transform_component": {
+            "children": [],
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 4.0,
+                    "y": 1.0,
+                    "z": 4.0
+                }
+            },
+            "local_scale": {
+                "x": 0.5,
+                "y": 0.5,
+                "z": 0.5
+            },
+            "parent": 0
+        },
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "pure-metallic",
+            "receive_shadow": true,
+            "uniform_overrides": {
+                "u_metallic": 1.0,
+                "u_roughness": 1.0
+            }
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "sphere-uniform"
+        }
+    },
+    "3": {
+        "@cubemap_component": {
+            "force_draw": false,
+            "ibl_irradiance_cubemap": "default-irradiance-cubemap",
+            "ibl_radiance_cubemap": "default-radiance-cubemap"
+        },
+        "@identifier_component": {
+            "id": "ibl-cubemap"
+        },
+        "@local_transform_component": {
+            "children": [],
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                }
+            },
+            "local_scale": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "parent": 0
+        }
+    },
+    "4": {
+        "@identifier_component": {
+            "id": "debug_renderer-4"
+        },
+        "@local_transform_component": {
+            "children": [],
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                }
+            },
+            "local_scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "parent": 0
+        },
+        "@material_component": {
+            "cast_shadow": false,
+            "material_handle": "debug-renderer-material",
+            "receive_shadow": false,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "debug-renderer"
+        }
+    },
+    "5": {
+        "@geometry_component": {
+            "cpu_mesh_handle": "sphere-uniform",
+            "cpu_mesh_proxy_handle": ""
+        },
+        "@identifier_component": {
+            "id": "pbr-grid-0"
+        },
+        "@local_transform_component": {
+            "children": [],
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 0.0,
+                    "y": 1.0,
+                    "z": 0.0
+                }
+            },
+            "local_scale": {
+                "x": 0.5,
+                "y": 0.5,
+                "z": 0.5
+            },
+            "parent": 0
+        },
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "pure-metallic",
+            "receive_shadow": true,
+            "uniform_overrides": {
+                "u_metallic": 0.0,
+                "u_roughness": 0.0
+            }
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "sphere-uniform"
+        }
+    },
+    "6": {
+        "@geometry_component": {
+            "cpu_mesh_handle": "sphere-uniform",
+            "cpu_mesh_proxy_handle": ""
+        },
+        "@identifier_component": {
+            "id": "pbr-grid-1"
+        },
+        "@local_transform_component": {
+            "children": [],
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 1.0,
+                    "y": 1.0,
+                    "z": 0.0
+                }
+            },
+            "local_scale": {
+                "x": 0.5,
+                "y": 0.5,
+                "z": 0.5
+            },
+            "parent": 0
+        },
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "pure-metallic",
+            "receive_shadow": true,
+            "uniform_overrides": {
+                "u_metallic": 0.25,
+                "u_roughness": 0.0
+            }
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "sphere-uniform"
+        }
+    },
+    "7": {
+        "@geometry_component": {
+            "cpu_mesh_handle": "sphere-uniform",
+            "cpu_mesh_proxy_handle": ""
+        },
+        "@identifier_component": {
+            "id": "pbr-grid-2"
+        },
+        "@local_transform_component": {
+            "children": [],
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 2.0,
+                    "y": 1.0,
+                    "z": 0.0
+                }
+            },
+            "local_scale": {
+                "x": 0.5,
+                "y": 0.5,
+                "z": 0.5
+            },
+            "parent": 0
+        },
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "pure-metallic",
+            "receive_shadow": true,
+            "uniform_overrides": {
+                "u_metallic": 0.5,
+                "u_roughness": 0.0
+            }
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "sphere-uniform"
+        }
+    },
+    "8": {
+        "@geometry_component": {
+            "cpu_mesh_handle": "sphere-uniform",
+            "cpu_mesh_proxy_handle": ""
+        },
+        "@identifier_component": {
+            "id": "pbr-grid-3"
+        },
+        "@local_transform_component": {
+            "children": [],
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 3.0,
+                    "y": 1.0,
+                    "z": 0.0
+                }
+            },
+            "local_scale": {
+                "x": 0.5,
+                "y": 0.5,
+                "z": 0.5
+            },
+            "parent": 0
+        },
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "pure-metallic",
+            "receive_shadow": true,
+            "uniform_overrides": {
+                "u_metallic": 0.75,
+                "u_roughness": 0.0
+            }
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "sphere-uniform"
+        }
+    },
+    "9": {
+        "@geometry_component": {
+            "cpu_mesh_handle": "sphere-uniform",
+            "cpu_mesh_proxy_handle": ""
+        },
+        "@identifier_component": {
+            "id": "pbr-grid-4"
+        },
+        "@local_transform_component": {
+            "children": [],
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 4.0,
+                    "y": 1.0,
+                    "z": 0.0
+                }
+            },
+            "local_scale": {
+                "x": 0.5,
+                "y": 0.5,
+                "z": 0.5
+            },
+            "parent": 0
+        },
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "pure-metallic",
+            "receive_shadow": true,
+            "uniform_overrides": {
+                "u_metallic": 1.0,
+                "u_roughness": 0.0
+            }
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "sphere-uniform"
+        }
+    }
+}

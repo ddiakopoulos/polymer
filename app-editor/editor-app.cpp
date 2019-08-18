@@ -49,6 +49,24 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
     global_debug_mesh_manager::get()->initialize_resources(&the_entity_system_manager, &the_scene);
 
     gizmo.reset(new gizmo_controller(&the_scene));
+
+    //for (uint32_t y = 0; y < 5; y++)
+    //{
+    //    for (uint32_t x = 0; x < 5; x++)
+    //    {
+    //        const transform pose = transform(float3((float) x, 1.f, (float) y));
+    //        const float3 scale(0.5f);
+    //        const std::string name = "pbr-grid-" + std::to_string((y * 5) + x);
+    //        const entity e = make_standard_scene_object(&the_entity_system_manager, &the_scene,
+    //            name, pose, scale, material_handle(material_library::kDefaultMaterialId), "sphere-uniform", "sphere-uniform");
+    //
+    //        const float y_step = (1.f / 4.f) * y;
+    //        const float x_step = (1.f / 4.f) * x;
+    //
+    //        the_scene.render_system->get_material_component(e)->override_table.table["u_roughness"] = polymer::property<float>(y_step);
+    //        the_scene.render_system->get_material_component(e)->override_table.table["u_metallic"] = polymer::property<float>(x_step);
+    //    }
+    //}
 }
 
 void scene_editor_app::on_drop(std::vector<std::string> filepaths)
