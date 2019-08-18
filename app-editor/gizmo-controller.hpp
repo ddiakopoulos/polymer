@@ -25,6 +25,7 @@ class gizmo_controller
     bool started_dragging{ false };
     simple_cpu_timer cooldown_timer;
     bool gizmo_active{ false };
+    bool move_flag{ false };
 
     scene * the_scene{ nullptr };
 
@@ -110,14 +111,17 @@ public:
         compute_entity_transform();
     }
 
-    void refresh()
-    {
-        compute_entity_transform();
-    }
+    void refresh() { compute_entity_transform(); }
+    bool active() const { return gizmo_active; }
 
-    bool active() const
-    {
-        return gizmo_active;
+    bool moved() 
+    { 
+        if (move_flag)
+        {
+            move_flag = false;
+            return true;
+        }
+        return false; 
     }
 
     void on_input(const app_input_event & event)
@@ -142,6 +146,7 @@ public:
         if (gizmo_transform != previous_gizmo_transform)
         {
             gizmo_active = true;
+            move_flag = true;
 
             // For each selected entity... 
             for (int i = 0; i < selected_entities.size(); ++i)
@@ -168,7 +173,6 @@ public:
                     get_transform_system()->set_local_transform(e, updated_pose, local_scale);
                 }
             }
-
             previous_gizmo_transform = gizmo_transform;
         }
 
