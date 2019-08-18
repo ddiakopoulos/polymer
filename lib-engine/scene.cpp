@@ -12,13 +12,17 @@ using namespace polymer;
 
 render_component polymer::assemble_render_component(scene & the_scene, const entity e)
 {
-    render_component r(e);
-    r.material = the_scene.render_system->get_material_component(e);
-    r.mesh = the_scene.render_system->get_mesh_component(e);
-    r.world_transform = const_cast<world_transform_component*>(the_scene.xform_system->get_world_transform(e));
-    r.local_transform = const_cast<local_transform_component*>(the_scene.xform_system->get_local_transform(e));
-    r.render_sort_order = the_scene.render_system->get_render_priority(e);
-    return r;
+    if (e != kInvalidEntity)
+    {
+        render_component r(e);
+        r.material = the_scene.render_system->get_material_component(e);
+        r.mesh = the_scene.render_system->get_mesh_component(e);
+        r.world_transform = const_cast<world_transform_component*>(the_scene.xform_system->get_world_transform(e));
+        r.local_transform = const_cast<local_transform_component*>(the_scene.xform_system->get_local_transform(e));
+        r.render_sort_order = the_scene.render_system->get_render_priority(e);
+        return r;
+    }
+    else return render_component(e);
 }
 
 entity polymer::make_standard_scene_object(entity_system_manager * esm, scene * the_scene,

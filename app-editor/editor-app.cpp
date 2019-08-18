@@ -177,7 +177,6 @@ void scene_editor_app::on_input(const app_input_event & event)
             if (gizmo->moved())
             {
                 the_scene.collision_system->queue_acceleration_rebuild();
-                std::cout << "Queued rebuild..." << std::endl;
             }
         }
     }
@@ -377,7 +376,8 @@ void scene_editor_app::on_draw()
             }
         }
 
-        renderer_payload.render_components.push_back(assemble_render_component(the_scene, global_debug_mesh_manager::get()->get_entity()));
+        const auto debug_renderer_entity = assemble_render_component(the_scene, global_debug_mesh_manager::get()->get_entity());
+        if (debug_renderer_entity.get_entity() != kInvalidEntity) renderer_payload.render_components.push_back(debug_renderer_entity);
 
         // Add single-viewport camera
         renderer_payload.views.push_back(view_data(0, cam.pose, projectionMatrix));
@@ -534,12 +534,20 @@ void scene_editor_app::on_draw()
         menu.end();
 
         menu.begin("Create");
-        if (menu.item("entity")) 
+        if (menu.item("basic entity")) 
         {
             std::vector<entity> list = { the_scene.track_entity(the_entity_system_manager.create_entity()) };
             the_scene.xform_system->create(list[0], transform());
             the_scene.identifier_system->create(list[0], "new entity (" + std::to_string(list[0]) + ")");
             gizmo->set_selection(list); // Newly spawned objects are selected by default
+        }
+        if (menu.item("renderable entity"))
+        {
+            const std::string name = "new renderable entity";
+            const entity e = make_standard_scene_object(&the_entity_system_manager, &the_scene,
+                name, {}, float3(1.f), material_handle(material_library::kDefaultMaterialId), "cube-uniform", "cube-uniform");
+            std::vector<entity> list = { e };
+            gizmo->set_selection(list);
         }
         menu.end();
 

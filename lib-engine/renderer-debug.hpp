@@ -19,7 +19,7 @@ namespace polymer
         struct Vertex { float3 position; float3 color; };
         std::vector<Vertex> vertices;
 
-        entity dbg_renderer_ent;
+        entity dbg_renderer_ent{ kInvalidEntity };
         std::shared_ptr<polymer_procedural_material> debug_renderer_material;
 
     public:
