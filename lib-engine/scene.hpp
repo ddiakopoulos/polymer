@@ -3,17 +3,15 @@
 #ifndef polymer_scene_hpp
 #define polymer_scene_hpp
 
-#include "geometry.hpp"
-
 #include "gl-api.hpp"
 #include "gl-mesh-util.hpp"
-#include "gl-camera.hpp"
 #include "gl-procedural-sky.hpp"
 
 #include "renderer-uniforms.hpp"
 #include "material.hpp"
 #include "material-library.hpp"
 #include "asset-handle-utils.hpp"
+#include "geometry.hpp"
 
 #include "ecs/typeid.hpp"
 #include "ecs/core-ecs.hpp"

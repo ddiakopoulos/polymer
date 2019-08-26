@@ -8,10 +8,11 @@
  */
 
 #include "lib-polymer.hpp"
-#include "gl-camera.hpp"
+
 #include "gl-texture-view.hpp"
 #include "gl-renderable-grid.hpp"
 
+#include "camera-controllers.hpp"
 #include "shader-library.hpp"
 #include "scene.hpp"
 
@@ -40,7 +41,7 @@ raycast_result raycast(const sample_object & obj, const ray & worldRay)
 struct sample_gl_render_offscreen final : public polymer_app
 {
     perspective_camera cam;
-    fps_camera_controller flycam;
+    camera_controller_fps flycam;
 
     std::unique_ptr<simple_texture_view> view;
     gl_shader_monitor shader_mon{ "../../assets/" };

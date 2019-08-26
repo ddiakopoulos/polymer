@@ -100,6 +100,7 @@
     <ClInclude Include="bullet_engine.hpp" />
     <ClInclude Include="bullet_object.hpp" />
     <ClInclude Include="bullet_utils.hpp" />
+    <ClInclude Include="camera-controllers.hpp" />
     <ClInclude Include="ecs\component-pool.hpp" />
     <ClInclude Include="ecs\core-ecs.hpp" />
     <ClInclude Include="ecs\core-events.hpp" />
@@ -110,7 +111,7 @@
     <ClInclude Include="openvr-hmd.hpp" />
     <ClInclude Include="gfx\gl\gl-api.hpp" />
     <ClInclude Include="gfx\gl\gl-async-gpu-timer.hpp" />
-    <ClInclude Include="gfx\gl\gl-camera.hpp" />
+    <ClInclude Include="gfx\gl\gl-camera-utils.hpp" />
     <ClInclude Include="gfx\gl\gl-gizmo.hpp" />
     <ClInclude Include="gfx\gl\gl-imgui.hpp" />
     <ClInclude Include="gfx\gl\gl-loaders.hpp" />

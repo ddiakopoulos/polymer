@@ -13,7 +13,6 @@
  */
 
 #include "lib-polymer.hpp"
-#include "gl-camera.hpp"
 #include "gl-texture-view.hpp"
 
 using namespace polymer;

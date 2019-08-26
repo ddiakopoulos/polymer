@@ -22,6 +22,7 @@
 #include "arcball.hpp"
 #include "asset-resolver.hpp"
 #include "ui-actions.hpp"
+#include "camera-controllers.hpp"
 
 #include "material-editor.hpp"
 #include "asset-browser.hpp"
@@ -30,7 +31,7 @@
 struct scene_editor_app final : public polymer_app
 {
     perspective_camera cam;
-    fps_camera_controller flycam;
+    camera_controller_fps flycam;
     profiler<simple_cpu_timer> editorProfiler;
     gl_shader_monitor shaderMonitor { "../assets/" };
     gl_renderable_grid grid{ 1.f, 512, 512 };

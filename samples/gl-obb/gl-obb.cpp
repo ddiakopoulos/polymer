@@ -1,9 +1,11 @@
 #include "lib-polymer.hpp"
 
-#include "gl-camera.hpp"
+#include "camera-controllers.hpp"
+
 #include "gl-texture-view.hpp"
 #include "gl-gizmo.hpp"
 #include "gl-imgui.hpp"
+
 #include <sstream>
 
 using namespace polymer;
@@ -36,7 +38,7 @@ using namespace gui;
 struct sample_gl_obb final : public polymer_app
 {
     perspective_camera cam;
-    fps_camera_controller flycam;
+    camera_controller_fps flycam;
     uniform_random_gen gen;
 
     std::unique_ptr<imgui_instance> imgui;

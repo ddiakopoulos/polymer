@@ -8,8 +8,10 @@
  */
 
 #include "lib-polymer.hpp"
+
+#include "camera-controllers.hpp"
+
 #include "gl-loaders.hpp"
-#include "gl-camera.hpp"
 #include "gl-renderable-grid.hpp"
 #include "gl-gizmo.hpp"
 #include "gl-mesh-util.hpp"
@@ -110,7 +112,7 @@ public:
 struct sample_gl_camera_trajectory final : public polymer_app
 {
     perspective_camera debug_cam, follow_cam;
-    fps_camera_controller fly_controller;
+    camera_controller_fps fly_controller;
 
     gl_renderable_grid grid_ctrl{ 2.f, 8, 8 };
     gl_renderable_grid grid_world{ 1.f, 32, 32};

@@ -10,11 +10,14 @@
 */
 
 #include "lib-polymer.hpp"
+
 #include "gl-loaders.hpp"
 #include "gl-gizmo.hpp"
 #include "gl-nvg.hpp"
 #include "gl-imgui.hpp"
 #include "gl-renderable-grid.hpp"
+
+#include "camera-controllers.hpp"
 #include "shader-library.hpp"
 #include "scene.hpp"
 
@@ -44,206 +47,6 @@ constexpr const char textured_frag[] = R"(#version 330
         f_color = texture(s_texture, vec2(v_texcoord.x, v_texcoord.y));
     }
 )";
-
-class orbit_camera
-{
-    linalg::aliases::float3 make_direction_vector(const float yaw, const float pitch) const
-    {
-        return { cos(pitch) * cos(yaw), sin(pitch), cos(pitch) * sin(yaw) };
-    }
-
-    struct delta_state
-    {
-        float delta_zoom{ 0.f };
-        float delta_pan_x{ 0.f };
-        float delta_pan_y{ 0.f };
-        float delta_yaw{ 0.f };
-        float delta_pitch{ 0.f };
-    };
-
-    struct frame_rh
-    {
-        linalg::aliases::float3 zDir, xDir, yDir;
-        frame_rh() = default;
-        frame_rh(const linalg::aliases::float3 & eyePoint, const linalg::aliases::float3 & target, const linalg::aliases::float3 & worldUp = { 0,1,0 })
-        {
-            zDir = normalize(eyePoint - target);
-            xDir = normalize(cross(worldUp, zDir));
-            yDir = cross(zDir, xDir);
-        }
-    };
-
-    float yaw{ 0.f };
-    float pitch{ 0.f };
-    frame_rh f;
-
-    linalg::aliases::float3 eye{ 0, 300, 300 };
-    linalg::aliases::float3 target{ 0, 0, 0 };
-
-    bool ml = 0, mr = 0;
-    linalg::aliases::float2 last_cursor{ 0.f, 0.f };
-
-    float zoom_scale = 5.f;
-    float pan_scale = 0.1f;
-    float rotate_scale = 0.0025f;
-
-    float focus = 10.f;
-
-    bool hasUpdatedInput{ false };
-
-public:
-
-    delta_state delta;
-    float yfov{ 1.f }, near_clip{ 0.01f }, far_clip{ 512.f };
-
-    orbit_camera() { set_target(target); }
-
-    void set_target(const linalg::aliases::float3 & new_target)
-    {
-        target = new_target;
-        const linalg::aliases::float3 lookat = normalize(eye - target);
-        pitch = asinf(lookat.y);
-        yaw = acosf(lookat.x);
-        f = frame_rh(eye, target);
-        // set focus? 
-    }
-
-    void set_eye_position(const linalg::aliases::float3 & new_eye)
-    {
-        eye = new_eye;
-        f = frame_rh(eye, target);
-    }
-
-    void handle_input(const app_input_event & e)
-    {
-        if (e.type == app_input_event::Type::SCROLL)
-        {
-            delta.delta_zoom = (-e.value[1]) * zoom_scale;
-        }
-        else if (e.type == app_input_event::MOUSE)
-        {
-            if (e.value[0] == GLFW_MOUSE_BUTTON_LEFT) ml = e.is_down();
-            else if (e.value[0] == GLFW_MOUSE_BUTTON_RIGHT) mr = e.is_down();
-        }
-        else if (e.type == app_input_event::CURSOR)
-        {
-            const linalg::aliases::float2 delta_cursor = e.cursor - last_cursor;
-
-            if (mr)
-            {
-                if (e.mods & GLFW_MOD_SHIFT)
-                {
-                    delta.delta_pan_x = delta_cursor.x * pan_scale;
-                    delta.delta_pan_y = delta_cursor.y * pan_scale;
-                }
-                else
-                {
-                    delta.delta_yaw = delta_cursor.x * rotate_scale;
-                    delta.delta_pitch = delta_cursor.y * rotate_scale;
-                }
-            }
-            last_cursor = e.cursor;
-        }
-
-    }
-
-    void update(const float timestep, const float speed = 1.f)
-    {
-        if (delta.delta_pan_x != 0.f ||
-            delta.delta_pan_y != 0.f ||
-            delta.delta_yaw != 0.f ||
-            delta.delta_pitch != 0.f ||
-            delta.delta_zoom != 0.f) hasUpdatedInput = true;
-        else hasUpdatedInput = false;
-
-        if (should_update())
-        {
-            // Rotate
-            {
-                yaw += delta.delta_yaw;
-                pitch += delta.delta_pitch;
-
-                pitch = clamp(pitch, ((float)-POLYMER_PI / 2.f) + 0.1f, ((float)POLYMER_PI / 2.f) - 0.1f);
-                yaw = std::fmod(yaw, (float) POLYMER_TAU);
-
-                const linalg::aliases::float3 lookvec = normalize(make_direction_vector(yaw, pitch));
-                const linalg::aliases::float3 eye_point = (lookvec * focus);
-
-                eye = eye_point + target;
-                f = frame_rh(eye, target);
-            }
-
-            // Pan
-            {
-                const linalg::aliases::float3 local_y = -normalize(f.yDir);
-                const linalg::aliases::float3 flat_x = normalize(f.xDir * linalg::aliases::float3(1, 0, 1));
-                const linalg::aliases::float3 delta_pan_offset = (flat_x * -delta.delta_pan_x) + (local_y * -delta.delta_pan_y);
-                target += delta_pan_offset;
-            }
-
-            // Zoom / Eye Distance
-            focus += (delta.delta_zoom);
-            focus = std::max(0.1f, std::min(focus, 1024.f));
-
-            // Reset delta state
-            delta.delta_yaw = 0.f;
-            delta.delta_pitch = 0.f;
-            delta.delta_pan_x = 0.f;
-            delta.delta_pan_y = 0.f;
-            delta.delta_zoom = 0.f;
-        }
-    }
-
-    bool should_update(const float threshhold = 1e-3) const
-    {
-        if (std::abs(delta.delta_yaw) > threshhold) return true;
-        if (std::abs(delta.delta_pitch) > threshhold) return true;
-        if (std::abs(delta.delta_pan_x) > threshhold) return true;
-        if (std::abs(delta.delta_pan_y) > threshhold) return true;
-        if (std::abs(delta.delta_zoom) > threshhold) return true;
-        return false;
-    }
-
-    float3 get_target() const
-    {
-        return target;
-    }
-
-    void set_transform(const float4x4 & m) 
-    {
-        // todo 
-        // eye = m.z.xyz();
-    }
-
-    void set_yfov(float fov_radians)
-    {
-        yfov = fov_radians;
-    }
-
-    transform get_transform() const
-    {
-        transform t;
-        t.position = eye;
-        t.orientation = normalize(make_rotation_quat_from_rotation_matrix({ f.xDir, f.yDir, f.zDir }));
-        return t;
-    }
-
-    float4x4 get_view_matrix() const
-    {
-        transform view = get_transform();
-        return view.view_matrix();
-    }
-
-    float4x4 get_projection_matrix(const float aspect) const
-    { 
-        return matrix_xform::perspective(yfov, aspect, near_clip, far_clip);
-    }
-
-    float4x4 get_viewproj_matrix(const float aspect) const
-    { 
-        return get_projection_matrix(aspect) * get_view_matrix(); 
-    }
-};
 
 class gl_projective_texture
 {
@@ -287,7 +90,7 @@ public:
 
 struct sample_gl_debug_ui final : public polymer_app
 {
-    orbit_camera cam;
+    camera_controller_orbit cam;
 
     gl_renderable_grid grid{ 0.5f, 24, 24 };
     int which_cookie = 0;

@@ -10,7 +10,6 @@
 #include "timestamp.hpp"
 #include "profiling.hpp"
 
-#include "gl-camera.hpp"
 #include "gl-async-gpu-timer.hpp"
 #include "gl-procedural-sky.hpp"
 

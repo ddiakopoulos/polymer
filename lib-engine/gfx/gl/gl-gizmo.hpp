@@ -3,7 +3,8 @@
 
 #include "util.hpp"
 #include "gl-api.hpp"
-#include "gl-camera.hpp"
+
+#include "camera-controllers.hpp"
 #include "tinygizmo/tiny-gizmo.hpp"
 
 static inline polymer::transform to_linalg(tinygizmo::rigid_transform & t)

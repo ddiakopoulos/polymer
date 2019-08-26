@@ -9,17 +9,19 @@
  */
 
 #include "lib-polymer.hpp"
+
 #include "gl-loaders.hpp"
-#include "gl-camera.hpp"
 #include "gl-renderable-grid.hpp"
 #include "gl-gizmo.hpp"
 #include "gl-mesh-util.hpp"
 #include "gl-procedural-mesh.hpp"
 #include "gl-texture-view.hpp"
+#include "gl-particle-system.hpp"
+
 #include "shader-library.hpp"
 #include "asset-handle.hpp"
 #include "asset-handle-utils.hpp"
-#include "gl-particle-system.hpp"
+
 #include "../lib-model-io/model-io.hpp"
 
 #include <future>
@@ -57,7 +59,7 @@ constexpr const char skybox_frag[] = R"(#version 330
 struct sample_gl_particle_hull final : public polymer_app
 {
     perspective_camera cam;
-    fps_camera_controller flycam;
+    camera_controller_fps flycam;
     app_update_event last_update;
     gl_renderable_grid grid{ 0.5f, 16, 16 };
 

@@ -14,7 +14,7 @@ using namespace polymer;
 struct sample_engine_procedural_scene final : public polymer_app
 {
     perspective_camera cam;
-    fps_camera_controller flycam;
+    camera_controller_fps flycam;
 
     std::unique_ptr<gl_shader_monitor> shaderMonitor;
     std::unique_ptr<entity_system_manager> the_entity_system_manager;

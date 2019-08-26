@@ -35,7 +35,7 @@
 
 #include "gl-api.hpp"
 #include "gl-async-gpu-timer.hpp"
-#include "gl-camera.hpp"
+#include "gl-camera-utils.hpp"
 #include "gl-gizmo.hpp"
 #include "gl-imgui.hpp"
 #include "gl-loaders.hpp"
@@ -47,6 +47,7 @@
 #include "gl-renderable-meshline.hpp"
 #include "gl-texture-view.hpp"
 
+#include "camera-controllers.hpp"
 #include "glfw-app.hpp"
 
 #endif // end polymer_engine_hpp

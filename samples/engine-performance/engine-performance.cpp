@@ -37,7 +37,7 @@ constexpr const char basic_frag[] = R"(#version 330
 struct sample_engine_performance final : public polymer_app
 {
     perspective_camera cam;
-    fps_camera_controller flycam;
+    camera_controller_fps flycam;
 
     std::unique_ptr<imgui_instance> imgui;
     std::unique_ptr<gl_shader_monitor> shaderMonitor;

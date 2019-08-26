@@ -60,9 +60,6 @@
     <ClInclude Include="gfx\gl\gl-async-gpu-timer.hpp">
       <Filter>gfx\gl</Filter>
     </ClInclude>
-    <ClInclude Include="gfx\gl\gl-camera.hpp">
-      <Filter>gfx\gl</Filter>
-    </ClInclude>
     <ClInclude Include="gfx\gl\glfw-app.hpp">
       <Filter>gfx\gl</Filter>
     </ClInclude>
@@ -190,6 +187,10 @@
     <ClInclude Include="..\third_party\imgui\imgui_internal.h">
       <Filter>third-party\imgui</Filter>
     </ClInclude>
+    <ClInclude Include="gfx\gl\gl-camera-utils.hpp">
+      <Filter>gfx\gl</Filter>
+    </ClInclude>
+    <ClInclude Include="camera-controllers.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="gfx">
