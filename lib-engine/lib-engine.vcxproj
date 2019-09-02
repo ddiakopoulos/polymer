@@ -105,6 +105,7 @@
     <ClInclude Include="ecs\core-ecs.hpp" />
     <ClInclude Include="ecs\core-events.hpp" />
     <ClInclude Include="ecs\typeid.hpp" />
+    <ClInclude Include="gfx\gl\gl-particle-system.hpp" />
     <ClInclude Include="hmd-base.hpp" />
     <ClInclude Include="lib-engine.hpp" />
     <ClInclude Include="openvr-camera.hpp" />
@@ -152,6 +153,7 @@
     <ClCompile Include="..\third_party\tinyexr\tinyexr.cc" />
     <ClCompile Include="..\third_party\tinygizmo\tiny-gizmo.cpp" />
     <ClCompile Include="ecs\core-events.cpp" />
+    <ClCompile Include="gfx\gl\gl-particle-system.cpp" />
     <ClCompile Include="scene.cpp" />
     <ClCompile Include="hmd-base.cpp" />
     <ClCompile Include="openvr-camera.cpp" />

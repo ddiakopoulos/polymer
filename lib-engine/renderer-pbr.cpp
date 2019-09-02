@@ -366,6 +366,13 @@ void pbr_renderer::run_forward_pass(std::vector<const render_component *> & rend
     }
 }
 
+void pbr_renderer::run_particle_pass(const view_data & view, const render_payload & scene)
+{
+    if (!scene.particle_system) return;
+    auto & particle_shader = renderPassParticle.get()->get_variant()->shader;
+    scene.particle_system->draw(view.viewMatrix, view.projectionMatrix, particle_shader);
+}
+
 void pbr_renderer::run_post_pass(const view_data & view, const render_payload & scene)
 {
     if (!settings.tonemapEnabled) return;
@@ -660,6 +667,12 @@ void pbr_renderer::render_frame(const render_payload & scene)
         run_forward_pass(render_queue, scene.views[camIdx], scene);
         cpuProfiler.end("run_forward_pass-" + std::to_string(camIdx));
         gpuProfiler.end("run_forward_pass-" + std::to_string(camIdx));
+
+        gpuProfiler.begin("run_particle_pass-" + std::to_string(camIdx));
+        cpuProfiler.begin("run_particle_pass-" + std::to_string(camIdx));
+        run_particle_pass(scene.views[camIdx], scene);
+        cpuProfiler.end("run_particle_pass-" + std::to_string(camIdx));
+        gpuProfiler.end("run_particle_pass-" + std::to_string(camIdx));
 
         glDisable(GL_MULTISAMPLE);
 

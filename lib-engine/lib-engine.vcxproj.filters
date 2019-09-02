@@ -52,6 +52,9 @@
     <ClCompile Include="..\third_party\imgui\imgui_widgets.cpp">
       <Filter>third-party\imgui</Filter>
     </ClCompile>
+    <ClCompile Include="gfx\gl\gl-particle-system.cpp">
+      <Filter>gfx\gl</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="gfx\gl\gl-api.hpp">
@@ -191,6 +194,9 @@
       <Filter>gfx\gl</Filter>
     </ClInclude>
     <ClInclude Include="camera-controllers.hpp" />
+    <ClInclude Include="gfx\gl\gl-particle-system.hpp">
+      <Filter>gfx\gl</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="gfx">

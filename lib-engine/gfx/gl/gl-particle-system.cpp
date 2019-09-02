@@ -2,10 +2,27 @@
 
 using namespace polymer;
 
-gl_particle_system::gl_particle_system(size_t trail_count) : trail(trail_count)
+gl_particle_system::gl_particle_system()
 {
     const float2 triangle_coords[] = { { 0,0 },{ 1,0 },{ 0,1 },{ 0,1 }, {1, 0}, {1, 1} };
     glNamedBufferDataEXT(vertexBuffer, sizeof(triangle_coords), triangle_coords, GL_STATIC_DRAW);
+}
+
+void gl_particle_system::set_trail_count(const size_t trail_count)
+{
+    trail = trail_count;
+}
+
+size_t gl_particle_system::get_trail_count() const
+{
+    return trail;
+}
+
+void gl_particle_system::set_particle_texture(gl_texture_2d && tex)
+{
+    particle_tex = std::move(tex);
+    glTextureParameteriEXT(particle_tex, GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTextureParameteriEXT(particle_tex, GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 }
 
 void gl_particle_system::add_modifier(std::shared_ptr<particle_modifier> modifier)
@@ -13,7 +30,7 @@ void gl_particle_system::add_modifier(std::shared_ptr<particle_modifier> modifie
     particleModifiers.push_back(modifier);
 }
 
-void gl_particle_system::add(const float3 position, const float3 velocity, const float size, const float lifeMs)
+void gl_particle_system::add(const float3 & position, const float3 & velocity, const float size, const float lifeMs)
 {
     particle p;
     p.position = position;
@@ -23,11 +40,13 @@ void gl_particle_system::add(const float3 position, const float3 velocity, const
     particles.emplace_back(p);
 }
 
-void gl_particle_system::update(const float dt, const float3 gravityVec)
+void gl_particle_system::update(const float dt, const float3 & gravityVec)
 {
     if (particles.size() == 0) return;
 
-    // Update
+    elapsed_time_ms += dt;
+
+    // Update simulation
     for (auto & p : particles)
     {
         p.position += p.velocity * dt;
@@ -41,7 +60,7 @@ void gl_particle_system::update(const float dt, const float3 gravityVec)
         modifier->update(particles, dt);
     }
 
-    // Cull
+    // Dead particle culling
     if (!particles.empty())
     {
         auto it = std::remove_if(std::begin(particles), std::end(particles), [](const particle & p)
@@ -58,7 +77,7 @@ void gl_particle_system::update(const float dt, const float3 gravityVec)
         float3 & position = p.position;
         float & sz = p.size;
 
-        // Create a trail using instancing
+        // Create instance particles, with an optional trail
         for (int i = 0; i < (trail + 1); ++i)
         {
             position -= p.velocity * 0.001f;
@@ -66,7 +85,7 @@ void gl_particle_system::update(const float dt, const float3 gravityVec)
 
             instance_data instance;
             instance.position_size = float4(position, sz);
-            instance.color = float4(p.color, 1);
+            instance.color = float4(p.color);
             instances.emplace_back(instance);
         }
     }
@@ -77,9 +96,7 @@ void gl_particle_system::update(const float dt, const float3 gravityVec)
 void gl_particle_system::draw(
     const float4x4 & viewMat, 
     const float4x4 & projMat, 
-    gl_shader & shader, 
-    gl_texture_2d & particle_tex,
-    const float time)
+    gl_shader & shader) const
 {
     if (instances.size() == 0) return;
 
@@ -87,14 +104,21 @@ void gl_particle_system::draw(
 
     const GLboolean wasBlendingEnabled = glIsEnabled(GL_BLEND);
 
+    // GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA // Traditional transparency
+    // GL_ONE, GL_ONE_MINUS_SRC_ALPHA       // Premultiplied transparency
+    // GL_ONE, GL_ONE                       // Additive
+    // GL_ONE_MINUS_DST_COLOR, GL_ONE       // Soft additive
+    // GL_DST_COLOR, GL_ZERO                // Multiplicative
+    // GL_DST_COLOR, GL_SRC_COLOR           // 2x Multiplicative
+
     glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // one-one, additive
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); 
     glDepthMask(GL_FALSE);
 
     shader.uniform("u_modelMatrix", Identity4x4);
     shader.uniform("u_inverseViewMatrix", inverse(viewMat));
     shader.uniform("u_viewProjMat", projMat * viewMat);
-    shader.uniform("u_time", time);
+    shader.uniform("u_time", elapsed_time_ms);
     shader.texture("s_particleTex", 0, particle_tex, GL_TEXTURE_2D);
 
     glBindVertexArray(vao);

@@ -65,7 +65,7 @@ struct sample_gl_particle_hull final : public polymer_app
 
     std::unique_ptr<gl_shader_monitor> shaderMonitor;
 
-    gl_particle_system particle_system{ 0 };
+    gl_particle_system particle_system;
     point_emitter pt_emitter;
     std::shared_ptr<gravity_modifier> grav_mod;
     std::shared_ptr<color_modifier> color_mod;
@@ -77,8 +77,6 @@ struct sample_gl_particle_hull final : public polymer_app
     gl_mesh sphere_mesh;
     gl_shader basic_shader;
     gl_shader sky_shader;
-
-    gl_texture_2d particle_tex;
 
     bool pause{ false };
 
@@ -110,15 +108,16 @@ sample_gl_particle_hull::sample_gl_particle_hull() : polymer_app(1280, 720, "sam
 
     pt_emitter.pose.position = float3(0, 2, 0);
 
-    particle_tex = load_image("../../assets/textures/particle_alt_large.png");
+    gl_texture_2d particle_tex = load_image("../../assets/textures/particle_alt_large.png");
     glTextureParameteriEXT(particle_tex, GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
     glTextureParameteriEXT(particle_tex, GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+    particle_system.set_particle_texture(std::move(particle_tex));
 
     shaderMonitor.reset(new gl_shader_monitor("../../assets"));
 
     shaderMonitor->watch("particle-shader",
-        "../../assets/shaders/prototype/particle_system_vert.glsl",
-        "../../assets/shaders/prototype/particle_system_frag.glsl");
+        "../../assets/shaders/renderer/particle_system_vert.glsl",
+        "../../assets/shaders/renderer/particle_system_frag.glsl");
 
     shaderMonitor->watch("wireframe",
         "../../assets/shaders/wireframe_vert.glsl",
@@ -138,7 +137,7 @@ void sample_gl_particle_hull::on_input(const app_input_event & event)
 {
     flycam.handle_input(event);
 
-    // Pause particle simulation
+    // Pause simulation
     if (event.type == app_input_event::KEY && event.value[0] == GLFW_KEY_SPACE && event.action == GLFW_RELEASE)
     {
         pause = !pause;
@@ -202,7 +201,7 @@ void sample_gl_particle_hull::on_draw()
     // Draw the particle system
     shader_handle particle_shader_h("particle-shader");
     gl_shader & shader = particle_shader_h.get()->get_variant()->shader;
-    particle_system.draw(viewMatrix, projectionMatrix, shader, particle_tex, static_cast<float>(last_update.elapsed_s));
+    particle_system.draw(viewMatrix, projectionMatrix, shader);
 
     if (hullFuture.valid())
     {

@@ -18,7 +18,7 @@ namespace polymer
     {
         float3 position;
         float3 velocity;
-        float3 color{ 1, 1, 1 };
+        float4 color{ 1, 1, 1, 1 };
         float size;
         float lifeMs;
         bool isDead{ false };
@@ -39,7 +39,7 @@ namespace polymer
         {
             for (auto & p : particles)
             {
-                p.color = float3(1, 1, 1);
+                p.color = float4(1, 1, 1, 1);
             }
         }
     };
@@ -129,12 +129,17 @@ namespace polymer
         gl_vertex_array_object vao;
         std::vector<std::shared_ptr<particle_modifier>> particleModifiers;
         size_t trail{ 0 };
+        float elapsed_time_ms{ 0.f };
+        gl_texture_2d particle_tex;
     public:
-        gl_particle_system(size_t trail_count);
-        void update(const float dt, const float3 gravityVec);
+        gl_particle_system();
+        void set_trail_count(const size_t trail_count);
+        size_t get_trail_count() const;
+        void set_particle_texture(gl_texture_2d && tex);
+        void update(const float dt, const float3 & gravityVec);
         void add_modifier(std::shared_ptr<particle_modifier> modifier);
-        void add(const float3 position, const float3 velocity, const float size, const float lifeMs);
-        void draw(const float4x4 & viewMat, const float4x4 & projMat, gl_shader & shader, gl_texture_2d & particle_tex, const float time);
+        void add(const float3 & position, const float3 & velocity, const float size, const float lifeMs);
+        void draw(const float4x4 & viewMat, const float4x4 & projMat, gl_shader & shader) const;
         std::vector<particle> & get() { return particles; }
     };
 

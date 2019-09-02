@@ -12,6 +12,7 @@
 
 #include "gl-async-gpu-timer.hpp"
 #include "gl-procedural-sky.hpp"
+#include "gl-particle-system.hpp"
 
 #include "ecs/typeid.hpp"
 #include "ecs/core-ecs.hpp"
@@ -105,6 +106,7 @@ namespace polymer
         std::vector<point_light_component *> point_lights;
         directional_light_component * sunlight{ nullptr };
         procedural_skybox_component * procedural_skybox{ nullptr };
+        gl_particle_system * particle_system{ nullptr };
         cubemap_component * ibl_cubemap{ nullptr };
         float4 clear_color{ 1, 0, 0, 1 };
         void reset() { *this = render_payload(); }
@@ -141,7 +143,7 @@ namespace polymer
 
         shader_handle renderPassEarlyZ = { "depth-prepass" };
         shader_handle renderPassTonemap = { "post-tonemap" };
-
+        shader_handle renderPassParticle = { "particle-system" };
         shader_handle no_op = { "no-op" };
 
         void update_per_object_uniform_buffer(const transform & p, const float3 & scale, const bool receiveShadow, const view_data & d);
@@ -150,6 +152,7 @@ namespace polymer
         void run_skybox_pass(const view_data & view, const render_payload & scene);
         void run_shadow_pass(const view_data & view, const render_payload & scene);
         void run_forward_pass(std::vector<const render_component *> & render_queue, const view_data & view, const render_payload & scene);
+        void run_particle_pass(const view_data & view, const render_payload & scene);
         void run_post_pass(const view_data & view, const render_payload & scene);
 
     public:

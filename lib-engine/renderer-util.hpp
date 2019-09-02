@@ -118,7 +118,7 @@ namespace polymer
                 base_path + "/shaders/renderer/phong_material_frag.glsl",
                 base_path + "/shaders/renderer");
 
-            // [renderer-pbr] standard gLTF-style PBR forward model 
+            // [renderer-pbr] standard gLTF 2.0-style PBR forward model 
             monitor.watch("pbr-forward-lighting",
                 base_path + "/shaders/renderer/renderer_vert.glsl",
                 base_path + "/shaders/renderer/pbr_material_frag.glsl",
@@ -128,6 +128,11 @@ namespace polymer
             monitor.watch("post-tonemap",
                 base_path + "/shaders/renderer/post_tonemap_vert.glsl",
                 base_path + "/shaders/renderer/post_tonemap_frag.glsl");
+
+            // [renderer-pbr] particle rendering
+            monitor.watch("particle-system",
+                base_path + "/shaders/renderer/particle_system_vert.glsl",
+                base_path + "/shaders/renderer/particle_system_frag.glsl");
         }
         catch (const std::exception & e)
         {
