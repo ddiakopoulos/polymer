@@ -1,6 +1,5 @@
 /*
- * File: samples/engine-ecs-stress.cpp
- * Modified `engine-scene` sample
+ * File: samples/engine-performance.cpp
  */
 
 #include "lib-polymer.hpp"

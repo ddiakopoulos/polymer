@@ -92,7 +92,7 @@ namespace polymer
                     if (iter == resolved.end())
                     {
                         resolved[key] = true;
-                        log::get()->engine_log->info("resolved {} ({})", name, type_id);
+                        log::get()->engine_log->info("resolved: {} ({})", name, type_id);
                         return true;
                     }
                     return false;

@@ -1,5 +1,5 @@
 /*
- * File: samples/engine-procedural-scene.cpp
+ * File: samples/engine-character-controller.cpp
  */
 
 #include "lib-polymer.hpp"
@@ -11,7 +11,7 @@
 
 using namespace polymer;
 
-struct sample_engine_procedural_scene final : public polymer_app
+struct sample_engine_character_controller final : public polymer_app
 {
     perspective_camera cam;
     camera_controller_fps flycam;
@@ -23,8 +23,8 @@ struct sample_engine_procedural_scene final : public polymer_app
     render_payload payload;
     scene the_scene;
 
-    sample_engine_procedural_scene();
-    ~sample_engine_procedural_scene();
+    sample_engine_character_controller();
+    ~sample_engine_character_controller();
 
     void on_window_resize(int2 size) override;
     void on_input(const app_input_event & event) override;
@@ -32,7 +32,7 @@ struct sample_engine_procedural_scene final : public polymer_app
     void on_draw() override;
 };
 
-sample_engine_procedural_scene::sample_engine_procedural_scene() : polymer_app(1280, 720, "sample-engine-procedural-scene")
+sample_engine_character_controller::sample_engine_character_controller() : polymer_app(1280, 720, "sample-engine-character-controller")
 {
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
@@ -49,40 +49,14 @@ sample_engine_procedural_scene::sample_engine_procedural_scene() : polymer_app(1
 
     the_scene.reset(*the_entity_system_manager, {width, height}, true);
 
-    create_handle_for_asset("debug-icosahedron", make_mesh_from_geometry(make_icosasphere(3))); // gpu mesh
-    create_handle_for_asset("debug-icosahedron", make_icosasphere(3)); // cpu mesh
+    create_handle_for_asset("capsule-avatar", make_mesh_from_geometry(make_capsule(24, 1, 2))); 
+    create_handle_for_asset("capsule-avatar", make_capsule(24, 1, 2));
 
-    // This describes how to configure a renderable entity programmatically, at runtime.
-    {
-        // Create a new entity to represent an icosahedron that we will render
-        const entity debug_icosa = the_scene.track_entity(the_entity_system_manager->create_entity());
+    const entity player = make_standard_scene_object(the_entity_system_manager.get(), &the_scene,
+        "player", {}, float3(1.f), material_handle(material_library::kDefaultMaterialId), "capsule-avatar", "capsule-avatar");
 
-        // Give the icosa a name and default transform and scale
-        the_scene.identifier_system->create(debug_icosa, "debug-icosahedron");
-        the_scene.xform_system->create(debug_icosa, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
-
-        // Create mesh component for the gpu mesh.
-        polymer::mesh_component mesh_component(debug_icosa);
-        mesh_component.mesh = gpu_mesh_handle("debug-icosahedron");
-        the_scene.render_system->create(debug_icosa, std::move(mesh_component));
-
-        // Create a geometry for the cpu mesh. This type of mesh is used for raycasting
-        // and collision, so not strictly required for this sample.
-        polymer::geometry_component geom_component(debug_icosa);
-        geom_component.geom = cpu_mesh_handle("debug-icosahedron");
-        the_scene.collision_system->create(debug_icosa, std::move(geom_component));
-
-        // Create material component with a default (normal-mapped) material
-        polymer::material_component material_component(debug_icosa);
-        material_component.material = material_handle(material_library::kDefaultMaterialId);
-        the_scene.render_system->create(debug_icosa, std::move(material_component));
-    
-        // Assemble a render_component (gather components so the renderer does not have to interface
-        // with many systems). Ordinarily this assembly is done per-frame in the update loop, but
-        // this is a fully static scene.
-        render_component debug_icosahedron_renderable = assemble_render_component(the_scene, debug_icosa);
-        payload.render_components.push_back(debug_icosahedron_renderable);
-    }
+    render_component debug_icosahedron_renderable = assemble_render_component(the_scene, player);
+    payload.render_components.push_back(debug_icosahedron_renderable);
 
     cam.look_at({ 0, 0, 2 }, { 0, 0.1f, 0 });
     flycam.set_camera(&cam);
@@ -108,16 +82,16 @@ sample_engine_procedural_scene::sample_engine_procedural_scene() : polymer_app(1
     the_scene.resolver->resolve();
 }
 
-sample_engine_procedural_scene::~sample_engine_procedural_scene() {}
+sample_engine_character_controller::~sample_engine_character_controller() {}
 
-void sample_engine_procedural_scene::on_window_resize(int2 size) {}
+void sample_engine_character_controller::on_window_resize(int2 size) {}
 
-void sample_engine_procedural_scene::on_input(const app_input_event & event)
+void sample_engine_character_controller::on_input(const app_input_event & event)
 {
     flycam.handle_input(event);
 }
 
-void sample_engine_procedural_scene::on_update(const app_update_event & e)
+void sample_engine_character_controller::on_update(const app_update_event & e)
 {
     int width, height;
     glfwGetWindowSize(window, &width, &height);
@@ -125,7 +99,7 @@ void sample_engine_procedural_scene::on_update(const app_update_event & e)
     shaderMonitor->handle_recompile();
 }
 
-void sample_engine_procedural_scene::on_draw()
+void sample_engine_character_controller::on_draw()
 {
     glfwMakeContextCurrent(window);
 
@@ -159,7 +133,7 @@ int main(int argc, char * argv[])
 {
     try
     {
-        sample_engine_procedural_scene app;
+        sample_engine_character_controller app;
         app.main_loop();
     }
     catch (const std::exception & e)

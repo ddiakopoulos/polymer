@@ -1,5 +1,5 @@
 /*
- * File: samples/engine-scene.cpp
+ * File: samples/engine-procedural-material.cpp
  */
 
 #include "lib-polymer.hpp"
