@@ -209,7 +209,7 @@ void sample_engine_performance::on_draw()
     if (show_debug_view)
     {
         std::vector<bvh_node *> selected_subtree;
-        scene.collision_system->scene_accelerator->get_flat_node_list(selected_subtree);
+        scene.collision_system->static_accelerator->get_flat_node_list(selected_subtree);
 
         boxDebugShader->bind();
 

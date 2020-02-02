@@ -5,20 +5,14 @@
 
 using namespace polymer;
 
-struct viewport_t
-{
-    float2 bmin, bmax;
-    GLuint texture;
-};
-
 struct engine_vr_sandbox : public polymer_app
 {
     gl_shader_monitor shaderMonitor{ "../../assets/" };
 
-    std::unique_ptr<openvr_hmd> hmd;
     std::unique_ptr<gui::imgui_instance> desktop_imgui;
     std::unique_ptr<entity_system_manager> the_entity_system_manager;
 
+	std::unique_ptr<openvr_hmd> hmd;
     std::unique_ptr<polymer::xr::xr_input_processor> input_processor;
     std::unique_ptr<polymer::xr::xr_controller_system> controller_system;
     std::unique_ptr<polymer::xr::xr_imgui_system> vr_imgui;

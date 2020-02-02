@@ -53,7 +53,12 @@ engine_vr_sandbox::engine_vr_sandbox()
 
         vr_imgui.reset(new xr_imgui_system(the_entity_system_manager.get(), &the_scene, hmd.get(), input_processor.get(), { 256, 256 }, window));
 
-        gui::make_light_theme();
+        for (const entity & r : vr_imgui->get_renderables())
+        {
+            input_processor->add_focusable(r);
+        }
+
+        the_scene.collision_system->queue_acceleration_rebuild();
     }
     catch (const std::exception & e)
     {
@@ -105,9 +110,9 @@ void engine_vr_sandbox::on_update(const app_update_event & e)
 {
     shaderMonitor.handle_recompile();
 
-    hmd->update();
     the_scene.event_manager->process();
 
+	hmd->update();
     input_processor->process(e.timestep_ms);
     controller_system->process(e.timestep_ms);
     gizmo_system->process(e.timestep_ms);

@@ -168,7 +168,7 @@ void sample_gl_particle_hull::on_draw()
     int width, height;
     glfwGetWindowSize(window, &width, &height);
 
-    if (!pause) particle_system.update(last_update.timestep_ms, float3(0, -1, 0));
+    if (!pause) particle_system.update(last_update.timestep_ms);
 
     glViewport(0, 0, width, height);
     glClearColor(0.25f, 0.25f, 0.25f, 1.0f);
