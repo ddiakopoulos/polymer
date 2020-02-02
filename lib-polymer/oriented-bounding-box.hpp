@@ -97,6 +97,8 @@ namespace polymer
 
         bool is_inside(const float3 & point) const { /* todo */ return false; }
 
+        transform get_transform() const { return transform(orientation, center); }
+
         bool intersects(const oriented_bounding_box & other)
         {
             // Early out using a sphere check

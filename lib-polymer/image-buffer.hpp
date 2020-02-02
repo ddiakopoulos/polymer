@@ -9,6 +9,16 @@
 
 namespace polymer
 {
+	struct camera_intrinsics
+	{
+		int width{ 0 };    // width of the image in pixels
+		int height{ 0 };   // height of the image in pixels
+		float ppx{ 0.f };  // horizontal coordinate of the principal point of the image, as a pixel offset from the left edge
+		float ppy{ 0.f };  // vertical coordinate of the principal point of the image, as a pixel offset from the top edge
+		float fx{ 0.f };   // focal length of the image plane, as a multiple of pixel width
+		float fy{ 0.f };   // focal length of the image plane, as a multiple of pixel height
+	};
+
     template <typename T, int C>
     class image_buffer
     {

@@ -77,8 +77,16 @@ inline void polymer_aligned_free(void * ptr)
 #endif
 }
 
+#include "math-core.hpp"
+
 namespace polymer
 {
+	struct viewport_t
+	{
+		float2 bmin, bmax;
+		uint32_t texture;
+	};
+
     // 32 bit Fowler–Noll–Vo Hash
     inline uint32_t poly_hash_fnv1a(const std::string & str)
     {
@@ -108,7 +116,8 @@ namespace polymer
         scoped_timer(std::string message) : message{ std::move(message) }, t0{ std::chrono::high_resolution_clock::now() } {}
         ~scoped_timer()
         {
-            std::cout << message << " completed in " << std::to_string((std::chrono::duration<float>(std::chrono::high_resolution_clock::now() - t0).count() * 1000)) << " ms" << std::endl;
+			const auto timestamp_ms = (std::chrono::duration<float>(std::chrono::high_resolution_clock::now() - t0).count() * 1000);
+            std::cout << message << " completed in " << std::to_string(timestamp_ms) << " ms" << std::endl;
         }
     };
 

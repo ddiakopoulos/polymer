@@ -23,27 +23,27 @@ namespace polymer
     // Rigid transformation value-type
     struct transform
     {
-        quatf       orientation;    // Orientation of an object, expressed as a rotation quaternion from the base orientation
-        float3      position;       // Position of an object, expressed as a translation vector from the base position
+        quatf     orientation;    // Orientation of an object, expressed as a rotation quaternion from the base orientation
+        float3    position;       // Position of an object, expressed as a translation vector from the base position
 
         transform() : transform({ 0,0,0,1 }, { 0,0,0 }) {}
         transform(const quatf & orientation, const float3 & position) : orientation(orientation), position(position) {}
-        explicit    transform(const quatf & orientation) : transform(orientation, { 0,0,0 }) {}
-        explicit    transform(const float3 & position) : transform({ 0,0,0,1 }, position) {}
+        explicit  transform(const quatf & orientation) : transform(orientation, { 0,0,0 }) {}
+        explicit  transform(const float3 & position) : transform({ 0,0,0,1 }, position) {}
+                  
+        transform inverse() const { auto invOri = linalg::inverse(orientation); return { invOri, qrot(invOri, -position) }; }
+        float4x4  matrix() const { return { { qxdir(orientation),0 },{ qydir(orientation),0 },{ qzdir(orientation),0 },{ position,1 } }; }
+        float4x4  view_matrix() const { return inverse().matrix(); }
+        float3    xdir() const { return qxdir(orientation); } // Equivalent to transform_vector({1,0,0})
+        float3    ydir() const { return qydir(orientation); } // Equivalent to transform_vector({0,1,0})
+        float3    zdir() const { return qzdir(orientation); } // Equivalent to transform_vector({0,0,1})
+                  
+        float3    transform_vector(const float3 & vec) const { return qrot(orientation, vec); }
+        float3    transform_coord(const float3 & coord) const { return position + transform_vector(coord); }
+        float3    detransform_coord(const float3 & coord) const { return detransform_vector(coord - position); }   // Equivalent to inverse().transform_coord(coord), but faster
+        float3    detransform_vector(const float3 & vec) const { return qrot(linalg::inverse(orientation), vec); } // Equivalent to inverse().transform_vector(vec), but faster
 
-        transform   inverse() const { auto invOri = linalg::inverse(orientation); return { invOri, qrot(invOri, -position) }; }
-        float4x4    matrix() const { return { { qxdir(orientation),0 },{ qydir(orientation),0 },{ qzdir(orientation),0 },{ position,1 } }; }
-        float4x4    view_matrix() const { return inverse().matrix(); }
-        float3      xdir() const { return qxdir(orientation); } // Equivalent to transform_vector({1,0,0})
-        float3      ydir() const { return qydir(orientation); } // Equivalent to transform_vector({0,1,0})
-        float3      zdir() const { return qzdir(orientation); } // Equivalent to transform_vector({0,0,1})
-
-        float3      transform_vector(const float3 & vec) const { return qrot(orientation, vec); }
-        float3      transform_coord(const float3 & coord) const { return position + transform_vector(coord); }
-        float3      detransform_coord(const float3 & coord) const { return detransform_vector(coord - position); }    // Equivalent to inverse().transform_coord(coord), but faster
-        float3      detransform_vector(const float3 & vec) const { return qrot(linalg::inverse(orientation), vec); }             // Equivalent to inverse().transform_vector(vec), but faster
-
-        transform   operator * (const transform & pose) const { return{ orientation * pose.orientation, transform_coord(pose.position) }; }
+        transform operator * (const transform & pose) const { return{ orientation * pose.orientation, transform_coord(pose.position) }; }
     };
 
     inline bool operator == (const transform & a, const transform & b) { return (a.position == b.position) && (a.orientation == b.orientation); }
@@ -368,13 +368,13 @@ namespace polymer
     //   transformation construction   //
     /////////////////////////////////////
 
-    // The long form of (a.inverse() * b) 
-    inline transform make_transform_from_to(const transform & a, const transform & b)
+    // The long form of (transform) source.inverse() * target
+    inline transform make_transform_from_to(const transform & source, const transform & target)
     {
         transform ret;
-        const auto inv = inverse(a.orientation);
-        ret.orientation = inv * b.orientation;
-        ret.position = qrot(inv, b.position - a.position);
+        const auto inv = inverse(source.orientation);
+        ret.orientation = inv * target.orientation;
+        ret.position = qrot(inv, target.position - source.position);
         return ret;
     }
 
@@ -400,7 +400,7 @@ namespace polymer
         return p;
     }
 
-    // tofix - this is not correct for parallel transport frames
+    // @tofix - this is not correct for parallel transport frames
     inline transform make_transform_from_matrix(const float4x4 & xform)
     {
         transform p;
