@@ -173,21 +173,21 @@ namespace polymer
         float pitch{ 0.f };
         frame_rh f;
 
-        linalg::aliases::float3 eye{ 0, 300, 300 };
+        linalg::aliases::float3 eye{ 0, 3, 3 };
         linalg::aliases::float3 target{ 0, 0, 0 };
 
-        bool ml = 0, mr = 0;
+        bool ml = 0, mr = 0, mm = 0;
         linalg::aliases::float2 last_cursor{ 0.f, 0.f };
-
-        float zoom_scale = 5.f;
-        float pan_scale = 0.1f;
-        float rotate_scale = 0.0025f;
 
         float focus = 10.f;
 
         bool hasUpdatedInput{ false };
 
     public:
+
+        float zoom_scale = 1.f;
+        float pan_scale = 0.1f;
+        float rotate_scale = 0.0025f;
 
         delta_state delta;
         float yfov{ 1.f }, near_clip{ 0.01f }, far_clip{ 512.f };
@@ -220,6 +220,7 @@ namespace polymer
             {
                 if (e.value[0] == GLFW_MOUSE_BUTTON_LEFT) ml = e.is_down();
                 else if (e.value[0] == GLFW_MOUSE_BUTTON_RIGHT) mr = e.is_down();
+                else if (e.value[0] == GLFW_MOUSE_BUTTON_MIDDLE) mm = e.is_down();
             }
             else if (e.type == app_input_event::CURSOR)
             {
@@ -238,8 +239,16 @@ namespace polymer
                         delta.delta_pitch = delta_cursor.y * rotate_scale;
                     }
                 }
+
+                if (mm)
+                {
+                    delta.delta_pan_x = delta_cursor.x * pan_scale;
+                    delta.delta_pan_y = delta_cursor.y * pan_scale;
+                }
                 last_cursor = e.cursor;
             }
+
+            update(0.0);
 
         }
 
@@ -254,6 +263,10 @@ namespace polymer
 
             if (should_update())
             {
+                // Zoom / Eye Distance
+                focus += (delta.delta_zoom);
+                focus = std::max(0.1f, std::min(focus, 1024.f));
+
                 // Rotate
                 {
                     yaw += delta.delta_yaw;
@@ -276,10 +289,6 @@ namespace polymer
                     const linalg::aliases::float3 delta_pan_offset = (flat_x * -delta.delta_pan_x) + (local_y * -delta.delta_pan_y);
                     target += delta_pan_offset;
                 }
-
-                // Zoom / Eye Distance
-                focus += (delta.delta_zoom);
-                focus = std::max(0.1f, std::min(focus, 1024.f));
 
                 // Reset delta state
                 delta.delta_yaw = 0.f;
