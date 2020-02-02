@@ -17,7 +17,7 @@ namespace polymer
     struct particle
     {
         float3 position;
-        float3 velocity;
+		float3 velocity{ 0, 0, 0 };
         float4 color{ 1, 1, 1, 1 };
         float size;
         float lifeMs;
@@ -115,17 +115,40 @@ namespace polymer
     //   CPU Particle System   //
     /////////////////////////////
 
+	#pragma pack(push, 1)
+    struct instance_data
+    {
+		ALIGNED(16) float4 position_size;
+		ALIGNED(16) float4 color;
+    };
+	#pragma pack(pop)
+
+	template<typename buffer_t>
+	class ping_pong_buffer
+	{
+		buffer_t buffer[2];
+		uint32_t active_ = 0;
+
+	public:
+
+		ping_pong_buffer(const size_t size)
+		{
+			glNamedBufferDataEXT(buffer[0], size * sizeof(instance_data), nullptr, GL_STREAM_DRAW);
+			glNamedBufferDataEXT(buffer[1], size * sizeof(instance_data), nullptr, GL_STREAM_DRAW);
+		}
+
+		void swap() { active_ = 1 - active_; }
+		buffer_t & current() { return { buffer[active_] }; }
+		buffer_t & previous() { return { buffer[1 - active_] }; }
+	};
+
     class gl_particle_system
     {
-        struct instance_data
-        {
-            float4 position_size;
-            float4 color;
-        };
-
         std::vector<particle> particles;
         std::vector<instance_data> instances;
-        gl_buffer vertexBuffer, instanceBuffer;
+		std::unique_ptr<ping_pong_buffer<gl_buffer>> instanceBuffers;
+
+        gl_buffer vertexBuffer;
         gl_vertex_array_object vao;
         std::vector<std::shared_ptr<particle_modifier>> particleModifiers;
         size_t trail{ 0 };
@@ -136,16 +159,18 @@ namespace polymer
         void set_trail_count(const size_t trail_count);
         size_t get_trail_count() const;
         void set_particle_texture(gl_texture_2d && tex);
-        void update(const float dt, const float3 & gravityVec);
+        void update(const float dt);
         void add_modifier(std::shared_ptr<particle_modifier> modifier);
         void add(const float3 & position, const float3 & velocity, const float size, const float lifeMs);
-        void draw(const float4x4 & viewMat, const float4x4 & projMat, gl_shader & shader) const;
+		void add(const float3 & position, const float4 & color, const float size);
+		void clear();
+        void draw(const float4x4 & viewMat, const float4x4 & projMat, gl_shader & shader, const bool should_swap = true) const;
         std::vector<particle> & get() { return particles; }
     };
 
-    ///////////////////////////
-    //   Particle Emitters   //
-    ///////////////////////////
+    //////////////////
+    //   emitters   //
+    //////////////////
 
     struct particle_emitter
     {
