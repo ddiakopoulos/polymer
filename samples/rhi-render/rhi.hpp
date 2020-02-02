@@ -11,17 +11,19 @@
 
 struct GLFWwindow;
 
-/* rhi - todo
- * [ ] instancing
- * [ ] swapchain
- * [ ] blits
- * [ ] async
- * [ ] draw indirect buffers
- * [ ] compute indirect buffers
- * [ ] compressed texture formats
- * [ ] device capabilities (memory, etc)
- * [ ] profile begin/end (like bgfx)
- * [ ] threading strategy
+/* 
+ * todo: render hardware interface api
+ * ==============================================
+ * [] instancing
+ * [] swapchain
+ * [] blits
+ * [] async
+ * [] draw indirect buffers
+ * [] compute indirect buffers
+ * [] compressed texture formats
+ * [] device capabilities (memory, etc)
+ * [] profile begin/end (like bgfx)
+ * [] threading strategy
  */
 
 namespace polymer {

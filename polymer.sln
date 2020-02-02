@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27130.0
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29009.5
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lib-polymer", "lib-polymer\lib-polymer.vcxproj", "{992E85A7-B590-477B-A1B2-8A04AAAD0E10}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -61,8 +61,6 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gl-obb", "samples\gl-obb\gl-obb.vcxproj", "{BB5A2189-E348-4B7B-B642-489D8F36A00A}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "engine-character-controller", "samples\engine-character-controller\engine-character-controller.vcxproj", "{782062E3-356B-4D7C-8DC1-B8EF02FB4FC3}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gl-coordinate-system", "samples\gl-coordinate-system\gl-coordinate-system.vcxproj", "{B3D652FD-0B7F-4DF3-9824-A66C85B9A36C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -166,10 +164,6 @@ Global
 		{782062E3-356B-4D7C-8DC1-B8EF02FB4FC3}.Debug|x64.Build.0 = Debug|x64
 		{782062E3-356B-4D7C-8DC1-B8EF02FB4FC3}.Release|x64.ActiveCfg = Release|x64
 		{782062E3-356B-4D7C-8DC1-B8EF02FB4FC3}.Release|x64.Build.0 = Release|x64
-		{B3D652FD-0B7F-4DF3-9824-A66C85B9A36C}.Debug|x64.ActiveCfg = Debug|x64
-		{B3D652FD-0B7F-4DF3-9824-A66C85B9A36C}.Debug|x64.Build.0 = Debug|x64
-		{B3D652FD-0B7F-4DF3-9824-A66C85B9A36C}.Release|x64.ActiveCfg = Release|x64
-		{B3D652FD-0B7F-4DF3-9824-A66C85B9A36C}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -199,7 +193,6 @@ Global
 		{12628B4B-9C5C-4453-9745-E5FB26D2DF44} = {0B054E41-2F3E-4230-8488-B44C3643F315}
 		{BB5A2189-E348-4B7B-B642-489D8F36A00A} = {0B054E41-2F3E-4230-8488-B44C3643F315}
 		{782062E3-356B-4D7C-8DC1-B8EF02FB4FC3} = {0B054E41-2F3E-4230-8488-B44C3643F315}
-		{B3D652FD-0B7F-4DF3-9824-A66C85B9A36C} = {0B054E41-2F3E-4230-8488-B44C3643F315}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {E2D0793D-BD41-4F42-A6AA-DAB3D17A46BE}
