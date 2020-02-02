@@ -72,6 +72,12 @@ struct vr_controller
     std::unordered_map<vr_button, vr_button_state> buttons;
 };
 
+
+struct vr_tracker
+{
+	transform t;
+};
+
 vr_button get_button_id_for_vendor(const uint32_t which_button, const vr_input_vendor vendor);
 
 ////////////////////////////

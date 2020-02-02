@@ -98,7 +98,10 @@ namespace xr {
         xr_input_focus get_focus() const;
         void process(const float dt);
 
-        void add_focusable(const entity focusable);
+        void add_focusable(const entity focusable)
+        {
+            focusable_entities.push_back(focusable);
+        }
 
         // The dominant hand changes depending on which controller last pressed the primary trigger.
         // This function can pin the dominant hand. For instance, if we attach some 

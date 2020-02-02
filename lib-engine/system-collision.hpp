@@ -34,8 +34,10 @@ namespace polymer
 
     public:
 
-        std::unique_ptr<bvh_tree> scene_accelerator;
-        std::vector<scene_object> bvh_objects;
+        std::unique_ptr<bvh_tree> static_accelerator;
+        std::unique_ptr<bvh_tree> dynamic_accelerator;
+
+        std::vector<scene_object> collidable_objects;
 
         collision_system(entity_system_manager * esm) : base_system(esm)
         {
@@ -71,8 +73,10 @@ namespace polymer
             entity hit_entity = kInvalidEntity;
             raycast_result out_result;
             std::vector<std::pair<scene_object*, float>> box_hit_results;
-            if (scene_accelerator->intersect(world_ray, box_hit_results))
+            if (static_accelerator->intersect(world_ray, box_hit_results))
             {
+                std::cout << "Did we intersect? " << std::endl;
+
                 float mesh_best_t = std::numeric_limits<float>::max();
 
                 for (auto & box_hit : box_hit_results)
@@ -130,12 +134,13 @@ namespace polymer
 
         void queue_acceleration_rebuild()
         {
-            scene_accelerator.reset();
+            static_accelerator.reset();
+            dynamic_accelerator.reset();
         }
 
         void setup_acceleration()
         {
-            if (!scene_accelerator)
+            if (!static_accelerator)
             {
                 if (!xform_system)
                 {
@@ -144,7 +149,7 @@ namespace polymer
                     assert(xform_system != nullptr);
                 }
 
-                scene_accelerator.reset(new bvh_tree());
+                static_accelerator.reset(new bvh_tree());
 
                 /// @todo - parallelizable
                 for (auto & m : meshes)
@@ -167,15 +172,15 @@ namespace polymer
                     scene_object obj;
                     obj.bounds = world_bounds;
                     obj.user_data = &m.second;
-                    bvh_objects.emplace_back(std::move(obj));
+                    collidable_objects.emplace_back(std::move(obj));
                 }
 
-                for (int i = 0; i < bvh_objects.size(); ++i)
+                for (int i = 0; i < collidable_objects.size(); ++i)
                 {
-                    scene_accelerator->add(&bvh_objects[i]);
+                    static_accelerator->add(&collidable_objects[i]);
                 }
 
-                scene_accelerator->build();
+                static_accelerator->build();
             }
         }
 
@@ -183,7 +188,7 @@ namespace polymer
         {
             setup_acceleration();
 
-            auto visible_bvh_nodes = scene_accelerator->find_visible_nodes(camera_frustum);
+            auto visible_bvh_nodes = static_accelerator->find_visible_nodes(camera_frustum);
 
             std::vector<entity> visible_entities;
             for (auto & n : visible_bvh_nodes)

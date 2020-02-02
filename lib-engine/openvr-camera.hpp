@@ -12,16 +12,6 @@
 
 namespace polymer
 {
-    struct camera_intrinsics
-    {
-        int width;  // width of the image in pixels
-        int height; // height of the image in pixels
-        float ppx;  // horizontal coordinate of the principal point of the image, as a pixel offset from the left edge
-        float ppy;  // vertical coordinate of the principal point of the image, as a pixel offset from the top edge
-        float fx;   // focal length of the image plane, as a multiple of pixel width
-        float fy;   // focal length of the image plane, as a multiple of pixel height
-    };
-
     struct tracked_camera_frame
     {
         transform render_pose;

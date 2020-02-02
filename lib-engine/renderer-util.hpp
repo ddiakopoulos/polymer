@@ -11,7 +11,7 @@
 namespace polymer
 {
 
-    void load_required_renderer_assets(const std::string & base_path, gl_shader_monitor & monitor)
+    inline void load_required_renderer_assets(const std::string & base_path, gl_shader_monitor & monitor)
     {            
         simple_cpu_timer t;
         t.start();

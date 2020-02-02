@@ -12,45 +12,52 @@ using namespace polymer::xr;
 
 xr_input_focus xr_input_processor::recompute_focus(const vr_controller & controller)
 {
+	// Not a valid controller pose 
+	if (controller.t == transform()) return { ray(), {} }; // no focus
+
     const ray controller_ray = ray(controller.t.position, -qzdir(controller.t.orientation));
     const entity_hit_result box_result = the_scene->collision_system->raycast(controller_ray, raycast_type::box);
 
     auto is_focuable = [this](const entity what)
     {
         bool result = false;
-        for (const auto& e : focusable_entities)
+        for (const auto & e : focusable_entities)
         {
             if (what == e) return true;
         }
         return false;
     };
 
+    //std::cout << "Did we hit the box? " << box_result.r.hit << std::endl;
+    //std::cout << "Is it focusable? " << is_focuable(box_result.e) << std::endl;
+
     if (box_result.r.hit)
     {
         // Can we focus on this thing?
         if (is_focuable(box_result.e))
         {
-        // Refine if hit the mesh
-        const entity_hit_result mesh_result = the_scene->collision_system->raycast(controller_ray, raycast_type::mesh);
-        if (mesh_result.r.hit)
-        {
-            return { controller_ray, mesh_result, false }; // "hard focus"
+            // Refine if hit the mesh
+            const entity_hit_result mesh_result = the_scene->collision_system->raycast(controller_ray, raycast_type::mesh);
+            if (mesh_result.r.hit)
+            {
+                return { controller_ray, mesh_result, false }; // "hard focus"
+            }
+            else
+            {
+                // Otherwise hitting an outer bounding box is still considered focus
+                return { controller_ray, box_result, true }; // "soft focus"
+            }
         }
-        else
-        {
-            // Otherwise hitting an outer bounding box is still considered focus
-            return { controller_ray, box_result, true }; // "soft focus"
-        }
-    }
         else
         {
             return { controller_ray, {} }; // no focus
-}
+        }
     }
     return { controller_ray, {} }; // no focus
 }
 
-xr_input_processor::xr_input_processor(entity_system_manager * esm, scene * the_scene, hmd_base * hmd) : the_scene(the_scene), hmd(hmd) {}
+xr_input_processor::xr_input_processor(entity_system_manager * esm, scene * the_scene, hmd_base * hmd) 
+    : the_scene(the_scene), hmd(hmd) {}
 xr_input_processor::~xr_input_processor() {}
 
 vr_controller xr_input_processor::get_controller(const vr_controller_role hand)
@@ -125,6 +132,8 @@ void xr_input_processor::process(const float dt)
         const vr_input_source_t src = (dominant_hand == vr_controller_role::left_hand) ? vr_input_source_t::left_controller : vr_input_source_t::right_controller;
 
         const xr_input_focus active_focus = recompute_focus(controller);
+
+        //std::cout << "Focus? " << active_focus.result.e << std::endl;
 
         // New focus, not invalid
         if (active_focus != last_focus && active_focus.result.e != kInvalidEntity)
@@ -247,6 +256,7 @@ std::vector<entity> xr_controller_system::get_renderables() const
 
 void xr_controller_system::handle_event(const xr_input_event & event)
 {
+
     // Draw laser on focus of any type
     if (event.type == xr_button_event::focus_begin)
     {
@@ -310,7 +320,6 @@ void xr_controller_system::process(const float dt)
         hmd->get_controller(vr_controller_role::right_hand).buttons[vr_button::xy]
     };
 
-
     if (render_styles.size() && render_styles.top() == controller_render_style_t::laser_to_entity)
     {
         const xr_input_focus focus = processor->get_focus();
@@ -321,6 +330,8 @@ void xr_controller_system::process(const float dt)
             if (focus.soft == false)
             {
                 const float hit_distance = focus.result.r.distance;
+
+                std::cout << hit_distance << std::endl;
 
                 // Ensure the distance is long enough to generate valid drawable geometry
                 if (hit_distance >= 0.01f) update_laser_geometry(hit_distance);

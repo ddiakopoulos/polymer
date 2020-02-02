@@ -1,4 +1,5 @@
 #include "openvr-hmd.hpp"
+#include "string-utils.hpp"
 
 using namespace polymer;
 
@@ -9,7 +10,7 @@ std::string get_tracked_device_string(vr::IVRSystem * pHmd, vr::TrackedDeviceInd
     std::vector<char> pchBuffer(unRequiredBufferLen);
     unRequiredBufferLen = pHmd->GetStringTrackedDeviceProperty(unDevice, prop, pchBuffer.data(), unRequiredBufferLen, peError);
     std::string result = { pchBuffer.begin(), pchBuffer.end() };
-    return result;
+	return trim(result);
 }
 
 ///////////////////////////////////
@@ -36,8 +37,8 @@ openvr_hmd::openvr_hmd()
 
 openvr_hmd::~openvr_hmd()
 {
-    glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_FALSE);
-    glDebugMessageCallback(nullptr, nullptr);
+    //glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_FALSE);
+    //glDebugMessageCallback(nullptr, nullptr);
     if (hmd) vr::VR_Shutdown();
 }
 
@@ -220,6 +221,13 @@ void openvr_hmd::update()
     vr::VRCompositor()->WaitGetPoses(poses.data(), static_cast<uint32_t>(poses.size()), nullptr, 0);
     for (vr::TrackedDeviceIndex_t i = 0; i < poses.size(); ++i)
     {
+		const std::string device_serial = get_tracked_device_string(hmd, i, vr::Prop_SerialNumber_String);
+
+		//if (device_serial == std::string("LHR-09DE111C"))
+		//{
+		//	std::cout << "Device class: " << hmd->GetTrackedDeviceClass(i) << std::endl;
+		//}
+
         if (!poses[i].bPoseIsValid) continue;
         switch (hmd->GetTrackedDeviceClass(i))
         {
@@ -228,6 +236,12 @@ void openvr_hmd::update()
             hmdPose = make_pose(poses[i].mDeviceToAbsoluteTracking); 
             break;
         }
+		case vr::TrackedDeviceClass_GenericTracker:
+		{
+			auto tracker_pose = make_pose(poses[i].mDeviceToAbsoluteTracking);
+			trackers[device_serial] = { tracker_pose };
+			break;
+		}
         case vr::TrackedDeviceClass_Controller:
         {
             vr::VRControllerState_t controllerState = vr::VRControllerState_t();

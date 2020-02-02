@@ -262,6 +262,7 @@ namespace polymer
     {
         cpu_mesh_handle geom;
         cpu_mesh_handle proxy_geom;
+        bool is_static {true};
         geometry_component() {};
         geometry_component(entity e) : base_component(e) {}
         geometry_component(entity e, cpu_mesh_handle handle) : base_component(e), geom(handle) {}
@@ -271,6 +272,7 @@ namespace polymer
     template<class F> void visit_fields(geometry_component & o, F f) {
         f("cpu_mesh_handle", o.geom);
         f("cpu_mesh_proxy_handle", o.proxy_geom);
+        f("is_static", o.is_static);
     }
 
     inline void to_json(json & j, const geometry_component & p) {

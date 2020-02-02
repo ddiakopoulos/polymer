@@ -24,6 +24,7 @@ class openvr_hmd : public hmd_base
     uint2 renderTargetSize;
     transform hmdPose, worldPose;
 
+	std::unordered_map<std::string, vr_tracker> trackers;
     cached_controller_render_data controllerRenderData[2];
     vr_controller controllers[2];
     std::function<void(cached_controller_render_data & data)> async_data_cb;
@@ -47,6 +48,7 @@ public:
     virtual void get_optical_properties(vr_eye eye, float & aspectRatio, float & vfov) override final;
     virtual gl_mesh get_stencil_mask(vr_eye eye) override final;
     virtual vr_input_vendor get_input_vendor() override final;
+	std::unordered_map<std::string, vr_tracker> get_trackers() { return trackers; }
 
     virtual void controller_render_data_callback(std::function<void(cached_controller_render_data & data)> callback) override final;
 
