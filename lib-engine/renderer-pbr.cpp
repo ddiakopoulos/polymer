@@ -369,8 +369,10 @@ void pbr_renderer::run_forward_pass(std::vector<const render_component *> & rend
 void pbr_renderer::run_particle_pass(const view_data & view, const render_payload & scene)
 {
     if (!scene.particle_systems.size()) return;
-	//glDisable(GL_CULL_FACE);
+
+    //glDisable(GL_CULL_FACE);
 	//glDisable(GL_DEPTH_TEST);
+
     auto & particle_shader = renderPassParticle.get()->get_variant()->shader;
 
 	for (auto & system : scene.particle_systems)

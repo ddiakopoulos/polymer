@@ -79,6 +79,7 @@ struct sample_gl_particle_hull final : public polymer_app
     gl_shader sky_shader;
 
     bool pause{ false };
+    uint64_t frame_count = 0;
 
     sample_gl_particle_hull();
     ~sample_gl_particle_hull();
@@ -158,7 +159,10 @@ void sample_gl_particle_hull::on_update(const app_update_event & e)
     shaderMonitor->handle_recompile();
     last_update = e;
 
-    if (!pause) pt_emitter.emit(particle_system);
+    if (!pause) 
+    {
+        pt_emitter.emit(particle_system);
+    }
 }
 
 void sample_gl_particle_hull::on_draw()
@@ -168,7 +172,10 @@ void sample_gl_particle_hull::on_draw()
     int width, height;
     glfwGetWindowSize(window, &width, &height);
 
-    if (!pause) particle_system.update(last_update.timestep_ms);
+    if (!pause) 
+    {
+        particle_system.update(last_update.timestep_ms);
+    }
 
     glViewport(0, 0, width, height);
     glClearColor(0.25f, 0.25f, 0.25f, 1.0f);
@@ -256,6 +263,7 @@ void sample_gl_particle_hull::on_draw()
     gl_check_error(__FILE__, __LINE__);
 
     glfwSwapBuffers(window); 
+    frame_count++;
 }
 
 int main(int argc, char * argv[])

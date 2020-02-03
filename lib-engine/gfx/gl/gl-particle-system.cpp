@@ -84,7 +84,8 @@ void gl_particle_system::update(const float dt)
 
 	//scoped_timer t("gl_particle_system::overall");
 
-	if (!instances.size())
+    // put into better place
+	if (particles.size() >= instances.size())
 	{
 		instances.resize(particles.size());
 		instanceBuffers.reset(new ping_pong_buffer<gl_buffer>(instances.size()));
@@ -93,16 +94,35 @@ void gl_particle_system::update(const float dt)
 	{
 		//scoped_timer t("gl_particle_system::simulate");
 
+        // Simulate 
+        for (int i = 0; i < particles.size(); ++i)
+        {
+            particles[i].position += particles[i].velocity * dt;
+            particles[i].lifeMs -= dt;
+            particles[i].isDead = particles[i].lifeMs <= 0.f;
+        }
+
+        // [pointcloud] Apply modifiers
+        for (auto& modifier : particleModifiers)
+        {
+            modifier->update(particles, dt);
+        }
+
+        // [pointcloud] Cull
+        if (!particles.empty())
+        {
+            auto it = std::remove_if(std::begin(particles), std::end(particles), [](const particle& p)
+            {
+                return p.isDead;
+            });
+            particles.erase(it, std::end(particles));
+        }
+
 		for (int i = 0; i < particles.size(); ++i)
 		{
 			// Reset
-			// instances[i].position_size = float4(0, 0, 0, 0);
-			// instances[i].color = float4(0, 0, 0, 1);
-
-			// Simulate 
-			//particles[i].position += particles[i].velocity * dt;
-			//particles[i].lifeMs -= dt;
-			//particles[i].isDead = particles[i].lifeMs <= 0.f;
+		    //instances[i].position_size = float4(0, 0, 0, 0);
+			//instances[i].color = float4(0, 0, 0, 1);
 
 			// Create instance particles, with an optional trail
 			for (int trail_idx = 0; trail_idx < (trail + 1); ++trail_idx)
@@ -124,6 +144,7 @@ void gl_particle_system::update(const float dt)
 	{
 		//scoped_timer t("gl_particle_system::upload");
 		glNamedBufferSubDataEXT(instanceBuffers->current(), 0, instances.size() * sizeof(instance_data), instances.data());
+        gl_check_error(__FILE__, __LINE__);
 	}
 }
 
@@ -138,6 +159,8 @@ void gl_particle_system::draw(
     shader.bind();
 
     const GLboolean wasBlendingEnabled = glIsEnabled(GL_BLEND);
+
+    gl_check_error(__FILE__, __LINE__);
 
     int current_vao {0};
     glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &current_vao);
@@ -168,10 +191,14 @@ void gl_particle_system::draw(
     glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(instance_data), (GLvoid*)offsetof(instance_data, color));
     glVertexAttribDivisor(1, 1); 
 
+    gl_check_error(__FILE__, __LINE__);
+
     // Draw quad with texcoords
     glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(float2), nullptr);
     glVertexAttribDivisor(2, 0); // If divisor is zero, the attribute at slot index advances once per vertex
+
+    gl_check_error(__FILE__, __LINE__);
 
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
@@ -192,6 +219,7 @@ void gl_particle_system::draw(
     if (should_swap)
     {
         instanceBuffers->swap();
+        gl_check_error(__FILE__, __LINE__);
     }
 
     gl_check_error(__FILE__, __LINE__);
