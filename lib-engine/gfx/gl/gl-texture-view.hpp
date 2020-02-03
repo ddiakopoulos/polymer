@@ -132,7 +132,6 @@ namespace polymer
             mesh.draw_elements();
             program.unbind();
         }
-        
     };
     
     class gl_texture_view_3d : public non_copyable

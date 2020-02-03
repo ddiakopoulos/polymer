@@ -38,6 +38,7 @@
 #include "bvh.hpp"
 #include "oriented-bounding-box.hpp"
 #include "polynomial-solvers.hpp"
+#include "colormap.hpp"
 
 #include "queue-spsc-bounded.hpp"
 #include "queue-spsc.hpp"

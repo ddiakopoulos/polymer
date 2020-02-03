@@ -159,20 +159,13 @@ namespace polymer
 
     inline float3 interpolate_color_hsv(const float3 & rgb_a, const float3 & rgb_b, const float t)
     {
-        float3 aHSV = rgb_to_hsv(rgb_a);
-        float3 bHSV = rgb_to_hsv(rgb_b);
-        float3 result = linalg::lerp(aHSV, bHSV, t);
-        return hsv_to_rgb(result);
+        auto aHSV = rgb_to_hsv(rgb_a);
+        auto bHSV = rgb_to_hsv(rgb_b);
+        auto result = linalg::lerp(aHSV, bHSV, t);
+        return hsv_to_rgb(float3(result));
     }
 
-    struct color_hsl
-    {
-        float h{0.f};
-        float s{0.f};
-        float l{0.f};
-    };
-
-    inline float3 hsl_to_rgb(const color_hsl & hsl)
+    inline float3 hsl_to_rgb(const float3 & hsl)
     {
         auto hue_to_rgb = [&](float m1, float m2, float h)
         {
@@ -184,9 +177,9 @@ namespace polymer
             return m1;
         };
 
-        float h = hsl.h;
-        float s = hsl.s;
-        float l = hsl.l;
+        float h = hsl.x;
+        float s = hsl.y;
+        float l = hsl.z;
 
         if (l < 0) l = 0;
         if (s < 0) s = 0;
@@ -209,7 +202,7 @@ namespace polymer
         return float3(r, g, b);
     }
 
-    inline color_hsl rgb_to_hsl(const float4 & rgb) 
+    inline float3 rgb_to_hsl(const float3 & rgb) 
     {
         float r = rgb.r / 255.f;
         float g = rgb.g / 255.f;

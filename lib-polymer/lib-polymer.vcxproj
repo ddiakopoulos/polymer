@@ -17,6 +17,7 @@
     <ClInclude Include="bit-mask.hpp" />
     <ClInclude Include="bvh.hpp" />
     <ClInclude Include="camera.hpp" />
+    <ClInclude Include="colormap.hpp" />
     <ClInclude Include="guid.hpp" />
     <ClInclude Include="timestamp.hpp" />
     <ClInclude Include="image-buffer.hpp" />
