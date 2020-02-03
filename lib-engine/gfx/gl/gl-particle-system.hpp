@@ -148,7 +148,7 @@ namespace polymer
         std::vector<instance_data> instances;
 		std::unique_ptr<ping_pong_buffer<gl_buffer>> instanceBuffers;
 
-        gl_buffer vertexBuffer;
+        gl_buffer vertexBuffer, instanceBuffer;
         gl_vertex_array_object vao;
         std::vector<std::shared_ptr<particle_modifier>> particleModifiers;
         size_t trail{ 0 };
@@ -164,7 +164,7 @@ namespace polymer
         void add(const float3 & position, const float3 & velocity, const float size, const float lifeMs);
 		void add(const float3 & position, const float4 & color, const float size);
 		void clear();
-        void draw(const float4x4 & viewMat, const float4x4 & projMat, gl_shader & shader, const bool should_swap = true) const;
+        void draw(const float4x4 & viewMat, const float4x4 & projMat, gl_shader & shader, const bool should_swap = false) const;
         std::vector<particle> & get() { return particles; }
     };
 

@@ -85,14 +85,15 @@ void gl_particle_system::update(const float dt)
 	//scoped_timer t("gl_particle_system::overall");
 
     // put into better place
-	if (particles.size() >= instances.size())
-	{
-		instances.resize(particles.size());
-		instanceBuffers.reset(new ping_pong_buffer<gl_buffer>(instances.size()));
-	}
+	//if (particles.size() >= instances.size())
+	//{
+	//	instances.resize(particles.size());
+	//	instanceBuffers.reset(new ping_pong_buffer<gl_buffer>(instances.size()));
+	//}
 
 	{
 		//scoped_timer t("gl_particle_system::simulate");
+
 
         // Simulate 
         for (int i = 0; i < particles.size(); ++i)
@@ -102,13 +103,13 @@ void gl_particle_system::update(const float dt)
             particles[i].isDead = particles[i].lifeMs <= 0.f;
         }
 
-        // [pointcloud] Apply modifiers
+        // [pointcloud] apply modifiers
         for (auto& modifier : particleModifiers)
         {
             modifier->update(particles, dt);
         }
 
-        // [pointcloud] Cull
+        // [pointcloud] cull
         if (!particles.empty())
         {
             auto it = std::remove_if(std::begin(particles), std::end(particles), [](const particle& p)
@@ -117,6 +118,8 @@ void gl_particle_system::update(const float dt)
             });
             particles.erase(it, std::end(particles));
         }
+
+        instances.resize(particles.size());
 
 		for (int i = 0; i < particles.size(); ++i)
 		{
@@ -143,7 +146,8 @@ void gl_particle_system::update(const float dt)
 
 	{
 		//scoped_timer t("gl_particle_system::upload");
-		glNamedBufferSubDataEXT(instanceBuffers->current(), 0, instances.size() * sizeof(instance_data), instances.data());
+		//glNamedBufferSubDataEXT(instanceBuffers->current(), 0, instances.size() * sizeof(instance_data), instances.data());
+        glNamedBufferDataEXT(instanceBuffer, instances.size() * sizeof(instance_data), instances.data(), GL_DYNAMIC_DRAW);
         gl_check_error(__FILE__, __LINE__);
 	}
 }
@@ -185,7 +189,7 @@ void gl_particle_system::draw(
 
     // Instance buffer contains position (xyz) and size/radius (w)
     // An attribute is referred to as instanced if its GL_VERTEX_ATTRIB_ARRAY_DIVISOR value is non-zero. 
-    glBindBuffer(GL_ARRAY_BUFFER, instanceBuffers->previous());
+    glBindBuffer(GL_ARRAY_BUFFER, instanceBuffer); // instanceBuffers->previous()
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(instance_data), (GLvoid*)offsetof(instance_data, position_size));
     glVertexAttribDivisor(0, 1);
     glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(instance_data), (GLvoid*)offsetof(instance_data, color));
