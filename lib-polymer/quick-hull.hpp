@@ -988,7 +988,7 @@ namespace quickhull
         /// Epsilon: minimum distance to a plane to consider a point being on positive of it (for a point cloud with scale 1)
         convex_hull compute(bool formatOutputCCW, bool useOriginalIndices, float eps = 0.001)
         {
-            assert(m_vertexData.size() >= 3);
+            if (m_vertexData.size() < 3) return {};
             return get_convex_hull(formatOutputCCW, useOriginalIndices, eps);
         }
         

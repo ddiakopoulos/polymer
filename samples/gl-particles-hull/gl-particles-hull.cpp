@@ -69,6 +69,7 @@ struct sample_gl_particle_hull final : public polymer_app
     point_emitter pt_emitter;
     std::shared_ptr<gravity_modifier> grav_mod;
     std::shared_ptr<color_modifier> color_mod;
+    std::shared_ptr<ground_modifier> ground_mod;
 
     gl_mesh convex_hull_mesh;
     geometry convex_hull_model;
@@ -79,6 +80,7 @@ struct sample_gl_particle_hull final : public polymer_app
     gl_shader sky_shader;
 
     bool pause{ false };
+    bool draw_hull {true};
     uint64_t frame_count = 0;
 
     sample_gl_particle_hull();
@@ -90,7 +92,7 @@ struct sample_gl_particle_hull final : public polymer_app
     void on_draw() override;
 };
 
-sample_gl_particle_hull::sample_gl_particle_hull() : polymer_app(1280, 720, "sample-gl-particle-hull")
+sample_gl_particle_hull::sample_gl_particle_hull() : polymer_app(1280, 720, "sample-gl-particle-hull", 4)
 {
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
@@ -104,10 +106,14 @@ sample_gl_particle_hull::sample_gl_particle_hull() : polymer_app(1280, 720, "sam
 
     color_mod = std::make_shared<color_modifier>();
     grav_mod = std::make_shared<gravity_modifier>(float3(0, -1, 0));
+    ground_mod = std::make_shared<ground_modifier>(plane(float4(0, 1, 0, 0)));
+
     particle_system.add_modifier(grav_mod);
     particle_system.add_modifier(color_mod);
+    particle_system.add_modifier(ground_mod);
 
     pt_emitter.pose.position = float3(0, 2, 0);
+    pt_emitter.multiplier = 2;
 
     gl_texture_2d particle_tex = load_image("../../assets/textures/particle_alt_large.png");
     glTextureParameteriEXT(particle_tex, GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
@@ -144,6 +150,11 @@ void sample_gl_particle_hull::on_input(const app_input_event & event)
         pause = !pause;
     }
 
+    if (event.type == app_input_event::KEY && event.value[0] == GLFW_KEY_H && event.action == GLFW_RELEASE)
+    {
+        draw_hull = !draw_hull;
+    }
+
     // Export particle pointcloud convex hull to disk as *.obj mesh
     else if (event.type == app_input_event::KEY && event.value[0] == GLFW_KEY_E && event.action == GLFW_RELEASE)
     {
@@ -177,6 +188,8 @@ void sample_gl_particle_hull::on_draw()
         particle_system.update(last_update.timestep_ms);
     }
 
+    //color_mod->camera_position = cam.get_eye_point();
+
     glViewport(0, 0, width, height);
     glClearColor(0.25f, 0.25f, 0.25f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -208,7 +221,7 @@ void sample_gl_particle_hull::on_draw()
     // Draw the particle system
     shader_handle particle_shader_h("particle-shader");
     gl_shader & shader = particle_shader_h.get()->get_variant()->shader;
-    particle_system.draw(viewMatrix, projectionMatrix, shader);
+    particle_system.draw(viewMatrix, projectionMatrix, shader, false);
 
     if (hullFuture.valid())
     {
@@ -246,13 +259,13 @@ void sample_gl_particle_hull::on_draw()
         });
     }
 
+    if (draw_hull)
     {
         glEnable(GL_BLEND);
-
         shader_handle wireframe_shader_h("wireframe");
         gl_shader & wireframe_shader = wireframe_shader_h.get()->get_variant()->shader;
         wireframe_shader.bind();
-        wireframe_shader.uniform("u_color", float4(1, 0, 0, 0.5f));
+        wireframe_shader.uniform("u_color", float4(0, 1, 1, 0.25f));
         wireframe_shader.uniform("u_eyePos", cam.get_eye_point());
         wireframe_shader.uniform("u_viewProjMatrix", viewProjectionMatrix);
         wireframe_shader.uniform("u_modelMatrix", Identity4x4);

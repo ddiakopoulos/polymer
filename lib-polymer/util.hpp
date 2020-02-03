@@ -117,7 +117,7 @@ namespace polymer
         ~scoped_timer()
         {
 			const auto timestamp_ms = (std::chrono::duration<float>(std::chrono::high_resolution_clock::now() - t0).count() * 1000);
-            std::cout << message << " completed in " << std::to_string(timestamp_ms) << " ms" << std::endl;
+            std::cout << message << " completed in " << std::to_string(timestamp_ms) << " ms\n";
         }
     };
 

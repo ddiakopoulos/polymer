@@ -47,6 +47,7 @@ void gl_particle_system::set_particle_texture(gl_texture_2d && tex)
     particle_tex = std::move(tex);
     glTextureParameteriEXT(particle_tex, GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
     glTextureParameteriEXT(particle_tex, GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+    use_alpha_mask_texture = true;
 }
 
 void gl_particle_system::add_modifier(std::shared_ptr<particle_modifier> modifier)
@@ -85,15 +86,13 @@ void gl_particle_system::update(const float dt)
 	//scoped_timer t("gl_particle_system::overall");
 
     // put into better place
-	//if (particles.size() >= instances.size())
-	//{
-	//	instances.resize(particles.size());
-	//	instanceBuffers.reset(new ping_pong_buffer<gl_buffer>(instances.size()));
-	//}
+	if (!instances.size())
+	{
+		instanceBuffers.reset(new ping_pong_buffer<gl_buffer>(16384)); // max?
+	}
 
 	{
 		//scoped_timer t("gl_particle_system::simulate");
-
 
         // Simulate 
         for (int i = 0; i < particles.size(); ++i)
@@ -119,14 +118,13 @@ void gl_particle_system::update(const float dt)
             particles.erase(it, std::end(particles));
         }
 
-        instances.resize(particles.size());
+        if (particles.size() > instances.size())
+        {
+            instances.resize(particles.size());
+        }        
 
 		for (int i = 0; i < particles.size(); ++i)
 		{
-			// Reset
-		    //instances[i].position_size = float4(0, 0, 0, 0);
-			//instances[i].color = float4(0, 0, 0, 1);
-
 			// Create instance particles, with an optional trail
 			for (int trail_idx = 0; trail_idx < (trail + 1); ++trail_idx)
 			{
@@ -137,7 +135,7 @@ void gl_particle_system::update(const float dt)
 					particles[trail_idx].size *= 0.97f;
 				}
 			
-				// Need to account for trail
+				// @fixme - need to account for trail
 				instances[i].position_size = float4(particles[i].position, particles[i].size);
 				instances[i].color = float4(particles[i].color);
 			}
@@ -146,9 +144,9 @@ void gl_particle_system::update(const float dt)
 
 	{
 		//scoped_timer t("gl_particle_system::upload");
-		//glNamedBufferSubDataEXT(instanceBuffers->current(), 0, instances.size() * sizeof(instance_data), instances.data());
-        glNamedBufferDataEXT(instanceBuffer, instances.size() * sizeof(instance_data), instances.data(), GL_DYNAMIC_DRAW);
-        gl_check_error(__FILE__, __LINE__);
+        // int buffer, int offset, int size bytes, data)
+		glNamedBufferSubDataEXT(instanceBuffers->current(), 0, instances.size() * sizeof(instance_data), instances.data());
+        instanceBuffers->swap();
 	}
 }
 
@@ -163,8 +161,6 @@ void gl_particle_system::draw(
     shader.bind();
 
     const GLboolean wasBlendingEnabled = glIsEnabled(GL_BLEND);
-
-    gl_check_error(__FILE__, __LINE__);
 
     int current_vao {0};
     glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &current_vao);
@@ -183,26 +179,28 @@ void gl_particle_system::draw(
     shader.uniform("u_inverseViewMatrix", inverse(viewMat));
     shader.uniform("u_viewProjMat", projMat * viewMat);
     shader.uniform("u_time", elapsed_time_ms);
-    shader.texture("s_particleTex", 0, particle_tex, GL_TEXTURE_2D);
+
+    if (use_alpha_mask_texture)
+    {
+        shader.uniform("u_use_alpha_mask", 1.f);
+        shader.texture("s_particleTex", 0, particle_tex, GL_TEXTURE_2D);
+    }
+    else shader.uniform("u_use_alpha_mask", 0.f);
 
     glBindVertexArray(vao);
 
     // Instance buffer contains position (xyz) and size/radius (w)
     // An attribute is referred to as instanced if its GL_VERTEX_ATTRIB_ARRAY_DIVISOR value is non-zero. 
-    glBindBuffer(GL_ARRAY_BUFFER, instanceBuffer); // instanceBuffers->previous()
+    glBindBuffer(GL_ARRAY_BUFFER, instanceBuffers->previous());
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(instance_data), (GLvoid*)offsetof(instance_data, position_size));
     glVertexAttribDivisor(0, 1);
     glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(instance_data), (GLvoid*)offsetof(instance_data, color));
     glVertexAttribDivisor(1, 1); 
 
-    gl_check_error(__FILE__, __LINE__);
-
     // Draw quad with texcoords
     glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(float2), nullptr);
     glVertexAttribDivisor(2, 0); // If divisor is zero, the attribute at slot index advances once per vertex
-
-    gl_check_error(__FILE__, __LINE__);
 
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
@@ -222,8 +220,7 @@ void gl_particle_system::draw(
 
     if (should_swap)
     {
-        instanceBuffers->swap();
-        gl_check_error(__FILE__, __LINE__);
+        // ... 
     }
 
     gl_check_error(__FILE__, __LINE__);

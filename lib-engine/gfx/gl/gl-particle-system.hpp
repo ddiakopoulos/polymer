@@ -6,6 +6,7 @@
 #include "gl-api.hpp"
 #include "util.hpp"
 #include "algo-misc.hpp"
+#include "colormap.hpp"
 
 namespace polymer
 {
@@ -35,11 +36,13 @@ namespace polymer
 
     struct color_modifier final : public particle_modifier
     {
+        float3 camera_position;
         void update(std::vector<particle> & particles, float dt) override
         {
             for (auto & p : particles)
             {
-                p.color = float4(1, 1, 1, 1);
+                const double3 color = colormap::get_color(1 - (distance(p.position, camera_position) / 4.f), colormap::colormap_t::haline);
+                p.color = float4(float3(color), 0.85f);
             }
         }
     };
@@ -97,6 +100,7 @@ namespace polymer
     struct ground_modifier final : public particle_modifier
     {
         plane ground;
+        float bounce_factor = 1.4f; 
         ground_modifier(const plane p) : ground(p) {}
         void update(std::vector<particle> & particles, float dt) override
         {
@@ -105,7 +109,7 @@ namespace polymer
                 const float reflectedVelocity = dot(ground.get_normal(), p.velocity);
                 if (dot(ground.equation, float4(p.position, 1)) < 0.f && reflectedVelocity < 0.f)
                 {
-                    p.velocity -= ground.get_normal() * (reflectedVelocity * 2.0f);
+                    p.velocity -= ground.get_normal() * (reflectedVelocity * std::max(1.f, bounce_factor));
                 }
             }
         }
@@ -148,12 +152,13 @@ namespace polymer
         std::vector<instance_data> instances;
 		std::unique_ptr<ping_pong_buffer<gl_buffer>> instanceBuffers;
 
-        gl_buffer vertexBuffer, instanceBuffer;
+        gl_buffer vertexBuffer;
         gl_vertex_array_object vao;
         std::vector<std::shared_ptr<particle_modifier>> particleModifiers;
         size_t trail{ 0 };
         float elapsed_time_ms{ 0.f };
         gl_texture_2d particle_tex;
+        bool use_alpha_mask_texture = false;
     public:
         gl_particle_system();
         void set_trail_count(const size_t trail_count);
@@ -181,14 +186,15 @@ namespace polymer
 
     struct point_emitter final : public particle_emitter
     {
+        uint32_t multiplier = 1;
         void emit(gl_particle_system & system) override
         {
-            for (int i = 0; i < 4; ++i)
+            for (uint32_t i = 0; i < multiplier; ++i)
             {
                 const auto v1 = gen.random_float(-.5f, +.5f);
-                const auto v2 = gen.random_float(0.5f, 2.f);
+                const auto v2 = gen.random_float(1.f, 3.f);
                 const auto v3 = gen.random_float(-.5f, +.5f);
-                system.add(pose.position, float3(v1, v2, v3), gen.random_float(0.05f, 0.2f), 2.5f);
+                system.add(pose.position, float3(v1, v2, v3), gen.random_float(0.02f, 0.05f), gen.random_float(4.f, 8.0f));
             }
         }
     };
