@@ -246,9 +246,10 @@ namespace polymer
     
     static const float PLANE_EPSILON = 0.0001f;
     
+    // a plane defined by ax * by * cz + d form (xyz normal, w distance)
     struct plane
     {
-        float4 equation = { 0, 0, 0, 0 }; // ax * by * cz + d form (xyz normal, w distance)
+        float4 equation = { 0, 0, 0, 0 }; 
         plane() {}
         plane(const float4 & equation) : equation(equation) {}
         plane(const float3 & normal, const float & distance) { equation = float4(normal.x, normal.y, normal.z, distance); }
@@ -364,6 +365,29 @@ namespace polymer
         const float c1 = (-p1.get_distance() + (p2.get_distance() * ndn)) * recDeterminant;
         const float c2 = (-p2.get_distance() + (p1.get_distance() * ndn)) * recDeterminant;
         return line((c1 * p1.get_normal()) + (c2 * p2.get_normal()), normalize(cross(p1.get_normal(), p2.get_normal())));
+    }
+
+    // Get the points on each line that are closest to each other 
+    inline bool closest_point_between_lines(const line & ln_a, const line & ln_b, float3 * out_a, float3 * out_b) 
+    {
+        const float3 u_hat = normalize(ln_a.direction);
+        const float3 v_hat = normalize(ln_b.direction);
+        const float3 w_0 = ln_b.origin - ln_a.origin;
+        const float b = dot(u_hat, v_hat);
+        const float b_sqr = b * b;
+
+        // Lines are parallel... 
+        if ((1.0f - b_sqr) < PLANE_EPSILON) return false;
+
+        const float d = dot(u_hat, w_0);
+        const float e = dot(v_hat, w_0);
+        const float s = (d - e * b) / (1.0f - b_sqr);
+        const float t = (d * b - e) / (1.0f - b_sqr);
+
+        if (out_a != nullptr) *out_a = ln_a.origin + s * u_hat;
+        if (out_b != nullptr) *out_b = ln_b.origin + t * v_hat;
+
+        return true;
     }
 
     ////////////////////////////////////////
