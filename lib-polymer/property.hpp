@@ -3,7 +3,7 @@
 #ifndef polymer_property_hpp
 #define polymer_property_hpp
 
-#include "any.hpp"
+#include "absl/any.hpp"
 #include <functional>
 
 namespace polymer
