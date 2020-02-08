@@ -12,7 +12,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="algo-misc.hpp" />
-    <ClInclude Include="any.hpp" />
     <ClInclude Include="arcball.hpp" />
     <ClInclude Include="bit-mask.hpp" />
     <ClInclude Include="bvh.hpp" />

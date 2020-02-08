@@ -83,6 +83,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\third_party\absl\any.hpp" />
+    <ClInclude Include="..\third_party\absl\inlined-vector.hpp" />
+    <ClInclude Include="..\third_party\eigenbom\object-pool.hpp" />
     <ClInclude Include="..\third_party\imgui\imconfig.h" />
     <ClInclude Include="..\third_party\imgui\imgui.h" />
     <ClInclude Include="..\third_party\imgui\imgui_internal.h" />

@@ -197,6 +197,15 @@
     <ClInclude Include="gfx\gl\gl-particle-system.hpp">
       <Filter>gfx\gl</Filter>
     </ClInclude>
+    <ClInclude Include="..\third_party\eigenbom\object-pool.hpp">
+      <Filter>third-party\eigenbom</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third_party\absl\any.hpp">
+      <Filter>third-party\absl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third_party\absl\inlined-vector.hpp">
+      <Filter>third-party\absl</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="gfx">
@@ -228,6 +237,12 @@
     </Filter>
     <Filter Include="third-party\tinygizmo">
       <UniqueIdentifier>{8003dc45-46b5-4e05-a1ea-127406978145}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third-party\eigenbom">
+      <UniqueIdentifier>{76b6b75c-2e7f-46bd-b2c9-81c8de26111c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third-party\absl">
+      <UniqueIdentifier>{9f4545fe-4199-4cb2-be0c-eaa3fdcc4d2a}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
