@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <iostream>
 #include <ostream>
+#include <assert.h>
 
 #include "linalg.h"
 #include "linalgx.h"
@@ -125,6 +126,16 @@ namespace polymer
     {
         return a * ((1.0f - u) * (1.0f - v)) + b * (u * (1.0f - v)) + c * (v * (1.0f - u)) + d * (u * v);
     }
+
+    // Returns the nearest int equal or lower of the provided argument
+    inline int floor_to_int(const float x)
+    {
+        static constexpr float LARGE_FLT_LESSTHAN_ONE = 0.99999994f;
+        assert(x >= std::numeric_limits<int32_t>::min() && x <= std::numeric_limits<int32_t>::max());
+        return x >= 0.0f ? (int32_t)x : (int32_t)(x - LARGE_FLT_LESSTHAN_ONE);
+    }
+
+    inline int round_to_int(const float x) { return floor_to_int(x + 0.5f); }
 
     template <typename T>
     inline T remap(T value, T inputMin, T inputMax, T outputMin, T outputMax, bool clamp = true)
