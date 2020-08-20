@@ -39,11 +39,12 @@ namespace polymer
         return{ start, safe_normalize(end - start) };
     }
 
-    inline ray ray_from_viewport_pixel(const float2 & pixelCoord, const float2 & viewportSize, const float4x4 & projectionMatrix)
+    inline ray ray_from_viewport_pixel(const float2 & screen_coord, const float2 & screen_size, const float4x4 & projection)
     {
-        float vx = pixelCoord.x * 2 / viewportSize.x - 1, vy = 1 - pixelCoord.y * 2 / viewportSize.y;
-        auto invProj = inverse(projectionMatrix);
-        return{ { 0,0,0 }, safe_normalize(transform_coord(invProj,{ vx, vy, +1 }) - transform_coord(invProj,{ vx, vy, -1 })) };
+        const float vx =     screen_coord.x * 2 / screen_size.x - 1;
+        const float vy = 1 - screen_coord.y * 2 / screen_size.y;
+        const auto inv_proj = inverse(projection);
+        return{ { 0,0,0 }, safe_normalize(transform_coord(inv_proj,{ vx, vy, +1 }) - transform_coord(inv_proj,{ vx, vy, -1 })) };
     }
 
     inline ray operator * (const transform & pose, const ray & ray)
@@ -73,6 +74,15 @@ namespace polymer
         }
         if (outT) *outT = std::numeric_limits<float>::max();
         return false;
+    }
+
+    // Intersects ray r against plane defined by triangle abc
+    inline bool intersect_ray_plane(const ray & r, const float3 & a, const float3 & b, const float3 & c, float & t)
+    {
+        const float3 & n = cross(b - a, c - a);
+        const float d = dot(n, a);
+        float3 intersection_pt;
+        return intersect_ray_plane(r, plane(n, d), &intersection_pt, &t);
     }
 
     // Real-Time Collision Detection pg. 180
@@ -196,6 +206,64 @@ namespace polymer
         return false;
     }
 
+    // Real-Time Collision Detection pg. 180. Computes interpolated normal.
+    inline bool intersect_ray_quad(const ray & r,
+        const float3 & a, const float3 & b, const float3 & c, const float3 & d,
+        const float3 & na, const float3 & nb, const float3 & nc, const float3 & nd,
+        float3 & n, float & t)
+    {
+
+        auto triple_product = [](const float3 & u, const float3 & v, const float3 & w)
+        {
+            return dot(cross(u, v), w);
+        };
+
+        const float3 pq = r.direction;
+        const float3 pa = a - r.origin;
+        const float3 pb = b - r.origin;
+        const float3 pc = c - r.origin;
+
+        const float3 m = cross(pc, pq);
+        float v = dot(pa, m);
+
+        if (v >= 0.f)
+        {
+            // Test intersection against triangle abc
+            float u = -dot(pb, m);
+            if (u < 0.f) return false;
+
+            float w = triple_product(pq, pb, pa);
+            if (w < 0.f) return false;
+
+            // Compute t
+            if (!intersect_ray_plane(r, a, b, c, t)) return false;
+            if (t < 0) return false;
+
+            n = u * na + v * nb + w * nc;
+        }
+        else
+        {
+            // Test intersection against triangle dac
+            const float3 & pd = d - r.origin;
+
+            float u = dot(pd, m);
+            if (u < 0.f) return false;
+
+            float w = triple_product(pq, pa, pd);
+            if (w < 0.f) return false;
+
+            v = -v;
+
+            // Compute t
+            if (!intersect_ray_plane(r, d, a, c, t)) return false;
+            if (t < 0) return false;
+
+            n = u * na + v * nd + w * nc;
+        }
+
+        return true;
+    }
+
     // Implementation adapted from: http://www.lighthouse3d.com/tutorials/maths/ray-triangle-intersection/
     inline bool intersect_ray_triangle(const ray & ray, const float3 & v0, const float3 & v1, const float3 & v2, float * outT = nullptr, float2 * outUV = nullptr)
     {
@@ -221,7 +289,6 @@ namespace polymer
 
         return true;
     }
-
 }
 
 #endif // end math_ray_hpp
