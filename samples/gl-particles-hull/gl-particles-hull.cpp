@@ -25,6 +25,7 @@
 #include "../lib-model-io/model-io.hpp"
 
 #include <future>
+#include "absl/inlined-vector.hpp"
 
 using namespace polymer;
 
@@ -55,6 +56,7 @@ constexpr const char skybox_frag[] = R"(#version 330
         f_color = vec4(mix(u_bottomColor, u_topColor, max(pow(max(h, 0.0), 0.8), 0.0)), 1.0);
     }
 )";
+
 
 struct sample_gl_particle_hull final : public polymer_app
 {

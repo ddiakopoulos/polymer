@@ -26,15 +26,23 @@ namespace polymer
         }
     }
 
-    inline std::vector<uint8_t> load_image_data(const std::string & path)
+    inline std::vector<uint8_t> load_image_data(const std::string & path, int32_t * out_width = nullptr, int32_t * out_height = nullptr, int32_t * out_bpp = nullptr, bool flip = false)
     {
         auto binaryFile = read_file_binary(path);
+
+        if (flip) stbi_set_flip_vertically_on_load(1);
+        else stbi_set_flip_vertically_on_load(0);
 
         int width, height, nBytes;
         auto data = stbi_load_from_memory(binaryFile.data(), (int)binaryFile.size(), &width, &height, &nBytes, 0);
         std::vector<uint8_t> d(width * height * nBytes);
         std::memcpy(d.data(), data, nBytes * width * height);
         stbi_image_free(data);
+
+        if (out_bpp) *out_bpp = nBytes;
+        if (out_width) *out_width = width;
+        if (out_height) *out_height = height;
+
         return d;
     }
 

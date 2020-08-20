@@ -370,8 +370,8 @@ void pbr_renderer::run_particle_pass(const view_data & view, const render_payloa
 {
     if (!scene.particle_systems.size()) return;
 
-    //glDisable(GL_CULL_FACE);
-	//glDisable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
+	glDisable(GL_DEPTH_TEST);
 
     auto & particle_shader = renderPassParticle.get()->get_variant()->shader;
 

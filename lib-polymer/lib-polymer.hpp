@@ -47,8 +47,4 @@
 #include "queue-mpmc-blocking.hpp"
 #include "queue-circular.hpp"
 
-// third-party
-#include "absl/any.hpp"
-#include "absl/inlined-vector.hpp"
-
 #endif // end lib_polymer_hpp

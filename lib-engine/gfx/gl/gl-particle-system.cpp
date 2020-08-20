@@ -83,12 +83,12 @@ void gl_particle_system::update(const float dt)
 {
 	if (particles.size() == 0) return;
 
-	//scoped_timer t("gl_particle_system::overall");
+	scoped_timer t("gl_particle_system::overall " +  std::to_string(particles.size()));
 
-    // put into better place
+    // @fixme - put into better place
 	if (!instances.size())
 	{
-		instanceBuffers.reset(new ping_pong_buffer<gl_buffer>(16384)); // max?
+		instanceBuffers.reset(new ping_pong_buffer<gl_buffer>(30720000)); // max?  // 16384
 	}
 
 	{
@@ -109,21 +109,21 @@ void gl_particle_system::update(const float dt)
         }
 
         // [pointcloud] cull
-        if (!particles.empty())
-        {
-            auto it = std::remove_if(std::begin(particles), std::end(particles), [](const particle& p)
-            {
-                return p.isDead;
-            });
-            particles.erase(it, std::end(particles));
-        }
+        // if (!particles.empty())
+        // {
+        //     auto it = std::remove_if(std::begin(particles), std::end(particles), [](const particle& p)
+        //     {
+        //         return p.isDead;
+        //     });
+        //     particles.erase(it, std::end(particles));
+        // }
 
         if (particles.size() > instances.size())
         {
             instances.resize(particles.size());
         }        
-
-		for (int i = 0; i < particles.size(); ++i)
+;
+		for (int i = 0; i < particles.size(); ++i) 
 		{
 			// Create instance particles, with an optional trail
 			for (int trail_idx = 0; trail_idx < (trail + 1); ++trail_idx)

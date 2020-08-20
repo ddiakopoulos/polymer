@@ -159,11 +159,9 @@ namespace polymer
         gl_shader shader;
         gl_mesh fullscreen_quad_ndc;
 
-        simple_texture_view()
-        {
-            static const char s_textureVert[] = R"(#version 330
+        constexpr static char s_textureVert[] = R"(#version 330
                 layout(location = 0) in vec3 position;
-                layout(location = 1) in vec2 uvs;
+                layout(location = 3) in vec2 uvs;
                 uniform mat4 u_mvp = mat4(1);
                 out vec2 texCoord;
                 void main()
@@ -174,7 +172,7 @@ namespace polymer
                 }
             )";
 
-            static const char s_textureFrag[] = R"(#version 330
+        constexpr static char s_textureFrag[] = R"(#version 330
                 uniform sampler2D s_texture;
                 in vec2 texCoord;
                 out vec4 f_color;
@@ -185,6 +183,8 @@ namespace polymer
                 }
             )";
 
+        simple_texture_view()
+        {
             shader = gl_shader(s_textureVert, s_textureFrag);
 
             struct Vertex { float3 position; float2 texcoord; };
@@ -196,7 +196,7 @@ namespace polymer
 
             fullscreen_quad_ndc.set_vertices(vertices, GL_STATIC_DRAW);
             fullscreen_quad_ndc.set_attribute(0, &Vertex::position);
-            fullscreen_quad_ndc.set_attribute(1, &Vertex::texcoord);
+            fullscreen_quad_ndc.set_attribute(3, &Vertex::texcoord);
             fullscreen_quad_ndc.set_elements(faces, GL_STATIC_DRAW);
         }
 

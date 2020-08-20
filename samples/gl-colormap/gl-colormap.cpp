@@ -128,7 +128,7 @@ sample_gl_colormap::sample_gl_colormap() : polymer_app(1024, 1024, "sample-gl-co
         }
 
         std::shared_ptr<gl_texture_2d> t = std::make_shared< gl_texture_2d>();
-        t->setup(num_steps, 1, GL_RGB, GL_RGB, GL_FLOAT, colors_in_row.data(), true);
+        t->setup((GLsizei)num_steps, 1, GL_RGB, GL_RGB, GL_FLOAT, colors_in_row.data(), true);
 
         view.texture = t;
         view.name = map.second;
@@ -163,8 +163,8 @@ void sample_gl_colormap::on_draw()
 
         for (const auto & v : generated_colormaps)
         {
-            view.draw(aabb_2d(128, current_y, width, current_y + height_per_map), float2(width,  height), v.texture->id());
-            font.draw(aabb_2d(4, 2 + current_y, 8, current_y + 10), float2(width, height), v.name.c_str());
+            view.draw(aabb_2d(128.f, current_y, width, current_y + height_per_map), float2(width,  height), v.texture->id());
+            font.draw(aabb_2d(4.f, 2.f + current_y, 8.f, current_y + 10.f), float2(width, height), v.name.c_str());
             current_y += height_per_map;
         }
     }

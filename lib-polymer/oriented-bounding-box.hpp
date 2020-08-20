@@ -26,10 +26,9 @@ namespace polymer
         // As per 'col' convention if float3x3 Q = qgetmatrix(q); then Q*v = q*v*conj(q)
         inline quatf make_diagonalized_matrix(const float3x3 & A)
         {
-            int maxsteps = 24;  // certainly wont need that many.
-            int i;
-            quatf q(0, 0, 0, 1);
-            for (i = 0; i < maxsteps; ++i)
+            uint32_t maxsteps = 32;  // certainly wont need that many.
+            quatf q = {0, 0, 0, 1};
+            for (uint32_t i = 0; i < maxsteps; ++i)
             {
                 float3x3 Q = qmat(q); // Q*v == q*v*conj(q)
                 float3x3 D = transpose(Q) * A * Q;  // A = Q*D*Q^T
@@ -64,22 +63,25 @@ namespace polymer
             auto M = transpose(qmat(q)) * A * qmat(q);   // to test result
             return q;
         }
-    }
+
+    } // end namespace pca_impl
 
     // Returns principal axes as a pose and population's variance along pose's local x,y,z
     inline std::pair<transform, float3> make_principal_axes(const std::vector<float3> & points)
     {
         if (points.size() == 0) throw std::invalid_argument("not enough points for PCA");
-        float3 com{ 0, 0, 0};
-        for (const auto & p : points) com += p;
-        com /= (float) points.size();
+
+        float3 centroid;
+        for (const auto & p : points) centroid += p;
+        centroid /= (float) points.size();
+
         float3x3 cov;
-        for (const auto & p : points) cov += linalg::outerprod(p - com, p - com);
+        for (const auto & p : points) cov += linalg::outerprod(p - centroid, p - centroid);
         cov /= (float)points.size();
         auto q = pca_impl::make_diagonalized_matrix(cov);
 
         //(mul(transpose(qmat(q)), cov, qmat(q))));
-        return std::make_pair<transform, float3>({ q, com }, diagonal(transpose(qmat(q)) * cov * qmat(q)));
+        return std::make_pair<transform, float3>({ q, centroid }, diagonal(transpose(qmat(q)) * cov * qmat(q)));
     }
 
     struct oriented_bounding_box

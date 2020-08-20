@@ -193,9 +193,8 @@ namespace polymer
     struct sphere
     {
         float3 center;
-        float radius;
-        
-        sphere() {}
+        float radius {std::numeric_limits<float>::infinity()};
+        sphere() = default;
         sphere(const float3 & center, float radius) : center(center), radius(radius) {}
     };
 
@@ -203,7 +202,7 @@ namespace polymer
     // http://stackoverflow.com/questions/17331203/bouncing-bubble-algorithm-for-smallest-enclosing-sphere
     inline sphere compute_enclosing_sphere(const std::vector<float3> & vertices, float minRadius = SPHERE_EPSILON)
     {
-        if (vertices.size() > 3) return sphere();
+        if (vertices.size() > 3) return {};
         if (minRadius < SPHERE_EPSILON) minRadius = SPHERE_EPSILON;
 
         sphere s;
@@ -259,11 +258,16 @@ namespace polymer
         bool is_positive_half_space(const float3 & point) const { return (dot(get_normal(), point) > equation.w()); };
         void normalize() { float n = 1.0f / length(get_normal()); equation *= n; };
         float get_distance() const { return equation.w(); }
-        float distance_to(const float3 & point) const { return dot(get_normal(), point) + equation.w(); };
+        float distance_to(const float3 & point) const { return dot(get_normal(), point) + equation.w(); }; // signed distance
         bool contains(const float3 & point) const { return std::abs(distance_to(point)) < PLANE_EPSILON; };
         float3 reflect_coord(const float3 & c) const { return get_normal() * distance_to(c) * -2.f + c; }
         float3 reflect_vector(const float3 & v) const { return get_normal() * dot(get_normal(), v) * 2.f - v; }
     };
+
+    inline std::ostream & operator << (std::ostream & o, const plane & b)
+    {
+        return o << "{" << b.equation << "}";
+    }
 
     inline plane transform_plane(const float4x4 & transform, const plane & p)
     {
@@ -275,26 +279,6 @@ namespace polymer
     inline float3 get_plane_point(const plane & p)
     {
         return -1.0f * p.get_distance() * p.get_normal();
-    }
-
-    inline float3 plane_intersection(const plane & a, const plane & b, const plane & c)
-    {
-        const float3 p1 = get_plane_point(a);
-        const float3 p2 = get_plane_point(b);
-        const float3 p3 = get_plane_point(c);
-
-        const float3 n1 = a.get_normal();
-        const float3 n2 = b.get_normal();
-        const float3 n3 = c.get_normal();
-
-        const float det = dot(n1, cross(n2, n3));
-
-        return (dot(p1, n1) * cross(n2, n3) + dot(p2, n2) * cross(n3, n1) + dot(p3, n3) * cross(n1, n2)) / det;
-    }
-
-    inline std::ostream & operator << (std::ostream & o, const plane & b)
-    {
-        return o << "{" << b.equation << "}";
     }
 
     // Find an orthonormal basis of a plane
@@ -358,7 +342,22 @@ namespace polymer
         return s.a + dir * d;
     }
 
-    inline line plane_intersection(const plane & p1, const plane & p2)
+    inline float3 intersect_planes(const plane & a, const plane & b, const plane & c)
+    {
+        const float3 p1 = get_plane_point(a);
+        const float3 p2 = get_plane_point(b);
+        const float3 p3 = get_plane_point(c);
+
+        const float3 n1 = a.get_normal();
+        const float3 n2 = b.get_normal();
+        const float3 n3 = c.get_normal();
+
+        const float det = dot(n1, cross(n2, n3));
+
+        return (dot(p1, n1) * cross(n2, n3) + dot(p2, n2) * cross(n3, n1) + dot(p3, n3) * cross(n1, n2)) / det;
+    }
+
+    inline line intersect_planes(const plane & p1, const plane & p2)
     {
         const float ndn = dot(p1.get_normal(), p2.get_normal());
         const float recDeterminant = 1.f / (1.f - (ndn * ndn));
@@ -390,10 +389,6 @@ namespace polymer
         return true;
     }
 
-    ////////////////////////////////////////
-    //   object-to-object intersections   //
-    ////////////////////////////////////////
-    
     inline float3 intersect_line_plane(const line & l, const plane & p)
     {
         const float d = dot(l.direction, p.get_normal());
@@ -422,15 +417,15 @@ namespace polymer
             planes[FrustumPlane::FAR] = plane({ 0, 0, -1 }, 1.f);
         }
 
-        frustum(const float4x4 & viewProj)
+        frustum(const float4x4 & view_proj)
         {
             // See "Fast Extraction of Viewing Frustum Planes from the WorldView-Projection Matrix" by Gil Gribb and Klaus Hartmann
-            for (int i = 0; i < 4; ++i) planes[FrustumPlane::RIGHT].equation[i] = viewProj[i][3] - viewProj[i][0];
-            for (int i = 0; i < 4; ++i) planes[FrustumPlane::LEFT].equation[i] = viewProj[i][3] + viewProj[i][0];
-            for (int i = 0; i < 4; ++i) planes[FrustumPlane::BOTTOM].equation[i] = viewProj[i][3] + viewProj[i][1];
-            for (int i = 0; i < 4; ++i) planes[FrustumPlane::TOP].equation[i] = viewProj[i][3] - viewProj[i][1];
-            for (int i = 0; i < 4; ++i) planes[FrustumPlane::NEAR].equation[i] = viewProj[i][3] + viewProj[i][2];
-            for (int i = 0; i < 4; ++i) planes[FrustumPlane::FAR].equation[i] = viewProj[i][3] - viewProj[i][2];
+            for (int i = 0; i < 4; ++i) planes[FrustumPlane::RIGHT].equation[i]  = view_proj[i][3] - view_proj[i][0];
+            for (int i = 0; i < 4; ++i) planes[FrustumPlane::LEFT].equation[i]   = view_proj[i][3] + view_proj[i][0];
+            for (int i = 0; i < 4; ++i) planes[FrustumPlane::BOTTOM].equation[i] = view_proj[i][3] + view_proj[i][1];
+            for (int i = 0; i < 4; ++i) planes[FrustumPlane::TOP].equation[i]    = view_proj[i][3] - view_proj[i][1];
+            for (int i = 0; i < 4; ++i) planes[FrustumPlane::NEAR].equation[i]   = view_proj[i][3] + view_proj[i][2];
+            for (int i = 0; i < 4; ++i) planes[FrustumPlane::FAR].equation[i]    = view_proj[i][3] - view_proj[i][2];
             for (auto & p : planes) p.normalize();
         }
 
@@ -489,21 +484,20 @@ namespace polymer
             }
             return true;
         }
-
     };
 
     inline std::array<float3, 8> make_frustum_corners(const frustum & f)
     {
         std::array<float3, 8> corners;
 
-        corners[0] = plane_intersection(f.planes[FrustumPlane::FAR],  f.planes[FrustumPlane::TOP],      f.planes[FrustumPlane::LEFT]);
-        corners[1] = plane_intersection(f.planes[FrustumPlane::FAR],  f.planes[FrustumPlane::BOTTOM],   f.planes[FrustumPlane::RIGHT]);
-        corners[2] = plane_intersection(f.planes[FrustumPlane::FAR],  f.planes[FrustumPlane::BOTTOM],   f.planes[FrustumPlane::LEFT]);
-        corners[3] = plane_intersection(f.planes[FrustumPlane::FAR],  f.planes[FrustumPlane::TOP],      f.planes[FrustumPlane::RIGHT]);
-        corners[4] = plane_intersection(f.planes[FrustumPlane::NEAR], f.planes[FrustumPlane::TOP],      f.planes[FrustumPlane::LEFT]);
-        corners[5] = plane_intersection(f.planes[FrustumPlane::NEAR], f.planes[FrustumPlane::BOTTOM],   f.planes[FrustumPlane::RIGHT]);
-        corners[6] = plane_intersection(f.planes[FrustumPlane::NEAR], f.planes[FrustumPlane::BOTTOM],   f.planes[FrustumPlane::LEFT]);
-        corners[7] = plane_intersection(f.planes[FrustumPlane::NEAR], f.planes[FrustumPlane::TOP],      f.planes[FrustumPlane::RIGHT]);
+        corners[0] = intersect_planes(f.planes[FrustumPlane::FAR],  f.planes[FrustumPlane::TOP],      f.planes[FrustumPlane::LEFT]);
+        corners[1] = intersect_planes(f.planes[FrustumPlane::FAR],  f.planes[FrustumPlane::BOTTOM],   f.planes[FrustumPlane::RIGHT]);
+        corners[2] = intersect_planes(f.planes[FrustumPlane::FAR],  f.planes[FrustumPlane::BOTTOM],   f.planes[FrustumPlane::LEFT]);
+        corners[3] = intersect_planes(f.planes[FrustumPlane::FAR],  f.planes[FrustumPlane::TOP],      f.planes[FrustumPlane::RIGHT]);
+        corners[4] = intersect_planes(f.planes[FrustumPlane::NEAR], f.planes[FrustumPlane::TOP],      f.planes[FrustumPlane::LEFT]);
+        corners[5] = intersect_planes(f.planes[FrustumPlane::NEAR], f.planes[FrustumPlane::BOTTOM],   f.planes[FrustumPlane::RIGHT]);
+        corners[6] = intersect_planes(f.planes[FrustumPlane::NEAR], f.planes[FrustumPlane::BOTTOM],   f.planes[FrustumPlane::LEFT]);
+        corners[7] = intersect_planes(f.planes[FrustumPlane::NEAR], f.planes[FrustumPlane::TOP],      f.planes[FrustumPlane::RIGHT]);
 
         return corners;
     }
