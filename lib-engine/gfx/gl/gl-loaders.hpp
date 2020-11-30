@@ -7,6 +7,7 @@
 #include "gl-api.hpp"
 #include "stb/stb_image.h" 
 #include "gli/gli.hpp"
+#include "image-buffer.hpp"
 
 namespace polymer
 {
@@ -44,6 +45,19 @@ namespace polymer
         if (out_height) *out_height = height;
 
         return d;
+    }
+
+    inline image_buffer<uint8_t> load_image_buffer(const std::string & path, bool flip = false)
+    {
+        int32_t width {0};
+        int32_t height {0};
+        int32_t channels {0};
+        std::vector<uint8_t> data = load_image_data(path, &width, &height, &channels, flip);
+
+        image_buffer<uint8_t> result(int2(width, height), channels);
+        std::memcpy(result.data(), data.data(), result.size_bytes());
+
+        return result;
     }
 
     inline gl_texture_2d load_image(const std::string & path, bool flip = false)

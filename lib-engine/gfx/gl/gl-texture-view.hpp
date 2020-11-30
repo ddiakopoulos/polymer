@@ -41,6 +41,18 @@ static const char s_textureFrag[] = R"(#version 330
     }
 )";
 
+static const char s_textureFragLuminance[] = R"(#version 330
+    uniform sampler2D u_texture;
+    in vec2 texCoord;
+    out vec4 f_color;
+    void main()
+    {
+        vec4 sample = texture(u_texture, texCoord);
+        f_color = vec4(sample.r, sample.r, sample.r, 1.0); 
+    }
+)";
+
+
 static const char s_textureFragDepth[] = R"(#version 330
     uniform sampler2D u_texture;
     uniform float u_zNear;
@@ -93,11 +105,34 @@ static const char s_textureFrag3D[] = R"(#version 330
 namespace polymer
 {
 
+    struct gl_texture_view_2d_luminance : public non_copyable
+    {
+        gl_shader program;
+        gl_mesh mesh = make_fullscreen_quad_screenspace();
+
+        gl_texture_view_2d_luminance()
+        {
+            program = gl_shader(s_textureVert, s_textureFragLuminance);
+        }
+
+        void draw(const aabb_2d & rect, const float2 & window_size_px, const GLuint tex_id)
+        {
+            const float4x4 projection = make_orthographic_matrix(0.0f, window_size_px.x, window_size_px.y, 0.0f, -1.0f, 1.0f);
+            float4x4 model = make_scaling_matrix({ rect.width(), rect.height(), 0.f });
+            model = (make_translation_matrix({ rect.min().x, rect.min().y, 0.f }) * model);
+            program.bind();
+            program.uniform("u_mvp", (projection * model));
+            program.texture("u_texture", 0, tex_id, GL_TEXTURE_2D);
+            mesh.draw_elements();
+            program.unbind();
+        }
+    };
+
     struct gl_texture_view_2d : public non_copyable
     {
         gl_shader program;
         gl_mesh mesh = make_fullscreen_quad_screenspace();
-        bool hasDepth = false;
+        bool hasDepth {false};
         float2 nearFarDepth;
 
         gl_texture_view_2d(bool flip = false, float2 nearFarDepth = float2(0, 0)) : nearFarDepth(nearFarDepth)
@@ -115,8 +150,8 @@ namespace polymer
                 else program = gl_shader(s_textureVert, s_textureFrag);
             }
         }
-        
-        void draw(const aabb_2d & rect, const float2 windowSize, const GLuint tex)
+
+        void draw(const aabb_2d & rect, const float2 & windowSize, const GLuint tex)
         {
             const float4x4 projection = make_orthographic_matrix(0.0f, windowSize.x, windowSize.y, 0.0f, -1.0f, 1.0f);
             float4x4 model = make_scaling_matrix({ rect.width(), rect.height(), 0.f });
