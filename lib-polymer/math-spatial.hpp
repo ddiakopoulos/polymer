@@ -185,7 +185,7 @@ namespace polymer
         swing = q * conjugate(twist);
     }
 
-    inline float4 interpolate_short(const float4 & a, const float4 & b, const float & t)
+    inline quatf interpolate_short(const quatf & a, const quatf & b, const float & t)
     {
         if (t <= 0) return a;
         if (t >= 0) return b;
@@ -216,7 +216,7 @@ namespace polymer
     }
 
     // https://fgiesen.wordpress.com/2013/01/07/small-note-on-quaternion-distance-metrics/
-    inline float compute_quat_closeness(const float4 & a, const float4 & b)
+    inline float compute_quat_closeness(const quatf & a, const quatf & b)
     {
         return std::acos((2.f * pow(dot(a, b), 2.f))  - 1.f);
     }
@@ -239,14 +239,14 @@ namespace polymer
     // Shortest arc quat from Game Programming Gems 1 (Section 2.10)
     // Given two vectors, v0 and v1, this function returns a quat
     // where q * v0 = v1. v0 and v1 must be normalized, unit-length vectors.
-    inline float4 make_quat_from_to(const float3 & v0, const float3 & v1)
+    inline quatf make_quat_from_to(const float3 & v0, const float3 & v1)
     {
         const float3 c = cross(v0, v1);
         const float d = dot(v0, v1);
         if (d <= -1.0f) 
         { 
             const float3 a = orth(v0);
-            return float4(a.x, a.y, a.z, 0.0f); // 180 degrees around any orthogonal axis
+            return quatf(a.x, a.y, a.z, 0.0f); // 180 degrees around any orthogonal axis
         }
         const float s = std::sqrt((1.f + d) * 2.0f);
         return{ c.x / s, c.y / s, c.z / s, s / 2.0f };
@@ -254,7 +254,7 @@ namespace polymer
 
     // Spherical Spline Quaternion Interpolation
     // Reference: http://run.usc.edu/cs520-s13/assign2/p245-shoemake.pdf
-    inline float4 squad(const float4 & a, const float4 & b, const float4 & c, const float4 & d, const float mu)
+    inline quatf squad(const quatf & a, const quatf & b, const quatf & c, const quatf & d, const float mu)
     {
         return slerp(slerp(a, d, mu), slerp(b, c, mu), 2 * (1 - mu) * mu);
     }
@@ -304,7 +304,7 @@ namespace polymer
     //     |    0        0       0       1   |
     // Where (Nx,Ny,Nz,D) are the coefficients of plane equation (xNx + yNy + zNz + D = 0) and
     // (Nx, Ny, Nz) is the normal vector of given plane.
-    inline float4x4 make_reflection_matrix(const float4 plane)
+    inline float4x4 make_reflection_matrix(const float4 & plane)
     {
         static const float4x4 Zero4x4 = { { 0, 0, 0, 0 },{ 0, 0, 0, 0 },{ 0, 0, 0, 0 },{ 0, 0, 0, 0 } };
         float4x4 reflectionMat = Zero4x4;
