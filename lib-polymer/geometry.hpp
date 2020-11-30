@@ -56,6 +56,21 @@ namespace polymer
         return bounds;
     }
 
+    inline aabb_2d compute_bounds(const std::vector<float2> & pts)
+    {
+        aabb_2d bounds;
+
+        bounds._min = float2(std::numeric_limits<float>::infinity());
+        bounds._max = -bounds.min();
+
+        for (const float2 & pt : pts)
+        {
+            bounds._min = linalg::min(bounds.min(), pt);
+            bounds._max = linalg::max(bounds.max(), pt);
+        }
+        return bounds;
+    }
+
     inline aabb_3d compute_bounds(const geometry & g)
     {
         return compute_bounds(g.vertices);
