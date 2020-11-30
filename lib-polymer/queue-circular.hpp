@@ -158,7 +158,7 @@ namespace polymer
     T compute_max(const circular_queue<T> & b)
     {
         T max = std::numeric_limits<T>::min();
-        for (size_t i = 0; i < b.get_current_size(); i++) if (buffer[i] > max) max = buffer[i];
+        for (size_t i = 0; i < b.get_current_size(); i++) if (b[i] > max) max = b[i];
         return max;
     }
 
