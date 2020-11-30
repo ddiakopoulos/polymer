@@ -48,6 +48,12 @@ namespace polymer
                 (_min.y <= other._min.y) && (_max.y >= other._max.y)) return true;
             return false;
         }
+
+        void surround(const aabb_2d & other)
+        {
+            _min = linalg::min(_min, other._min);
+            _max = linalg::max(_max, other._max);
+        }
     };
 
     inline std::ostream & operator << (std::ostream & o, const aabb_2d & b)
@@ -312,7 +318,7 @@ namespace polymer
     struct segment
     {
         float3 a, b;
-        segment(const float3 & first, const float3 & second) : a(a), b(b) {}
+        segment(const float3 & first, const float3 & second) : a(first), b(second) {}
         float3 get_direction() const { return safe_normalize(b - a); };
     };
 
