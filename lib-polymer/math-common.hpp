@@ -157,26 +157,24 @@ namespace polymer
         return outVal;
     }
 
-    inline float damped_spring(const float target, const float current, float & velocity, const float delta, const float spring_constant)
+    inline float move_to(const float current, const float target, const float maxDelta) 
     {
-        float currentToTarget = target - current;
-        float springForce = currentToTarget * spring_constant;
-        float dampingForce = -velocity * 2 * sqrt(spring_constant);
-        float force = springForce + dampingForce;
-        velocity += force * delta;
-        float displacement = velocity * delta;
-        return current + displacement;
+        const float delta = target - current;
+        return (maxDelta >= delta) ? target : current + maxDelta;
     }
 
     // Roughly based on https://graemepottsfolio.wordpress.com/tag/damped-spring/
-    inline void critically_damped_spring(const float delta, const float to, const float smooth, const float max_rate, float & x, float & dx)
+    // A spring is critically damped when it returns to equilibrium in the least possible amount of time.
+    // More information http://www.ryanjuckett.com/programming/damped-springs/
+    // x = position, dx = velocity
+    inline void critically_damped_spring(const float delta, const float to, const float smooth_time, const float max_rate, float & x, float & dx)
     {
-        if (smooth > 0.f)
+        if (smooth_time > 0.f)
         {
-            const float omega = 2.f / smooth;
+            const float omega = 2.f / smooth_time;
             const float od = omega * delta;
             const float inv_exp = 1.f / (1.f + od + 0.48f * od * od + 0.235f * od * od * od);
-            const float change_limit = max_rate * smooth;
+            const float change_limit = max_rate * smooth_time;
             const float clamped = clamp((x - to), -change_limit, change_limit);
             const float t = ((dx + clamped * omega) * delta);
             dx = (dx - t * omega) * inv_exp;
