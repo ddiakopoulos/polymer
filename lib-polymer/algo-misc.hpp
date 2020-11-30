@@ -45,33 +45,39 @@ namespace polymer
     };
 
     // Cantor set on the xz plane
-    struct cantor_set
+    class cantor_set
     {
-        std::vector<line> lines{ {float3(-1, 0, 0), float3(1, 0, 0)} }; // initial
+        std::vector<segment> lines; // initial
 
-        std::vector<line> next(const line & l) const
+        std::vector<segment> next(const segment & l) const
         {
-            const float3 p0 = l.origin;
-            const float3 pn = l.direction;
+            const float3 p0 = l.a;
+            const float3 pn = l.b;
             float3 p1 = (pn - p0) / 3.0f + p0;
             float3 p2 = ((pn - p0) * 2.f) / 3.f + p0;
 
-            std::vector<line> next;
+            std::vector<segment> next;
             next.push_back({ p0, p1 });
             next.push_back({ p2, pn });
 
             return next;
         }
 
-        void step()
+    public:
+
+        void reset() { lines.clear(); lines = {{float3(-1, 0, 0), float3(1, 0, 0)}}; }
+
+        std::vector<segment> step()
         {
-            std::vector<line> recomputedSet;
+            std::vector<segment> recomputedSet;
             for (auto & l : lines)
             {
-                std::vector<line> nextLines = next(l); // split
+                std::vector<segment> nextLines = next(l); // split
                 std::copy(nextLines.begin(), nextLines.end(), std::back_inserter(recomputedSet));
             }
             recomputedSet.swap(lines);
+
+            return lines;
         }
     };
 
