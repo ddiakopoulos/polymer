@@ -70,6 +70,14 @@ namespace polymer
         return { from_bt(xform.getRotation()), from_bt(xform.getOrigin()) };
     }
 
+    inline btTransform to_bt(const transform & xform)
+    {
+        btTransform x;
+        x.getOrigin() = to_bt(xform.position);
+        x.getRotation() = to_bt(xform.orientation);
+        return x;
+    }
+
 } // end namespace polymer
 
 #endif // end bullet_utils_hpp

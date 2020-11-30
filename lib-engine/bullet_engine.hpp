@@ -44,7 +44,9 @@ namespace polymer
             collisionConfiguration.reset(new btDefaultCollisionConfiguration());
             dispatcher.reset(new btCollisionDispatcher(collisionConfiguration.get()));
             solver.reset(new btSequentialImpulseConstraintSolver());
+
             dynamicsWorld.reset(new btDiscreteDynamicsWorld(dispatcher.get(), broadphase.get(), solver.get(), collisionConfiguration.get()));
+
             dynamicsWorld->setGravity(btVector3(0.f, -9.87f, 0.0f));
             dynamicsWorld->setInternalTickCallback(tick_callback, static_cast<void *>(this), true);
         }

@@ -83,7 +83,7 @@ bool openvr_tracked_camera::start()
     frame.texture.setup(intrin.width, intrin.height, GL_RGB, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
 
     // Create a persistent buffer for holding the incoming camera data
-    frame.rawBytes = image_buffer<uint8_t, 3>(int2(frameWidth, frameHeight));
+    frame.rawBytes = image_buffer<uint8_t>(int2(frameWidth, frameHeight), 3);
 
     lastFrameSequence = 0;
 

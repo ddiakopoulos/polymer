@@ -51,6 +51,7 @@ namespace polymer
             debugShader = gl_shader(debugVertexShader, debugFragmentShader);
         }
 
+        // This does not need to be called manually because: physicsEngine->get_world()->debugDrawWorld();
         void draw(const float4x4 & viewProj)
         {
             debugMesh.set_vertices(vertices.size(), vertices.data(), GL_DYNAMIC_DRAW);

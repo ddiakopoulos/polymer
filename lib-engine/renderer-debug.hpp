@@ -73,7 +73,6 @@ namespace polymer
 
         void draw_sphere(const transform & local_to_world, const float scale = 1.f, const float3 color = float3(1, 1, 1))
         {
-
             auto make_wireframe_sphere = [this, scale, local_to_world]()
             {
                 geometry g;

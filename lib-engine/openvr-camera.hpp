@@ -16,7 +16,7 @@ namespace polymer
     {
         transform render_pose;
         gl_texture_2d texture;
-        image_buffer<uint8_t, 3> rawBytes;
+        image_buffer<uint8_t> rawBytes;
     };
 
     class openvr_tracked_camera
