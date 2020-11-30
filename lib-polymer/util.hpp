@@ -134,13 +134,18 @@ namespace polymer
 
     class uniform_random_gen
     {
-        std::random_device rd;
         std::mt19937_64 gen;
         std::uniform_real_distribution<float> full { 0.f, 1.f };
         std::uniform_real_distribution<float> safe { 0.001f, 0.999f };
         std::uniform_real_distribution<float> two_pi { 0.f, float(6.2831853071795862) };
     public:
-        uniform_random_gen() : rd(), gen(rd()) { }
+        uniform_random_gen() 
+        { 
+            std::random_device r; 
+            std::seed_seq seed{r(), r()};
+            gen = std::mt19937_64(seed); 
+        }
+        uniform_random_gen (const uniform_random_gen & r) {}
         float random_float() { return full(gen); }
         float random_float(float max) { std::uniform_real_distribution<float> custom(0.f, max); return custom(gen); }
         float random_float(float min, float max) { std::uniform_real_distribution<float> custom(min, max); return custom(gen); }
