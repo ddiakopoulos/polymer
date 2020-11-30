@@ -315,30 +315,30 @@ namespace polymer
     //   lines & segments   //
     //////////////////////////
     
-    struct segment
+    struct segment_3d
     {
         float3 a, b;
-        segment(const float3 & first, const float3 & second) : a(first), b(second) {}
+        segment_3d(const float3 & first, const float3 & second) : a(first), b(second) {}
         float3 get_direction() const { return safe_normalize(b - a); };
     };
 
-    inline std::ostream & operator << (std::ostream & o, const segment & b)
+    inline std::ostream & operator << (std::ostream & o, const segment_3d & b)
     {
         return o << "{" << b.a << " to " << b.b << "}";
     }
 
-    struct line
+    struct line_3d
     {
         float3 origin, direction;
-        line(const float3 & origin, const float3 & direction) : origin(origin), direction(direction) {}
+        line_3d(const float3 & origin, const float3 & direction) : origin(origin), direction(direction) {}
     };
 
-    inline std::ostream & operator << (std::ostream & o, const line & b)
+    inline std::ostream & operator << (std::ostream & o, const line_3d & b)
     {
         return o << "{" << b.origin << " => " << b.direction << "}";
     }
 
-    inline float3 closest_point_on_segment(const float3 & point, const segment & s)
+    inline float3 closest_point_on_segment(const float3 & point, const segment_3d & s)
     {
         const float length = distance(s.a, s.b);
         const float3 dir = (s.b - s.a) / length;
@@ -363,17 +363,17 @@ namespace polymer
         return (dot(p1, n1) * cross(n2, n3) + dot(p2, n2) * cross(n3, n1) + dot(p3, n3) * cross(n1, n2)) / det;
     }
 
-    inline line intersect_planes(const plane & p1, const plane & p2)
+    inline line_3d intersect_planes(const plane & p1, const plane & p2)
     {
         const float ndn = dot(p1.get_normal(), p2.get_normal());
         const float recDeterminant = 1.f / (1.f - (ndn * ndn));
         const float c1 = (-p1.get_distance() + (p2.get_distance() * ndn)) * recDeterminant;
         const float c2 = (-p2.get_distance() + (p1.get_distance() * ndn)) * recDeterminant;
-        return line((c1 * p1.get_normal()) + (c2 * p2.get_normal()), normalize(cross(p1.get_normal(), p2.get_normal())));
+        return line_3d((c1 * p1.get_normal()) + (c2 * p2.get_normal()), normalize(cross(p1.get_normal(), p2.get_normal())));
     }
 
     // Get the points on each line that are closest to each other 
-    inline bool closest_point_between_lines(const line & ln_a, const line & ln_b, float3 * out_a, float3 * out_b) 
+    inline bool closest_point_between_lines(const line_3d & ln_a, const line_3d & ln_b, float3 * out_a, float3 * out_b) 
     {
         const float3 u_hat = normalize(ln_a.direction);
         const float3 v_hat = normalize(ln_b.direction);
@@ -395,11 +395,33 @@ namespace polymer
         return true;
     }
 
-    inline float3 intersect_line_plane(const line & l, const plane & p)
+    inline float3 intersect_line_plane(const line_3d & l, const plane & p)
     {
         const float d = dot(l.direction, p.get_normal());
         const float distance = p.distance_to(l.origin) / d;
         return (l.origin - (distance * l.direction));
+    }
+
+    inline bool intersect_segment_segment(
+        const float2 & p1,
+        const float2 & p2,
+        const float2 & p3,
+        const float2 & p4,
+        float2 * result)
+    {
+        auto d = (p2.x - p1.x) * (p4.y - p3.y) - (p2.y - p1.y) * (p4.x - p3.x);
+
+        if (d == 0.0f) return false;
+
+        auto u = ((p3.x - p1.x) * (p4.y - p3.y) - (p3.y - p1.y) * (p4.x - p3.x)) / d;
+        auto v = ((p3.x - p1.x) * (p2.y - p1.y) - (p3.y - p1.y) * (p2.x - p1.x)) / d;
+
+        if (u < 0.0f || u > 1.0f || v < 0.0f || v > 1.0f) return false;
+
+        result->x = p1.x + u * (p2.x - p1.x);
+        result->y = p1.y + u * (p2.y - p1.y);
+
+        return true;
     }
 
     /////////////////
