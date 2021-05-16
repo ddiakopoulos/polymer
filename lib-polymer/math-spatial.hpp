@@ -356,7 +356,7 @@ namespace polymer
 
     inline float3 transform_coord(const float4x4 & transform, const float3 & coord)
     {
-        auto r = transform * float4(coord, 1); return (r.xyz / r.w);
+        auto r = transform * float4(coord, 1); return (r.xyz * (1.0f / r.w));
     }
 
     inline float3 transform_vector(const float4x4 & transform, const float3 & vector)

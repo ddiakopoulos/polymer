@@ -70,15 +70,15 @@ namespace polymer
 
     inline std::string ltrim(std::string str) 
     {
-        str.erase(str.begin(), std::find_if(str.begin(), str.end(), std::not1(std::ptr_fun<int, int>(std::isspace))));
-		str.erase(str.begin(), std::find_if(str.begin(), str.end(), std::not1(std::ptr_fun<int, int>(std::iscntrl))));
+        str.erase(str.begin(), std::find_if(str.begin(), str.end(),
+            [](unsigned char c){ return isgraph(c); }));
         return str;
     }
 
     inline std::string rtrim(std::string str) 
     {
-        str.erase(std::find_if(str.rbegin(), str.rend(), std::not1(std::ptr_fun<int, int>(std::isspace))).base(), str.end());
-		str.erase(std::find_if(str.rbegin(), str.rend(), std::not1(std::ptr_fun<int, int>(std::iscntrl))).base(), str.end());
+        str.erase(std::find_if(str.rbegin(), str.rend(),
+            [](unsigned char c){ return isgraph(c); }).base(), str.end());
         return str;
     }
 

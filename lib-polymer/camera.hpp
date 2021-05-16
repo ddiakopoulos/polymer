@@ -48,23 +48,24 @@ namespace polymer
         // Project a point in (eye/view/camera) space to NDC coords. Returns a point in the NDC [-1, +1] range. 
         float3 project_point(const float3 & point, const float aspect_ratio) const
         {
-            float4 pp4 = get_projection_matrix(aspect_ratio) * float4(point.x, point.y, point.z, 1.f);
+            float4 projected_point = (get_projection_matrix(aspect_ratio) * get_view_matrix()) * float4(point.x, point.y, point.z, 1.f);
 
-            if (std::abs(pp4.w) > 1e-7f)
+            if (std::abs(projected_point.w) > 1e-7f)
             {
-                const float inv_w = 1.0f / pp4.w;
-                pp4.x *= inv_w;
-                pp4.y *= inv_w;
-                pp4.z *= inv_w;
+                // normalize if w is different than 1
+                const float inv_w = 1.0f / projected_point.w;
+                projected_point.x *= inv_w;
+                projected_point.y *= inv_w;
+                projected_point.z *= inv_w;
             }
             else
             {
-                pp4.x = 0.0f;
-                pp4.y = 0.0f;
-                pp4.z = 0.0f;
+                projected_point.x = 0.0f;
+                projected_point.y = 0.0f;
+                projected_point.z = 0.0f;
             }
 
-            return float3(pp4.x, pp4.y, pp4.z);
+            return float3(projected_point.x, projected_point.y, projected_point.z);
         }
 
         // Given a coordinate in view space, return a 2D point in NDC coordinates. 
@@ -83,7 +84,7 @@ namespace polymer
         // Given a 2D point in normalized device coordinates [-1, +1], return a screen space coordinate. 
         int2 ndc_to_screen_coord(const float2 & ndc_coord, const float2 & viewport_size) const
         {
-            // @todo - + viewport x + y
+            // @todo - add viewport x + y
             int2 screen_coord;
             screen_coord.x = round_to_int(((ndc_coord.x + 1.0f) * 0.5f) * viewport_size.x);
             screen_coord.y = round_to_int((1.0f - (ndc_coord.y + 1.0f) * 0.5f) * viewport_size.y);

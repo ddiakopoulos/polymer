@@ -64,8 +64,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "engine-character-controller
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gl-colormap", "samples\gl-colormap\gl-colormap.vcxproj", "{A7E69CA3-C888-4307-96F2-16F3DF33D66E}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gl-plotter-sketch", "samples\gl-plotter-sketch\gl-plotter-sketch.vcxproj", "{3EDEC89D-DEE2-44E1-9C9F-F390BFD215B3}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -172,10 +170,6 @@ Global
 		{A7E69CA3-C888-4307-96F2-16F3DF33D66E}.Debug|x64.Build.0 = Debug|x64
 		{A7E69CA3-C888-4307-96F2-16F3DF33D66E}.Release|x64.ActiveCfg = Release|x64
 		{A7E69CA3-C888-4307-96F2-16F3DF33D66E}.Release|x64.Build.0 = Release|x64
-		{3EDEC89D-DEE2-44E1-9C9F-F390BFD215B3}.Debug|x64.ActiveCfg = Debug|x64
-		{3EDEC89D-DEE2-44E1-9C9F-F390BFD215B3}.Debug|x64.Build.0 = Debug|x64
-		{3EDEC89D-DEE2-44E1-9C9F-F390BFD215B3}.Release|x64.ActiveCfg = Release|x64
-		{3EDEC89D-DEE2-44E1-9C9F-F390BFD215B3}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -206,7 +200,6 @@ Global
 		{BB5A2189-E348-4B7B-B642-489D8F36A00A} = {0B054E41-2F3E-4230-8488-B44C3643F315}
 		{782062E3-356B-4D7C-8DC1-B8EF02FB4FC3} = {0B054E41-2F3E-4230-8488-B44C3643F315}
 		{A7E69CA3-C888-4307-96F2-16F3DF33D66E} = {0B054E41-2F3E-4230-8488-B44C3643F315}
-		{3EDEC89D-DEE2-44E1-9C9F-F390BFD215B3} = {0B054E41-2F3E-4230-8488-B44C3643F315}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {E2D0793D-BD41-4F42-A6AA-DAB3D17A46BE}

@@ -29,11 +29,16 @@ namespace polymer
         aabb_2d(float2 min, float2 max) : _min(min), _max(max) {}
         aabb_2d(float x0, float y0, float x1, float y1) { _min.x = x0; _min.y = y0; _max.x = x1; _max.y = y1; }
 
+        // aabb_2d(const aabb_2d & r) { _min = r.min; _max = r.max; } 
+        // aabb_2d(aabb_2d && r) { *this = std::move(r); }
+        // aabb_2d & operator = (aabb_2d & other) {  _min = other.min; _max = other.max; return *this; }
+        // aabb_2d & operator = (aabb_2d && r) noexcept { _min = r.min; _max = r.max; return *this; }
+
         float2 min() const { return _min; }
         float2 max() const { return _max; }
 
         float2 size() const { return max() - min(); }
-        float2 center() const { return{ (_min.x + _max.y) / 2, (_min.y + _max.y) / 2 }; }
+        float2 center() const { return{ (_min.x + _max.x) / 2, (_min.y + _max.y) / 2 }; }
         float area() const { return (_max.x - _min.x) * (_max.y - _min.y); }
 
         float width() const { return _max.x - _min.x; }
@@ -318,6 +323,7 @@ namespace polymer
     struct segment_3d
     {
         float3 a, b;
+        segment_3d() = default;
         segment_3d(const float3 & first, const float3 & second) : a(first), b(second) {}
         float3 get_direction() const { return safe_normalize(b - a); };
     };

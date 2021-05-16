@@ -1,13 +1,26 @@
 #include "shader-library.hpp"
 #include "asset-handle-utils.hpp"
 
+#include <chrono>
+#include <filesystem>
+
 using namespace polymer;
-using namespace std::experimental::filesystem;
+using namespace std::filesystem;
 using namespace std::chrono;
 
-system_clock::time_point write_time(const std::string & file_path)
+inline system_clock::time_point write_time(const std::string & file_path)
 {
-    try { return last_write_time(path(file_path)); }
+    try { 
+        const auto lwt = std::filesystem::last_write_time(path(file_path));
+
+        // get the ticks and subtract the file time epoch adjustment
+        const auto ticks = lwt.time_since_epoch().count() - __std_fs_file_time_epoch_adjustment;
+
+        // create a time_point from ticks
+        const auto tp = system_clock::time_point(system_clock::time_point::duration(ticks));
+
+        return tp;
+    }
     catch (...) { return system_clock::time_point::min(); };
 }
 
