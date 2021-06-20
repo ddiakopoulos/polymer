@@ -1,6 +1,6 @@
 {
     "@polymer_pbr_standard": {
-        "albedo_handle": "concrete_tile_basecolor",
+        "albedo_handle": "avalanchesnowchunks_basecolor",
         "blend_factor": "",
         "cast_shadows": true,
         "depth_read": true,
@@ -9,7 +9,7 @@
         "emissive_handle": "",
         "height_handle": "",
         "metallic_handle": "",
-        "normal_handle": "concrete_tile_normal",
+        "normal_handle": "avalanchesnowchunks_normal",
         "occlusion_handle": "",
         "opacity": 1.0,
         "program_handle": "pbr-forward-lighting",
@@ -33,7 +33,7 @@
         "u_specularLevel": 0.0,
         "u_texCoordScale": {
             "x": 0.07500000298023224,
-            "y": 0.07500000298023224
+            "y": 5.0
         }
     }
 }

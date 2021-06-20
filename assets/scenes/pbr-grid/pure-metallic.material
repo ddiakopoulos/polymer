@@ -1,6 +1,6 @@
 {
     "@polymer_pbr_standard": {
-        "albedo_handle": "",
+        "albedo_handle": "avalanchesnowchunks_basecolor",
         "blend_factor": "",
         "cast_shadows": true,
         "depth_read": true,
