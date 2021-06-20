@@ -86,28 +86,29 @@ void gl_particle_system::update(const float dt)
 
 	scoped_timer t("gl_particle_system::overall " +  std::to_string(particles.size()));
 
-    // @fixme - put into better place
-	if (!instances.size())
-	{
-		instanceBuffers.reset(new ping_pong_buffer<gl_buffer>(30720000)); // max?  // 16384
-	}
+    if (particles.size() > instances.size())
+    {
+        instances.resize(particles.size());
+        size_t size_bytes = instances.size() * sizeof(instance_data);
+        instanceBuffers.reset(new ping_pong_buffer<gl_buffer>(size_bytes)); 
+    }   
 
 	{
 		//scoped_timer t("gl_particle_system::simulate");
 
         // Simulate 
-        for (int i = 0; i < particles.size(); ++i)
-        {
-            particles[i].position += particles[i].velocity * dt;
-            particles[i].lifeMs -= dt;
-            particles[i].isDead = particles[i].lifeMs <= 0.f;
-        }
-
-        // [pointcloud] apply modifiers
-        for (auto& modifier : particleModifiers)
-        {
-            modifier->update(particles, dt);
-        }
+        // for (int i = 0; i < particles.size(); ++i)
+        // {
+        //     particles[i].position += particles[i].velocity * dt;
+        //     particles[i].lifeMs -= dt;
+        //     particles[i].isDead = particles[i].lifeMs <= 0.f;
+        // }
+        // 
+        // // [pointcloud] apply modifiers
+        // for (auto& modifier : particleModifiers)
+        // {
+        //     modifier->update(particles, dt);
+        // }
 
         // [pointcloud] cull
         // if (!particles.empty())
@@ -118,12 +119,7 @@ void gl_particle_system::update(const float dt)
         //     });
         //     particles.erase(it, std::end(particles));
         // }
-
-        if (particles.size() > instances.size())
-        {
-            instances.resize(particles.size());
-        }        
-;
+     
 		for (int i = 0; i < particles.size(); ++i) 
 		{
 			// Create instance particles, with an optional trail
@@ -146,7 +142,7 @@ void gl_particle_system::update(const float dt)
 	{
 		//scoped_timer t("gl_particle_system::upload");
         // int buffer, int offset, int size bytes, data)
-		glNamedBufferSubDataEXT(instanceBuffers->current(), 0, instances.size() * sizeof(instance_data), instances.data());
+		glNamedBufferSubDataEXT(instanceBuffers->previous(), 0, instances.size() * sizeof(instance_data), instances.data());
         instanceBuffers->swap();
 	}
 }
@@ -175,7 +171,7 @@ void gl_particle_system::draw(
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); 
-    glDepthMask(GL_FALSE);
+    glDepthMask(GL_TRUE); // -> GL_FALSE
 
     shader.uniform("u_inverseViewMatrix", inverse(viewMat));
     shader.uniform("u_viewProjMat", projMat * viewMat);
@@ -189,12 +185,12 @@ void gl_particle_system::draw(
     else shader.uniform("u_use_alpha_mask", 0.f);
 
     glBindVertexArray(vao);
-
     // Instance buffer contains position (xyz) and size/radius (w)
     // An attribute is referred to as instanced if its GL_VERTEX_ATTRIB_ARRAY_DIVISOR value is non-zero. 
-    glBindBuffer(GL_ARRAY_BUFFER, instanceBuffers->previous());
+    glBindBuffer(GL_ARRAY_BUFFER, instanceBuffers->current());
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(instance_data), (GLvoid*)offsetof(instance_data, position_size));
     glVertexAttribDivisor(0, 1);
+
     glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(instance_data), (GLvoid*)offsetof(instance_data, color));
     glVertexAttribDivisor(1, 1); 
 
@@ -218,11 +214,6 @@ void gl_particle_system::draw(
     glDepthMask(GL_TRUE);
 
     shader.unbind();
-
-    if (should_swap)
-    {
-        // ... 
-    }
 
     gl_check_error(__FILE__, __LINE__);
 }

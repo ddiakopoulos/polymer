@@ -59,7 +59,7 @@ namespace gui
     }
 
     std::vector<uint8_t> fontBuffer;
-    void imgui_instance::add_font(const std::vector<uint8_t> & buffer)
+    ImFont * imgui_instance::add_font(const std::vector<uint8_t> & buffer)
     {
         ImGuiIO & io = ImGui::GetIO();
         fontBuffer = buffer;
@@ -67,10 +67,11 @@ namespace gui
         config.FontDataOwnedByAtlas = false;
         auto font = io.Fonts->AddFontFromMemoryTTF((void *)fontBuffer.data(), (int) fontBuffer.size(), 15.f, &config);
         IM_ASSERT(font != NULL);
+        return font;
     }
 
     std::vector<uint8_t> iconFontBuffer;
-    void imgui_instance::append_icon_font(const std::vector<uint8_t> & buffer)
+    ImFont * imgui_instance::append_icon_font(const std::vector<uint8_t> & buffer)
     {
         ImGuiIO & io = ImGui::GetIO();
         iconFontBuffer = buffer;
@@ -81,6 +82,7 @@ namespace gui
         icons_config.FontDataOwnedByAtlas = false;
         auto font = io.Fonts->AddFontFromMemoryTTF((void *)iconFontBuffer.data(), (int)iconFontBuffer.size(), 15.f, &icons_config, icons_ranges);
         IM_ASSERT(font != NULL);
+        return font;
     }
 
     imgui_instance::~imgui_instance()

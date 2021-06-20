@@ -137,8 +137,8 @@ namespace polymer
 
 		ping_pong_buffer(const size_t size)
 		{
-			glNamedBufferDataEXT(buffer[0], size * sizeof(instance_data), nullptr, GL_STREAM_DRAW);
-			glNamedBufferDataEXT(buffer[1], size * sizeof(instance_data), nullptr, GL_STREAM_DRAW);
+			glNamedBufferDataEXT(buffer[0], size, nullptr, GL_STREAM_DRAW);
+			glNamedBufferDataEXT(buffer[1], size, nullptr, GL_STREAM_DRAW);
 		}
 
 		void swap() { active_ = 1 - active_; }

@@ -62,7 +62,7 @@ namespace polymer
         aabb_2d bounds;
 
         bounds._min = float2(std::numeric_limits<float>::infinity());
-        bounds._max = -bounds.min();
+        bounds._max = -bounds.min(); 
 
         for (const float2 & pt : pts)
         {
@@ -267,6 +267,15 @@ namespace polymer
         s.faces.insert(s.faces.end(), a.faces.begin(), a.faces.end());
         for (auto & f : b.faces) s.faces.push_back({ (int)a.vertices.size() + f.x, (int)a.vertices.size() + f.y, (int)a.vertices.size() + f.z });
         return s;
+    }
+
+    inline void concatenate_geometry_inplace(geometry & base, const geometry & add)
+    {
+        base.vertices.insert(base.vertices.end(), add.vertices.begin(), add.vertices.end());
+        base.normals.insert(base.normals.end(), add.normals.begin(), add.normals.end());
+        base.texcoord0.insert(base.texcoord0.end(), add.texcoord0.begin(), add.texcoord0.end());
+        base.colors.insert(base.colors.end(), add.colors.begin(), add.colors.end());
+        for (auto & f : add.faces) base.faces.push_back({ (int)base.vertices.size() + f.x, (int)base.vertices.size() + f.y, (int)base.vertices.size() + f.z });
     }
 
     inline bool intersect_ray_mesh(const ray & ray,

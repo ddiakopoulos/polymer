@@ -26,7 +26,7 @@ namespace polymer
 
     public:
 
-        spsc_queue() : head(reinterpret_cast<node_t*>(new node_aligned_t)), tail(head)
+        spsc_queue() : head(reinterpret_cast<node_t*>(new node_aligned_t())), tail(head)
         {
             head->next = nullptr;
         }
@@ -40,7 +40,7 @@ namespace polymer
 
         bool produce(const T & input)
         {
-            node_t * node = reinterpret_cast<node_t*>(new node_aligned_t);
+            node_t * node = reinterpret_cast<node_t*>(new node_aligned_t());
             node->data = input;
             node->next = nullptr;
 

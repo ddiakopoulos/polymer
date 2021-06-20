@@ -72,7 +72,7 @@ static const char s_textureFragDepth[] = R"(#version 330
     {
         vec4 sample = texture(u_texture, texCoord);
         float linearDepthSample = linear_01_depth(sample.r);
-        f_color = vec4(linearDepthSample, linearDepthSample, linearDepthSample, 1.0); 
+        f_color = vec4(sample.r, sample.r, sample.r, 1.0); 
     }
 )";
 
@@ -98,7 +98,7 @@ static const char s_textureFrag3D[] = R"(#version 330
     void main()
     {
         vec4 sample = texture(u_texture, vec3(v_texcoord, float(u_slice)));
-        f_color = vec4(sample.r, sample.r, sample.r, 1.0); // temp hack for debugging
+        f_color = vec4(sample.r, sample.g, sample.b, 1.0);
     }
 )";
 
@@ -151,11 +151,11 @@ namespace polymer
             }
         }
 
-        void draw(const aabb_2d & rect, const float2 & windowSize, const GLuint tex)
+        void draw(const int2 position_px, const int2 size_px, const float2 & windowSize, const GLuint tex)
         {
             const float4x4 projection = make_orthographic_matrix(0.0f, windowSize.x, windowSize.y, 0.0f, -1.0f, 1.0f);
-            float4x4 model = make_scaling_matrix({ rect.width(), rect.height(), 0.f });
-            model = (make_translation_matrix({ rect.min().x, rect.min().y, 0.f }) * model);
+            float4x4 model = make_scaling_matrix({ (float) size_px.x, (float) size_px.y, 0.f });
+            model = (make_translation_matrix({ (float) position_px.x, (float) position_px.y, 0.f }) * model);
             program.bind();
             program.uniform("u_mvp", (projection * model));
             if (hasDepth)
