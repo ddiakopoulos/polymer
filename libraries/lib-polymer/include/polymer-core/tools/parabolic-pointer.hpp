@@ -9,6 +9,7 @@
 #include "polymer-core/math/math-core.hpp"
 #include "polymer-core/util/util.hpp"
 #include "polymer-core/tools/polynomial-solvers.hpp"
+#include "polymer-core/tools/geometry.hpp"
 
 namespace polymer
 {
