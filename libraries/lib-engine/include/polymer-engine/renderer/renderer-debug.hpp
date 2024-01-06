@@ -10,6 +10,9 @@
 
 #include "polymer-engine/scene.hpp"
 
+// todo: refactor to inline shaders and make debug renderer a gl-component rather than being 
+// included in polymer-engine directly
+
 namespace polymer
 {
     class global_debug_mesh_manager : public singleton<global_debug_mesh_manager>
@@ -27,6 +30,7 @@ namespace polymer
     public:
 
         global_debug_mesh_manager() = default;
+
 
         void initialize_resources(entity_system_manager * esm, scene * the_scene)
         {
@@ -124,6 +128,21 @@ namespace polymer
                 v = local_to_world.transform_coord(v);
                 vertices.push_back({ v, axis.colors[i].xyz });
             }
+        }
+
+        void draw_obb()
+        {
+            // todo
+        }
+
+        void draw_frustum()
+        {
+            // todo
+        }
+
+        void draw_text()
+        {
+            // todo
         }
 
         void upload()
