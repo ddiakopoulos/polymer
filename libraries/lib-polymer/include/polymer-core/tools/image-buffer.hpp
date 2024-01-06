@@ -52,6 +52,14 @@ namespace polymer
             return *this;
         }
 
+        void clear()
+        {
+            for (int i = 0; i < dims.x * dims.y * channels; ++i) 
+            {
+                alias[i] = 0;
+            }
+        }
+
         int2 size() const { return dims; }
         uint32_t size_bytes() const { return channels * dims.x * dims.y * sizeof(T); }
         uint32_t num_pixels() const { return dims.x * dims.y; }
