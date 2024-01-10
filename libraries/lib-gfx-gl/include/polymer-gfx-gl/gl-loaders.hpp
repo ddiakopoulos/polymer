@@ -59,7 +59,7 @@ namespace polymer
         image_buffer<uint8_t> result(int2(width, height), channels);
         std::memcpy(result.data(), data.data(), result.size_bytes());
 
-        return result;
+        return std::move(result);
     }
 
     inline gl_texture_2d load_image(const std::string & path, bool flip = false)

@@ -33,11 +33,12 @@ namespace polymer
 
         image_buffer() {};
         image_buffer(const int2 & size, const uint32_t channels) : dims(size), channels(channels),
-            buffer(new T[dims.x * dims.y * channels], delete_array()) {
+            buffer(new T[dims.x * dims.y * channels], delete_array()) 
+        {
             alias = buffer.get();
         }
 
-        image_buffer(const image_buffer<T> & r) : dims(r.dims), buffer(new T[dims.x * dims.y * channels], delete_array())
+        image_buffer(const image_buffer<T> & r) : dims(r.dims), channels(r.channels), buffer(new T[dims.x * dims.y * channels], delete_array())
         {
             alias = buffer.get();
             if (r.alias) std::memcpy(alias, r.alias, dims.x * dims.y * channels * sizeof(T));
@@ -48,6 +49,7 @@ namespace polymer
             buffer = { new T[dims.x * dims.y * channels], delete_array() };
             alias = buffer.get();
             dims = r.dims;
+            channels = r.channels;
             if (r.alias) std::memcpy(alias, r.alias, dims.x * dims.y * channels * sizeof(T));
             return *this;
         }
