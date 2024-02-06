@@ -128,7 +128,6 @@ glfw_window::glfw_window(gl_context * context, int w, int h, const std::string t
     glfwSetScrollCallback(window, [](GLFWwindow * window, double deltaX, double deltaY) { get(window).consume_scroll(deltaX, deltaY); });
     glfwSetDropCallback(window, [](GLFWwindow * window, int count, const char * names[]) { get(window).on_drop({ names, names + count }); });
     glfwSetWindowCloseCallback(window, [](GLFWwindow * window) { get(window).on_window_close(); });
-    
 }
 
 glfw_window::~glfw_window()
