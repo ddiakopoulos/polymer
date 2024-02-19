@@ -256,7 +256,7 @@ namespace impl
         { 0.0f, 1.0f, -1.0f }, { 0.0f, -1.0f, -1.0f }
     };
     
-    // Helper functions to compute gradients-dot-residualvectors (1D to 4D)
+    // Helper functions to compute gradients-dot-residual vectors (1D to 4D)
     // Note that these generate gradients of more than unit length. To make
     // a close match with the value range of classic Perlin noise, the final
     // noise values need to be rescaled to fit nicely within [-1,1].
