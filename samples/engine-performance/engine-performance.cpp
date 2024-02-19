@@ -2,13 +2,12 @@
  * File: samples/engine-performance.cpp
  */
 
-#include "lib-polymer.hpp"
-#include "lib-engine.hpp"
-
-#include "ecs/core-ecs.hpp"
-#include "scene.hpp"
-#include "renderer-util.hpp"
-#include "gl-imgui.hpp"
+#include "polymer-core/lib-polymer.hpp"
+#include "polymer-engine/lib-engine.hpp"
+#include "polymer-app-base/glfw-app.hpp"
+#include "polymer-app-base/wrappers/gl-imgui.hpp"
+#include "polymer-app-base/camera-controllers.hpp"
+#include "polymer-gfx-gl/gl-texture-view.hpp"
 
 using namespace polymer;
 using namespace gui;

@@ -9,6 +9,9 @@
 #ifndef polymer_typeid_hpp
 #define polymer_typeid_hpp
 
+#include "polymer-core/lib-polymer.hpp"
+#include <stdint.h>
+
 namespace polymer
 {
     ///////////////////////////////////////
