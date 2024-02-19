@@ -1,4 +1,6 @@
-#include "lib-polymer.hpp"
+#include "polymer-core/lib-polymer.hpp"
+#include "polymer-app-base/glfw-app.hpp"
+#include "polymer-model-io/model-io.hpp"
 
 #include "gl-gizmo.hpp"
 #include "gl-imgui.hpp"
@@ -27,6 +29,7 @@
 #include "material-editor.hpp"
 #include "asset-browser.hpp"
 #include "gizmo-controller.hpp"
+#include "editor-inspector-ui.hpp"
 
 struct scene_editor_app final : public polymer_app
 {

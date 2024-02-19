@@ -1,13 +1,12 @@
-#include "lib-polymer.hpp"
-#include "system-util.hpp"
+// #include "system-util.hpp"
+// #include "logging.hpp"
+// #include "util-win32.hpp"
+// #include "model-io.hpp"
+// #include "renderer-util.hpp"
+// #include "renderer-debug.hpp"
+//#include "serialization.hpp"
+
 #include "editor-app.hpp"
-#include "editor-inspector-ui.hpp"
-#include "serialization.hpp"
-#include "logging.hpp"
-#include "util-win32.hpp"
-#include "model-io.hpp"
-#include "renderer-util.hpp"
-#include "renderer-debug.hpp"
 
 using namespace polymer;
 
