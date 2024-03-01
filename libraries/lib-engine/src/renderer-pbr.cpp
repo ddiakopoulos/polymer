@@ -146,10 +146,10 @@ GLuint stable_cascaded_shadows::get_output_texture() const
 //   pbr_renderer implementation   //
 /////////////////////////////////////
 
-void pbr_renderer::update_per_object_uniform_buffer(const transform & p, const float3 & scale, const bool recieveShadow, const view_data & d)
+void pbr_renderer::update_per_object_uniform_buffer(const float4x4 & model_matrix, const bool recieveShadow, const view_data & d)
 {
     uniforms::per_object object = {};
-    object.modelMatrix = p.matrix() * make_scaling_matrix(scale);
+    object.modelMatrix = model_matrix;
     object.modelMatrixIT = inverse(transpose(object.modelMatrix));
     object.modelViewMatrix = d.viewMatrix * object.modelMatrix;
     object.receiveShadow = static_cast<float>(recieveShadow);
@@ -243,7 +243,7 @@ void pbr_renderer::run_depth_prepass(const view_data & view, const render_payloa
 
     for (const render_component & r : scene.render_components)
     {
-        update_per_object_uniform_buffer(r.world_transform->world_pose, r.local_transform->local_scale, r.material->receive_shadow, view);
+        update_per_object_uniform_buffer(r.world_matrix, r.material->receive_shadow, view);
         r.mesh->draw();
     }
 
@@ -303,8 +303,8 @@ void pbr_renderer::run_shadow_pass(const view_data & view, const render_payload 
     {
         if (r.material->material.get()->cast_shadows)
         {
-            const float4x4 modelMatrix = (r.world_transform->world_pose.matrix() * make_scaling_matrix(r.local_transform->local_scale));
-            shadow->update_shadow_matrix(modelMatrix);
+            // const float4x4 modelMatrix = (r.world_transform->world_pose.matrix() * make_scaling_matrix(r.local_transform->local_scale));
+            shadow->update_shadow_matrix(r.world_matrix);
             r.mesh->draw();
         }
     }
@@ -326,8 +326,7 @@ void pbr_renderer::run_forward_pass(std::vector<const render_component *> & rend
     for (const render_component * render_comp : render_queue)
     {
         update_per_object_uniform_buffer(
-            render_comp->world_transform->world_pose, 
-            render_comp->local_transform->local_scale, 
+            render_comp->world_matrix,
             render_comp->material->receive_shadow, 
             view);
 
@@ -449,7 +448,6 @@ pbr_renderer::pbr_renderer(const renderer_settings settings) : settings(settings
     {
         postFramebuffers.resize(settings.cameraCount);
         postTextures.resize(settings.cameraCount);
-
 
         for (uint32_t camIdx = 0; camIdx < settings.cameraCount; ++camIdx)
         {

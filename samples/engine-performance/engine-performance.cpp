@@ -31,7 +31,6 @@ constexpr const char basic_frag[] = R"(#version 330
     }
 )";
 
-
 struct sample_engine_performance final : public polymer_app
 {
     perspective_camera cam;
@@ -39,7 +38,6 @@ struct sample_engine_performance final : public polymer_app
 
     std::unique_ptr<imgui_instance> imgui;
     std::unique_ptr<gl_shader_monitor> shaderMonitor;
-    std::unique_ptr<entity_system_manager> the_entity_system_manager;
     std::unique_ptr<simple_texture_view> fullscreen_surface;
 
     bool show_debug_view{ false };
@@ -72,11 +70,10 @@ sample_engine_performance::sample_engine_performance() : polymer_app(1920, 1080,
 
     shaderMonitor.reset(new gl_shader_monitor("../../assets/"));
     fullscreen_surface.reset(new simple_texture_view());
-    the_entity_system_manager.reset(new entity_system_manager());
 
     load_required_renderer_assets("../../assets/", *shaderMonitor);
 
-    scene.reset(*the_entity_system_manager, {width, height}, true);
+    scene.reset({width, height}, true);
 
     boxDebugShader.reset(new gl_shader(basic_vert, basic_frag));
     boxDebugMesh = make_cube_mesh();
@@ -98,22 +95,41 @@ sample_engine_performance::sample_engine_performance() : polymer_app(1920, 1080,
 
     uniform_random_gen rand;
 
-    for (uint32_t entity_index = 0; entity_index < 16384; ++entity_index) // 16384
+    for (uint32_t entity_index = 0; entity_index < 1024; ++entity_index) // 16384
     {
-        float dist_multiplier = 128.f;
+        const float dist_multiplier = 128.f;
+
         const float3 random_position = float3(rand.random_float(-1, 1) * dist_multiplier, rand.random_float(-1, 1) * dist_multiplier, rand.random_float(-1, 1) * dist_multiplier);
         const float3 random_axis = normalize(float3(rand.random_float(), rand.random_float(), rand.random_float()));
         const quatf random_quat = make_rotation_quat_axis_angle(random_axis, rand.random_float_sphere());
+
         const transform pose = transform(normalize(random_quat), random_position);
         const float3 scale = float3(rand.random_float(0.1f, 2.5f));
+
         const std::string name = "pickable-" + std::to_string(entity_index);
 
         auto geometry = geometry_options[rand.random_int(0, (int32_t) geometry_options.size() - 1)];
-        const entity e = make_standard_scene_object(the_entity_system_manager.get(), &scene,
-            name, pose, scale, material_handle(material_library::kDefaultMaterialId), geometry, geometry);
 
-        new_entities.push_back(e);
+        base_object the_object(name);
+
+        transform_component transform_c = transform_component(pose, scale);
+        the_object.add_component(transform_c);
+
+        material_component mat_c = material_component(material_handle(material_library::kDefaultMaterialId));
+        the_object.add_component(mat_c);
+        
+        mesh_component mesh_c = mesh_component(gpu_mesh_handle(geometry));
+        the_object.add_component(mesh_c);
+
+        geometry_component geom_c = geometry_component(cpu_mesh_handle(geometry));
+        the_object.add_component(geom_c);
+
+        scene.get_collision_system()->add_collidable(the_object.get_entity());
+
+        scene.get_graph().add_object(std::move(the_object));
     }
+
+    scene.get_graph().refresh();
 
     payload.clear_color = float4(0.85f, 0.85f, 0.85f, 1.f);
 
@@ -140,14 +156,15 @@ void sample_engine_performance::on_input(const app_input_event & event)
         if (event.value[0] == GLFW_MOUSE_BUTTON_LEFT)
         {
             const ray r = cam.get_world_ray(event.cursor, float2(static_cast<float>(event.windowSize.x), static_cast<float>(event.windowSize.y)));
-
+    
             if (length(r.direction) > 0)
             {
-                entity_hit_result result = scene.collision_system->raycast(r);
+                entity_hit_result result = scene.get_collision_system()->raycast(r);
                 if (result.r.hit)
                 {
-                    auto mat_comp = scene.render_system->get_material_component(result.e);
-                    mat_comp->material = "renderer-wireframe";
+                    base_object & hit_obj   = scene.get_graph().get_object(result.e);
+                    material_component * mc = hit_obj.get_component<material_component>();
+                    mc->material            = material_handle("renderer-wireframe");
                 }
             }
         }
@@ -186,25 +203,44 @@ void sample_engine_performance::on_draw()
     payload.render_components.clear();
 
     {
-        simple_cpu_timer t;
-        t.start();
-        const std::vector<entity> visible_entity_list = scene.collision_system->get_visible_entities(camera_frustum);
-        t.stop();
+        // simple_cpu_timer t;
+        // t.start();
+        // const std::vector<entity> visible_entity_list = scene.collision_system->get_visible_entities(camera_frustum);
+        // t.stop();
 
-        ImGui::Text("Frustum Cull Took %f ms", (float)t.elapsed_ms());
-        ImGui::Text("Visible Entities %i", visible_entity_list.size());
+        // ImGui::Text("Frustum Cull Took %f ms", (float)t.elapsed_ms());
+        // ImGui::Text("Visible Entities %i", visible_entity_list.size());
 
+        // {
+        //     for (size_t i = 0; i < visible_entity_list.size(); ++i)
+        //     {
+        //         const auto e = visible_entity_list[i];
+        //         payload.render_components.emplace_back(assemble_render_component(scene, e));
+        //     }
+        // }
+
+        auto assemble_render_component = [](base_object & t)
         {
-            for (size_t i = 0; i < visible_entity_list.size(); ++i)
-            {
-                const auto e = visible_entity_list[i];
-                payload.render_components.emplace_back(assemble_render_component(scene, e));
-            }
-        }
+            render_component r;
+            r.material          = t.get_component<material_component>();
+            r.mesh              = t.get_component<mesh_component>();
+            r.world_matrix      = t.get_component<transform_component>()->get_world_transform().matrix();
+            r.render_sort_order = 0;
+            return r;
+        };
+
+        //scene.get_graph().graph_objects.size();
+
+        for (auto & t : scene.get_graph().graph_objects)
+        { 
+            render_component r = assemble_render_component(t.second);
+            payload.render_components.emplace_back(r);
+        };
     }
 
-    scene.render_system->get_renderer()->render_frame(payload);
+    scene.get_renderer()->render_frame(payload);
 
+    /*
     if (show_debug_view)
     {
         std::vector<bvh_node *> selected_subtree;
@@ -219,7 +255,7 @@ void sample_engine_performance::on_draw()
             {
                 if (node->object)
                 {
-                    const auto so = static_cast<scene_object*>(node->object->user_data);
+                    const auto so = static_cast<bvh_node_data*>(node->object->user_data);
 
                     if (so)
                     {
@@ -252,6 +288,7 @@ void sample_engine_performance::on_draw()
 
         boxDebugShader->unbind();
     }
+    */
 
     glUseProgram(0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -260,12 +297,12 @@ void sample_engine_performance::on_draw()
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
 
-    fullscreen_surface->draw(scene.render_system->get_renderer()->get_color_texture(viewIndex));
+    fullscreen_surface->draw(scene.get_renderer()->get_color_texture(viewIndex));
 
     ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
     ImGui::Checkbox("Show Debug", &show_debug_view);
-    for (auto & t : scene.render_system->get_renderer()->cpuProfiler.get_data()) ImGui::Text("CPU: %s - %f", t.first.c_str(), t.second);
-    for (auto & t : scene.render_system->get_renderer()->gpuProfiler.get_data()) ImGui::Text("GPU: %s - %f", t.first.c_str(), t.second);
+    for (auto & t : scene.get_renderer()->cpuProfiler.get_data()) ImGui::Text("CPU: %s - %f", t.first.c_str(), t.second);
+    for (auto & t : scene.get_renderer()->gpuProfiler.get_data()) ImGui::Text("GPU: %s - %f", t.first.c_str(), t.second);
     imgui->end_frame();
 
     gl_check_error(__FILE__, __LINE__);

@@ -12,8 +12,8 @@
 
 #include "polymer-engine/ecs/typeid.hpp"
 #include "polymer-engine/ecs/core-ecs.hpp"
-#include "polymer-engine/scene.hpp"
 #include "polymer-engine/profiling.hpp"
+#include "polymer-engine/object.hpp"
 
 #include "polymer-engine/renderer/renderer-uniforms.hpp"
 #include "polymer-engine/renderer/renderer-procedural-sky.hpp"
@@ -98,16 +98,18 @@ namespace polymer
         }
     };
 
-    class render_system;
     struct render_payload
     {
         std::vector<view_data> views;
+
         std::vector<render_component> render_components;
         std::vector<point_light_component *> point_lights;
         directional_light_component * sunlight{ nullptr };
         procedural_skybox_component * procedural_skybox{ nullptr };
+        ibl_component * ibl_cubemap {nullptr};
+
 		std::vector<gl_particle_system *> particle_systems;
-        cubemap_component * ibl_cubemap{ nullptr };
+
         float4 clear_color{ 1, 0, 0, 1 };
         void reset() { *this = render_payload(); }
     };
@@ -146,7 +148,7 @@ namespace polymer
         shader_handle renderPassParticle = { "particle-system" };
         shader_handle no_op = { "no-op" };
 
-        void update_per_object_uniform_buffer(const transform & p, const float3 & scale, const bool receiveShadow, const view_data & d);
+        void update_per_object_uniform_buffer(const float4x4 & model_matrix, const bool receiveShadow, const view_data & d);
         void run_stencil_prepass(const view_data & view, const render_payload & scene);
         void run_depth_prepass(const view_data & view, const render_payload & scene);
         void run_skybox_pass(const view_data & view, const render_payload & scene);

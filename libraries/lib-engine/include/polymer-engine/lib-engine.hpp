@@ -12,20 +12,15 @@
 #include "polymer-engine/ecs/component-pool.hpp"
 #include "polymer-engine/ecs/typeid.hpp"
 
-#include "polymer-engine/system/system-identifier.hpp"
-#include "polymer-engine/system/system-transform.hpp"
-#include "polymer-engine/system/system-collision.hpp"
-#include "polymer-engine/system/system-render.hpp"
-
 #include "polymer-engine/renderer/renderer-pbr.hpp"
 #include "polymer-engine/renderer/renderer-debug.hpp"
 #include "polymer-engine/renderer/renderer-util.hpp"
 
-#include "profiling.hpp"
-#include "logging.hpp"
-#include "shader.hpp"
-#include "material.hpp"
-#include "shader-library.hpp"
-#include "material-library.hpp"
+#include "polymer-engine/profiling.hpp"
+#include "polymer-engine/logging.hpp"
+#include "polymer-engine/shader.hpp"
+#include "polymer-engine/material.hpp"
+#include "polymer-engine/shader-library.hpp"
+#include "polymer-engine/material-library.hpp"
 
 #endif // end polymer_engine_hpp

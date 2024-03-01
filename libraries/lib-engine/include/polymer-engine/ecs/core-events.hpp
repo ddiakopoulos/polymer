@@ -21,7 +21,7 @@ namespace polymer
 
     /// `event_wrapper` is a modified version of the concept found in Google's Lullaby. 
     /// It was changed to only support the notion of a "concrete" event, a compile-time
-    /// event definition (as separate from a potential future runtime-definable events
+    /// event definition (as separate from a potential future runtime-definable event
     /// using a variant type). The wrapper idea persists in Polymer as a point of future extension. 
     /// An `event_wrapper` by default does not own an event, however a copy operation 
     /// fully copies the underlying event and assumes ownership. 

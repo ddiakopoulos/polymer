@@ -83,8 +83,8 @@ namespace polymer
     const char * get_typename()
     {
         assert(false);
-        /// If you get a compiler error that complains about TYPEID_NOT_SETUP, then you have not added 
-        /// POLYMER_SETUP_TYPEID(T) such that the compilation unit being compiled uses it.
+        // If you get a compiler error that complains about TYPEID_NOT_SETUP, then you have not added 
+        // POLYMER_SETUP_TYPEID(T) such that the compilation unit being compiled uses it.
         return T::TYPEID_NOT_SETUP;
     }
 

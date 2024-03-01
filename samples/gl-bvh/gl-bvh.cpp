@@ -54,7 +54,7 @@ struct sample_gl_bvh final : public polymer_app
 
     std::unique_ptr<imgui_instance> imgui;
 
-    std::vector<scene_object> bvh_objects;
+    std::vector<bvh_node_data> bvh_objects;
     std::unique_ptr<gl_shader> debug_shader;
     std::vector<debug_object> scene_objects;
     gl_mesh sphereMesh;
@@ -62,7 +62,7 @@ struct sample_gl_bvh final : public polymer_app
 
     bvh_tree scene_accelerator;
     bvh_node * selected_node{ nullptr };
-    scene_object * selected_object{ nullptr };
+    bvh_node_data * selected_object{ nullptr };
 
     uint32_t bvhInsertIdx = 0;
 
@@ -142,7 +142,7 @@ sample_gl_bvh::sample_gl_bvh() : polymer_app(1280, 720, "sample-gl-bvh")
     {
         auto & sphere = scene_objects[i];
 
-        scene_object obj;
+        bvh_node_data obj;
         obj.bounds = sphere.get_bounds();
         obj.user_data = &sphere;
         bvh_objects.emplace_back(std::move(obj));
@@ -194,7 +194,7 @@ void sample_gl_bvh::on_input(const app_input_event & event)
 
             if (length(r.direction) > 0)
             {
-                std::vector<std::pair<scene_object*, float>> hit_results;
+                std::vector<std::pair<bvh_node_data*, float>> hit_results;
                 if (scene_accelerator.intersect(r, hit_results)) selected_object = hit_results[0].first;
                 else selected_object = nullptr;
             }

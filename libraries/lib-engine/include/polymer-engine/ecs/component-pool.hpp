@@ -15,9 +15,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include "polymer-engine/ecs/core-ecs.hpp"
-#include "polymer-engine/ecs/typeid.hpp"
-
 namespace polymer
 {
     /// A map-like container of [Key] to [Object].
@@ -308,8 +305,11 @@ namespace polymer
         };
     };
 
-    template <typename T>
-    using polymer_component_pool = unordered_vector_map<entity, T, component_hash, std::hash<entity>>;
+    //template <typename T>
+    //using polymer_component_pool = unordered_vector_map<entity, T, component_hash, std::hash<entity>>;
+
+    //template <typename T>
+    //using polymer_object_pool = unordered_vector_map<entity, T, polymer::base_object_hash, std::hash<entity>>;
 
 } // end namespace polymer
 

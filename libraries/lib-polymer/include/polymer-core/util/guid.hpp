@@ -54,7 +54,7 @@ namespace polymer
 
     public:
 
-        guid(const std::array<uint8_t, 16> & bytes) : byte_array(bytes) {}
+        guid(const std::array<uint8_t, 16> bytes) : byte_array(bytes) {}
         guid(const uint8_t * bytes) { std::copy(bytes, bytes + 16, std::begin(byte_array)); }
 
         guid(const std::string & guid_as_string)

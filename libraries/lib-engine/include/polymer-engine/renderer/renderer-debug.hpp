@@ -13,6 +13,8 @@
 // todo: refactor to inline shaders and make debug renderer a gl-component rather than being 
 // included in polymer-engine directly
 
+#if 0
+
 namespace polymer
 {
     class global_debug_mesh_manager : public singleton<global_debug_mesh_manager>
@@ -30,7 +32,6 @@ namespace polymer
     public:
 
         global_debug_mesh_manager() = default;
-
 
         void initialize_resources(entity_system_manager * esm, scene * the_scene)
         {
@@ -161,5 +162,7 @@ namespace polymer
     template<> global_debug_mesh_manager * polymer::singleton<global_debug_mesh_manager>::single = nullptr;
 
 } // end namespace polymer
+
+#endif
 
 #endif // end polymer_renderer_debug_hpp

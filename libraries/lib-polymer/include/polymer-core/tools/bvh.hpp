@@ -92,7 +92,7 @@ namespace polymer
         leaf     = 2
     };
 
-    struct scene_object
+    struct bvh_node_data
     {
         aabb_3d bounds;
         void * user_data;
@@ -102,12 +102,12 @@ namespace polymer
     // while groups of objects are represented by internal nodes. 
     struct bvh_node
     {
-        aabb_3d bounds;                    // Bounds of this node, encompassing all children
-        uint64_t morton { 0 };             // The morton index value for this node
-        bvh_node * parent { nullptr };     // Parent node attached to this node (nullptr if this is the root)
-        bvh_node * left { nullptr };       // The 'left' child node (nullptr if this is a leaf node)
-        bvh_node * right { nullptr };      // The 'right' child node (nullptr if this is a leaf node)
-        scene_object * object { nullptr }; // The object attached to this node (nullptr if this an internal node)
+        aabb_3d bounds;                     // Bounds of this node, encompassing all children
+        uint64_t morton { 0 };              // The morton index value for this node
+        bvh_node * parent { nullptr };      // Parent node attached to this node (nullptr if this is the root)
+        bvh_node * left { nullptr };        // The 'left' child node (nullptr if this is a leaf node)
+        bvh_node * right { nullptr };       // The 'right' child node (nullptr if this is a leaf node)
+        bvh_node_data * object { nullptr }; // The object attached to this node (nullptr if this an internal node)
         bvh_node_type type { bvh_node_type::root };
     };
 
@@ -117,13 +117,13 @@ namespace polymer
 
     class bvh_tree
     {
-        typedef std::pair<uint64_t, scene_object*> bvh_morton_pair;
+        typedef std::pair<uint64_t, bvh_node_data*> bvh_morton_pair;
 
         bvh_node * root {nullptr};                  // Root scene node of the tree
 
-        std::vector<scene_object *> objects;         // Convenience container for tree reconstruction (prevents the need of a full-traversal).
-        std::vector<scene_object *> staged_objects;  // Newly added objects that are waiting to be added to the tree.
-        std::vector<scene_object *> pending_updates; // Container of all dirty nodes that need to be updated / leaves that have moved or rotated.
+        std::vector<bvh_node_data *> objects;         // Convenience container for tree reconstruction (prevents the need of a full-traversal).
+        std::vector<bvh_node_data *> staged_objects;  // Newly added objects that are waiting to be added to the tree.
+        std::vector<bvh_node_data *> pending_updates; // Container of all dirty nodes that need to be updated / leaves that have moved or rotated.
 
         float3 morton_scale{ 0.f };
         float3 morton_offset{ 0.f };
@@ -141,7 +141,7 @@ namespace polymer
             // Find the minimum and maximum extents of objects in the tree
             float3 min = float3(std::numeric_limits<float>::max());
             float3 max = float3(std::numeric_limits<float>::min());
-            for (const scene_object * object : objects)
+            for (const bvh_node_data * object : objects)
             {
                 const aabb_3d bounds = object->bounds;
                 min = linalg::min(min, bounds.min());
@@ -170,14 +170,14 @@ namespace polymer
             }
         }
 
-        bool contains(scene_object * object, bool check_new) const 
+        bool contains(bvh_node_data * object, bool check_new) const 
         { 
             if (std::find(objects.begin(), objects.end(), object) != objects.end()) return true;
             else if (std::find(staged_objects.begin(), staged_objects.end(), object) != staged_objects.end()) return true;
             return false;
         }
 
-        void add(scene_object * object)
+        void add(bvh_node_data * object)
         {
             if (object)
             {
@@ -186,7 +186,7 @@ namespace polymer
             }
         }
 
-        bool remove(scene_object * object)
+        bool remove(bvh_node_data * object)
         {
             bool result = false;
 
@@ -342,7 +342,7 @@ namespace polymer
             print_recursive(print_recursive, root);
         } 
 
-        bool intersect(const ray & ray, std::vector<std::pair<scene_object*, float>> & results) const
+        bool intersect(const ray & ray, std::vector<std::pair<bvh_node_data*, float>> & results) const
         {
             {
                 //scoped_timer t("bvh-intersect");
@@ -361,16 +361,16 @@ namespace polymer
             return results.size() ? true : false;
         }
 
-        std::vector<scene_object*> find_visible_nodes(const frustum & camera_frustum)
+        std::vector<bvh_node_data*> find_visible_nodes(const frustum & camera_frustum)
         {
-            std::vector<scene_object*> visible_set;
+            std::vector<bvh_node_data*> visible_set;
             find_visible_nodes_internal(root, camera_frustum, visible_set);
             return visible_set;
         }
 
     private: 
 
-        void intersect_internal(bvh_node * node, const ray & ray, std::vector<std::pair<scene_object*, float>> & results) const
+        void intersect_internal(bvh_node * node, const ray & ray, std::vector<std::pair<bvh_node_data*, float>> & results) const
         {
             if (node)
             {   
@@ -398,7 +398,7 @@ namespace polymer
             }
         }
 
-        void find_visible_nodes_internal(bvh_node * node, const frustum & camera_frustum, std::vector<scene_object*> & objects) const
+        void find_visible_nodes_internal(bvh_node * node, const frustum & camera_frustum, std::vector<bvh_node_data*> & objects) const
         {
             if (node)
             {
@@ -457,7 +457,7 @@ namespace polymer
             }
         }
 
-        void insert_object(scene_object * object)
+        void insert_object(bvh_node_data * object)
         {
             if (object)
             {
@@ -546,7 +546,7 @@ namespace polymer
         }
 
         // Finds the leaf node that owns the specified object in the tree
-        bvh_node * find_parent_leaf_for_object(bvh_node * node, scene_object * object) const
+        bvh_node * find_parent_leaf_for_object(bvh_node * node, bvh_node_data * object) const
         {
             bvh_node * parent = nullptr;
             if (node->type == bvh_node_type::leaf)
@@ -592,7 +592,7 @@ namespace polymer
                 compute_normalized_morton_scale();
 
                 // Create and sort codes
-                for (scene_object * object : objects)
+                for (bvh_node_data * object : objects)
                 {
                     const auto morton_code = get_normalized_morton(object->bounds.center());
                     sorted_pairs.push_back(std::make_pair(morton_code, object));

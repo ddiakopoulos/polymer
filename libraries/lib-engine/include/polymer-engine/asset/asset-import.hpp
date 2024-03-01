@@ -6,9 +6,9 @@
 #include "polymer-engine/scene.hpp"
 #include "polymer-engine/asset/asset-resolver.hpp"
 
+/*
 namespace polymer
 {
-
     inline entity create_model(const std::string & geom_handle,
         const std::string & mesh_handle,
         scene & the_scene,
@@ -96,5 +96,7 @@ namespace polymer
     }
 
 } // end namespace polymer
+
+*/
 
 #endif // end polymer_asset_import_utils_hpp

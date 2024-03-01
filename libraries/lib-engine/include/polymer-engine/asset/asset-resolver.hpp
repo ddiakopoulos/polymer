@@ -22,19 +22,20 @@
 
 #include "polymer-engine/asset/asset-handle.hpp"
 #include "polymer-engine/asset/asset-handle-utils.hpp"
+#include "polymer-engine/renderer/renderer-pbr.hpp"
+#include "polymer-engine/material-library.hpp"
 
 #include "polymer-core/util/string-utils.hpp"
-
-#include "polymer-engine/renderer/renderer-pbr.hpp"
-#include "polymer-engine/system/system-render.hpp"
-#include "polymer-engine/system/system-collision.hpp"
-#include "polymer-engine/scene.hpp"
 
 #include "polymer-model-io/model-io.hpp"
 #include "nlohmann/json.hpp"
 
+using namespace std::filesystem;
+
 namespace polymer
 {
+    class scene;
+
     template <typename T>
     inline void remove_duplicates(std::vector<T> & vec)
     {
@@ -58,7 +59,7 @@ namespace polymer
     class asset_resolver
     {
         scene * the_scene;
-        material_library * library;
+        material_library * mat_library;
 
         // Unresolved asset names
         std::vector<std::string> mesh_names;
@@ -104,7 +105,7 @@ namespace polymer
                 {
                     if (asset_resolve_cache(name, "material"))
                     {
-                        library->import_material(path);
+                        mat_library->import_material(path);
                     }
                 }
                 else if (ext == "png" || ext == "tga" || ext == "jpg" || ext == "jpeg")
@@ -171,8 +172,9 @@ namespace polymer
 
         void resolve()
         {
+            /* 
             assert(the_scene != nullptr);
-            assert(library != nullptr);
+            assert(mat_library != nullptr);
 
             // Material Names
             for (auto & m : the_scene->render_system->materials)
@@ -191,7 +193,7 @@ namespace polymer
 
             auto collect_shaders_and_textures = [this]()
             {
-                for (auto & mat : library->instances)
+                for (auto & mat : mat_library->instances)
                 {
                     if (auto * pbr = dynamic_cast<polymer_pbr_standard*>(mat.second.instance.get()))
                     {
@@ -247,10 +249,11 @@ namespace polymer
                 log::get()->engine_log->info("[2] resolving directory " + path);
                 walk_directory(path);
             }
+            */ 
         }
 
-        asset_resolver::asset_resolver(polymer::scene * the_scene, material_library * library)
-            : the_scene(the_scene), library(library) {}
+        asset_resolver::asset_resolver(polymer::scene * the_scene, material_library * mat_library)
+            : the_scene(the_scene), mat_library(mat_library) {}
 
         void add_search_path(const std::string & search_path)
         {

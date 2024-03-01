@@ -1,7 +1,5 @@
 #include "polymer-engine/renderer/renderer-pbr.hpp"
 #include "polymer-engine/material.hpp"
-#include "polymer-engine/asset/asset-handle.hpp"
-#include "polymer-engine/asset/asset-handle-utils.hpp"
 #include "polymer-engine/shader.hpp"
 #include "polymer-engine/shader-library.hpp"
 #include "polymer-engine/scene.hpp"

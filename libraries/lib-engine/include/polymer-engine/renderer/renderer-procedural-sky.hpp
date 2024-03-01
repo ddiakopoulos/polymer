@@ -10,7 +10,6 @@
 #include "polymer-gfx-gl/gl-procedural-mesh.hpp"
 #include "polymer-gfx-gl/gl-loaders.hpp"
 
-//#include "polymer-engine/asset/asset-handle.hpp"
 #include "polymer-engine/shader.hpp"
 #include "polymer-engine/asset/asset-handle-utils.hpp"
 
