@@ -7,14 +7,19 @@
  * simple raycast against CPU-resident geometry. 
  */
 
-#include "lib-polymer.hpp"
+#include "polymer-core/lib-polymer.hpp"
 
-#include "gl-texture-view.hpp"
-#include "gl-renderable-grid.hpp"
+#include "polymer-gfx-gl/gl-loaders.hpp"
+#include "polymer-gfx-gl/gl-texture-view.hpp"
+#include "polymer-gfx-gl/gl-renderable-grid.hpp"
 
-#include "camera-controllers.hpp"
-#include "shader-library.hpp"
-#include "scene.hpp"
+#include "polymer-app-base/wrappers/gl-nvg.hpp"
+#include "polymer-app-base/wrappers/gl-imgui.hpp"
+#include "polymer-app-base/wrappers/gl-gizmo.hpp"
+#include "polymer-app-base/camera-controllers.hpp"
+
+#include "polymer-engine/asset/asset-handle-utils.hpp"
+#include "polymer-engine/shader-library.hpp"
 
 using namespace polymer;
 

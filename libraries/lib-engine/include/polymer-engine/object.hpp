@@ -18,6 +18,20 @@
 #include "polymer-engine/renderer/renderer-procedural-sky.hpp"
 #include "polymer-engine/renderer/renderer-uniforms.hpp"
 
+inline size_t round_and_clamp_index(int index, size_t list_size)
+{
+    if (index < 0)
+    {
+        if (static_cast<unsigned int>(index * -1) > list_size) return 0;
+        else return list_size + index;
+    }
+    else
+    {
+        if (static_cast<unsigned int>(index) >= list_size) return list_size - 1;
+        else return static_cast<size_t>(index);
+    }
+}
+
 namespace linalg
 {
     using json = nlohmann::json;
@@ -370,6 +384,17 @@ namespace polymer
     };
     POLYMER_SETUP_TYPEID(transform_component);
 
+    //////////////////////////////
+    //   identifier_component   //
+    //////////////////////////////
+
+    struct identifier_component : public base_component
+    {
+        identifier_component() {};
+        virtual ~identifier_component() {};
+    };
+    POLYMER_SETUP_TYPEID(identifier_component);
+
     //////////////////////////
     //   render_component   //
     //////////////////////////
@@ -413,13 +438,19 @@ namespace polymer
 
     public:
 
-        bool enabled      = true;
-        bool serializable = true;
+        bool enabled {true};
+        bool serializable {true};
         std::string name;
 
         base_object()
         {
             e = make_guid();
+        }
+
+        // only for serialization! 
+        base_object(const entity & from)
+        {
+            e = from;
         }
 
         base_object(const std::string & name) : name(name)
@@ -428,8 +459,8 @@ namespace polymer
         }
 
         entity get_entity() const { return e; }
-        std::string get_name() const { return name; };
 
+        std::string get_name() const { return name; };
         void set_name(const std::string & n)
         {
             name = n;
@@ -565,43 +596,65 @@ namespace polymer
         scene_graph()  = default;
         ~scene_graph() = default;
 
-        // need to get base_object ptr from entity
         // get entity from base_object ptr (rare)
 
         template <class T>
         void add_object(const T && object)
         {
             graph_objects[object.get_entity()] = std::move(object);
-            // should we recalculate poses? 
+            // todo: should we recalculate poses? 
         }
 
-        // todo: use optional? 
+        // todo: use optional? what about disabled objects? 
         base_object & get_object(const entity & e) { return graph_objects[e]; }
 
         bool add_child(entity parent, entity child)
         {
             if (parent == child) throw std::invalid_argument("parent and child cannot be the same");
-            /// if (parent == kInvalidEntity) throw std::invalid_argument("parent was invalid"); kInvalidEntity means no parent
-            /// if (!has_transform(parent)) throw std::invalid_argument("parent has no transform component");
             if (child == kInvalidEntity) throw std::invalid_argument("child was invalid");
+            if (parent == kInvalidEntity) throw std::invalid_argument("parent was invalid");
 
-            if (parent != kInvalidEntity) graph_objects[parent].children.push_back(child);  // add to children list if not a top level root node
-
+            graph_objects[parent].children.push_back(child);  // add to children list if not a top level root node
             graph_objects[child].parent = parent;
-
-            if (parent != kInvalidEntity) recalculate_world_transform(parent);  // only recalc if there is a sub graph
+            recalculate_world_transform(parent); 
 
             return true;
         }
 
-        void insert_child(entity parent, entity child, uint32_t idx = -1)
+        void insert_child(entity parent, entity child, uint32_t idx)
         { 
-            /* todo */
+            if (get_parent(child) != parent)
+            {
+                add_child(parent, child);
+            }
+            move_child(child, idx);
         }
 
         void move_child(entity child, uint32_t idx)
         { 
-            /* todo */
+            base_object & the_child = graph_objects[child];
+
+            if (the_child.parent == kInvalidEntity) return;
+
+            base_object & the_parent = graph_objects[the_child.parent];
+
+            auto & children = the_parent.children;
+            const size_t num_children = children.size();
+
+            // Get iterator to child's current position.
+            const auto source = std::find(children.begin(), children.end(), child);
+            if (source == children.end()) 
+            {
+                std::cout << "child entity not found in its parent's list of children." << std::endl;
+                return;
+            }
+
+            const size_t old_index = static_cast<size_t>(source - children.begin());
+            const size_t new_index = round_and_clamp_index(idx, num_children);
+            const auto destination = children.begin() + new_index;
+
+            if (source >= destination) std::rotate(destination, source, source + 1);
+            else std::rotate(source, source + 1, destination + 1);
         }
 
         entity get_parent(const entity & child)
@@ -609,6 +662,12 @@ namespace polymer
             if (child == kInvalidEntity) return kInvalidEntity;
             const auto & e = graph_objects[child];
             return e.parent;
+        }
+
+        std::vector<entity> get_children(const entity & parent)
+        {
+            const auto & node = graph_objects[parent];
+            return node.children;
         }
 
         bool has_child(const entity & parent, const entity & child) 
@@ -619,13 +678,13 @@ namespace polymer
             bool found_child = false;
             const auto & e = graph_objects[parent];
 
-                for (auto & one_child : e.children)
+            for (auto & one_child : e.children)
+            {
+                if (one_child == child)
                 {
-                    if (one_child == child)
-                    {
-                        found_child = true;
-                    }
+                    found_child = true;
                 }
+            }
             return found_child;
         }
 

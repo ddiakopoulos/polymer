@@ -86,7 +86,17 @@ inline void polymer_aligned_free(void * ptr)
 
 namespace polymer
 {
-	struct viewport_t
+    struct raycast_result
+    {
+        bool hit {false};
+        float distance {std::numeric_limits<float>::max()};
+        float3 normal {0, 0, 0};
+        float2 uv {0, 0};
+        raycast_result() {};
+        raycast_result(bool h, float t, float3 n, float2 uv) : hit(h), distance(t), normal(n), uv(uv) {}
+    };
+
+    struct viewport_t
 	{
 		float2 bmin, bmax;
 		uint32_t texture;

@@ -163,6 +163,14 @@ namespace polymer
         }
     };
 
+    struct screen_raycaster
+    {
+        perspective_camera & cam;
+        float2 viewport;
+        screen_raycaster(perspective_camera & camera, const float2 viewport) : cam(camera), viewport(viewport) {}
+        ray from(const float2 & cursor) const { return cam.get_world_ray(cursor, viewport); };
+    };
+
 } // end namespace polymer
 
 #endif // end polymer_camera_hpp

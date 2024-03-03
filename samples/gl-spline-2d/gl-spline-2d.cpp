@@ -2,14 +2,14 @@
  * File: samples/gl-spline-2d.cpp
  */
 
-#include "lib-polymer.hpp"
-#include "gl-loaders.hpp"
-#include "gl-nvg.hpp"
-#include "gl-imgui.hpp"
-#include "gl-texture-view.hpp"
-#include "shader-library.hpp"
-#include "splines.hpp"
-#include "scene.hpp"
+#include "polymer-core/lib-polymer.hpp"
+
+#include "polymer-gfx-gl/gl-loaders.hpp"
+#include "polymer-gfx-gl/gl-texture-view.hpp"
+
+#include "polymer-app-base/wrappers/gl-nvg.hpp"
+#include "polymer-app-base/wrappers/gl-imgui.hpp"
+#include "polymer-app-base/wrappers/gl-gizmo.hpp"
 
 using namespace polymer;
 using namespace gui;

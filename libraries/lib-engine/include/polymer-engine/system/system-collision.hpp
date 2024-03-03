@@ -14,25 +14,6 @@
 
 namespace polymer
 {
-    
-    struct screen_raycaster
-    {
-        perspective_camera & cam;
-        float2 viewport;
-        screen_raycaster(perspective_camera & camera, const float2 viewport) : cam(camera), viewport(viewport) {}
-        ray from(const float2 & cursor) const { return cam.get_world_ray(cursor, viewport); };
-    };
-
-    struct raycast_result
-    {
-        bool hit {false};
-        float distance {std::numeric_limits<float>::max()};
-        float3 normal {0, 0, 0};
-        float2 uv {0, 0};
-        raycast_result() {};
-        raycast_result(bool h, float t, float3 n, float2 uv) : hit(h), distance(t), normal(n), uv(uv) {}
-    };
-
     struct entity_hit_result
     {
         entity e {kInvalidEntity};
@@ -57,7 +38,7 @@ namespace polymer
     public:
 
         std::unique_ptr<bvh_tree> static_accelerator;
-        std::unique_ptr<bvh_tree> dynamic_accelerator;
+        std::unique_ptr<bvh_tree> dynamic_accelerator; // unimplemented 
 
         std::vector<bvh_node_data> collidable_objects;
 

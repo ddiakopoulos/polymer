@@ -203,21 +203,13 @@ void sample_engine_performance::on_draw()
     payload.render_components.clear();
 
     {
-        // simple_cpu_timer t;
-        // t.start();
-        // const std::vector<entity> visible_entity_list = scene.collision_system->get_visible_entities(camera_frustum);
-        // t.stop();
+        simple_cpu_timer t;
+        t.start();
+        const std::vector<entity> visible_entity_list = scene.get_collision_system()->get_visible_entities(camera_frustum);
+        t.stop();
 
-        // ImGui::Text("Frustum Cull Took %f ms", (float)t.elapsed_ms());
-        // ImGui::Text("Visible Entities %i", visible_entity_list.size());
-
-        // {
-        //     for (size_t i = 0; i < visible_entity_list.size(); ++i)
-        //     {
-        //         const auto e = visible_entity_list[i];
-        //         payload.render_components.emplace_back(assemble_render_component(scene, e));
-        //     }
-        // }
+        ImGui::Text("Frustum Cull Took %f ms", (float)t.elapsed_ms());
+        ImGui::Text("Visible Entities %i", visible_entity_list.size());
 
         auto assemble_render_component = [](base_object & t)
         {
@@ -229,13 +221,21 @@ void sample_engine_performance::on_draw()
             return r;
         };
 
-        //scene.get_graph().graph_objects.size();
+        // Render everything
+        //for (auto & t : scene.get_graph().graph_objects)
+        //{ 
+        //    render_component r = assemble_render_component(t.second);
+        //    payload.render_components.emplace_back(r);
+        //};
 
-        for (auto & t : scene.get_graph().graph_objects)
-        { 
-            render_component r = assemble_render_component(t.second);
+        for (size_t i = 0; i < visible_entity_list.size(); ++i)
+        {
+            const entity e = visible_entity_list[i];
+            base_object & obj = scene.get_graph().get_object(e);
+            render_component r = assemble_render_component(obj);
             payload.render_components.emplace_back(r);
-        };
+        }
+
     }
 
     scene.get_renderer()->render_frame(payload);
