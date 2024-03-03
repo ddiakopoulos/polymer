@@ -8,21 +8,24 @@
  * use of std::future and std::async. 
  */
 
-#include "lib-polymer.hpp"
+ #include "polymer-core/lib-polymer.hpp"
 
-#include "gl-loaders.hpp"
-#include "gl-renderable-grid.hpp"
-#include "gl-gizmo.hpp"
-#include "gl-mesh-util.hpp"
-#include "gl-procedural-mesh.hpp"
-#include "gl-texture-view.hpp"
-#include "gl-particle-system.hpp"
+#include "polymer-gfx-gl/gl-loaders.hpp"
+#include "polymer-gfx-gl/gl-texture-view.hpp"
+#include "polymer-gfx-gl/gl-renderable-grid.hpp"
+#include "polymer-gfx-gl/gl-particle-system.hpp"
+#include "polymer-gfx-gl/gl-procedural-mesh.hpp"
+#include "polymer-gfx-gl/gl-mesh-util.hpp"
 
-#include "shader-library.hpp"
-#include "asset-handle.hpp"
-#include "asset-handle-utils.hpp"
+#include "polymer-app-base/wrappers/gl-nvg.hpp"
+#include "polymer-app-base/wrappers/gl-imgui.hpp"
+#include "polymer-app-base/wrappers/gl-gizmo.hpp"
+#include "polymer-app-base/camera-controllers.hpp"
 
-#include "../lib-model-io/model-io.hpp"
+#include "polymer-engine/asset/asset-handle-utils.hpp"
+#include "polymer-engine/shader-library.hpp"
+
+#include "polymer-model-io/model-io.hpp"
 
 #include <future>
 #include "absl/inlined-vector.hpp"

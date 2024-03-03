@@ -7,9 +7,21 @@
  * shading, a texture-only based approach without any actual scene lighting.
  */
 
-#include "lib-polymer.hpp"
-#include "gl-loaders.hpp"
-#include "../lib-model-io/model-io.hpp"
+#include "polymer-core/lib-polymer.hpp"
+
+#include "polymer-gfx-gl/gl-loaders.hpp"
+#include "polymer-gfx-gl/gl-texture-view.hpp"
+#include "polymer-gfx-gl/gl-renderable-grid.hpp"
+
+#include "polymer-app-base/wrappers/gl-nvg.hpp"
+#include "polymer-app-base/wrappers/gl-imgui.hpp"
+#include "polymer-app-base/wrappers/gl-gizmo.hpp"
+#include "polymer-app-base/camera-controllers.hpp"
+
+#include "polymer-engine/asset/asset-handle-utils.hpp"
+#include "polymer-engine/shader-library.hpp"
+
+#include "polymer-model-io/model-io.hpp"
 
 using namespace polymer;
 
