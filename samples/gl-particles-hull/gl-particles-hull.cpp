@@ -28,7 +28,6 @@
 #include "polymer-model-io/model-io.hpp"
 
 #include <future>
-#include "absl/inlined-vector.hpp"
 
 using namespace polymer;
 

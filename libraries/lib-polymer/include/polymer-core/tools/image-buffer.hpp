@@ -68,9 +68,9 @@ namespace polymer
         uint32_t num_channels() const { return channels; }
         T * data() { return alias; }
         const T * data() const { return alias; }
-        T & operator()(int y, int x) { return alias[y * dims.x + x]; }
+        T & operator()(int y, int x) { return alias[channels * (y * dims.x + x)]; }
         T & operator()(int y, int x, int channel) { return alias[channels * (y * dims.x + x) + channel]; }
-        const T operator()(int y, int x) const { return alias[y * dims.x + x]; }
+        const T operator()(int y, int x) const { return alias[channels * (y * dims.x + x)]; }
         const T operator()(int y, int x, int channel) const { return alias[channels * (y * dims.x + x) + channel]; }
         T sample_nearest(const int y, const int x) const;
         T sample_bilinear(const int y, const int x) const;
