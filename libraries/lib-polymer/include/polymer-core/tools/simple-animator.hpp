@@ -216,6 +216,9 @@ namespace polymer
                         it->t0 = now_seconds;
                         it->t1 = now_seconds + it->duration_seconds;
 
+                        // temp hack... needs an on_loop variant
+                        if (it->on_finish) it->on_finish();
+
                         if (it->state & playback_forward)
                         {
                             it->state = static_cast<playback_state>(it->state & ~playback_forward); // unset fwd
