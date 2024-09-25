@@ -10,6 +10,7 @@
 #include <functional>
 #include <thread>
 
+// https://github.com/LiveMirror/cpptweener/blob/fee53371b05e94e24f3df40335023205f8d0abd9/src/CppTweener.cpp
 namespace tween
 {
     struct linear
@@ -21,7 +22,26 @@ namespace tween
     {
         inline static float ease_in_out(float t)
         {
+            const float b = 0.f;
+            const float c = 1.f;
+            const float d = 1.f;
             return -0.5f * (std::cos((float)POLYMER_PI * t) - 1.f);
+        }
+
+        inline static float ease_in(float t)
+        {
+            const float b = 0.f;
+            const float c = 1.f;
+            const float d = 1.f;
+            return -c * std::cos(t / d * (POLYMER_HALF_PI)) + c + b;
+        }
+
+        inline static float ease_out(float t)
+        {
+            const float b = 0.f;
+            const float c = 1.f;
+            const float d = 1.f;
+            return c * std::sin(t / d * (POLYMER_HALF_PI)) + b;
         }
     };
 
@@ -58,6 +78,22 @@ namespace tween
             if (t < 1) return 0.5f * std::powf(2, 10 * (t - 1));
             return 0.5f * (-std::powf(2, -10 * (t - 1)) + 2);
         }
+
+        inline static float ease_in(float t)
+        {
+            const float b = 0.f;
+            const float c = 1.f;
+            const float d = 1.f;
+            return (t == 0) ? b : c * pow(2, 10 * (t / d - 1)) + b;
+        }
+
+        inline static float ease_out(float t)
+        {
+            const float b = 0.f;
+            const float c = 1.f;
+            const float d = 1.f;
+            return (t == d) ? b + c : c * (-pow(2, -10 * t / d) + 1) + b;
+        }
     };
 
     struct cubic
@@ -68,6 +104,22 @@ namespace tween
             if (t < 1) return 0.5f * t*t*t;
             t -= 2;
             return 0.5f*(t*t*t + 2);
+        }
+
+        inline static float ease_in(float t)
+        {
+            const float b = 0.f;
+            const float c = 1.f;
+            const float d = 1.f;
+            return c * (t /= d) * t * t + b;
+        }
+
+        inline static float ease_out(float t)
+        {
+            const float b = 0.f;
+            const float c = 1.f;
+            const float d = 1.f;
+            return c * ((t = t / d - 1) * t * t + 1) + b;
         }
     };
 
@@ -131,9 +183,16 @@ namespace polymer
 
             for (auto it = std::begin(tweens); it != std::end(tweens);)
             {
-                //std::cout << "Updating: " << it->name << ", now: " << now_seconds << ", end: " << it->t1 << std::endl;
-                if (now_seconds < it->t1)
+
+                if (now_seconds < it->t1) // now less than the end
                 {
+                    // don't need to update quite yet; delay in effect
+                    if (now_seconds < it->t0) 
+                    {
+                        ++it;
+                        continue;
+                    }
+
                     const float dx = static_cast<float>((now_seconds - it->t0) / (it->t1 - it->t0));
                     if (it->on_update) it->on_update(dx);
 
