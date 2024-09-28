@@ -66,6 +66,12 @@ namespace polymer
         return o << "{" << b.min() << " to " << b.max() << "}";
     }
 
+    inline aabb_2d aabb_from_position_and_size(const float2 & position, const float2 & size)
+    {
+        aabb_2d bounds(position.x - (size.x / 2), position.y - (size.y / 2), position.x + (size.x / 2), position.y + (size.y / 2));
+        return bounds;
+    }
+
     struct aabb_3d
     {
         float3 _min = { 0, 0, 0 };
