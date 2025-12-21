@@ -154,6 +154,10 @@ namespace polymer
 
         void draw(const int2 position_px, const int2 size_px, const float2 & windowSize, const GLuint tex)
         {
+            GLint viewport[4];
+            glGetIntegerv(GL_VIEWPORT, viewport);
+            glViewport(0, 0, (GLsizei) windowSize.x, (GLsizei) windowSize.y);
+
             const float4x4 projection = make_orthographic_matrix(0.0f, windowSize.x, windowSize.y, 0.0f, -1.0f, 1.0f);
             float4x4 model = make_scaling_matrix({ (float) size_px.x, (float) size_px.y, 0.f });
             model = (make_translation_matrix({ (float) position_px.x, (float) position_px.y, 0.f }) * model);
@@ -167,10 +171,16 @@ namespace polymer
             program.texture("u_texture", 0, tex, GL_TEXTURE_2D);
             mesh.draw_elements();
             program.unbind();
+
+            glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
         }
 
         void draw(const aabb_2d & rect, const float2 & window_size_px, const GLuint tex)
         {
+            GLint viewport[4];
+            glGetIntegerv(GL_VIEWPORT, viewport);
+            glViewport(0, 0, (GLsizei) window_size_px.x, (GLsizei) window_size_px.y);
+
             const float4x4 projection = make_orthographic_matrix(0.0f, window_size_px.x, window_size_px.y, 0.0f, -1.0f, 1.0f);
             float4x4 model            = make_scaling_matrix({rect.width(), rect.height(), 0.f});
             model                     = (make_translation_matrix({rect.min().x, rect.min().y, 0.f}) * model);
@@ -179,6 +189,8 @@ namespace polymer
             program.texture("u_texture", 0, tex, GL_TEXTURE_2D);
             mesh.draw_elements();
             program.unbind();
+
+            glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
         }
     };
     
