@@ -45,6 +45,7 @@ namespace polymer
         
         std::vector<gl_framebuffer> framebuffer;
         std::vector<gl_texture_2d> texture;
+        std::vector<GLuint> stencil_rbo;  // Stencil renderbuffers for NanoVG polygon fills
 
     public:
 
@@ -76,6 +77,7 @@ namespace polymer
             // Setup surfaces
             framebuffer.resize(num_surfaces);
             texture.resize(num_surfaces);
+            stencil_rbo.resize(num_surfaces);
 
             for (uint32_t i = 0; i < num_surfaces; ++i)
             {
@@ -86,17 +88,32 @@ namespace polymer
                 glTextureParameteriEXT(texture[i], GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
                 glTextureParameteriEXT(texture[i], GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
                 glNamedFramebufferTexture2DEXT(framebuffer[i], GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture[i], 0);
+
+                // Create stencil renderbuffer (required for NanoVG polygon fills)
+                glGenRenderbuffers(1, &stencil_rbo[i]);
+                glBindRenderbuffer(GL_RENDERBUFFER, stencil_rbo[i]);
+                glRenderbufferStorage(GL_RENDERBUFFER, GL_STENCIL_INDEX8, static_cast<GLsizei>(size.x), static_cast<GLsizei>(size.y));
+                glNamedFramebufferRenderbufferEXT(framebuffer[i], GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, stencil_rbo[i]);
+                glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
                 framebuffer[i].check_complete();
             }
         }
 
-        ~gl_nvg_surface() { release_nanovg_context(nvg); }
+        ~gl_nvg_surface()
+        {
+            for (auto rbo : stencil_rbo)
+            {
+                if (rbo) glDeleteRenderbuffers(1, &rbo);
+            }
+            release_nanovg_context(nvg);
+        }
 
         NVGcontext * pre_draw(GLFWwindow * window, const uint32_t surface_idx)
         {
             glBindFramebuffer(GL_FRAMEBUFFER, framebuffer[surface_idx]);
             glViewport(0, 0, static_cast<GLsizei>(size.x), static_cast<GLsizei>(size.y));
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
             nvgBeginFrame(nvg, size.x, size.y, 1.0);
             return nvg;
         }
