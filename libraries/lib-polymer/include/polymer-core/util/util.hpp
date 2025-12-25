@@ -102,7 +102,7 @@ namespace polymer
 		uint32_t texture;
 	};
 
-    // 32 bit Fowler–Noll–Vo Hash
+    // 32 bit Fowlerï¿½Nollï¿½Vo Hash
     inline uint32_t poly_hash_fnv1a(const std::string & str)
     {
         static const uint32_t fnv1aBase32 = 0x811C9DC5u;
@@ -154,12 +154,13 @@ namespace polymer
         std::uniform_real_distribution<float> safe { 0.001f, 0.999f };
         std::uniform_real_distribution<float> two_pi { 0.f, float(6.2831853071795862) };
     public:
-        uniform_random_gen() 
-        { 
-            std::random_device r; 
+        uniform_random_gen()
+        {
+            std::random_device r;
             std::seed_seq seed{r(), r()};
-            gen = std::mt19937_64(seed); 
+            gen = std::mt19937_64(seed);
         }
+        explicit uniform_random_gen(uint64_t seed) : gen(seed) {}
         uniform_random_gen (const uniform_random_gen & r) {}
         float random_float() { return full(gen); }
         float random_float(float max) { std::uniform_real_distribution<float> custom(0.f, max); return custom(gen); }
