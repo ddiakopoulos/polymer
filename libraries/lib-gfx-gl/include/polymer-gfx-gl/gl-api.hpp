@@ -161,7 +161,9 @@ public:
 };
 
 struct gl_buffer_factory { static void create(GLuint & x) { glCreateBuffers(1, &x); }; static void destroy(GLuint x) { glDeleteBuffers(1, &x); }; };
-struct gl_texture_factory { static void create(GLuint & x) { glGenTextures(1, &x); }; static void destroy(GLuint x) { glDeleteTextures(1, &x); }; };
+struct gl_texture_2d_factory { static void create(GLuint & x) { glCreateTextures(GL_TEXTURE_2D, 1, &x); }; static void destroy(GLuint x) { glDeleteTextures(1, &x); }; };
+struct gl_texture_3d_factory { static void create(GLuint & x) { glCreateTextures(GL_TEXTURE_3D, 1, &x); }; static void destroy(GLuint x) { glDeleteTextures(1, &x); }; };
+struct gl_texture_cube_factory { static void create(GLuint & x) { glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &x); }; static void destroy(GLuint x) { glDeleteTextures(1, &x); }; };
 struct gl_vertex_array_factory { static void create(GLuint & x) { glGenVertexArrays(1, &x); }; static void destroy(GLuint x) { glDeleteVertexArrays(1, &x); }; };
 struct gl_renderbuffer_factory { static void create(GLuint & x) { glGenRenderbuffers(1, &x); }; static void destroy(GLuint x) { glDeleteRenderbuffers(1, &x); }; };
 struct gl_framebuffer_factory { static void create(GLuint & x) { glGenFramebuffers(1, &x); }; static void destroy(GLuint x) { glDeleteFramebuffers(1, &x); }; };
@@ -170,7 +172,9 @@ struct gl_sampler_factory { static void create(GLuint & x) { glGenSamplers(1, &x
 struct gl_transform_feedback_factory { static void create(GLuint & x) { glGenTransformFeedbacks(1, &x); }; static void destroy(GLuint x) { glDeleteTransformFeedbacks(1, &x); }; };
 
 typedef gl_handle<gl_buffer_factory> gl_buffer_object;
-typedef gl_handle<gl_texture_factory> gl_texture_object;
+typedef gl_handle<gl_texture_2d_factory> gl_texture_2d_object;
+typedef gl_handle<gl_texture_3d_factory> gl_texture_3d_object;
+typedef gl_handle<gl_texture_cube_factory> gl_texture_cube_object;
 typedef gl_handle<gl_vertex_array_factory> gl_vertex_array_object;
 typedef gl_handle<gl_renderbuffer_factory> gl_renderbuffer_object;
 typedef gl_handle<gl_framebuffer_factory> gl_framebuffer_object;
@@ -212,11 +216,11 @@ struct gl_framebuffer : public gl_framebuffer_object
 //   texture types   //
 ///////////////////////
 
-struct gl_texture_2d : public gl_texture_object
+struct gl_texture_2d : public gl_texture_2d_object
 {
     float width{ 0 }, height{ 0 };
     gl_texture_2d() = default;
-    gl_texture_2d(GLuint id) : gl_texture_object(id) { }
+    gl_texture_2d(GLuint id) : gl_texture_2d_object(id) { }
     gl_texture_2d(float width, float height) : width(width), height(height) {}
 
     void setup(GLsizei width, GLsizei height, GLenum internal_fmt, GLenum format, GLenum type, const GLvoid * pixels, bool createMipmap = false)
@@ -248,11 +252,12 @@ struct gl_texture_2d : public gl_texture_object
     }
 };
 
-// Either a 3D texture or 2D array
-struct gl_texture_3d : public gl_texture_object
+// 3D texture (for 2D texture arrays, use glCreateTextures(GL_TEXTURE_2D_ARRAY) manually)
+struct gl_texture_3d : public gl_texture_3d_object
 {
     float width{ 0 }, height{ 0 }, depth{ 0 };
     gl_texture_3d() = default;
+    gl_texture_3d(GLuint id) : gl_texture_3d_object(id) { }
     gl_texture_3d(float width, float height, float depth) : width(width), height(height), depth(depth) {}
 
     void setup(GLenum target, GLsizei width, GLsizei height, GLsizei depth, GLenum internal_fmt, GLenum format, GLenum type, const GLvoid * pixels)
