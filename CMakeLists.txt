@@ -66,10 +66,6 @@ if (NOT TARGET polymer-gfx-gl)
     add_subdirectory(libraries/lib-gfx-gl polymer-gfx-gl)
 endif()
 
-if (NOT TARGET polymer-xr)
-    add_subdirectory(libraries/lib-xr polymer-xr)
-endif()
-
 if (NOT TARGET polymer-app-base)
     add_subdirectory(libraries/lib-app-base polymer-app-base)
 endif()
