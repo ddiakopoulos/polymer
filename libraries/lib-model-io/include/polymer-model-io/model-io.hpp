@@ -81,16 +81,13 @@ namespace polymer
     runtime_mesh import_polymer_binary_model(const std::string & path);
     void export_polymer_binary_model(const std::string & path, runtime_mesh & mesh, bool compressed = false);
 
-    // Load an FBX model, assuming the path points to a valid *.fbx
-    std::unordered_map<std::string, runtime_mesh> import_fbx_model(const std::string & path);
-
     // Load an OBJ model, assuming the path points to a valid *.obj
     std::unordered_map<std::string, runtime_mesh> import_obj_model(const std::string & path);
 
     // Load a PLY model, assuming the path points to a valid *.ply
     std::unordered_map<std::string, runtime_mesh> import_ply_model(const std::string & path);
 
-    // Convenience function that checks extension for *.fbx, *.obj, *.ply, or *.mesh
+    // Convenience function that checks extension for *.obj, *.ply, or *.mesh
     std::unordered_map<std::string, runtime_mesh> import_model(const std::string & path);
 
     bool export_obj_model(const std::string & name, const std::string & filename, runtime_mesh & mesh);

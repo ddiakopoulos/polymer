@@ -3,7 +3,6 @@
 #include <ostream>
 
 #include "polymer-model-io/model-io.hpp"
-#include "polymer-model-io/fbx-importer.hpp"
 #include "polymer-model-io/model-io-util.hpp"
 
 #include "polymer-core/util/file-io.hpp"
@@ -24,12 +23,7 @@ std::unordered_map<std::string, runtime_mesh> polymer::import_model(const std::s
     std::string ext = get_extension(path);
     std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
 
-    if (ext == "fbx")
-    {
-        auto asset = import_fbx_model(path);
-        for (auto & a : asset) models[a.first] = a.second;
-    }
-    else if (ext == "obj")
+    if (ext == "obj")
     {
         auto asset = import_obj_model(path);
         for (auto & a : asset) models[a.first] = a.second;
@@ -56,32 +50,6 @@ std::unordered_map<std::string, runtime_mesh> polymer::import_model(const std::s
     }
 
     return models;
-}
-
-std::unordered_map<std::string, runtime_mesh> polymer::import_fbx_model(const std::string & path)
-{
-#ifdef SYSTEM_HAS_FBX_SDK
-    
-    std::unordered_map<std::string, runtime_mesh> results;
-
-    try
-    {
-        auto asset = import_fbx_file(path);
-        for (auto & a : asset.meshes) results[a.first] = a.second;
-        return results;
-     }
-    catch (const std::exception & e)
-    {
-        std::cout << "fbx import exception: " << e.what() << std::endl;
-    }
-
-    return {};
-
-#else
-    #pragma message ("fbxsdk is not enabled with the SYSTEM_HAS_FBX_SDK flag")
-#endif
-
-    return {};
 }
 
 std::unordered_map<std::string, runtime_mesh> polymer::import_obj_model(const std::string & path)
