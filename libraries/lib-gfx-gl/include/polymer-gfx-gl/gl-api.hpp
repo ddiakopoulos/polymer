@@ -262,6 +262,34 @@ struct gl_texture_2d : public gl_texture_2d_object
     }
 };
 
+struct gl_texture_cube : public gl_texture_cube_object
+{
+    float width{ 0 }, height{ 0 };
+    gl_texture_cube() = default;
+    gl_texture_cube(GLuint id) : gl_texture_cube_object(id) { }
+
+    void setup(GLsizei width, GLsizei height, GLenum internal_fmt, GLsizei levels = 1)
+    {
+        glTextureStorage2D(*this, levels, internal_fmt, width, height);
+        glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+        glTextureParameteri(*this, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTextureParameteri(*this, GL_TEXTURE_MIN_FILTER, levels > 1 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
+        glTextureParameteri(*this, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTextureParameteri(*this, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTextureParameteri(*this, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+        glTextureParameteri(*this, GL_TEXTURE_BASE_LEVEL, 0);
+        glTextureParameteri(*this, GL_TEXTURE_MAX_LEVEL, levels - 1);
+        this->width = static_cast<float>(width);
+        this->height = static_cast<float>(height);
+    }
+
+    void upload_face(GLenum face, GLint level, GLsizei width, GLsizei height, GLenum format, GLenum type, const void* data)
+    {
+        // face should be 0-5 for +X, -X, +Y, -Y, +Z, -Z
+        glTextureSubImage3D(*this, level, 0, 0, face, width, height, 1, format, type, data);
+    }
+};
+
 // 3D texture or 2D texture array - target is specified in setup()
 struct gl_texture_3d
 {

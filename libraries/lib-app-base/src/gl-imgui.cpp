@@ -559,7 +559,9 @@ namespace gui
 
     bool imgui_menu_stack::item(const char * label, int mods, int key, bool enabled)
     {
-        bool invoked = (key && mods == current_mods && keys[key]);
+        // Use IsKeyPressed with repeat=false to only trigger once per key press,
+        // not every frame while the key is held down
+        bool invoked = (key && mods == current_mods && ImGui::IsKeyPressed(key, false));
         if (open.back())
         {
             std::string shortcut;

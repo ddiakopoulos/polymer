@@ -54,6 +54,7 @@ struct material_editor_window final : public glfw_window
     std::unique_ptr<mesh_component> mesh_comp;
     std::unique_ptr<transform_component> xform_comp;
     std::unique_ptr<ibl_component> ibl_cubemap;
+    std::unique_ptr<directional_light_component> preview_sunlight;
 
     render_component preview_renderable;
 
@@ -112,6 +113,13 @@ struct material_editor_window final : public glfw_window
         preview_renderable.mesh = mesh_comp.get();
 
         ibl_cubemap.reset(new ibl_component());
+
+        // Setup a directional light for the preview so PBR materials are visible
+        preview_sunlight.reset(new directional_light_component());
+        preview_sunlight->enabled = true;
+        preview_sunlight->data.direction = normalize(float3(1.f, -1.f, -1.f)); // Light coming from upper-right-front
+        preview_sunlight->data.color = float3(1.f, 1.f, 1.f);
+        preview_sunlight->data.amount = 2.f;
 
         previewCam.pose = lookat_rh(float3(0, 0.25f, 2), float3(0, 0.001f, 0));
         auxImgui.reset(new gui::imgui_instance(window, true));
@@ -212,17 +220,18 @@ struct material_editor_window final : public glfw_window
                 else
                 {
                     inspected_entity = kInvalidEntity;
-                    assetSelection = -1;
+                    // Don't reset assetSelection here - preserve the user's browse selection
                 }
             }
 
-            // A non-zero asset selection also means the preview mesh would have a valid material
-            if (assetSelection > 0)
+            // A valid asset selection means the preview mesh would have a valid material
+            if (assetSelection >= 0)
             {
                 // Construct ad-hoc payload
                 render_payload preview_payload = {};
                 preview_payload.clear_color = float4(0.25f, 0.25f, 0.25f, 1.f);
                 preview_payload.ibl_cubemap = ibl_cubemap.get();
+                preview_payload.sunlight = preview_sunlight.get();
                 preview_payload.views.push_back(view_data(0, previewCam.pose, previewCam.get_projection_matrix(width / float(previewHeight))));
                 preview_payload.render_components.push_back(preview_renderable);
 
@@ -385,7 +394,7 @@ struct material_editor_window final : public glfw_window
             gui::imgui_fixed_window_end();
             auxImgui->end_frame();
 
-            if (assetSelection > 0)
+            if (assetSelection >= 0)
             {
                 glViewport(0, 0, width, previewHeight);
                 fullscreen_surface->draw(preview_renderer->get_color_texture(0));

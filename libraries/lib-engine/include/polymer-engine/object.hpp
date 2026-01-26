@@ -72,6 +72,9 @@ namespace polymer
     inline void to_json(json & archive, const texture_handle & m) { archive = m.name == "empty" ? "" : m.name; }
     inline void from_json(const json & archive, texture_handle & m) { m = texture_handle(archive.get<std::string>()); }
 
+    inline void to_json(json & archive, const cubemap_handle & m) { archive = m.name == "empty" ? "" : m.name; }
+    inline void from_json(const json & archive, cubemap_handle & m) { m = cubemap_handle(archive.get<std::string>()); }
+
     inline void to_json(json & archive, const gpu_mesh_handle & m) { archive = m.name == "empty" ? "" : m.name; }
     inline void from_json(const json & archive, gpu_mesh_handle & m) { m = gpu_mesh_handle(archive.get<std::string>()); }
 
@@ -209,8 +212,8 @@ namespace polymer
 
     struct ibl_component : public base_component
     {
-        texture_handle ibl_radianceCubemap{ "default-radiance-cubemap" };
-        texture_handle ibl_irradianceCubemap{ "default-irradiance-cubemap" };
+        cubemap_handle ibl_radianceCubemap{ "default-radiance-cubemap" };
+        cubemap_handle ibl_irradianceCubemap{ "default-irradiance-cubemap" };
         bool force_draw{ false };
         ibl_component() {};
         virtual ~ibl_component() {};

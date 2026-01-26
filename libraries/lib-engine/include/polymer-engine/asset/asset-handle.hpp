@@ -128,6 +128,20 @@ namespace polymer
             return false;
         }
 
+        uint64_t get_timestamp() const
+        {
+            if (handle) return handle->timestamp;
+
+            // Search for it, but don't default construct
+            auto itr = table.find(name);
+            if (itr != table.end())
+            {
+                handle = itr->second;
+                return handle->timestamp;
+            }
+            return 0;
+        }
+
         // List will return all the asset_handles of type T.
         static std::vector<asset_handle> list()
         {

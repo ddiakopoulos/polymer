@@ -16,14 +16,35 @@ namespace polymer
         simple_cpu_timer t;
         t.start();
         
-        //auto cubemap_binary = read_file_binary(path);
-        //gli::texture_cube cubemap_as_gli_cubemap(gli::load_dds((char *)cubemap_binary.data(), cubemap_binary.size()));
-        //create_handle_for_asset(filename_no_ext.c_str(), load_cubemap(cubemap_as_gli_cubemap));
-        // assets\textures\envmaps
-        //base_path + "/shaders/renderer/renderer_vert.glsl",
-        //create_handle_for_asset("");
-        //texture_handle ibl_radianceCubemap{ "default-radiance-cubemap" };
-        //texture_handle ibl_irradianceCubemap{ "default-irradiance-cubemap" };
+        // Load default IBL cubemaps for PBR rendering
+        auto default_radiance_bin = read_file_binary(base_path + "/textures/envmaps/default-radiance-cubemap.dds");
+        auto default_irradiance_bin = read_file_binary(base_path + "/textures/envmaps/default-irradiance-cubemap.dds");
+
+        gli::texture_cube r_cubemap_as_gli_cubemap(gli::load_dds((char *) default_radiance_bin.data(), default_radiance_bin.size()));
+        if (r_cubemap_as_gli_cubemap.empty())
+        {
+            log::get()->import_log->error("Failed to load default-radiance-cubemap.dds");
+        }
+        else
+        {
+            log::get()->import_log->info("Loaded default-radiance-cubemap: {}x{}, {} levels",
+                r_cubemap_as_gli_cubemap.extent().x, r_cubemap_as_gli_cubemap.extent().y, r_cubemap_as_gli_cubemap.levels());
+            create_handle_for_asset("default-radiance-cubemap", load_cubemap(r_cubemap_as_gli_cubemap));
+        }
+        gl_check_error(__FILE__, __LINE__);
+
+        gli::texture_cube irr_cubemap_as_gli_cubemap(gli::load_dds((char *) default_irradiance_bin.data(), default_irradiance_bin.size()));
+        if (irr_cubemap_as_gli_cubemap.empty())
+        {
+            log::get()->import_log->error("Failed to load default-irradiance-cubemap.dds");
+        }
+        else
+        {
+            log::get()->import_log->info("Loaded default-irradiance-cubemap: {}x{}, {} levels",
+                irr_cubemap_as_gli_cubemap.extent().x, irr_cubemap_as_gli_cubemap.extent().y, irr_cubemap_as_gli_cubemap.levels());
+            create_handle_for_asset("default-irradiance-cubemap", load_cubemap(irr_cubemap_as_gli_cubemap));
+        }
+        gl_check_error(__FILE__, __LINE__);
 
         // The Polymer editor has a number of "intrinsic" mesh assets that are loaded from disk at runtime. These primarily
         // add to the number of objects that can be quickly prototyped with, along with the usual set of procedural mesh functions

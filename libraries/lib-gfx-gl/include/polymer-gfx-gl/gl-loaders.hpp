@@ -89,31 +89,35 @@ namespace polymer
         return tex;
     }
 
-    inline gl_texture_2d load_cubemap(const gli::texture_cube & tex)
+    inline gl_texture_cube load_cubemap(const gli::texture_cube & tex)
     {
-        gl_texture_2d t;
+        gl_texture_cube t;
 
-        for (gli::texture_cube::size_type Face = 0; Face < 6; ++Face)
+        gli::gl GL(gli::gl::PROFILE_GL33);
+        gli::gl::format const fmt = GL.translate(tex.format(), tex.swizzles());
+
+        // Get dimensions from the base level
+        auto w = GLsizei(tex[0][0].extent().x);
+        auto h = GLsizei(tex[0][0].extent().y);
+        GLsizei levels = static_cast<GLsizei>(tex.levels());
+
+        // Allocate storage for all faces and mip levels
+        t.setup(w, h, fmt.Internal, levels);
+
+        // Upload each face and mip level
+        for (gli::texture_cube::size_type face = 0; face < 6; ++face)
         {
-            for (std::size_t Level = 0; Level < tex.levels(); ++Level)
+            for (std::size_t level = 0; level < tex.levels(); ++level)
             {
-                gli::gl GL(gli::gl::PROFILE_GL33);
-                gli::gl::format const fmt = GL.translate(tex.format(), tex.swizzles());
-                auto w = GLsizei(tex[Face][Level].extent().x), h = GLsizei(tex[Face][Level].extent().y);
-                glTextureImage2DEXT(t, GL_TEXTURE_CUBE_MAP_POSITIVE_X + GLenum(Face), GLint(Level), fmt.Internal, w, h, 0, fmt.External, fmt.Type, tex[Face][Level].data());
-                glTextureParameteriEXT(t, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                glTextureParameteriEXT(t, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-                glTextureParameteriEXT(t, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-                glTextureParameteriEXT(t, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-                glTextureParameteriEXT(t, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-                glTextureParameteriEXT(t, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_BASE_LEVEL, (GLint)tex.base_level());
-                glTextureParameteriEXT(t, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAX_LEVEL, (GLint)tex.max_level());
-                gl_check_error(__FILE__, __LINE__);
+                auto level_w = GLsizei(tex[face][level].extent().x);
+                auto level_h = GLsizei(tex[face][level].extent().y);
+                t.upload_face(static_cast<GLenum>(face), static_cast<GLint>(level), level_w, level_h, fmt.External, fmt.Type, tex[face][level].data());
             }
         }
 
+        gl_check_error(__FILE__, __LINE__);
         return t;
-    };
+    }
 
 } // end namespace polymer
 

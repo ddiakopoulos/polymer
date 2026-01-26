@@ -197,7 +197,7 @@ polymer_pbr_standard::polymer_pbr_standard()
     shader = shader_handle("pbr-forward-lighting");
 }
 
-void polymer_pbr_standard::resolve_variants() 
+void polymer_pbr_standard::resolve_variants()
 {
     std::vector<std::string> processed_defines;
 
