@@ -12,7 +12,6 @@
 #include "polymer-engine/renderer/renderer-procedural-sky.hpp"
 #include "polymer-engine/renderer/renderer-uniforms.hpp"
 
-#include "polymer-engine/asset/asset-import.hpp"
 #include "polymer-engine/asset/asset-resolver.hpp"
 
 #include "polymer-engine/material.hpp"
@@ -27,8 +26,6 @@
 #include "polymer-core/tools/camera.hpp"
 
 #include "polymer-engine/system/system-collision.hpp"
-
-using namespace polymer;
 
 namespace polymer
 {
@@ -51,10 +48,9 @@ namespace polymer
 
         scene()
         {
-            renderer_settings settings;
-            settings.renderSize = {1920, 1080}; // FIXME
-            renderer.reset(new pbr_renderer(settings));
-            the_collision_system.reset(new collision_system(graph));
+            // Note: renderer and collision_system are created in reset()
+            // because OpenGL context must be current first
+            graph.set_scene(this);  // Wire up scene pointer
         }
 
         std::unique_ptr<polymer::material_library> mat_library;
@@ -63,7 +59,7 @@ namespace polymer
 
         void import_environment(const std::string & path);
         void export_environment(const std::string & path);
-     
+
         void copy(entity src, entity dest);
         void destroy(entity e);
 
@@ -73,6 +69,33 @@ namespace polymer
         scene_graph & get_graph() { return graph; }
 
         void reset(int2 default_renderer_resolution, bool create_default_entities = false);
+
+        // Called every frame to update all objects
+        void update(float delta_time);
+
+        // Convenience object access
+        base_object * get_object(const entity & e);
+
+        // Factory methods (returns reference to object in scene)
+        base_object & instantiate(base_object && obj);
+
+        base_object & instantiate_mesh(
+            const std::string & name,
+            const transform & pose,
+            const float3 & scale,
+            const std::string & mesh_name,
+            const std::string & material_name = material_library::kDefaultMaterialId);
+
+        base_object & instantiate_empty(
+            const std::string & name,
+            const transform & pose = transform(),
+            const float3 & scale = float3(1, 1, 1));
+
+        base_object & instantiate_point_light(
+            const std::string & name,
+            const float3 & position,
+            const float3 & color,
+            float radius);
     };
 
 } // end namespace polymer

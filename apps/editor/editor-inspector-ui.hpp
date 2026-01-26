@@ -3,14 +3,20 @@
 #ifndef imgui_utils_hpp
 #define imgui_utils_hpp
 
-#include "scene.hpp"
-#include "gl-api.hpp"
-#include "gl-imgui.hpp"
-#include "material.hpp"
-#include "renderer-uniforms.hpp"
-#include "asset-handle-utils.hpp"
-#include "serialization.hpp"
+// IMPORTANT: imgui_internal.h must be included BEFORE polymer headers
+// to avoid 'log' symbol ambiguity between global log() and polymer::log
 #include "imgui/imgui_internal.h"
+
+#include "polymer-engine/scene.hpp"
+#include "polymer-engine/object.hpp"
+#include "polymer-gfx-gl/gl-api.hpp"
+#include "polymer-app-base/wrappers/gl-imgui.hpp"
+#include "polymer-engine/material.hpp"
+#include "polymer-engine/renderer/renderer-uniforms.hpp"
+#include "polymer-engine/asset/asset-handle-utils.hpp"
+#include "polymer-engine/serialization.hpp"
+
+using namespace polymer;
 
 ///////////////////////////////////////////////
 //   imgui generators for object properties  //
@@ -188,33 +194,115 @@ build_imgui(imgui_ui_context & ctx, const char * label, T & object)
     return r;
 }
 
-// todo - we should be using component pools to make this logic easer
-inline bool inspect_entity(imgui_ui_context & ctx, const char * label, entity e, scene & env)
+// Inspect entity components using the new base_object pattern
+inline bool inspect_entity_new(imgui_ui_context & ctx, base_object & obj)
 {
     bool r = false;
 
-    visit_systems(&env, [e, &r, &ctx](const char * name, auto * system_pointer)
+    // Display object name
+    ImGui::Text("Name: %s", obj.name.c_str());
+    ImGui::Separator();
+
+    // Transform component (always present)
+    if (auto * xform = obj.get_component<transform_component>())
     {
-        if (system_pointer)
+        if (ImGui::TreeNode("transform_component"))
         {
-            visit_components(e, system_pointer, [name, e, &r, &ctx](const char * component_name, auto & component_ref, auto... component_metadata)
-            {
-                if (auto * hidden = unpack<editor_hidden>(component_metadata...)) return;
-
-                if (ImGui::TreeNode(component_name))
-                {
-                    visit_fields(component_ref, [&r, &ctx](const char * field_name, auto & field, auto... field_metadata)
-                    {
-                        r |= build_imgui(ctx, field_name, field, field_metadata...);
-                    });
-
-                    ImGui::TreePop();
-                }
-            });
+            r |= build_imgui(ctx, "local_pose.position", xform->local_pose.position);
+            r |= build_imgui(ctx, "local_pose.orientation", xform->local_pose.orientation);
+            r |= build_imgui(ctx, "local_scale", xform->local_scale);
+            ImGui::TreePop();
         }
-    });
+    }
+
+    // Mesh component
+    if (auto * mesh = obj.get_component<mesh_component>())
+    {
+        if (ImGui::TreeNode("mesh_component"))
+        {
+            r |= build_imgui(ctx, "mesh", mesh->mesh);
+            ImGui::TreePop();
+        }
+    }
+
+    // Material component
+    if (auto * mat = obj.get_component<material_component>())
+    {
+        if (ImGui::TreeNode("material_component"))
+        {
+            r |= build_imgui(ctx, "material", mat->material);
+            r |= build_imgui(ctx, "receive_shadow", mat->receive_shadow);
+            r |= build_imgui(ctx, "cast_shadow", mat->cast_shadow);
+            ImGui::TreePop();
+        }
+    }
+
+    // Geometry component
+    if (auto * geom = obj.get_component<geometry_component>())
+    {
+        if (ImGui::TreeNode("geometry_component"))
+        {
+            r |= build_imgui(ctx, "geom", geom->geom);
+            r |= build_imgui(ctx, "is_static", geom->is_static);
+            ImGui::TreePop();
+        }
+    }
+
+    // Point light component
+    if (auto * pt_light = obj.get_component<point_light_component>())
+    {
+        if (ImGui::TreeNode("point_light_component"))
+        {
+            r |= build_imgui(ctx, "enabled", pt_light->enabled);
+            r |= build_imgui(ctx, "position", pt_light->data.position);
+            r |= build_imgui(ctx, "color", pt_light->data.color);
+            r |= build_imgui(ctx, "radius", pt_light->data.radius);
+            ImGui::TreePop();
+        }
+    }
+
+    // Directional light component
+    if (auto * dir_light = obj.get_component<directional_light_component>())
+    {
+        if (ImGui::TreeNode("directional_light_component"))
+        {
+            r |= build_imgui(ctx, "enabled", dir_light->enabled);
+            r |= build_imgui(ctx, "direction", dir_light->data.direction);
+            r |= build_imgui(ctx, "color", dir_light->data.color);
+            r |= build_imgui(ctx, "amount", dir_light->data.amount);
+            ImGui::TreePop();
+        }
+    }
+
+    // IBL component
+    if (auto * ibl = obj.get_component<ibl_component>())
+    {
+        if (ImGui::TreeNode("ibl_component"))
+        {
+            r |= build_imgui(ctx, "ibl_irradianceCubemap", ibl->ibl_irradianceCubemap);
+            r |= build_imgui(ctx, "ibl_radianceCubemap", ibl->ibl_radianceCubemap);
+            ImGui::TreePop();
+        }
+    }
+
+    // Procedural skybox component
+    if (auto * skybox = obj.get_component<procedural_skybox_component>())
+    {
+        if (ImGui::TreeNode("procedural_skybox_component"))
+        {
+            r |= build_imgui(ctx, "sun_directional_light", skybox->sun_directional_light);
+            ImGui::TreePop();
+        }
+    }
 
     return r;
+}
+
+// Legacy function - kept for compatibility but deprecated
+inline bool inspect_entity(imgui_ui_context & ctx, const char * label, entity e, scene & env)
+{
+    base_object & obj = env.get_graph().get_object(e);
+    return inspect_entity_new(ctx, obj);
 }
 
 inline bool inspect_material(imgui_ui_context & ctx, base_material * material)
@@ -307,7 +395,7 @@ namespace ImGui
 
             if (ScrollToBottom)
             {
-                ImGui::SetScrollHere(1.0f);
+                ImGui::SetScrollHereY(1.0f);
             }
             ScrollToBottom = false;
 
@@ -315,16 +403,19 @@ namespace ImGui
         }
     };
 
-    class spdlog_editor_sink : public spdlog::sinks::sink
+    class spdlog_editor_sink : public spdlog::sinks::base_sink<std::mutex>
     {
         editor_app_log & console;
     public:
         spdlog_editor_sink(editor_app_log & c) : console(c) { };
-        void log(const spdlog::details::log_msg & msg) override
+    protected:
+        void sink_it_(const spdlog::details::log_msg & msg) override
         {
-            console.Update(msg.raw.str());
+            spdlog::memory_buf_t formatted;
+            spdlog::sinks::base_sink<std::mutex>::formatter_->format(msg, formatted);
+            console.Update(fmt::to_string(formatted));
         }
-        void flush() { };
+        void flush_() override { };
     };
 
     enum SplitType : uint32_t

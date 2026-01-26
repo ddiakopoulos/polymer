@@ -9,17 +9,17 @@
 * The gizmo uses hotkeys (ctrl-w, ctrl-e, ctrl-r) to control position, orientation, and scaling.
 */
 
-#include "lib-polymer.hpp"
+#include "polymer-core/lib-polymer.hpp"
 
-#include "gl-loaders.hpp"
-#include "gl-gizmo.hpp"
-#include "gl-nvg.hpp"
-#include "gl-imgui.hpp"
-#include "gl-renderable-grid.hpp"
+#include "polymer-gfx-gl/gl-loaders.hpp"
+#include "polymer-app-base/wrappers/gl-gizmo.hpp"
+#include "polymer-app-base/wrappers/gl-nvg.hpp"
+#include "polymer-app-base/wrappers/gl-imgui.hpp"
+#include "polymer-gfx-gl/gl-renderable-grid.hpp"
 
-#include "camera-controllers.hpp"
-#include "shader-library.hpp"
-#include "scene.hpp"
+#include "polymer-app-base/camera-controllers.hpp"
+#include "polymer-engine/shader-library.hpp"
+#include "polymer-engine/scene.hpp"
 
 using namespace polymer;
 using namespace gui;
@@ -74,7 +74,7 @@ public:
     const float4x4 get_projector_matrix(const float4x4 & modelViewMatrix, bool isOrthographic = false)
     {
         // Bias matrix is a constant.
-        // It performs a linear transformation to go from the [–1, 1]
+        // It performs a linear transformation to go from the [ï¿½1, 1]
         // range to the [0, 1] range. Having the coordinates in the [0, 1]
         // range is necessary for the values to be used as texture coordinates.
         constexpr float4x4 biasMatrix = {

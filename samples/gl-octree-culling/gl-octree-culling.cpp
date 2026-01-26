@@ -4,13 +4,13 @@
  * basic frustum culling. 
  */
 
-#include "lib-polymer.hpp"
+#include "polymer-core/lib-polymer.hpp"
 
-#include "camera-controllers.hpp"
-#include "gl-texture-view.hpp"
-#include "gl-gizmo.hpp"
+#include "polymer-app-base/camera-controllers.hpp"
+#include "polymer-gfx-gl/gl-texture-view.hpp"
+#include "polymer-app-base/wrappers/gl-gizmo.hpp"
 
-#include "octree.hpp"
+#include "polymer-core/tools/octree.hpp"
 
 using namespace polymer;
 
@@ -164,7 +164,8 @@ void sample_gl_octree_culling::on_draw()
 
     if (show_debug)
     {
-        octree_debug_draw<debug_sphere>(octree, shader.get(), &boxMesh, &sphereMesh, viewProjectionMatrix, nullptr, float3());
+        // octree_debug_draw is commented out in the library
+        // octree_debug_draw<debug_sphere>(octree, shader.get(), &boxMesh, &sphereMesh, viewProjectionMatrix, nullptr, float3());
     }
 
     {

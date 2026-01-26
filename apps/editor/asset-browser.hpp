@@ -3,16 +3,16 @@
 #ifndef asset_browser_hpp
 #define asset_browser_hpp
 
-#include "material.hpp"
-#include "renderer-pbr.hpp"
-#include "asset-handle-utils.hpp"
+#include "polymer-engine/material.hpp"
+#include "polymer-engine/renderer/renderer-pbr.hpp"
+#include "polymer-engine/asset/asset-handle-utils.hpp"
 #include "gizmo-controller.hpp"
-#include "scene.hpp"
+#include "polymer-engine/scene.hpp"
 #include "editor-inspector-ui.hpp"
-#include "arcball.hpp"
-#include "gl-texture-view.hpp"
-#include "util-win32.hpp"
-#include "asset-import.hpp"
+#include "polymer-core/tools/arcball.hpp"
+#include "polymer-gfx-gl/gl-texture-view.hpp"
+#include "polymer-core/util/util-win32.hpp"
+#include "polymer-engine/asset/asset-import.hpp"
 
 struct asset_browser_window final : public glfw_window
 {

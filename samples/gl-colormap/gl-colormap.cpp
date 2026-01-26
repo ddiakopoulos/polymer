@@ -2,8 +2,9 @@
  * File: sample/gl-colormap.cpp
  */
 
-#include "lib-polymer.hpp"
-#include "gl-texture-view.hpp"
+#include "polymer-core/lib-polymer.hpp"
+#include "polymer-app-base/glfw-app.hpp"
+#include "polymer-gfx-gl/gl-texture-view.hpp"
 #include "stb/stb_easy_font.h"
 
 using namespace polymer;

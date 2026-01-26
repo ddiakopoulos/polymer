@@ -32,23 +32,37 @@ namespace polymer
         renderer_settings settings;
         std::unique_ptr<pbr_renderer> renderer;
 
-        /*
-        void initialize_procedural_skybox_and_sun(entity_system_manager * esm)
+        // Setup the skybox callback to update the directional light when sky parameters change.
+        // This should be called after the scene has created the procedural skybox and sun entities.
+        void initialize_procedural_skybox_callback(scene * the_scene)
         {
-            // Setup the skybox; link internal parameters to a directional light entity owned by the render system. 
-            the_procedural_skybox.sky.onParametersChanged = [this]
-            {
-                directional_light_component dir_light(the_procedural_skybox.sun_directional_light);
-                dir_light.data.direction = the_procedural_skybox.sky.get_sun_direction();
-                dir_light.data.color = float3(1.f, 1.f, 1.f);
-                dir_light.data.amount = 1.f;
-                create(the_procedural_skybox.sun_directional_light, std::move(dir_light));
-            };
+            if (!the_scene) return;
 
-            // Set initial values on the skybox with the sunlight entity we just created
-            the_procedural_skybox.sky.onParametersChanged();
+            // Find the procedural skybox in the scene graph
+            for (auto & [e, obj] : the_scene->get_graph().graph_objects)
+            {
+                if (auto * skybox = obj.get_component<procedural_skybox_component>())
+                {
+                    // Setup the callback to update the sun direction
+                    skybox->sky.onParametersChanged = [the_scene, skybox]()
+                    {
+                        if (skybox->sun_directional_light == kInvalidEntity) return;
+
+                        base_object & sun_obj = the_scene->get_graph().get_object(skybox->sun_directional_light);
+                        if (auto * dir_light = sun_obj.get_component<directional_light_component>())
+                        {
+                            dir_light->data.direction = skybox->sky.get_sun_direction();
+                            dir_light->data.color = float3(1.f, 1.f, 1.f);
+                            dir_light->data.amount = 1.f;
+                        }
+                    };
+
+                    // Set initial values
+                    skybox->sky.onParametersChanged();
+                    break;
+                }
+            }
         }
-        */
 
     public:
 

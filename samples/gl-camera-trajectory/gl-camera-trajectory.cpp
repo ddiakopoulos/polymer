@@ -7,16 +7,16 @@
  * along discrete frames. 
  */
 
-#include "lib-polymer.hpp"
+#include "polymer-core/lib-polymer.hpp"
 
-#include "camera-controllers.hpp"
+#include "polymer-app-base/camera-controllers.hpp"
 
-#include "gl-loaders.hpp"
-#include "gl-renderable-grid.hpp"
-#include "gl-gizmo.hpp"
-#include "gl-mesh-util.hpp"
-#include "gl-procedural-mesh.hpp"
-#include "gl-texture-view.hpp"
+#include "polymer-gfx-gl/gl-loaders.hpp"
+#include "polymer-gfx-gl/gl-renderable-grid.hpp"
+#include "polymer-app-base/wrappers/gl-gizmo.hpp"
+#include "polymer-gfx-gl/gl-mesh-util.hpp"
+#include "polymer-gfx-gl/gl-procedural-mesh.hpp"
+#include "polymer-gfx-gl/gl-texture-view.hpp"
 
 using namespace polymer;
 
@@ -156,8 +156,8 @@ sample_gl_camera_trajectory::sample_gl_camera_trajectory()
 
     renderTextureRGBA.setup(width, height, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
     renderTextureDepth.setup(width, height, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
-    glNamedFramebufferTexture2DEXT(renderFramebuffer, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, renderTextureRGBA, 0);
-    glNamedFramebufferTexture2DEXT(renderFramebuffer, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, renderTextureDepth, 0);
+    glNamedFramebufferTexture(renderFramebuffer, GL_COLOR_ATTACHMENT0, renderTextureRGBA, 0);
+    glNamedFramebufferTexture(renderFramebuffer, GL_DEPTH_ATTACHMENT, renderTextureDepth, 0);
     renderFramebuffer.check_complete();
 
     gizmo.reset(new gl_gizmo());

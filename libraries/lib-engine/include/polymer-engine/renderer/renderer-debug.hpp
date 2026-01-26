@@ -10,10 +10,10 @@
 
 #include "polymer-engine/scene.hpp"
 
-// todo: refactor to inline shaders and make debug renderer a gl-component rather than being 
+// todo: refactor to inline shaders and make debug renderer a gl-component rather than being
 // included in polymer-engine directly
 
-#if 0
+#if 1
 
 namespace polymer
 {
@@ -33,22 +33,29 @@ namespace polymer
 
         global_debug_mesh_manager() = default;
 
-        void initialize_resources(entity_system_manager * esm, scene * the_scene)
+        // Initialize debug rendering resources using the new Unity-style pattern
+        void initialize_resources(scene * the_scene)
         {
+            this->the_scene = the_scene;
+
             debug_renderer_material = std::make_shared<polymer_procedural_material>();
             debug_renderer_material->shader = shader_handle("debug-renderer");
             debug_renderer_material->cast_shadows = false;
             the_scene->mat_library->register_material("debug-renderer-material", debug_renderer_material);
 
-            dbg_renderer_ent = the_scene->track_entity(esm->create_entity());
-            the_scene->identifier_system->create(dbg_renderer_ent, "debug_renderer-" + std::to_string(dbg_renderer_ent));
-            the_scene->xform_system->create(dbg_renderer_ent, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
+            // Create debug renderer entity using the new pattern
+            base_object debug_obj("debug-renderer");
+            debug_obj.add_component(transform_component(transform(float3(0, 0, 0)), float3(1.f, 1.f, 1.f)));
 
-            auto mat_c = material_component(dbg_renderer_ent, material_handle("debug-renderer-material"));
+            material_component mat_c(material_handle("debug-renderer-material"));
             mat_c.cast_shadow = false;
             mat_c.receive_shadow = false;
-            the_scene->render_system->create(dbg_renderer_ent, std::move(mat_c));
-            the_scene->render_system->create(dbg_renderer_ent, mesh_component(dbg_renderer_ent, gpu_mesh_handle("debug-renderer")));
+            debug_obj.add_component(mat_c);
+
+            debug_obj.add_component(mesh_component(gpu_mesh_handle("debug-renderer")));
+
+            base_object & created = the_scene->instantiate(std::move(debug_obj));
+            dbg_renderer_ent = created.get_entity();
         }
 
         void clear() { vertices.clear(); }

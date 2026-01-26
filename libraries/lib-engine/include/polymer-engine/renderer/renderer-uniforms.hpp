@@ -6,8 +6,8 @@
 #include "polymer-core/util/util.hpp"
 #include "polymer-core/math/math-common.hpp"
 
-using namespace polymer;
-
+namespace polymer
+{
 namespace uniforms
 {
     static const int MAX_POINT_LIGHTS = 4;
@@ -77,6 +77,11 @@ namespace uniforms
         ALIGNED(16) float     receiveShadow;
     };
 
-}
+} // namespace uniforms
+
+// For backwards compatibility, also expose uniforms in global namespace
+using namespace uniforms;
+
+} // namespace polymer
 
 #endif // end polymer_renderer_uniforms_hpp

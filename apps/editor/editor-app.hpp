@@ -1,35 +1,37 @@
 #include "polymer-core/lib-polymer.hpp"
 #include "polymer-app-base/glfw-app.hpp"
+#include "polymer-app-base/camera-controllers.hpp"
 #include "polymer-model-io/model-io.hpp"
 
-#include "gl-gizmo.hpp"
-#include "gl-imgui.hpp"
-#include "gl-texture-view.hpp"
-#include "gl-renderable-grid.hpp"
+#include "polymer-app-base/wrappers/gl-gizmo.hpp"
+#include "polymer-app-base/wrappers/gl-imgui.hpp"
+#include "polymer-gfx-gl/gl-texture-view.hpp"
+#include "polymer-gfx-gl/gl-renderable-grid.hpp"
 
-#include "ecs/component-pool.hpp"
-#include "ecs/core-ecs.hpp"
-#include "ecs/core-events.hpp"
-#include "ecs/typeid.hpp"
+#include "polymer-engine/ecs/component-pool.hpp"
+#include "polymer-engine/ecs/core-ecs.hpp"
+#include "polymer-engine/ecs/core-events.hpp"
+#include "polymer-engine/ecs/typeid.hpp"
 
-#include "system-identifier.hpp"
-#include "system-transform.hpp"
-#include "system-render.hpp"
-#include "system-collision.hpp"
+#include "polymer-engine/system/system-collision.hpp"
 
-#include "material.hpp"
-#include "renderer-uniforms.hpp"
-#include "asset-handle-utils.hpp"
-#include "scene.hpp"
-#include "arcball.hpp"
-#include "asset-resolver.hpp"
-#include "ui-actions.hpp"
-#include "camera-controllers.hpp"
+#include "polymer-engine/material.hpp"
+#include "polymer-engine/renderer/renderer-uniforms.hpp"
+#include "polymer-engine/asset/asset-handle-utils.hpp"
+#include "polymer-engine/asset/asset-import.hpp"
+#include "polymer-engine/scene.hpp"
+#include "polymer-engine/object.hpp"
+#include "polymer-engine/asset/asset-resolver.hpp"
 
+#include "polymer-app-base/ui-actions.hpp"
+#include "polymer-core/tools/arcball.hpp"
+
+// Note: editor-inspector-ui.hpp must come before gizmo-controller.hpp
+// to avoid 'log' symbol ambiguity with imgui_internal.h
+#include "editor-inspector-ui.hpp"
+#include "gizmo-controller.hpp"
 #include "material-editor.hpp"
 #include "asset-browser.hpp"
-#include "gizmo-controller.hpp"
-#include "editor-inspector-ui.hpp"
 
 struct scene_editor_app final : public polymer_app
 {
@@ -59,7 +61,6 @@ struct scene_editor_app final : public polymer_app
     std::shared_ptr<gizmo_controller> gizmo;
 
     render_payload renderer_payload;
-    entity_system_manager the_entity_system_manager;
     scene the_scene;
 
     void draw_entity_scenegraph(const entity e);

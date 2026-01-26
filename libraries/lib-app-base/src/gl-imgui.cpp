@@ -429,7 +429,7 @@ namespace gui
     {
         imgui.reset(new gui::imgui_instance(window));
         renderTexture.setup(size.x, size.y, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-        glNamedFramebufferTexture2DEXT(renderFramebuffer, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, renderTexture, 0);
+        glNamedFramebufferTexture(renderFramebuffer, GL_COLOR_ATTACHMENT0, renderTexture, 0);
         renderFramebuffer.check_complete();
     }
 

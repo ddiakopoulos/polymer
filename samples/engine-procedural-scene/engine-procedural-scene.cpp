@@ -2,12 +2,13 @@
  * File: samples/engine-procedural-scene.cpp
  */
 
-#include "lib-polymer.hpp"
-#include "lib-engine.hpp"
+#include "polymer-core/lib-polymer.hpp"
+#include "polymer-engine/lib-engine.hpp"
+#include "polymer-engine/scene.hpp"
 
-#include "ecs/core-ecs.hpp"
-#include "scene.hpp"
-#include "renderer-util.hpp"
+#include "polymer-app-base/glfw-app.hpp"
+#include "polymer-app-base/camera-controllers.hpp"
+#include "polymer-gfx-gl/gl-texture-view.hpp"
 
 using namespace polymer;
 
@@ -17,7 +18,6 @@ struct sample_engine_procedural_scene final : public polymer_app
     camera_controller_fps flycam;
 
     std::unique_ptr<gl_shader_monitor> shaderMonitor;
-    std::unique_ptr<entity_system_manager> the_entity_system_manager;
     std::unique_ptr<simple_texture_view> fullscreen_surface;
 
     render_payload payload;
@@ -43,63 +43,57 @@ sample_engine_procedural_scene::sample_engine_procedural_scene() : polymer_app(1
 
     shaderMonitor.reset(new gl_shader_monitor("../../assets/"));
     fullscreen_surface.reset(new simple_texture_view());
-    the_entity_system_manager.reset(new entity_system_manager());
 
     load_required_renderer_assets("../../assets/", *shaderMonitor);
 
-    the_scene.reset(*the_entity_system_manager, {width, height}, true);
+    the_scene.reset({width, height}, true);
 
     create_handle_for_asset("debug-icosahedron", make_mesh_from_geometry(make_icosasphere(3))); // gpu mesh
     create_handle_for_asset("debug-icosahedron", make_icosasphere(3)); // cpu mesh
 
-    // This describes how to configure a renderable entity programmatically, at runtime.
-    {
-        // Create a new entity to represent an icosahedron that we will render
-        const entity debug_icosa = the_scene.track_entity(the_entity_system_manager->create_entity());
+    // Create a renderable mesh entity using the new factory method (1 line instead of 15+!)
+    // Auto-registers with collision system automatically.
+    base_object & icosa = the_scene.instantiate_mesh(
+        "debug-icosahedron",           // name
+        transform(float3(0, 0, 0)),    // pose
+        float3(1.f, 1.f, 1.f),         // scale
+        "debug-icosahedron"            // mesh/geometry handle
+    );
 
-        // Give the icosa a name and default transform and scale
-        the_scene.identifier_system->create(debug_icosa, "debug-icosahedron");
-        the_scene.xform_system->create(debug_icosa, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
-
-        // Create mesh component for the gpu mesh.
-        polymer::mesh_component mesh_component(debug_icosa);
-        mesh_component.mesh = gpu_mesh_handle("debug-icosahedron");
-        the_scene.render_system->create(debug_icosa, std::move(mesh_component));
-
-        // Create a geometry for the cpu mesh. This type of mesh is used for raycasting
-        // and collision, so not strictly required for this sample.
-        polymer::geometry_component geom_component(debug_icosa);
-        geom_component.geom = cpu_mesh_handle("debug-icosahedron");
-        the_scene.collision_system->create(debug_icosa, std::move(geom_component));
-
-        // Create material component with a default (normal-mapped) material
-        polymer::material_component material_component(debug_icosa);
-        material_component.material = material_handle(material_library::kDefaultMaterialId);
-        the_scene.render_system->create(debug_icosa, std::move(material_component));
-    
-        // Assemble a render_component (gather components so the renderer does not have to interface
-        // with many systems). Ordinarily this assembly is done per-frame in the update loop, but
-        // this is a fully static scene.
-        render_component debug_icosahedron_renderable = assemble_render_component(the_scene, debug_icosa);
-        payload.render_components.push_back(debug_icosahedron_renderable);
-    }
+    // Assemble render_component for the static scene
+    auto assemble_render_component = [](base_object & obj) {
+        render_component r;
+        r.material = obj.get_component<material_component>();
+        r.mesh = obj.get_component<mesh_component>();
+        r.world_matrix = obj.get_component<transform_component>()->get_world_transform().matrix();
+        r.render_sort_order = 0;
+        return r;
+    };
+    payload.render_components.push_back(assemble_render_component(icosa));
 
     cam.look_at({ 0, 0, 2 }, { 0, 0.1f, 0 });
     flycam.set_camera(&cam);
 
-    for (auto & e : the_scene.entity_list())
+    // Find IBL cubemap and procedural skybox from scene graph
+    for (auto & [e, obj] : the_scene.get_graph().graph_objects)
     {
-        if (auto * cubemap = the_scene.render_system->get_cubemap_component(e)) payload.ibl_cubemap = cubemap;
-    }
+        if (auto * cubemap = obj.get_component<ibl_component>())
+        {
+            payload.ibl_cubemap = cubemap;
+        }
 
-    for (auto & e : the_scene.entity_list())
-    {
-        if (auto * proc_skybox = the_scene.render_system->get_procedural_skybox_component(e))
+        if (auto * proc_skybox = obj.get_component<procedural_skybox_component>())
         {
             payload.procedural_skybox = proc_skybox;
-            if (auto sunlight = the_scene.render_system->get_directional_light_component(proc_skybox->sun_directional_light))
+
+            // Find the sun directional light
+            if (proc_skybox->sun_directional_light != kInvalidEntity)
             {
-                payload.sunlight = sunlight;
+                base_object & sun_obj = the_scene.get_graph().get_object(proc_skybox->sun_directional_light);
+                if (auto * sunlight = sun_obj.get_component<directional_light_component>())
+                {
+                    payload.sunlight = sunlight;
+                }
             }
         }
     }
@@ -123,6 +117,9 @@ void sample_engine_procedural_scene::on_update(const app_update_event & e)
     glfwGetWindowSize(window, &width, &height);
     flycam.update(e.timestep_ms);
     shaderMonitor->handle_recompile();
+
+    // Update all objects (calls on_update on each enabled object)
+    the_scene.update(e.timestep_ms / 1000.0f);
 }
 
 void sample_engine_procedural_scene::on_draw()
@@ -139,7 +136,7 @@ void sample_engine_procedural_scene::on_draw()
 
     payload.views.clear();
     payload.views.emplace_back(view_data(viewIndex, cam.pose, projectionMatrix));
-    the_scene.render_system->get_renderer()->render_frame(payload);
+    the_scene.get_renderer()->render_frame(payload);
 
     glUseProgram(0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -148,7 +145,7 @@ void sample_engine_procedural_scene::on_draw()
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
 
-    fullscreen_surface->draw(the_scene.render_system->get_renderer()->get_color_texture(viewIndex));
+    fullscreen_surface->draw(the_scene.get_renderer()->get_color_texture(viewIndex));
 
     gl_check_error(__FILE__, __LINE__);
 

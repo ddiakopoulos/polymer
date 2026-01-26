@@ -1,9 +1,3 @@
-/*
- * Based on: https://github.com/google/lullaby/tree/master/lullaby/modules/ecs
- * Apache 2.0 License. Copyright 2017 Google Inc. All Rights Reserved.
- * See LICENSE file for full attribution information.
- */
-
 #pragma once
 
 #ifndef polymer_base_ecs_hpp

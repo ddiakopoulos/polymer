@@ -6,11 +6,12 @@
 #include "polymer-engine/asset/asset-handle-utils.hpp"
 #include "polymer-engine/ecs/typeid.hpp"
 #include "polymer-engine/ecs/core-ecs.hpp"
-#include "polymer-engine/system/system-transform.hpp"
-#include "polymer-engine/scene.hpp"
+#include "polymer-engine/object.hpp"
 
 #include "polymer-core/tools/bvh.hpp"
 #include "polymer-core/tools/geometry.hpp"
+
+#include <algorithm>
 
 namespace polymer
 {
@@ -49,7 +50,23 @@ namespace polymer
 
         void add_collidable(const entity & e)
         {
-            collidable_entities.push_back(e);
+            // Prevent duplicate registration (idempotent)
+            if (std::find(collidable_entities.begin(), collidable_entities.end(), e)
+                == collidable_entities.end())
+            {
+                collidable_entities.push_back(e);
+                queue_acceleration_rebuild();
+            }
+        }
+
+        void remove_collidable(const entity & e)
+        {
+            auto it = std::find(collidable_entities.begin(), collidable_entities.end(), e);
+            if (it != collidable_entities.end())
+            {
+                collidable_entities.erase(it);
+                queue_acceleration_rebuild();
+            }
         }
 
         entity_hit_result raycast(const ray & world_ray, const raycast_type type = raycast_type::mesh)

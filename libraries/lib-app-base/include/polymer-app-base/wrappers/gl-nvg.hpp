@@ -81,19 +81,19 @@ namespace polymer
 
             for (uint32_t i = 0; i < num_surfaces; ++i)
             {
-                glTextureImage2DEXT(texture[i], GL_TEXTURE_2D, 0, GL_RGBA8, static_cast<GLsizei>(size.x), static_cast<GLsizei>(size.y), 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-                glTextureParameteriEXT(texture[i], GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                glTextureParameteriEXT(texture[i], GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                glTextureParameteriEXT(texture[i], GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-                glTextureParameteriEXT(texture[i], GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-                glTextureParameteriEXT(texture[i], GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
-                glNamedFramebufferTexture2DEXT(framebuffer[i], GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture[i], 0);
+                glTextureStorage2D(texture[i], 1, GL_RGBA8, static_cast<GLsizei>(size.x), static_cast<GLsizei>(size.y));
+                glTextureParameteri(texture[i], GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glTextureParameteri(texture[i], GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTextureParameteri(texture[i], GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTextureParameteri(texture[i], GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                glTextureParameteri(texture[i], GL_TEXTURE_MAX_LEVEL, 0);
+                glNamedFramebufferTexture(framebuffer[i], GL_COLOR_ATTACHMENT0, texture[i], 0);
 
                 // Create stencil renderbuffer (required for NanoVG polygon fills)
                 glGenRenderbuffers(1, &stencil_rbo[i]);
                 glBindRenderbuffer(GL_RENDERBUFFER, stencil_rbo[i]);
                 glRenderbufferStorage(GL_RENDERBUFFER, GL_STENCIL_INDEX8, static_cast<GLsizei>(size.x), static_cast<GLsizei>(size.y));
-                glNamedFramebufferRenderbufferEXT(framebuffer[i], GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, stencil_rbo[i]);
+                glNamedFramebufferRenderbuffer(framebuffer[i], GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, stencil_rbo[i]);
                 glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
                 framebuffer[i].check_complete();

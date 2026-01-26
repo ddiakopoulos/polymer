@@ -3,12 +3,14 @@
 #ifndef polymer_editor_gizmo_controller_hpp
 #define polymer_editor_gizmo_controller_hpp
 
-#include "gl-gizmo.hpp"
-#include "gl-imgui.hpp"
-#include "scene.hpp"
-#include "ecs/core-ecs.hpp"
-#include "system-transform.hpp"
-#include "ui-actions.hpp"
+#include "polymer-app-base/wrappers/gl-gizmo.hpp"
+#include "polymer-app-base/wrappers/gl-imgui.hpp"
+#include "polymer-engine/scene.hpp"
+#include "polymer-engine/object.hpp"
+#include "polymer-engine/ecs/core-ecs.hpp"
+#include "polymer-app-base/ui-actions.hpp"
+
+using namespace polymer;
 
 class gizmo_controller
 {
@@ -29,7 +31,45 @@ class gizmo_controller
 
     scene * the_scene{ nullptr };
 
-    polymer::transform_system * get_transform_system() { return the_scene->xform_system; }
+    // Helper to get world transform from entity
+    transform get_world_transform(entity e)
+    {
+        base_object & obj = the_scene->get_graph().get_object(e);
+        if (auto * xform = obj.get_component<transform_component>())
+        {
+            return xform->get_world_transform();
+        }
+        return {};
+    }
+
+    // Helper to get local scale from entity
+    float3 get_local_scale(entity e)
+    {
+        base_object & obj = the_scene->get_graph().get_object(e);
+        if (auto * xform = obj.get_component<transform_component>())
+        {
+            return xform->local_scale;
+        }
+        return float3(1.f);
+    }
+
+    // Helper to get parent entity
+    entity get_parent(entity e)
+    {
+        return the_scene->get_graph().get_parent(e);
+    }
+
+    // Helper to set local transform
+    void set_local_transform(entity e, const transform & pose, const float3 & scale)
+    {
+        base_object & obj = the_scene->get_graph().get_object(e);
+        if (auto * xform = obj.get_component<transform_component>())
+        {
+            xform->local_pose = pose;
+            xform->local_scale = scale;
+        }
+        the_scene->get_graph().refresh();
+    }
 
     void compute_entity_transform()
     {
@@ -41,16 +81,16 @@ class gizmo_controller
         // Single object selection
         else if (selected_entities.size() == 1)
         {
-            entity_transform = get_transform_system()->get_world_transform(selected_entities[0])->world_pose;
+            entity_transform = get_world_transform(selected_entities[0]);
         }
         // Multi-object selection
         else
         {
             float3 center_of_mass = {};
             float numObjects = 0;
-            for (auto entity : selected_entities)
+            for (auto ent : selected_entities)
             {
-                center_of_mass += get_transform_system()->get_world_transform(entity)->world_pose.position;
+                center_of_mass += get_world_transform(ent).position;
                 numObjects++;
             }
             center_of_mass /= numObjects;
@@ -58,10 +98,10 @@ class gizmo_controller
         }
 
         compute_relative_transforms();
-        
+
         // Gizmo location is now at the location of the entity in world space. We check
         // for changes in gizmo location to see if there's been any user interaction, so
-        // we also set the previous transform. 
+        // we also set the previous transform.
         gizmo_transform = from_linalg(entity_transform);
         previous_gizmo_transform = gizmo_transform;
     }
@@ -72,7 +112,7 @@ class gizmo_controller
 
         for (entity e : selected_entities)
         {
-            const transform x = get_transform_system()->get_world_transform(e)->world_pose;
+            const transform x = get_world_transform(e);
             relative_transforms.push_back(entity_transform.inverse() * x);
         }
     }
@@ -142,35 +182,37 @@ public:
         gizmo.update(camera, viewport_size);
         tinygizmo::transform_gizmo("editor-controller", gizmo.gizmo_ctx, gizmo_transform);
 
-        // Has the gizmo moved? 
+        // Has the gizmo moved?
         if (gizmo_transform != previous_gizmo_transform)
         {
             gizmo_active = true;
             move_flag = true;
 
-            // For each selected entity... 
+            // For each selected entity...
             for (int i = 0; i < selected_entities.size(); ++i)
             {
                 const entity e = selected_entities[i];
                 const transform updated_pose = to_linalg(gizmo_transform) * relative_transforms[i];
-                const float3 local_scale = get_transform_system()->get_local_transform(e)->local_scale;
+                const float3 local_scale = get_local_scale(e);
 
                 // Does this have a parent?
-                if (get_transform_system()->get_parent(e) != kInvalidEntity)
+                if (get_parent(e) != kInvalidEntity)
                 {
-                    // `updated_pose` is in worldspace, even though it's a child. 
-                    // We need to bring it back into the space of the parent. 
-                    const entity parent_entity = get_transform_system()->get_parent(e);
-                    const transform parent_pose = get_transform_system()->get_local_transform(parent_entity)->local_pose;
+                    // `updated_pose` is in worldspace, even though it's a child.
+                    // We need to bring it back into the space of the parent.
+                    const entity parent_entity = get_parent(e);
+                    base_object & parent_obj = the_scene->get_graph().get_object(parent_entity);
+                    transform_component * parent_xform = parent_obj.get_component<transform_component>();
+                    const transform parent_pose = parent_xform ? parent_xform->local_pose : transform();
                     const transform child_local_pose = parent_pose.inverse() * updated_pose;
 
-                    get_transform_system()->set_local_transform(e, child_local_pose, local_scale);
+                    set_local_transform(e, child_local_pose, local_scale);
                 }
                 else
                 {
                     // Note how we're setting the local transform. If this is a parent entity,
-                    // local is already in worldspace. 
-                    get_transform_system()->set_local_transform(e, updated_pose, local_scale);
+                    // local is already in worldspace.
+                    set_local_transform(e, updated_pose, local_scale);
                 }
             }
             previous_gizmo_transform = gizmo_transform;

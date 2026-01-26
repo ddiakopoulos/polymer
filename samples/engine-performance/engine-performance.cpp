@@ -95,7 +95,7 @@ sample_engine_performance::sample_engine_performance() : polymer_app(1920, 1080,
 
     uniform_random_gen rand;
 
-    for (uint32_t entity_index = 0; entity_index < 1024; ++entity_index) // 16384
+    for (uint32_t entity_index = 0; entity_index < 4096; ++entity_index) // 16384
     {
         const float dist_multiplier = 128.f;
 
@@ -110,23 +110,7 @@ sample_engine_performance::sample_engine_performance() : polymer_app(1920, 1080,
 
         auto geometry = geometry_options[rand.random_int(0, (int32_t) geometry_options.size() - 1)];
 
-        base_object the_object(name);
-
-        transform_component transform_c = transform_component(pose, scale);
-        the_object.add_component(transform_c);
-
-        material_component mat_c = material_component(material_handle(material_library::kDefaultMaterialId));
-        the_object.add_component(mat_c);
-        
-        mesh_component mesh_c = mesh_component(gpu_mesh_handle(geometry));
-        the_object.add_component(mesh_c);
-
-        geometry_component geom_c = geometry_component(cpu_mesh_handle(geometry));
-        the_object.add_component(geom_c);
-
-        scene.get_collision_system()->add_collidable(the_object.get_entity());
-
-        scene.get_graph().add_object(std::move(the_object));
+        scene.instantiate_mesh(name, pose, scale, geometry);
     }
 
     scene.get_graph().refresh();
@@ -177,6 +161,9 @@ void sample_engine_performance::on_update(const app_update_event & e)
     glfwGetWindowSize(window, &width, &height);
     flycam.update(e.timestep_ms);
     shaderMonitor->handle_recompile();
+
+    // NEW: Update all objects - calls on_update() on each enabled object
+    scene.update(e.timestep_ms / 1000.0f);
 }
 
 void sample_engine_performance::on_draw()
@@ -222,11 +209,11 @@ void sample_engine_performance::on_draw()
         };
 
         // Render everything
-        //for (auto & t : scene.get_graph().graph_objects)
-        //{ 
-        //    render_component r = assemble_render_component(t.second);
-        //    payload.render_components.emplace_back(r);
-        //};
+        for (auto & t : scene.get_graph().graph_objects)
+        { 
+            render_component r = assemble_render_component(t.second);
+            payload.render_components.emplace_back(r);
+        };
 
         for (size_t i = 0; i < visible_entity_list.size(); ++i)
         {

@@ -17,6 +17,7 @@
 #include "polymer-app-base/wrappers/gl-imgui.hpp"
 #include "polymer-app-base/wrappers/gl-gizmo.hpp"
 #include "polymer-app-base/camera-controllers.hpp"
+#include "polymer-core/tools/arcball.hpp"
 
 #include "polymer-engine/asset/asset-handle-utils.hpp"
 #include "polymer-engine/shader-library.hpp"

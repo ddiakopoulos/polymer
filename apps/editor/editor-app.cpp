@@ -1,14 +1,10 @@
-// #include "system-util.hpp"
-// #include "logging.hpp"
-// #include "util-win32.hpp"
-// #include "model-io.hpp"
-// #include "renderer-util.hpp"
-// #include "renderer-debug.hpp"
-//#include "serialization.hpp"
+#include "polymer-engine/renderer/renderer-debug.hpp"
+#include "polymer-engine/renderer/renderer-util.hpp"
 
 #include "editor-app.hpp"
 
-using namespace polymer;
+// Note: We avoid "using namespace polymer" because it conflicts with
+// imgui_internal.h's use of the global log() function
 
 scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
 {
@@ -21,7 +17,7 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
     glfwGetWindowSize(window, &width, &height);
     glViewport(0, 0, width, height);
 
-    log::get()->set_engine_logger(std::make_shared<ImGui::spdlog_editor_sink>(editor_console_log));
+    polymer::log::get()->set_engine_logger(std::make_shared<ImGui::spdlog_editor_sink>(editor_console_log));
 
     auto droidSansTTFBytes = read_file_binary("../assets/fonts/droid_sans.ttf");
 
@@ -43,9 +39,9 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
 
     fullscreen_surface.reset(new simple_texture_view());
 
-    the_scene.reset(the_entity_system_manager, { width, height }, true);
+    the_scene.reset({ width, height }, true);
 
-    global_debug_mesh_manager::get()->initialize_resources(&the_entity_system_manager, &the_scene);
+    polymer::global_debug_mesh_manager::get()->initialize_resources(&the_scene);
 
     gizmo.reset(new gizmo_controller(&the_scene));
 }
@@ -56,20 +52,15 @@ void scene_editor_app::on_drop(std::vector<std::string> filepaths)
     {
         const std::string ext = get_extension(path);
         if (ext == "json") import_scene(path);
-        else import_asset_runtime(path, the_scene, the_entity_system_manager);
+        else import_asset_runtime(path, the_scene);
     }
 }
 
-void scene_editor_app::on_window_resize(int2 size) 
-{ 
+void scene_editor_app::on_window_resize(int2 size)
+{
     // Iconification/minimization triggers an on_window_resize event with a zero size
-    if (size.x > 0 && size.y > 0)
-    {
-        renderer_settings settings;
-        settings.renderSize = size;
-        the_scene.render_system->reconfigure(settings);
-        // scene.render_system->get_procedural_skybox_component()->onParametersChanged(); // @tofix - reconfigure directional light
-    }
+    // Note: Window resize reconfiguration is not currently supported
+    (void)size;
 }
 
 void scene_editor_app::on_input(const app_input_event & event)
@@ -100,9 +91,11 @@ void scene_editor_app::on_input(const app_input_event & event)
             if (event.value[0] == GLFW_KEY_F && event.action == GLFW_RELEASE)
             {
                 if (gizmo->get_selection().size() == 0) return;
-                if (entity theSelection = gizmo->get_selection()[0])
+                entity theSelection = gizmo->get_selection()[0];
+                if (theSelection != kInvalidEntity)
                 {
-                    const transform selectedObjectPose = the_scene.xform_system->get_world_transform(theSelection)->world_pose;
+                    base_object & obj = the_scene.get_graph().get_object(theSelection);
+                    const transform selectedObjectPose = obj.get_component<transform_component>()->get_world_transform();
                     const float3 focusOffset = selectedObjectPose.position + float3(0.f, 0.5f, 4.f);
                     cam.look_at(focusOffset, selectedObjectPose.position);
                     flycam.update_yaw_pitch();
@@ -123,11 +116,13 @@ void scene_editor_app::on_input(const app_input_event & event)
                 auto nudge = [this](const float3 amount)
                 {
                     if (gizmo->get_selection().size() == 0) return;
-                    if (const entity first_selection = gizmo->get_selection()[0])
+                    const entity first_selection = gizmo->get_selection()[0];
+                    if (first_selection != kInvalidEntity)
                     {
-                        auto transform = the_scene.xform_system->get_local_transform(first_selection)->local_pose;
-                        transform.position += amount;
-                        the_scene.xform_system->set_local_transform(first_selection, transform);
+                        base_object & obj = the_scene.get_graph().get_object(first_selection);
+                        auto * xform = obj.get_component<transform_component>();
+                        xform->local_pose.position += amount;
+                        the_scene.get_graph().refresh();
                     }
                 };
 
@@ -149,7 +144,7 @@ void scene_editor_app::on_input(const app_input_event & event)
             if (length(r.direction) > 0 && !gizmo->active())
             {
                 std::vector<entity> selectedObjects;
-                entity_hit_result result = the_scene.collision_system->raycast(r);
+                entity_hit_result result = the_scene.get_collision_system()->raycast(r);
                 if (result.e != kInvalidEntity) selectedObjects.push_back(result.e);
 
                 // New object was selected
@@ -175,7 +170,7 @@ void scene_editor_app::on_input(const app_input_event & event)
 
             if (gizmo->moved())
             {
-                the_scene.collision_system->queue_acceleration_rebuild();
+                the_scene.get_collision_system()->queue_acceleration_rebuild();
             }
         }
     }
@@ -190,10 +185,10 @@ void scene_editor_app::import_scene(const std::string & path)
 
         int width, height;
         glfwGetWindowSize(window, &width, &height);
-        the_scene.reset(the_entity_system_manager, { width, height }, false); // don't create implicit objects if importing
+        the_scene.reset({ width, height }, false); // don't create implicit objects if importing
 
-        the_scene.import_environment(path, the_entity_system_manager);
-       
+        the_scene.import_environment(path);
+
         // Resolve polymer-local assets
         the_scene.resolver->add_search_path("../assets/");
 
@@ -211,12 +206,12 @@ void scene_editor_app::import_scene(const std::string & path)
         throw std::invalid_argument("path was empty...?");
     }
 
-    global_debug_mesh_manager::get()->initialize_resources(&the_entity_system_manager, &the_scene);
+    polymer::global_debug_mesh_manager::get()->initialize_resources(&the_scene);
 }
 
 void scene_editor_app::open_material_editor()
 {
-    material_editor.reset(new material_editor_window(get_shared_gl_context(), 500, 1200, "", 1, the_scene, gizmo, the_entity_system_manager));
+    material_editor.reset(new material_editor_window(get_shared_gl_context(), 500, 1200, "", 1, the_scene, gizmo));
     glfwMakeContextCurrent(window);
 }
 
@@ -242,33 +237,32 @@ void scene_editor_app::on_update(const app_update_event & e)
 
 void scene_editor_app::draw_entity_scenegraph(const entity e)
 {
-    if (e == kInvalidEntity || !the_scene.xform_system->has_transform(e))
+    if (e == kInvalidEntity)
     {
-        throw std::invalid_argument("this entity is invalid or someone deleted its transform (bad)");
+        throw std::invalid_argument("this entity is invalid");
     }
+
+    base_object & obj = the_scene.get_graph().get_object(e);
+    const std::vector<entity> children = the_scene.get_graph().get_children(e);
 
     bool open = false;
 
-    ImGui::PushID(static_cast<int>(e));
+    ImGui::PushID(e.as_string().c_str());
 
-    // Has a transform system entry
-    if (auto * xform = the_scene.xform_system->get_local_transform(e))
+    // Check if this has children
+    if (children.size())
     {
-        // Check if this has children
-        if (xform->children.size())
-        {
-            // Increase spacing to differentiate leaves from expanded contents.
-            ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, ImGui::GetFontSize());
-            ImGui::SetNextTreeNodeOpen(true, ImGuiCond_FirstUseEver);
-            open = ImGui::TreeNode("");
-            if (!open) ImGui::PopStyleVar();
-            ImGui::SameLine();
-        }
+        // Increase spacing to differentiate leaves from expanded contents.
+        ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, ImGui::GetFontSize());
+        ImGui::SetNextTreeNodeOpen(true, ImGuiCond_FirstUseEver);
+        open = ImGui::TreeNode("");
+        if (!open) ImGui::PopStyleVar();
+        ImGui::SameLine();
     }
 
     const bool selected = gizmo->selected(e);
-    std::string name = the_scene.identifier_system->get_name(e);
-    std::string entity_as_string = "[" + std::to_string(e) + "] ";
+    std::string name = obj.name;
+    std::string entity_as_string = "[" + e.as_string().substr(0, 8) + "] ";
     name = name.empty() ? entity_as_string + "<unnamed entity>" : entity_as_string + name;
 
     if (ImGui::Selectable(name.c_str(), selected))
@@ -279,17 +273,13 @@ void scene_editor_app::draw_entity_scenegraph(const entity e)
 
     if (open)
     {
-        // Has a transform system entry
-        if (auto * xform = the_scene.xform_system->get_local_transform(e))
+        for (auto & c : children)
         {
-            for (auto & c : xform->children)
-            {
-                draw_entity_scenegraph(c);
-            }
-            ImGui::PopStyleVar();
-            ImGui::Unindent(ImGui::GetFontSize());
-            ImGui::TreePop();
+            draw_entity_scenegraph(c);
         }
+        ImGui::PopStyleVar();
+        ImGui::Unindent(ImGui::GetFontSize());
+        ImGui::TreePop();
     }
 
     ImGui::PopID();
@@ -312,8 +302,8 @@ void scene_editor_app::on_draw()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    global_debug_mesh_manager::get()->upload();
-    global_debug_mesh_manager::get()->clear();
+    polymer::global_debug_mesh_manager::get()->upload();
+    polymer::global_debug_mesh_manager::get()->clear();
 
     const float4x4 projectionMatrix = cam.get_projection_matrix(float(width) / float(height));
     const float4x4 viewMatrix = cam.get_view_matrix();
@@ -325,58 +315,68 @@ void scene_editor_app::on_draw()
         // Clear out transient scene payload data
         renderer_payload.reset();
 
-        // Does the entity have a material? If so, we can render it. 
-        for (const auto e : the_scene.entity_list())
-        {
-            if (material_component * mat_c = the_scene.render_system->get_material_component(e))
+        // Lambda to assemble render component from base_object
+        auto assemble_render_component = [](base_object & obj) {
+            render_component r;
+            r.material = obj.get_component<material_component>();
+            r.mesh = obj.get_component<mesh_component>();
+            if (auto * xform = obj.get_component<transform_component>())
             {
-                auto mesh_c = the_scene.render_system->get_mesh_component(e);
+                r.world_matrix = xform->get_world_transform().matrix();
+            }
+            r.render_sort_order = 0;
+            return r;
+        };
+
+        // Iterate all objects in the scene graph
+        for (auto & [e, obj] : the_scene.get_graph().graph_objects)
+        {
+            // Does the entity have a material? If so, we can render it.
+            if (auto * mat_c = obj.get_component<material_component>())
+            {
+                auto * mesh_c = obj.get_component<mesh_component>();
                 if (!mesh_c) continue; // for the case that we just created a material component and haven't set a mesh yet
 
-                auto xform_c = the_scene.xform_system->get_world_transform(e);
-                assert(xform_c != nullptr); // we did something bad if this entity doesn't also have a world transform component
-
-                auto scale_c = the_scene.xform_system->get_local_transform(e);
-                assert(scale_c != nullptr); 
-
-                render_component r = assemble_render_component(the_scene, e);
+                render_component r = assemble_render_component(obj);
                 renderer_payload.render_components.push_back(r);
             }
-        }
 
-        // Only one IBL
-        for (auto & e : the_scene.entity_list())
-        {
-            if (auto * cubemap = the_scene.render_system->get_cubemap_component(e))
+            // IBL cubemap
+            if (auto * cubemap = obj.get_component<ibl_component>())
             {
                 renderer_payload.ibl_cubemap = cubemap;
             }
-        }
 
-        // Only one skybox
-        for (auto & e : the_scene.entity_list())
-        {
-            if (auto * proc_skybox = the_scene.render_system->get_procedural_skybox_component(e))
+            // Procedural skybox
+            if (auto * proc_skybox = obj.get_component<procedural_skybox_component>())
             {
                 renderer_payload.procedural_skybox = proc_skybox;
-                if (auto sunlight = the_scene.render_system->get_directional_light_component(proc_skybox->sun_directional_light))
+                if (proc_skybox->sun_directional_light != kInvalidEntity)
                 {
-                    renderer_payload.sunlight = sunlight;
+                    base_object & sun_obj = the_scene.get_graph().get_object(proc_skybox->sun_directional_light);
+                    if (auto * sunlight = sun_obj.get_component<directional_light_component>())
+                    {
+                        renderer_payload.sunlight = sunlight;
+                    }
                 }
             }
-        }
 
-        // Gather point lights
-        for (const auto e : the_scene.entity_list())
-        {
-            if (auto pt_light_c = the_scene.render_system->get_point_light_component(e))
+            // Point lights
+            if (auto * pt_light_c = obj.get_component<point_light_component>())
             {
                 renderer_payload.point_lights.push_back(pt_light_c);
             }
         }
 
-        const auto debug_renderer_entity = assemble_render_component(the_scene, global_debug_mesh_manager::get()->get_entity());
-        if (debug_renderer_entity.get_entity() != kInvalidEntity) renderer_payload.render_components.push_back(debug_renderer_entity);
+        // Add debug renderer entity
+        entity debug_ent = polymer::global_debug_mesh_manager::get()->get_entity();
+        if (debug_ent != kInvalidEntity)
+        {
+            base_object & debug_obj = the_scene.get_graph().get_object(debug_ent);
+            const auto debug_renderer_entity = assemble_render_component(debug_obj);
+            if (debug_renderer_entity.mesh && debug_renderer_entity.material)
+                renderer_payload.render_components.push_back(debug_renderer_entity);
+        }
 
         // Add single-viewport camera
         renderer_payload.views.push_back(view_data(0, cam.pose, projectionMatrix));
@@ -385,14 +385,14 @@ void scene_editor_app::on_draw()
 
         // Submit scene to the scene renderer
         editorProfiler.begin("submit-scene");
-        the_scene.render_system->get_renderer()->render_frame(renderer_payload);
+        the_scene.get_renderer()->render_frame(renderer_payload);
         editorProfiler.end("submit-scene");
 
         // Draw to screen framebuffer
         glUseProgram(0);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, width, height);
-        fullscreen_surface->draw(the_scene.render_system->get_renderer()->get_color_texture(0));
+        fullscreen_surface->draw(the_scene.get_renderer()->get_color_texture(0));
 
         if (show_grid)
         {
@@ -413,11 +413,13 @@ void scene_editor_app::on_draw()
         program.uniform("u_viewProjMatrix", viewProjectionMatrix);
         for (const entity e : gizmo->get_selection())
         {
-            const transform p = the_scene.xform_system->get_world_transform(e)->world_pose;
-            const float3 scale = the_scene.xform_system->get_local_transform(e)->local_scale;
+            base_object & obj = the_scene.get_graph().get_object(e);
+            auto * xform = obj.get_component<transform_component>();
+            const transform p = xform->get_world_transform();
+            const float3 scale = xform->local_scale;
             const float4x4 modelMatrix = (p.matrix() * make_scaling_matrix(scale));
             program.uniform("u_modelMatrix", modelMatrix);
-            if (auto mesh = the_scene.render_system->get_mesh_component(e))
+            if (auto * mesh = obj.get_component<mesh_component>())
             {
                 mesh->draw();
             }
@@ -482,7 +484,7 @@ void scene_editor_app::on_draw()
         {
             gizmo->clear();
 
-            the_scene.reset(the_entity_system_manager, { width, height }, true);
+            the_scene.reset({ width, height }, true);
 
             renderer_payload.render_components.clear();
             glfwSetWindowTitle(window, "New Scene");
@@ -498,22 +500,36 @@ void scene_editor_app::on_draw()
         menu.end();
 
         menu.begin("Edit");
-        if (menu.item("Clone", GLFW_MOD_CONTROL, GLFW_KEY_D)) 
+        if (menu.item("Clone", GLFW_MOD_CONTROL, GLFW_KEY_D))
         {
             const auto selection_list = gizmo->get_selection();
             if (!selection_list.empty() && selection_list[0] != kInvalidEntity)
             {
-                const entity the_copy = the_scene.track_entity(the_entity_system_manager.create_entity());
-                the_scene.copy(selection_list[0], the_copy);
+                // Get the source object
+                base_object & src_obj = the_scene.get_graph().get_object(selection_list[0]);
 
-                // offset cloned object by 0.1 units
-                auto old_local_xform = the_scene.xform_system->get_local_transform(the_copy);
-                transform t = old_local_xform->local_pose;
-                t.position += 0.1f;
+                // Create a copy with a new name
+                base_object copy_obj(src_obj.name + "_copy");
 
-                the_scene.xform_system->set_local_transform(the_copy, t);
+                // Copy transform with offset
+                if (auto * src_xform = src_obj.get_component<transform_component>())
+                {
+                    transform_component xform_copy = *src_xform;
+                    xform_copy.local_pose.position += 0.1f;
+                    copy_obj.add_component(xform_copy);
+                }
 
-                std::vector<entity> new_selection_list = { the_copy };
+                // Copy other components
+                if (auto * mat = src_obj.get_component<material_component>())
+                    copy_obj.add_component(*mat);
+                if (auto * mesh = src_obj.get_component<mesh_component>())
+                    copy_obj.add_component(*mesh);
+                if (auto * geom = src_obj.get_component<geometry_component>())
+                    copy_obj.add_component(*geom);
+
+                base_object & created = the_scene.instantiate(std::move(copy_obj));
+
+                std::vector<entity> new_selection_list = { created.get_entity() };
                 gizmo->set_selection(new_selection_list);
             }
         }
@@ -526,26 +542,33 @@ void scene_editor_app::on_draw()
             }
             gizmo->clear();
         }
-        if (menu.item("Select All", GLFW_MOD_CONTROL, GLFW_KEY_A)) 
+        if (menu.item("Select All", GLFW_MOD_CONTROL, GLFW_KEY_A))
         {
-            gizmo->set_selection(the_scene.entity_list());
+            std::vector<entity> all_entities;
+            for (auto & [e, obj] : the_scene.get_graph().graph_objects)
+            {
+                all_entities.push_back(e);
+            }
+            gizmo->set_selection(all_entities);
         }
         menu.end();
 
         menu.begin("Create");
-        if (menu.item("basic entity")) 
+        if (menu.item("basic entity"))
         {
-            std::vector<entity> list = { the_scene.track_entity(the_entity_system_manager.create_entity()) };
-            the_scene.xform_system->create(list[0], transform());
-            the_scene.identifier_system->create(list[0], "new entity (" + std::to_string(list[0]) + ")");
+            base_object & new_obj = the_scene.instantiate_empty("new entity");
+            std::vector<entity> list = { new_obj.get_entity() };
             gizmo->set_selection(list); // Newly spawned objects are selected by default
         }
         if (menu.item("renderable entity"))
         {
-            const std::string name = "new renderable entity";
-            const entity e = make_standard_scene_object(&the_entity_system_manager, &the_scene,
-                name, {}, float3(1.f), material_handle(material_library::kDefaultMaterialId), "cube-uniform", "cube-uniform");
-            std::vector<entity> list = { e };
+            base_object & new_obj = the_scene.instantiate_mesh(
+                "new renderable entity",
+                transform(),
+                float3(1.f),
+                "cube-uniform"
+            );
+            std::vector<entity> list = { new_obj.get_entity() };
             gizmo->set_selection(list);
         }
         menu.end();
@@ -588,16 +611,27 @@ void scene_editor_app::on_draw()
             ImGui::Dummy({ 0, 8 });
 
             gizmo->refresh(); // selector only stores data, not pointers, so we need to recalc new xform.
-            inspect_entity(im_ui_ctx, nullptr, gizmo->get_selection()[0], the_scene);
+
+            // Inspect selected entity using the new pattern
+            entity selected_entity = gizmo->get_selection()[0];
+            base_object & selected_obj = the_scene.get_graph().get_object(selected_entity);
+            inspect_entity_new(im_ui_ctx, selected_obj);
 
             if (ImGui::BeginPopupModal("Create Component", NULL, ImGuiWindowFlags_AlwaysAutoResize))
             {
                 const entity selection = gizmo->get_selection()[0];
+                base_object & sel_obj = the_scene.get_graph().get_object(selection);
 
                 ImGui::Dummy({ 0, 6 });
 
-                std::vector<std::string> component_names;
-                enumerate_components([&](const char * name, poly_typeid type) { component_names.push_back(name); });
+                // List available component types
+                std::vector<std::string> component_names = {
+                    "mesh_component",
+                    "material_component",
+                    "geometry_component",
+                    "point_light_component",
+                    "directional_light_component"
+                };
 
                 static int componentTypeSelection = -1;
                 gui::Combo("Component", &componentTypeSelection, component_names);
@@ -606,23 +640,19 @@ void scene_editor_app::on_draw()
 
                 if (ImGui::Button("OK", ImVec2(120, 0)))
                 {
-                    if (componentTypeSelection == -1)ImGui::CloseCurrentPopup();
-
-                    const std::string type_name = component_names[componentTypeSelection];
-
-                    visit_systems(&the_scene, [&](const char * system_name, auto * system_pointer)
+                    if (componentTypeSelection == -1) ImGui::CloseCurrentPopup();
+                    else
                     {
-                        if (system_pointer)
-                        {
-                            if (type_name == get_typename<mesh_component>()) system_pointer->create(selection, get_typeid<mesh_component>(), &mesh_component(selection));
-                            else if (type_name == get_typename<material_component>()) system_pointer->create(selection, get_typeid<material_component>(), &material_component(selection));
-                            else if (type_name == get_typename<geometry_component>()) system_pointer->create(selection, get_typeid<geometry_component>(), &geometry_component(selection));
-                            else if (type_name == get_typename<point_light_component>()) system_pointer->create(selection, get_typeid<point_light_component>(), &point_light_component(selection));
-                            else if (type_name == get_typename<directional_light_component>()) system_pointer->create(selection, get_typeid<directional_light_component>(), &directional_light_component(selection));
-                        }
-                    });
+                        const std::string type_name = component_names[componentTypeSelection];
 
-                    ImGui::CloseCurrentPopup();
+                        if (type_name == "mesh_component") sel_obj.add_component(mesh_component());
+                        else if (type_name == "material_component") sel_obj.add_component(material_component());
+                        else if (type_name == "geometry_component") sel_obj.add_component(geometry_component());
+                        else if (type_name == "point_light_component") sel_obj.add_component(point_light_component());
+                        else if (type_name == "directional_light_component") sel_obj.add_component(directional_light_component());
+
+                        ImGui::CloseCurrentPopup();
+                    }
                 }
 
                 ImGui::SetItemDefaultFocus();
@@ -635,23 +665,14 @@ void scene_editor_app::on_draw()
         gui::imgui_fixed_window_end();
 
         gui::imgui_fixed_window_begin("Scene Entities", bottomRightPane);
-        
-        const auto entity_list = the_scene.entity_list();
+
+        // Build list of root entities (those without parents)
         std::vector<entity> root_list;
-        for (auto & e : entity_list)
+        for (auto & [e, obj] : the_scene.get_graph().graph_objects)
         {
-            // Does the entity have a transform?
-            if (auto * t = the_scene.xform_system->get_local_transform(e))
-            {
-                // If it has a valid parent, it's a child, so we skip it
-                if (t->parent != kInvalidEntity) continue;
-                root_list.push_back(e);
-            }
-            else
-            {
-                // We also list out entities with no transform
-                root_list.push_back(e);
-            }
+            // If it has a valid parent, it's a child, so we skip it
+            if (the_scene.get_graph().get_parent(e) != kInvalidEntity) continue;
+            root_list.push_back(e);
         }
 
         // Now walk the root list
@@ -681,18 +702,18 @@ void scene_editor_app::on_draw()
 
                 ImGui::SliderFloat("Far Clip", &cam.farclip, 2.f, 256.f);
 
-                renderer_settings lastSettings = the_scene.render_system->get_renderer()->settings;
-                if (build_imgui(im_ui_ctx, "Renderer", *the_scene.render_system->get_renderer()))
+                renderer_settings lastSettings = the_scene.get_renderer()->settings;
+                if (build_imgui(im_ui_ctx, "Renderer", *the_scene.get_renderer()))
                 {
-                    the_scene.render_system->get_renderer()->gpuProfiler.set_enabled(the_scene.render_system->get_renderer()->settings.performanceProfiling);
-                    the_scene.render_system->get_renderer()->cpuProfiler.set_enabled(the_scene.render_system->get_renderer()->settings.performanceProfiling);
+                    the_scene.get_renderer()->gpuProfiler.set_enabled(the_scene.get_renderer()->settings.performanceProfiling);
+                    the_scene.get_renderer()->cpuProfiler.set_enabled(the_scene.get_renderer()->settings.performanceProfiling);
                 }
 
                 ImGui::Dummy({ 0, 10 });
 
                 ImGui::Dummy({ 0, 10 });
 
-                if (auto * shadows = the_scene.render_system->get_renderer()->get_shadow_pass())
+                if (auto * shadows = the_scene.get_renderer()->get_shadow_pass())
                 {
                     if (ImGui::TreeNode("Shadow Mapping"))
                     {
@@ -706,10 +727,10 @@ void scene_editor_app::on_draw()
 
             ImGui::Dummy({ 0, 10 });
 
-            if (the_scene.render_system->get_renderer()->settings.performanceProfiling)
+            if (the_scene.get_renderer()->settings.performanceProfiling)
             {
-                for (auto & t : the_scene.render_system->get_renderer()->gpuProfiler.get_data()) ImGui::Text("[Renderer GPU] %s %f ms", t.first.c_str(), t.second);
-                for (auto & t : the_scene.render_system->get_renderer()->cpuProfiler.get_data()) ImGui::Text("[Renderer CPU] %s %f ms", t.first.c_str(), t.second);
+                for (auto & t : the_scene.get_renderer()->gpuProfiler.get_data()) ImGui::Text("[Renderer GPU] %s %f ms", t.first.c_str(), t.second);
+                for (auto & t : the_scene.get_renderer()->cpuProfiler.get_data()) ImGui::Text("[Renderer CPU] %s %f ms", t.first.c_str(), t.second);
             }
 
             ImGui::Dummy({ 0, 10 });

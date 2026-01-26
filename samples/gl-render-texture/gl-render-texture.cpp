@@ -82,8 +82,8 @@ sample_gl_render_offscreen::sample_gl_render_offscreen() : polymer_app(1280, 720
 
     renderTextureRGBA.setup(width, height, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
     renderTextureDepth.setup(width, height, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
-    glNamedFramebufferTexture2DEXT(renderFramebuffer, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, renderTextureRGBA, 0);
-    glNamedFramebufferTexture2DEXT(renderFramebuffer, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, renderTextureDepth, 0);
+    glNamedFramebufferTexture(renderFramebuffer, GL_COLOR_ATTACHMENT0, renderTextureRGBA, 0);
+    glNamedFramebufferTexture(renderFramebuffer, GL_DEPTH_ATTACHMENT, renderTextureDepth, 0);
     renderFramebuffer.check_complete();
 
     // Assign a new shader_handle with id "wireframe"

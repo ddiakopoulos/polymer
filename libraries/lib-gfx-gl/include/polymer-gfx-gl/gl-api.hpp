@@ -165,8 +165,8 @@ struct gl_texture_2d_factory { static void create(GLuint & x) { glCreateTextures
 struct gl_texture_3d_factory { static void create(GLuint & x) { glCreateTextures(GL_TEXTURE_3D, 1, &x); }; static void destroy(GLuint x) { glDeleteTextures(1, &x); }; };
 struct gl_texture_cube_factory { static void create(GLuint & x) { glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &x); }; static void destroy(GLuint x) { glDeleteTextures(1, &x); }; };
 struct gl_vertex_array_factory { static void create(GLuint & x) { glGenVertexArrays(1, &x); }; static void destroy(GLuint x) { glDeleteVertexArrays(1, &x); }; };
-struct gl_renderbuffer_factory { static void create(GLuint & x) { glGenRenderbuffers(1, &x); }; static void destroy(GLuint x) { glDeleteRenderbuffers(1, &x); }; };
-struct gl_framebuffer_factory { static void create(GLuint & x) { glGenFramebuffers(1, &x); }; static void destroy(GLuint x) { glDeleteFramebuffers(1, &x); }; };
+struct gl_renderbuffer_factory { static void create(GLuint & x) { glCreateRenderbuffers(1, &x); }; static void destroy(GLuint x) { glDeleteRenderbuffers(1, &x); }; };
+struct gl_framebuffer_factory { static void create(GLuint & x) { glCreateFramebuffers(1, &x); }; static void destroy(GLuint x) { glDeleteFramebuffers(1, &x); }; };
 struct gl_query_factory { static void create(GLuint & x) { glGenQueries(1, &x); }; static void destroy(GLuint x) { glDeleteQueries(1, &x); }; };
 struct gl_sampler_factory { static void create(GLuint & x) { glGenSamplers(1, &x); }; static void destroy(GLuint x) { glDeleteSamplers(1, &x); }; };
 struct gl_transform_feedback_factory { static void create(GLuint & x) { glGenTransformFeedbacks(1, &x); }; static void destroy(GLuint x) { glDeleteTransformFeedbacks(1, &x); }; };
@@ -209,7 +209,7 @@ struct gl_framebuffer : public gl_framebuffer_object
     gl_framebuffer() {}
     gl_framebuffer(float width, float height) : width(width), height(height) {}
     gl_framebuffer(float width, float height, float depth) : width(width), height(height), depth(depth) {}
-    void check_complete() { if (glCheckNamedFramebufferStatusEXT(*this, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) throw std::runtime_error("fbo incomplete"); }
+    void check_complete() { if (glCheckNamedFramebufferStatus(*this, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) throw std::runtime_error("fbo incomplete"); }
 };
 
 ///////////////////////
@@ -225,12 +225,22 @@ struct gl_texture_2d : public gl_texture_2d_object
 
     void setup(GLsizei width, GLsizei height, GLenum internal_fmt, GLenum format, GLenum type, const GLvoid * pixels, bool createMipmap = false)
     {
-        glTextureImage2DEXT(*this, GL_TEXTURE_2D, 0, internal_fmt, width, height, 0, format, type, pixels);
-        glTextureParameteriEXT(*this, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTextureParameteriEXT(*this, GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, createMipmap ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
-        glTextureParameteriEXT(*this, GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTextureParameteriEXT(*this, GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        if (createMipmap) glGenerateTextureMipmapEXT(*this, GL_TEXTURE_2D);
+        // Convert unsized internal formats to sized formats for glTextureStorage2D
+        GLenum sized_fmt = internal_fmt;
+        if (internal_fmt == GL_RGBA) sized_fmt = (type == GL_FLOAT) ? GL_RGBA32F : GL_RGBA8;
+        else if (internal_fmt == GL_RGB) sized_fmt = (type == GL_FLOAT) ? GL_RGB32F : GL_RGB8;
+        else if (internal_fmt == GL_RG) sized_fmt = (type == GL_FLOAT) ? GL_RG32F : GL_RG8;
+        else if (internal_fmt == GL_RED) sized_fmt = (type == GL_FLOAT) ? GL_R32F : GL_R8;
+        else if (internal_fmt == GL_DEPTH_COMPONENT) sized_fmt = GL_DEPTH_COMPONENT32F;
+
+        GLsizei levels = createMipmap ? static_cast<GLsizei>(std::floor(std::log2(std::max(width, height)))) + 1 : 1;
+        glTextureStorage2D(*this, levels, sized_fmt, width, height);
+        if (pixels) glTextureSubImage2D(*this, 0, 0, 0, width, height, format, type, pixels);
+        glTextureParameteri(*this, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTextureParameteri(*this, GL_TEXTURE_MIN_FILTER, createMipmap ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
+        glTextureParameteri(*this, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTextureParameteri(*this, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        if (createMipmap) glGenerateTextureMipmap(*this);
         this->width = static_cast<float>(width);
         this->height = static_cast<float>(height);
     }
@@ -252,22 +262,39 @@ struct gl_texture_2d : public gl_texture_2d_object
     }
 };
 
-// 3D texture (for 2D texture arrays, use glCreateTextures(GL_TEXTURE_2D_ARRAY) manually)
-struct gl_texture_3d : public gl_texture_3d_object
+// 3D texture or 2D texture array - target is specified in setup()
+struct gl_texture_3d
 {
+    GLuint handle{ 0 };
     float width{ 0 }, height{ 0 }, depth{ 0 };
     gl_texture_3d() = default;
-    gl_texture_3d(GLuint id) : gl_texture_3d_object(id) { }
+    gl_texture_3d(GLuint id) : handle(id) { }
     gl_texture_3d(float width, float height, float depth) : width(width), height(height), depth(depth) {}
+    ~gl_texture_3d() { if (handle) { glDeleteTextures(1, &handle); handle = 0; } }
+    gl_texture_3d(const gl_texture_3d &) = delete;
+    gl_texture_3d & operator=(const gl_texture_3d &) = delete;
+    gl_texture_3d(gl_texture_3d && r) { handle = r.handle; r.handle = 0; width = r.width; height = r.height; depth = r.depth; }
+    gl_texture_3d & operator=(gl_texture_3d && r) { handle = r.handle; r.handle = 0; width = r.width; height = r.height; depth = r.depth; return *this; }
+    operator GLuint() const { return handle; }
+    GLuint id() const { return handle; }
 
     void setup(GLenum target, GLsizei width, GLsizei height, GLsizei depth, GLenum internal_fmt, GLenum format, GLenum type, const GLvoid * pixels)
     {
-        glTextureImage3DEXT(*this, target, 0, internal_fmt, width, height, depth, 0, format, type, pixels);
-        glTextureParameteriEXT(*this, target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTextureParameteriEXT(*this, target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTextureParameteriEXT(*this, target, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTextureParameteriEXT(*this, target, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTextureParameteriEXT(*this, target, GL_TEXTURE_WRAP_R, GL_REPEAT);
+        // Create texture with the specified target
+        if (handle) { glDeleteTextures(1, &handle); handle = 0; }
+        glCreateTextures(target, 1, &handle);
+
+        // Convert unsized internal formats to sized formats
+        GLenum sized_fmt = internal_fmt;
+        if (internal_fmt == GL_DEPTH_COMPONENT) sized_fmt = GL_DEPTH_COMPONENT32F;
+
+        glTextureStorage3D(handle, 1, sized_fmt, width, height, depth);
+        if (pixels) glTextureSubImage3D(handle, 0, 0, 0, 0, width, height, depth, format, type, pixels);
+        glTextureParameteri(handle, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTextureParameteri(handle, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTextureParameteri(handle, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTextureParameteri(handle, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTextureParameteri(handle, GL_TEXTURE_WRAP_R, GL_REPEAT);
         this->width = static_cast<float>(width);
         this->height = static_cast<float>(height);
         this->depth = static_cast<float>(depth);
@@ -391,7 +418,8 @@ public:
 
     void texture(GLint loc, GLenum target, int unit, GLuint tex) const
     {
-        glBindMultiTextureEXT(GL_TEXTURE0 + unit, target, tex);
+        (void)target; // Target is no longer needed with core DSA
+        glBindTextureUnit(unit, tex);
         glProgramUniform1i(program, loc, unit);
     }
 
@@ -518,13 +546,14 @@ public:
 
     void texture(GLint loc, GLenum target, int unit, GLuint tex) const
     {
+        (void)target; // Target is no longer needed with core DSA
         glUseProgram(program);
-        glBindMultiTextureEXT(GL_TEXTURE0 + unit, target, tex);
+        glBindTextureUnit(unit, tex);
         glProgramUniform1i(program, loc, unit);
     }
 
-    void texture(const char * name, int unit, GLuint tex, GLenum target) const 
-    { 
+    void texture(const char * name, int unit, GLuint tex, GLenum target) const
+    {
         texture(get_uniform_location(name), target, unit, tex);
     }
 };

@@ -4,41 +4,26 @@
 #define polymer_asset_import_utils_hpp
 
 #include "polymer-engine/scene.hpp"
-#include "polymer-engine/asset/asset-resolver.hpp"
 
-/*
 namespace polymer
 {
-    inline entity create_model(const std::string & geom_handle,
-        const std::string & mesh_handle,
-        scene & the_scene,
-        entity_system_manager & orch)
+    // Creates a model entity with mesh, material, and geometry components
+    // Uses the new Unity-style pattern via scene.instantiate_mesh()
+    inline entity create_model(const std::string & mesh_handle, scene & the_scene)
     {
-        const entity e = the_scene.track_entity(orch.create_entity());
-
-        the_scene.identifier_system->create(e, mesh_handle);
-        the_scene.xform_system->create(e, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
-
-        polymer::material_component model_mat(e);
-        model_mat.material = material_handle(material_library::kDefaultMaterialId);
-        the_scene.render_system->create(e, std::move(model_mat));
-
-        polymer::mesh_component model_mesh(e);
-        model_mesh.mesh = gpu_mesh_handle(mesh_handle);
-        the_scene.render_system->create(e, std::move(model_mesh));
-
-        polymer::geometry_component model_geom(e);
-        model_geom.geom = cpu_mesh_handle(mesh_handle);
-        the_scene.collision_system->create(e, std::move(model_geom));
-
-        return e;
+        base_object & obj = the_scene.instantiate_mesh(
+            mesh_handle,                    // name
+            transform(float3(0, 0, 0)),     // pose
+            float3(1.f, 1.f, 1.f),          // scale
+            mesh_handle                     // mesh/geometry handle
+        );
+        return obj.get_entity();
     }
 
-    inline std::vector<entity> import_asset_runtime(const std::string & filepath,
-        scene & the_scene,
-        entity_system_manager & esm)
+    // Imports assets from a file path and creates corresponding entities
+    // Supports: images (png, tga, jpg) and meshes (obj, fbx, ply, mesh)
+    inline std::vector<entity> import_asset_runtime(const std::string & filepath, scene & the_scene)
     {
-
         // Keep a list of all the entities we create as part of the import process
         std::vector<entity> created_entities;
 
@@ -70,33 +55,37 @@ namespace polymer
             create_handle_for_asset(handle_id.c_str(), make_mesh_from_geometry(mesh));
             create_handle_for_asset(handle_id.c_str(), std::move(mesh));
 
-            if (num_models == 1) created_entities.push_back(create_model(handle_id, handle_id, the_scene, esm));
-            else children.push_back(create_model(handle_id, handle_id, the_scene, esm));
-        }
-
-        if (children.size())
-        {
-            const entity root_entity = the_scene.track_entity(esm.create_entity());
-            created_entities.push_back(root_entity);
-            the_scene.identifier_system->create(root_entity, "root/" + name_no_ext);
-            the_scene.xform_system->create(root_entity, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
-            for (const entity child : children)
+            if (num_models == 1)
             {
-                the_scene.xform_system->add_child(root_entity, child);
-                created_entities.push_back(child);
+                created_entities.push_back(create_model(handle_id, the_scene));
+            }
+            else
+            {
+                children.push_back(create_model(handle_id, the_scene));
             }
         }
 
-        // Flatten unordered_map of mesh assets into a list of names
-        //std::vector<std::string> submesh_names;
-        //for (auto m : imported_models) submesh_names.push_back(m.first);
-        //create_asset_descriptor(filepath, submesh_names); // write out .meta on import
+        // If we have multiple meshes, create a root entity and parent the children
+        if (children.size())
+        {
+            base_object & root_obj = the_scene.instantiate_empty(
+                "root/" + name_no_ext,
+                transform(float3(0, 0, 0)),
+                float3(1.f, 1.f, 1.f)
+            );
+            const entity root_entity = root_obj.get_entity();
+            created_entities.push_back(root_entity);
+
+            for (const entity child : children)
+            {
+                the_scene.get_graph().add_child(root_entity, child);
+                created_entities.push_back(child);
+            }
+        }
 
         return created_entities;
     }
 
 } // end namespace polymer
-
-*/
 
 #endif // end polymer_asset_import_utils_hpp

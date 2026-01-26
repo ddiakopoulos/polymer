@@ -1,10 +1,10 @@
-#include "lib-polymer.hpp"
+#include "polymer-core/lib-polymer.hpp"
 
-#include "camera-controllers.hpp"
+#include "polymer-app-base/camera-controllers.hpp"
 
-#include "gl-texture-view.hpp"
-#include "gl-gizmo.hpp"
-#include "gl-imgui.hpp"
+#include "polymer-gfx-gl/gl-texture-view.hpp"
+#include "polymer-app-base/wrappers/gl-gizmo.hpp"
+#include "polymer-app-base/wrappers/gl-imgui.hpp"
 
 #include <sstream>
 

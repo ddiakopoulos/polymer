@@ -32,14 +32,6 @@ operator polymer::float4() const { return polymer::float4(x,y,z,w); }
 
 #include "imgui/imgui.h"
 
-using namespace polymer;
-
-struct ui_rect
-{
-    int2 min, max;
-    bool contains(const int2 & p) const { return all(gequal(p, min)) && all(less(p, max)); }
-};
-
 struct gl_texture_2d;
 namespace polymer
 {
@@ -47,9 +39,16 @@ namespace polymer
     struct app_input_event;
 }
 
+struct ui_rect
+{
+    polymer::int2 min, max;
+    bool contains(const polymer::int2 & p) const { return all(gequal(p, min)) && all(less(p, max)); }
+};
+
 struct GLFWwindow;
 namespace gui
 {
+    using namespace polymer; // bring polymer types into gui namespace only
 
     struct imgui_data
     {

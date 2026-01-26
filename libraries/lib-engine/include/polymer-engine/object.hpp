@@ -18,6 +18,8 @@
 #include "polymer-engine/renderer/renderer-procedural-sky.hpp"
 #include "polymer-engine/renderer/renderer-uniforms.hpp"
 
+#include <algorithm>
+
 inline size_t round_and_clamp_index(int index, size_t list_size)
 {
     if (index < 0)
@@ -367,7 +369,9 @@ namespace polymer
     //   transform_component   //
     /////////////////////////////
 
+    // Forward declarations
     class base_object;
+    class scene;
 
     struct transform_component : public base_component
     {
@@ -436,6 +440,9 @@ namespace polymer
         transform_component transform;
         std::unordered_map<poly_typeid, std::shared_ptr<base_component>> components;
 
+        // Back-pointer to owning scene (set by scene_graph when added)
+        scene * owning_scene {nullptr};
+
     public:
 
         bool enabled {true};
@@ -447,7 +454,7 @@ namespace polymer
             e = make_guid();
         }
 
-        // only for serialization! 
+        // only for serialization!
         base_object(const entity & from)
         {
             e = from;
@@ -458,7 +465,20 @@ namespace polymer
             e = make_guid();
         }
 
+        // Virtual destructor for inheritance
+        virtual ~base_object() = default;
+
         entity get_entity() const { return e; }
+
+        // Scene access
+        scene * get_scene() const { return owning_scene; }
+
+        // Lifecycle callbacks (empty defaults for backward compatibility)
+        virtual void on_create() {}
+        virtual void on_update(float delta_time) {}
+        virtual void on_destroy() {}
+        virtual void on_enable() {}
+        virtual void on_disable() {}
 
         std::string get_name() const { return name; };
         void set_name(const std::string & n)
@@ -473,6 +493,12 @@ namespace polymer
             *shared = component;
             auto tid = get_typeid<T>();
             components[tid] = shared;
+
+            // Auto-register with systems if we have a scene
+            if (owning_scene != nullptr)
+            {
+                notify_component_added(tid);
+            }
         }
 
         template <>
@@ -484,8 +510,17 @@ namespace polymer
         template <typename T>
         void remove_component()
         {
-            auto it = components.find(get_typeid<T>());
-            if (it != components.end()) components.erase(it);
+            auto tid = get_typeid<T>();
+            auto it = components.find(tid);
+            if (it != components.end())
+            {
+                // Auto-unregister from systems
+                if (owning_scene != nullptr)
+                {
+                    notify_component_removed(tid);
+                }
+                components.erase(it);
+            }
         }
 
         template <typename T>
@@ -506,6 +541,11 @@ namespace polymer
         {
             return &transform;
         }
+
+    private:
+        // Notify systems of component changes (implemented in scene.cpp)
+        void notify_component_added(poly_typeid tid);
+        void notify_component_removed(poly_typeid tid);
     };
 
     // Hash functor so this can be used in unordered containers.
@@ -520,6 +560,8 @@ namespace polymer
 
     class scene_graph
     {
+        scene * owning_scene {nullptr};
+
         void recalculate_world_transform(entity child)
         {
             base_object & node = graph_objects[child];
@@ -596,16 +638,36 @@ namespace polymer
         scene_graph()  = default;
         ~scene_graph() = default;
 
+        // Set scene pointer (called by scene constructor)
+        void set_scene(scene * s) { owning_scene = s; }
+        scene * get_scene() const { return owning_scene; }
+
         // get entity from base_object ptr (rare)
 
         template <class T>
-        void add_object(const T && object)
+        void add_object(T && object)
         {
-            graph_objects[object.get_entity()] = std::move(object);
-            // todo: should we recalculate poses? 
+            entity ent = object.get_entity();
+            graph_objects[ent] = std::move(object);
+
+            // Set back-pointer
+            base_object & obj = graph_objects[ent];
+            obj.owning_scene = owning_scene;
+
+            // Retroactively register any existing components
+            if (owning_scene)
+            {
+                for (auto & [tid, comp] : obj.components)
+                {
+                    obj.notify_component_added(tid);
+                }
+            }
+
+            // Invoke on_create callback
+            obj.on_create();
         }
 
-        // todo: use optional? what about disabled objects? 
+        // todo: use optional? what about disabled objects?
         base_object & get_object(const entity & e) { return graph_objects[e]; }
 
         bool add_child(entity parent, entity child)
@@ -704,8 +766,16 @@ namespace polymer
 
         void destroy(entity e)
         {
-            std::vector<entity> destroyed_entities;
             if (e == kInvalidEntity) throw std::invalid_argument("entity was invalid");
+
+            // Invoke on_destroy before destruction
+            auto it = graph_objects.find(e);
+            if (it != graph_objects.end())
+            {
+                it->second.on_destroy();
+            }
+
+            std::vector<entity> destroyed_entities;
             destroy_recursive(e, destroyed_entities);
         }
 

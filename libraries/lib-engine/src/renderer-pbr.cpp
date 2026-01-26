@@ -5,6 +5,8 @@
 #include "polymer-engine/system/system-render.hpp"
 #include "polymer-engine/renderer/renderer-pbr.hpp"
 
+using namespace polymer;
+
 ////////////////////////////////////////////////
 //   stable_cascaded_shadows implementation   //
 ////////////////////////////////////////////////
@@ -13,7 +15,7 @@ stable_cascaded_shadows::stable_cascaded_shadows()
 {
     const GLsizei size = static_cast<GLsizei>(resolution);
     shadowArrayDepth.setup(GL_TEXTURE_2D_ARRAY, size, size, uniforms::NUM_CASCADES, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
-    glNamedFramebufferTextureEXT(shadowArrayFramebuffer, GL_DEPTH_ATTACHMENT, shadowArrayDepth, 0);
+    glNamedFramebufferTexture(shadowArrayFramebuffer, GL_DEPTH_ATTACHMENT, shadowArrayDepth, 0);
     shadowArrayFramebuffer.check_complete();
     gl_check_error(__FILE__, __LINE__);
 }
@@ -418,10 +420,10 @@ pbr_renderer::pbr_renderer(const renderer_settings settings) : settings(settings
     eyeDepthTextures.resize(settings.cameraCount);
 
     // Generate multisample render buffers for color and depth, attach to multi-sampled framebuffer target
-    glNamedRenderbufferStorageMultisampleEXT(multisampleRenderbuffers[0], settings.msaaSamples, GL_RGBA, settings.renderSize.x, settings.renderSize.y);
-    glNamedFramebufferRenderbufferEXT(multisampleFramebuffer, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, multisampleRenderbuffers[0]);
-    glNamedRenderbufferStorageMultisampleEXT(multisampleRenderbuffers[1], settings.msaaSamples, GL_DEPTH24_STENCIL8, settings.renderSize.x, settings.renderSize.y);
-    glNamedFramebufferRenderbufferEXT(multisampleFramebuffer, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, multisampleRenderbuffers[1]);
+    glNamedRenderbufferStorageMultisample(multisampleRenderbuffers[0], settings.msaaSamples, GL_RGBA, settings.renderSize.x, settings.renderSize.y);
+    glNamedFramebufferRenderbuffer(multisampleFramebuffer, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, multisampleRenderbuffers[0]);
+    glNamedRenderbufferStorageMultisample(multisampleRenderbuffers[1], settings.msaaSamples, GL_DEPTH24_STENCIL8, settings.renderSize.x, settings.renderSize.y);
+    glNamedFramebufferRenderbuffer(multisampleFramebuffer, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, multisampleRenderbuffers[1]);
 
     multisampleFramebuffer.check_complete();
 
@@ -433,13 +435,13 @@ pbr_renderer::pbr_renderer(const renderer_settings settings) : settings(settings
 
         // Color
         eyeTextures[camIdx].setup(settings.renderSize.x, settings.renderSize.y, GL_RGBA, GL_RGBA, GL_FLOAT, nullptr, false);
-        glTextureParameteriEXT(eyeTextures[camIdx], GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTextureParameteriEXT(eyeTextures[camIdx], GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTextureParameteriEXT(eyeTextures[camIdx], GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
+        glTextureParameteri(eyeTextures[camIdx], GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTextureParameteri(eyeTextures[camIdx], GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTextureParameteri(eyeTextures[camIdx], GL_TEXTURE_MAX_LEVEL, 0);
 
         // Attachments
-        glNamedFramebufferTexture2DEXT(eyeFramebuffers[camIdx], GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, eyeTextures[camIdx], 0);
-        glNamedFramebufferTexture2DEXT(eyeFramebuffers[camIdx], GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, eyeDepthTextures[camIdx], 0);
+        glNamedFramebufferTexture(eyeFramebuffers[camIdx], GL_COLOR_ATTACHMENT0, eyeTextures[camIdx], 0);
+        glNamedFramebufferTexture(eyeFramebuffers[camIdx], GL_DEPTH_ATTACHMENT, eyeDepthTextures[camIdx], 0);
 
         eyeFramebuffers[camIdx].check_complete();
     }
@@ -452,10 +454,10 @@ pbr_renderer::pbr_renderer(const renderer_settings settings) : settings(settings
         for (uint32_t camIdx = 0; camIdx < settings.cameraCount; ++camIdx)
         {
             postTextures[camIdx].setup(settings.renderSize.x, settings.renderSize.y, GL_RGBA, GL_RGBA, GL_FLOAT, nullptr, false);
-            glTextureParameteriEXT(postTextures[camIdx], GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTextureParameteriEXT(postTextures[camIdx], GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glTextureParameteriEXT(postTextures[camIdx], GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
-            glNamedFramebufferTexture2DEXT(postFramebuffers[camIdx], GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, postTextures[camIdx], 0);
+            glTextureParameteri(postTextures[camIdx], GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTextureParameteri(postTextures[camIdx], GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glTextureParameteri(postTextures[camIdx], GL_TEXTURE_MAX_LEVEL, 0);
+            glNamedFramebufferTexture(postFramebuffers[camIdx], GL_COLOR_ATTACHMENT0, postTextures[camIdx], 0);
             postFramebuffers[camIdx].check_complete();
         }
     }

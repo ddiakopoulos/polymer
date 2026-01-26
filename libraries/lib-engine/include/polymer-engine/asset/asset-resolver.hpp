@@ -170,89 +170,9 @@ namespace polymer
 
     public:
 
-        void resolve()
-        {
-            /* 
-            assert(the_scene != nullptr);
-            assert(mat_library != nullptr);
+        void resolve();
 
-            // Material Names
-            for (auto & m : the_scene->render_system->materials)
-                material_names.push_back(m.second.material.name);
-
-            // GPU Geometry
-            for (auto & m : the_scene->render_system->meshes)
-                mesh_names.push_back(m.second.mesh.name);
-
-            // CPU Geometry (same list as GPU)
-            for (auto & m : the_scene->collision_system->meshes)
-                mesh_names.push_back(m.second.geom.name);
-
-            remove_duplicates(material_names);
-            remove_duplicates(mesh_names);
-
-            auto collect_shaders_and_textures = [this]()
-            {
-                for (auto & mat : mat_library->instances)
-                {
-                    if (auto * pbr = dynamic_cast<polymer_pbr_standard*>(mat.second.instance.get()))
-                    {
-                        shader_names.push_back(pbr->shader.name);
-
-                        texture_names.push_back(pbr->albedo.name);
-                        texture_names.push_back(pbr->normal.name);
-                        texture_names.push_back(pbr->metallic.name);
-                        texture_names.push_back(pbr->roughness.name);
-                        texture_names.push_back(pbr->emissive.name);
-                        texture_names.push_back(pbr->height.name);
-                        texture_names.push_back(pbr->occlusion.name);
-                    }
-
-                    if (auto * phong = dynamic_cast<polymer_blinn_phong_standard*>(mat.second.instance.get()))
-                    {
-                        shader_names.push_back(phong->shader.name);
-
-                        texture_names.push_back(phong->diffuse.name);
-                        texture_names.push_back(phong->normal.name);
-                    }
-                }
-
-                // IBLs 
-                if (the_scene->render_system->the_cubemap.get_entity() != kInvalidEntity)
-                {
-                    texture_names.push_back(the_scene->render_system->the_cubemap.ibl_irradianceCubemap.name);
-                    texture_names.push_back(the_scene->render_system->the_cubemap.ibl_radianceCubemap.name);
-                }
-
-                remove_duplicates(shader_names);
-                remove_duplicates(texture_names);
-            };
-
-            // First Pass. Grab shaders and textures programmatically defined.
-            collect_shaders_and_textures(); 
-
-            // Resolve known assets, including materials. 
-            for (auto & path : search_paths)
-            {
-                log::get()->engine_log->info("[1] resolving directory " + path);
-                walk_directory(path);
-            }
-
-            // Second Pass. Collect shaders and textures again, because materials might define them and import them.
-            collect_shaders_and_textures();
-
-            // Resolve known assets again, this time including shaders and textures that may
-            // have been identified by an imported material.
-            // @fixme - we need to remove already resolved assets from being imported a second time! 
-            for (auto & path : search_paths)
-            {
-                log::get()->engine_log->info("[2] resolving directory " + path);
-                walk_directory(path);
-            }
-            */ 
-        }
-
-        asset_resolver::asset_resolver(polymer::scene * the_scene, material_library * mat_library)
+        asset_resolver(polymer::scene * the_scene, material_library * mat_library)
             : the_scene(the_scene), mat_library(mat_library) {}
 
         void add_search_path(const std::string & search_path)

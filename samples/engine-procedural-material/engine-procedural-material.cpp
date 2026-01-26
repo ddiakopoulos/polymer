@@ -2,12 +2,16 @@
  * File: samples/engine-procedural-material.cpp
  */
 
-#include "lib-polymer.hpp"
-#include "lib-engine.hpp"
+#include "polymer-core/lib-polymer.hpp"
+#include "polymer-engine/lib-engine.hpp"
+#include "polymer-app-base/glfw-app.hpp"
+#include "polymer-app-base/camera-controllers.hpp"
+#include "polymer-gfx-gl/gl-texture-view.hpp"
 
-#include "ecs/core-ecs.hpp"
-#include "scene.hpp"
-#include "renderer-util.hpp"
+#include "polymer-engine/ecs/core-ecs.hpp"
+#include "polymer-engine/scene.hpp"
+#include "polymer-engine/object.hpp"
+#include "polymer-engine/renderer/renderer-util.hpp"
 
 using namespace polymer;
 
@@ -17,7 +21,6 @@ struct sample_engine_procedural_material final : public polymer_app
     camera_controller_fps flycam;
 
     std::unique_ptr<gl_shader_monitor> shader_monitor;
-    std::unique_ptr<entity_system_manager> the_entity_system_manager;
     std::unique_ptr<simple_texture_view> fullscreen_surface;
 
     render_payload payload;
@@ -45,11 +48,10 @@ sample_engine_procedural_material::sample_engine_procedural_material() : polymer
     shader_monitor->add_search_path("assets/"); // local
 
     fullscreen_surface.reset(new simple_texture_view());
-    the_entity_system_manager.reset(new entity_system_manager());
 
     load_required_renderer_assets("../../assets/", *shader_monitor);
 
-    the_scene.reset(*the_entity_system_manager, {width, height}, true);
+    the_scene.reset({width, height}, true);
 
     auto gpu_mesh = create_handle_for_asset("debug-icosahedron", make_mesh_from_geometry(make_icosasphere(4)));
     auto cpu_mesh = create_handle_for_asset("debug-icosahedron", make_icosasphere(4));
@@ -59,49 +61,61 @@ sample_engine_procedural_material::sample_engine_procedural_material() : polymer
         "assets/ikeda_frag.glsl",
         "../../assets/shaders/renderer");
 
+    // Create a procedural material with custom shader
+    auto ikeda_material = std::make_shared<polymer_procedural_material>();
+    ikeda_material->shader = shader_handle("ikeda-shader");
+
+    ikeda_material->update_uniform_func = [this, ikeda_material]()
     {
-        const entity debug_icosa = the_scene.track_entity(the_entity_system_manager->create_entity());
+        auto & shader = ikeda_material->compiled_shader->shader;
+        shader.bind();
+        shader.unbind();
+    };
+    auto ikeda_material_handle = the_scene.mat_library->register_material("ikeda-material", ikeda_material);
 
-        the_scene.identifier_system->create(debug_icosa, "debug-icosahedron");
-        the_scene.xform_system->create(debug_icosa, transform(float3(0, 0, 0)), { 1.f, 1.f, 1.f });
+    // Create icosahedron object using instantiate_mesh
+    base_object & icosa = the_scene.instantiate_mesh(
+        "debug-icosahedron",           // name
+        transform(float3(0, 0, 0)),    // pose
+        float3(1.f, 1.f, 1.f),         // scale
+        "debug-icosahedron"            // mesh/geometry handle
+    );
 
-        polymer::mesh_component mesh_component(debug_icosa);
-        mesh_component.mesh = gpu_mesh;
-        the_scene.render_system->create(debug_icosa, std::move(mesh_component));
-
-        auto ikeda_material = std::make_shared<polymer_procedural_material>();
-        ikeda_material->shader = shader_handle("ikeda-shader");
-
-        ikeda_material->update_uniform_func = [this, ikeda_material]()
-        {
-            auto & shader = ikeda_material->compiled_shader->shader;
-            shader.bind();
-            shader.unbind();
-        };
-        auto ikeda_material_handle = the_scene.mat_library->register_material("ikeda-material", ikeda_material);
-
-        // Create material component with a default (normal-mapped) material
-        polymer::material_component material_component(debug_icosa);
-        material_component.material = ikeda_material_handle;
-        the_scene.render_system->create(debug_icosa, std::move(material_component));
-
-        payload.render_components.push_back(assemble_render_component(the_scene, debug_icosa));
+    // Override the default material with our procedural material
+    if (auto * mat_comp = icosa.get_component<material_component>())
+    {
+        mat_comp->material = ikeda_material_handle;
     }
+
+    // Assemble render component from base_object
+    auto assemble_render_component = [](base_object & obj) {
+        render_component r;
+        if (auto * xform = obj.get_component<transform_component>()) r.world_matrix = xform->get_world_transform().matrix();
+        if (auto * mesh = obj.get_component<mesh_component>()) r.mesh = mesh;
+        if (auto * mat = obj.get_component<material_component>()) r.material = mat;
+        return r;
+    };
+    payload.render_components.push_back(assemble_render_component(icosa));
 
     cam.look_at({ 0, 0, 2 }, { 0, 0.1f, 0 });
     flycam.set_camera(&cam);
 
-    for (auto & e : the_scene.entity_list())
+    // Find IBL cubemap and procedural skybox components
+    for (auto & [e, obj] : the_scene.get_graph().graph_objects)
     {
-        if (auto * cubemap = the_scene.render_system->get_cubemap_component(e)) payload.ibl_cubemap = cubemap;
+        if (auto * cubemap = obj.get_component<ibl_component>())
+        {
+            payload.ibl_cubemap = cubemap;
+        }
     }
 
-    for (auto & e : the_scene.entity_list())
+    for (auto & [e, obj] : the_scene.get_graph().graph_objects)
     {
-        if (auto * proc_skybox = the_scene.render_system->get_procedural_skybox_component(e))
+        if (auto * proc_skybox = obj.get_component<procedural_skybox_component>())
         {
             payload.procedural_skybox = proc_skybox;
-            if (auto sunlight = the_scene.render_system->get_directional_light_component(proc_skybox->sun_directional_light))
+            base_object & sun_obj = the_scene.get_graph().get_object(proc_skybox->sun_directional_light);
+            if (auto * sunlight = sun_obj.get_component<directional_light_component>())
             {
                 payload.sunlight = sunlight;
             }
@@ -144,7 +158,7 @@ void sample_engine_procedural_material::on_draw()
 
     payload.views.clear();
     payload.views.emplace_back(view_data(viewIndex, cam.pose, projectionMatrix));
-    the_scene.render_system->get_renderer()->render_frame(payload);
+    the_scene.get_renderer()->render_frame(payload);
 
     glUseProgram(0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -153,11 +167,11 @@ void sample_engine_procedural_material::on_draw()
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
 
-    fullscreen_surface->draw(the_scene.render_system->get_renderer()->get_color_texture(viewIndex));
+    fullscreen_surface->draw(the_scene.get_renderer()->get_color_texture(viewIndex));
 
     gl_check_error(__FILE__, __LINE__);
 
-    glfwSwapBuffers(window); 
+    glfwSwapBuffers(window);
 }
 
 int main(int argc, char * argv[])

@@ -3,15 +3,16 @@
 #ifndef material_editor_hpp
 #define material_editor_hpp
 
-#include "material.hpp"
-#include "renderer-pbr.hpp"
-#include "asset-handle-utils.hpp"
+#include "polymer-engine/material.hpp"
+#include "polymer-engine/renderer/renderer-pbr.hpp"
+#include "polymer-engine/asset/asset-handle-utils.hpp"
+#include "polymer-engine/scene.hpp"
+#include "polymer-engine/object.hpp"
 #include "gizmo-controller.hpp"
-#include "scene.hpp"
 #include "editor-inspector-ui.hpp"
-#include "arcball.hpp"
-#include "gl-texture-view.hpp"
-#include "util-win32.hpp"
+#include "polymer-core/tools/arcball.hpp"
+#include "polymer-gfx-gl/gl-texture-view.hpp"
+#include "polymer-core/util/util-win32.hpp"
 
 template<typename AssetHandleType>
 bool draw_listbox(const std::string & label, ImGuiTextFilter & filter, int & selection)
@@ -51,9 +52,8 @@ struct material_editor_window final : public glfw_window
     std::unique_ptr<pbr_renderer> preview_renderer;
     std::unique_ptr<material_component> material_comp;
     std::unique_ptr<mesh_component> mesh_comp;
-    std::unique_ptr<world_transform_component> world_xform_comp;
-    std::unique_ptr<local_transform_component> local_xform_comp;
-    std::unique_ptr<cubemap_component> ibl_cubemap;
+    std::unique_ptr<transform_component> xform_comp;
+    std::unique_ptr<ibl_component> ibl_cubemap;
 
     render_component preview_renderable;
 
@@ -67,7 +67,6 @@ struct material_editor_window final : public glfw_window
     std::shared_ptr<gizmo_controller> selector;
 
     entity inspected_entity{ kInvalidEntity };
-    entity debug_sphere{ kInvalidEntity };
 
     imgui_ui_context mat_im_ui_ctx; // fixme
 
@@ -76,8 +75,7 @@ struct material_editor_window final : public glfw_window
         const std::string & title,
         int samples,
         scene & the_scene,
-        std::shared_ptr<gizmo_controller> selector,
-        entity_system_manager & orch)
+        std::shared_ptr<gizmo_controller> selector)
             : glfw_window(context, w, h, title, samples), the_scene(the_scene), selector(selector)
     {
         glfwMakeContextCurrent(window);
@@ -94,31 +92,26 @@ struct material_editor_window final : public glfw_window
 
         preview_renderer.reset(new pbr_renderer(previewSettings));
 
-        // Create a debug entity
-        debug_sphere = 778899;
-
         // Create debug sphere asset and assign to a handle
         // These are created on the this gl context and cached as global variables in the asset table. It will be re-assigned
         // every time this window is opened so we don't need to worry about cleaning up the handle asset.
         auto icosa = make_mesh_from_geometry(make_icosasphere(4));
         auto debug_sphere_handle = create_handle_for_asset("material-debug-sphere", std::move(icosa)); // calls destruct on old
 
-        mesh_comp.reset(new mesh_component(debug_sphere));
+        mesh_comp.reset(new mesh_component());
         mesh_comp->mesh = debug_sphere_handle;
 
-        material_comp.reset(new material_component(debug_sphere));
+        material_comp.reset(new material_component());
         material_comp->material = material_handle(material_library::kDefaultMaterialId);
 
-        local_xform_comp.reset(new local_transform_component(debug_sphere));
-        world_xform_comp.reset(new world_transform_component(debug_sphere));
+        xform_comp.reset(new transform_component(transform(), float3(1.f)));
 
-        preview_renderable = render_component(debug_sphere);
-        preview_renderable.local_transform = local_xform_comp.get();
-        preview_renderable.world_transform = world_xform_comp.get();
+        preview_renderable = render_component();
+        preview_renderable.world_matrix = xform_comp->local_pose.matrix();
         preview_renderable.material = material_comp.get();
         preview_renderable.mesh = mesh_comp.get();
 
-        ibl_cubemap.reset(new cubemap_component(debug_sphere));
+        ibl_cubemap.reset(new ibl_component());
 
         previewCam.pose = lookat_rh(float3(0, 0.25f, 2), float3(0, 0.001f, 0));
         auxImgui.reset(new gui::imgui_instance(window, true));
@@ -143,8 +136,9 @@ struct material_editor_window final : public glfw_window
         else if (e.type == app_input_event::CURSOR && e.drag)
         {
             arcball->mouse_drag(e.cursor);
-            world_xform_comp->world_pose.orientation = safe_normalize(
-                arcball->currentQuat * world_xform_comp->world_pose.orientation);
+            xform_comp->local_pose.orientation = safe_normalize(
+                arcball->currentQuat * xform_comp->local_pose.orientation);
+            preview_renderable.world_matrix = xform_comp->local_pose.matrix();
         }
     }
 
@@ -203,7 +197,8 @@ struct material_editor_window final : public glfw_window
                 entity selected_entity = selected_entities[0];
 
                 // We can only edit scene entities with a material component
-                if (auto * mc = the_scene.render_system->get_material_component(selected_entity))
+                base_object & obj = the_scene.get_graph().get_object(selected_entity);
+                if (auto * mc = obj.get_component<material_component>())
                 {
                     inspected_entity = selected_entity;
                     uint32_t mat_idx = 0;
@@ -298,9 +293,9 @@ struct material_editor_window final : public glfw_window
                 ImGui::EndPopup();
             }
 
-            // Only draw the list of materials if there's no asset selected in the editor. 
+            // Only draw the list of materials if there's no asset selected in the editor.
             // This is a bit of a UX hack.
-            if (!inspected_entity)
+            if (inspected_entity == kInvalidEntity)
             {
                 ImGui::Dummy({ 0, 12 });
                 ImGuiTextFilter textFilter;
@@ -358,11 +353,14 @@ struct material_editor_window final : public glfw_window
 
                     if (ImGui::Button("OK", ImVec2(120, 0)))
                     {
-                        if (inspected_entity)
+                        if (inspected_entity != kInvalidEntity)
                         {
                             // Set the inspected entity to the default material
-                            auto mc = the_scene.render_system->get_material_component(inspected_entity);
-                            mc->material = material_handle(material_library::kDefaultMaterialId);
+                            base_object & insp_obj = the_scene.get_graph().get_object(inspected_entity);
+                            if (auto * mc = insp_obj.get_component<material_component>())
+                            {
+                                mc->material = material_handle(material_library::kDefaultMaterialId);
+                            }
                         }
 
                         // Set the preview entity to the default material
