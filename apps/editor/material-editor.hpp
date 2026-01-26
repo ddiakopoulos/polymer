@@ -24,7 +24,7 @@ bool draw_listbox(const std::string & label, ImGuiTextFilter & filter, int & sel
     ImGui::Text(label.c_str());
 
     ImGui::PushItemWidth(-1);
-    if (ImGui::ListBoxHeader("##assets"))
+    if (ImGui::BeginListBox("##assets"))
     {
         for (int n = 0; n < assets.size(); ++n)
         {
@@ -37,7 +37,7 @@ bool draw_listbox(const std::string & label, ImGuiTextFilter & filter, int & sel
             }
         }
 
-        ImGui::ListBoxFooter();
+        ImGui::EndListBox();
     }
     ImGui::PopItemWidth();
     return r;
@@ -272,24 +272,25 @@ struct material_editor_window final : public glfw_window
 
                 if (ImGui::Button("OK", ImVec2(120, 0)))
                 {
-                    if (!stringBuffer.empty())
+                    if (!stringBuffer.empty() && materialTypeSelection >= 0 && materialTypeSelection < (int)materialTypes.size())
                     {
-                        if (materialTypeSelection == 0) // pbr
+                        const std::string & selectedType = materialTypes[materialTypeSelection];
+                        if (selectedType == "polymer_pbr_standard")
                         {
                             auto new_material = std::make_shared<polymer_pbr_standard>();
                             the_scene.mat_library->register_material(stringBuffer, new_material);
                         }
-                        else if (materialTypeSelection == 1) // blinn-phong
+                        else if (selectedType == "polymer_blinn_phong_standard")
                         {
                             auto new_material = std::make_shared<polymer_blinn_phong_standard>();
                             the_scene.mat_library->register_material(stringBuffer, new_material);
                         }
-                        else if (materialTypeSelection == 2) // wireframe
+                        else if (selectedType == "polymer_wireframe_material")
                         {
                             auto new_material = std::make_shared<polymer_wireframe_material>();
                             the_scene.mat_library->register_material(stringBuffer, new_material);
                         }
-                        // todo - 3 = fx material
+                        // todo - fx material
                     }
 
                     stringBuffer.clear();

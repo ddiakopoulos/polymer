@@ -254,7 +254,7 @@ void scene_editor_app::draw_entity_scenegraph(const entity e)
     {
         // Increase spacing to differentiate leaves from expanded contents.
         ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, ImGui::GetFontSize());
-        ImGui::SetNextTreeNodeOpen(true, ImGuiCond_FirstUseEver);
+        ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
         open = ImGui::TreeNode("");
         if (!open) ImGui::PopStyleVar();
         ImGui::SameLine();
@@ -441,7 +441,7 @@ void scene_editor_app::on_draw()
     editorProfiler.begin("imgui-menu");
     igm->begin_frame();
 
-    gui::imgui_menu_stack menu(*this, ImGui::GetIO().KeysDown);
+    gui::imgui_menu_stack menu(*this);
     menu.app_menu_begin();
     {
         menu.begin("File");
