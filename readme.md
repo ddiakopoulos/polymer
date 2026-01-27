@@ -22,8 +22,6 @@ Windows SDK is required to build the project. You may download it [here](https:/
 
 ### Building the projects
 
-Open the solution file in Microsoft Visual Studio 2017 and build it.
-
 **Note:** If the build fails with the message _Windows SDK version 10.0.16299.0 not found_ and you have installed the Windows SDK correctly, you might need to change the Windows SDK version in each project properties and select the one you've installed.
 
 ## Samples & Documentation
