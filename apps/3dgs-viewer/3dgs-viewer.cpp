@@ -11,13 +11,15 @@
 
 using namespace polymer;
 
-//////////////////////////
-// Gaussian Splat Renderer
-//////////////////////////
+/////////////////////////////////
+//   Gaussian Splat Renderer   //
+/////////////////////////////////
 
 class gaussian_splat_renderer
 {
+
 public:
+
     gaussian_splat_renderer() = default;
     ~gaussian_splat_renderer() = default;
 
@@ -45,24 +47,14 @@ public:
     {
         scene_ = scene;
         num_gaussians_ = static_cast<uint32_t>(scene_.vertices.size());
-
         if (num_gaussians_ == 0) return;
 
-        // Create vertex buffer
         const size_t vertex_size = sizeof(gaussian_vertex);
+        const size_t attr_size= 64;
         vertex_buffer_.set_buffer_data(num_gaussians_ * vertex_size, scene_.vertices.data(), GL_STATIC_DRAW);
-
-        // Create covariance buffer (6 floats per gaussian)
         cov3d_buffer_.set_buffer_data(num_gaussians_ * 6 * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
-
-        // Create vertex attribute buffer
-        const size_t attr_size = 64;
         vertex_attr_buffer_.set_buffer_data(num_gaussians_ * attr_size, nullptr, GL_DYNAMIC_DRAW);
-
-        // Create tile overlap buffer
         tile_overlap_buffer_.set_buffer_data(num_gaussians_ * sizeof(uint32_t), nullptr, GL_DYNAMIC_DRAW);
-
-        // Create prefix sum buffers
         prefix_sum_buffer_.set_buffer_data(num_gaussians_ * sizeof(uint32_t), nullptr, GL_DYNAMIC_DRAW);
 
         recreate_tile_buffers();
@@ -149,21 +141,10 @@ private:
     void recreate_sort_buffers()
     {
         if (max_sort_instances_ == 0) max_sort_instances_ = 1024 * 1024;
-
         sort_keys_.resize(max_sort_instances_);
         sort_payloads_.resize(max_sort_instances_);
-
-        sort_keys_buffer_.set_buffer_data(
-            max_sort_instances_ * sizeof(uint64_t),
-            nullptr,
-            GL_DYNAMIC_DRAW
-        );
-
-        sort_payloads_buffer_.set_buffer_data(
-            max_sort_instances_ * sizeof(uint32_t),
-            nullptr,
-            GL_DYNAMIC_DRAW
-        );
+        sort_keys_buffer_.set_buffer_data(max_sort_instances_ * sizeof(uint64_t), nullptr, GL_DYNAMIC_DRAW);
+        sort_payloads_buffer_.set_buffer_data(max_sort_instances_ * sizeof(uint32_t), nullptr, GL_DYNAMIC_DRAW);
     }
 
     void precompute_cov3d(float scale_modifier)
@@ -395,9 +376,9 @@ private:
     gl_texture_2d output_texture_;
 };
 
-//////////////////////////
-// 3DGS Viewer Application
-//////////////////////////
+/////////////////////////////////
+//   3DGS Viewer Application   //
+/////////////////////////////////
 
 struct gs_viewer_app final : public polymer_app
 {
@@ -408,7 +389,7 @@ struct gs_viewer_app final : public polymer_app
     std::unique_ptr<simple_texture_view> fullscreen_surface;
     std::unique_ptr<gaussian_splat_renderer> renderer;
 
-    gaussian_splat_scene scene;
+    gaussian_splat_scene scene; // fixme since this copies the gsplat
     std::string scene_filename;
 
     int sh_degree_override = 3;

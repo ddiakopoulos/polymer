@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.7)
 project(polymer-model-io LANGUAGES CXX)
 
-file(GLOB INCLUDE_FILES include/polymer-model-io/*.hpp)
-file(GLOB SOURCE_FILES src/*.cpp)
+file(GLOB INCLUDE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/include/polymer-model-io/*.hpp")
+file(GLOB SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/include")
 
@@ -33,6 +33,7 @@ set(MESHOPTIMIZER_FILES
 )
 
 add_library(${PROJECT_NAME} STATIC ${INCLUDE_FILES} ${SOURCE_FILES} ${TINYPLY_FILES} ${TINYOBJ_FILES} ${MESHOPTIMIZER_FILES})
+source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${INCLUDE_FILES} ${SOURCE_FILES} ${TINYPLY_FILES} ${TINYOBJ_FILES} ${MESHOPTIMIZER_FILES})
 target_include_directories(${PROJECT_NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
 target_include_directories(${PROJECT_NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/third-party") # for tinyply etc

@@ -43,18 +43,29 @@ namespace polymer
 
         std::string find_asset_directory(const std::vector<std::string> search_paths)
         {
-            for (auto & search_path : search_paths)
+            for (const std::string & search_path : search_paths)
             {
+                std::error_code ec;
+                if (!std::filesystem::exists(search_path, ec) || ec) continue;
+                if (!std::filesystem::is_directory(search_path, ec) || ec) continue;
+
                 log::get()->engine_log->info("searching {}", search_path);
 
-                for (const auto & entry : recursive_directory_iterator(search_path))
+                try
                 {
-                    if (is_directory(entry.path()) && entry.path().filename() == "assets")
+                    for (auto it = recursive_directory_iterator(search_path, directory_options::skip_permission_denied, ec);
+                         it != recursive_directory_iterator() && !ec;
+                         it.increment(ec))
                     {
-                        log::get()->engine_log->info("found asset dir {}", entry.path().string());
-                        return entry.path().string();
+                        const path & entry_path = it->path();
+                        if (std::filesystem::is_directory(entry_path, ec) && !ec && entry_path.filename() == "assets")
+                        {
+                            log::get()->engine_log->info("found asset dir {}", entry_path.string());
+                            return entry_path.string();
+                        }
                     }
                 }
+                catch (const std::filesystem::filesystem_error &) { continue; }
             }
 
             return {};
