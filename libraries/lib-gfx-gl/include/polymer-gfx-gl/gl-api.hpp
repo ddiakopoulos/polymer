@@ -491,7 +491,7 @@ public:
             glGetProgramInfoLog(program, (GLsizei)buffer.size(), nullptr, buffer.data());
             std::cerr << "GL Link Error: " << buffer.data() << std::endl;
             throw std::runtime_error("GLSL Link Failure");
-        }
+        }sdf
     }
 
     std::map<uint32_t, std::string> reflect()

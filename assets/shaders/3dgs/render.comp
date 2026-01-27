@@ -1,0 +1,99 @@
+#version 450 core
+
+#define TILE_WIDTH 16
+#define TILE_HEIGHT 16
+
+layout (local_size_x = TILE_WIDTH, local_size_y = TILE_HEIGHT, local_size_z = 1) in;
+
+struct VertexAttribute {
+    vec4 conic_opacity;
+    vec4 color_radii;
+    uvec4 aabb;
+    vec2 uv;
+    float depth;
+    uint pad;
+};
+
+layout (std430, binding = 0) readonly buffer Attributes {
+    VertexAttribute attr[];
+};
+
+layout (std430, binding = 1) readonly buffer Boundaries {
+    uint boundaries[];
+};
+
+layout (std430, binding = 2) readonly buffer SortedVertices {
+    uint sorted_vertices[];
+};
+
+layout (rgba8, binding = 3) uniform writeonly image2D output_image;
+
+layout (std140, binding = 4) uniform Params {
+    uint width;
+    uint height;
+};
+
+void main() {
+    uint tileX = gl_WorkGroupID.x;
+    uint tileY = gl_WorkGroupID.y;
+    uint localX = gl_LocalInvocationID.x;
+    uint localY = gl_LocalInvocationID.y;
+
+    uvec2 curr_uv = uvec2(tileX * TILE_WIDTH + localX, tileY * TILE_HEIGHT + localY);
+
+    // Early out if outside image bounds
+    if (curr_uv.x >= width || curr_uv.y >= height) {
+        return;
+    }
+
+    uint tiles_width = (width + TILE_WIDTH - 1) / TILE_WIDTH;
+    uint tile_id = tileX + tileY * tiles_width;
+
+    uint start = boundaries[tile_id * 2];
+    uint end = boundaries[tile_id * 2 + 1];
+
+    // Alpha blending accumulation
+    float T = 1.0;  // Transmittance
+    vec3 c = vec3(0.0);  // Accumulated color
+
+    // Iterate through sorted gaussians in this tile
+    for (uint i = start; i < end; i++) {
+        uint vertex_idx = sorted_vertices[i];
+
+        vec2 uv = attr[vertex_idx].uv;
+        vec2 distance = uv - vec2(curr_uv);
+
+        vec4 co = attr[vertex_idx].conic_opacity;
+
+        // Evaluate 2D gaussian
+        float power = -0.5 * (co.x * distance.x * distance.x + co.z * distance.y * distance.y) - co.y * distance.x * distance.y;
+
+        // Skip if outside gaussian
+        if (power > 0.0) {
+            continue;
+        }
+
+        // Compute alpha
+        float alpha = min(0.99, co.w * exp(power));
+
+        // Skip if alpha is too small
+        if (alpha < 1.0 / 255.0) {
+            continue;
+        }
+
+        // Update transmittance
+        float test_T = T * (1.0 - alpha);
+
+        // Early termination when fully opaque
+        if (test_T < 0.0001) {
+            break;
+        }
+
+        // Accumulate color
+        c += attr[vertex_idx].color_radii.xyz * alpha * T;
+        T = test_T;
+    }
+
+    // Write output color
+    imageStore(output_image, ivec2(curr_uv), vec4(c, 1.0));
+}

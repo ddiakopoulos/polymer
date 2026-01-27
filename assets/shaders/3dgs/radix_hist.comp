@@ -1,0 +1,47 @@
+#version 450 core
+#extension GL_ARB_gpu_shader_int64 : enable
+
+#define RADIX_BITS 8
+#define RADIX_SIZE (1 << RADIX_BITS)  // 256
+#define WORKGROUP_SIZE 256
+
+layout (local_size_x = WORKGROUP_SIZE, local_size_y = 1, local_size_z = 1) in;
+
+layout (std430, binding = 0) readonly buffer Keys {
+    uint64_t keys[];
+};
+
+layout (std430, binding = 1) buffer Histogram {
+    uint histogram[];
+};
+
+layout (std140, binding = 2) uniform Params {
+    uint num_elements;
+    uint pass_index;  // 0-7 for 64-bit keys
+};
+
+shared uint local_histogram[RADIX_SIZE];
+
+void main() {
+    uint local_id = gl_LocalInvocationID.x;
+    uint global_id = gl_GlobalInvocationID.x;
+    uint workgroup_id = gl_WorkGroupID.x;
+
+    // Initialize local histogram
+    local_histogram[local_id] = 0;
+    barrier();
+
+    // Count elements in each bin
+    if (global_id < num_elements) {
+        uint64_t key = keys[global_id];
+        uint shift = pass_index * RADIX_BITS;
+        uint radix = uint((key >> shift) & 0xFFu);
+        atomicAdd(local_histogram[radix], 1);
+    }
+
+    barrier();
+
+    // Write local histogram to global memory
+    // Layout: histogram[workgroup_id * 256 + radix] = count
+    histogram[workgroup_id * RADIX_SIZE + local_id] = local_histogram[local_id];
+}

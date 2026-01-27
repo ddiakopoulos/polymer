@@ -1,9 +1,12 @@
 #include <assert.h>
 #include <fstream>
 #include <ostream>
+#include <cmath>
+#include <cstring>
 
 #include "polymer-model-io/model-io.hpp"
 #include "polymer-model-io/model-io-util.hpp"
+#include "polymer-model-io/gaussian-splat-io.hpp"
 
 #include "polymer-core/util/file-io.hpp"
 #include "polymer-core/util/string-utils.hpp"
@@ -340,4 +343,200 @@ bool polymer::export_obj_multi_model(const std::vector<std::string> & names, con
     file.close();
 
     return true;
+}
+
+/////////////////////////////////////
+//   Gaussian Splat PLY Loading    //
+/////////////////////////////////////
+
+bool polymer::is_gaussian_splat_ply(const std::string & path)
+{
+    try
+    {
+        std::ifstream ss(path, std::ios::binary);
+        if (ss.fail()) return false;
+
+        PlyFile file;
+        file.parse_header(ss);
+
+        // Check for characteristic gaussian splat properties
+        bool has_opacity = false;
+        bool has_scale = false;
+        bool has_rotation = false;
+        bool has_sh = false;
+
+        for (const auto & element : file.get_elements())
+        {
+            if (element.name == "vertex")
+            {
+                for (const auto & prop : element.properties)
+                {
+                    if (prop.name == "opacity") has_opacity = true;
+                    if (prop.name == "scale_0") has_scale = true;
+                    if (prop.name == "rot_0") has_rotation = true;
+                    if (prop.name == "f_dc_0") has_sh = true;
+                }
+            }
+        }
+
+        return has_opacity && has_scale && has_rotation && has_sh;
+    }
+    catch (const std::exception &)
+    {
+        return false;
+    }
+}
+
+gaussian_splat_scene polymer::import_gaussian_splat_ply(const std::string & path)
+{
+    gaussian_splat_scene scene;
+
+    try
+    {
+        std::ifstream ss(path, std::ios::binary);
+        if (ss.fail()) throw std::runtime_error("failed to open " + path);
+
+        PlyFile file;
+        file.parse_header(ss);
+
+        // Request position
+        std::shared_ptr<PlyData> positions, scales, opacities, rotations;
+        std::shared_ptr<PlyData> f_dc[3];  // DC components (RGB)
+        std::shared_ptr<PlyData> f_rest[45]; // Rest of SH coefficients (15 per channel)
+
+        try { positions = file.request_properties_from_element("vertex", { "x", "y", "z" }); }
+        catch (const std::exception & e) { throw std::runtime_error(std::string("Missing position: ") + e.what()); }
+
+        try { scales = file.request_properties_from_element("vertex", { "scale_0", "scale_1", "scale_2" }); }
+        catch (const std::exception & e) { throw std::runtime_error(std::string("Missing scales: ") + e.what()); }
+
+        try { opacities = file.request_properties_from_element("vertex", { "opacity" }); }
+        catch (const std::exception & e) { throw std::runtime_error(std::string("Missing opacity: ") + e.what()); }
+
+        try { rotations = file.request_properties_from_element("vertex", { "rot_0", "rot_1", "rot_2", "rot_3" }); }
+        catch (const std::exception & e) { throw std::runtime_error(std::string("Missing rotations: ") + e.what()); }
+
+        // Request SH DC components
+        try { f_dc[0] = file.request_properties_from_element("vertex", { "f_dc_0" }); }
+        catch (const std::exception &) { }
+        try { f_dc[1] = file.request_properties_from_element("vertex", { "f_dc_1" }); }
+        catch (const std::exception &) { }
+        try { f_dc[2] = file.request_properties_from_element("vertex", { "f_dc_2" }); }
+        catch (const std::exception &) { }
+
+        // Request SH rest components (f_rest_0 through f_rest_44)
+        for (int i = 0; i < 45; ++i)
+        {
+            try { f_rest[i] = file.request_properties_from_element("vertex", { "f_rest_" + std::to_string(i) }); }
+            catch (const std::exception &) { }
+        }
+
+        file.read(ss);
+
+        const size_t num_vertices = positions->count;
+        scene.vertices.resize(num_vertices);
+
+        // Get raw pointers
+        const float * pos_data = reinterpret_cast<const float *>(positions->buffer.get());
+        const float * scale_data = reinterpret_cast<const float *>(scales->buffer.get());
+        const float * opacity_data = reinterpret_cast<const float *>(opacities->buffer.get());
+        const float * rot_data = reinterpret_cast<const float *>(rotations->buffer.get());
+
+        const float * f_dc_data[3] = { nullptr, nullptr, nullptr };
+        for (int c = 0; c < 3; ++c)
+        {
+            if (f_dc[c]) f_dc_data[c] = reinterpret_cast<const float *>(f_dc[c]->buffer.get());
+        }
+
+        const float * f_rest_data[45] = { nullptr };
+        for (int i = 0; i < 45; ++i)
+        {
+            if (f_rest[i]) f_rest_data[i] = reinterpret_cast<const float *>(f_rest[i]->buffer.get());
+        }
+
+        // Determine SH degree based on available coefficients
+        // SH degree 0: 1 coeff, degree 1: 4 coeffs, degree 2: 9 coeffs, degree 3: 16 coeffs
+        int available_sh_coeffs = 1; // DC is always there
+        for (int i = 0; i < 45; ++i)
+        {
+            if (f_rest_data[i]) available_sh_coeffs = 1 + (i + 1) / 3 + 1;
+        }
+
+        if (available_sh_coeffs >= 16) scene.sh_degree = 3;
+        else if (available_sh_coeffs >= 9) scene.sh_degree = 2;
+        else if (available_sh_coeffs >= 4) scene.sh_degree = 1;
+        else scene.sh_degree = 0;
+
+        // Helper: sigmoid function
+        auto sigmoid = [](float x) { return 1.0f / (1.0f + std::exp(-x)); };
+
+        for (size_t i = 0; i < num_vertices; ++i)
+        {
+            gaussian_vertex & v = scene.vertices[i];
+
+            // Position (xyz, w=1)
+            v.position.x = pos_data[i * 3 + 0];
+            v.position.y = pos_data[i * 3 + 1];
+            v.position.z = pos_data[i * 3 + 2];
+            v.position.w = 1.0f;
+
+            // Scale (apply exp) and opacity (apply sigmoid)
+            v.scale_opacity.x = std::exp(scale_data[i * 3 + 0]);
+            v.scale_opacity.y = std::exp(scale_data[i * 3 + 1]);
+            v.scale_opacity.z = std::exp(scale_data[i * 3 + 2]);
+            v.scale_opacity.w = sigmoid(opacity_data[i]);
+
+            // Rotation quaternion (wxyz in PLY -> xyzw normalized)
+            float qw = rot_data[i * 4 + 0];
+            float qx = rot_data[i * 4 + 1];
+            float qy = rot_data[i * 4 + 2];
+            float qz = rot_data[i * 4 + 3];
+            float len = std::sqrt(qw * qw + qx * qx + qy * qy + qz * qz);
+            if (len > 0.0f)
+            {
+                qw /= len;
+                qx /= len;
+                qy /= len;
+                qz /= len;
+            }
+            v.rotation.x = qw;  // Store as wxyz for shader compatibility
+            v.rotation.y = qx;
+            v.rotation.z = qy;
+            v.rotation.w = qz;
+
+            // Initialize SH coefficients to zero
+            std::memset(v.shs, 0, sizeof(v.shs));
+
+            // SH coefficients: PLY stores [all R coeffs][all G coeffs][all B coeffs]
+            // We need to interleave to [RGB0][RGB1]...[RGB15]
+            // DC component (f_dc_0, f_dc_1, f_dc_2) -> sh[0], sh[1], sh[2]
+            if (f_dc_data[0]) v.shs[0] = f_dc_data[0][i];
+            if (f_dc_data[1]) v.shs[1] = f_dc_data[1][i];
+            if (f_dc_data[2]) v.shs[2] = f_dc_data[2][i];
+
+            // Rest of SH coefficients
+            // f_rest layout: [R1..R15][G1..G15][B1..B15]
+            // f_rest_0..f_rest_14 = R coeffs 1-15
+            // f_rest_15..f_rest_29 = G coeffs 1-15
+            // f_rest_30..f_rest_44 = B coeffs 1-15
+            for (int sh_idx = 1; sh_idx < 16; ++sh_idx)
+            {
+                int r_idx = sh_idx - 1;
+                int g_idx = sh_idx - 1 + 15;
+                int b_idx = sh_idx - 1 + 30;
+
+                if (f_rest_data[r_idx]) v.shs[sh_idx * 3 + 0] = f_rest_data[r_idx][i];
+                if (f_rest_data[g_idx]) v.shs[sh_idx * 3 + 1] = f_rest_data[g_idx][i];
+                if (f_rest_data[b_idx]) v.shs[sh_idx * 3 + 2] = f_rest_data[b_idx][i];
+            }
+        }
+
+        std::cout << "Loaded gaussian splat: " << num_vertices << " gaussians, SH degree " << scene.sh_degree << std::endl;
+    }
+    catch (const std::exception & e)
+    {
+        std::cerr << "Failed to load gaussian splat: " << e.what() << std::endl;
+    }
+
+    return scene;
 }

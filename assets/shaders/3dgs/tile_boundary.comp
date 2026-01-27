@@ -1,0 +1,44 @@
+#version 450 core
+#extension GL_ARB_gpu_shader_int64 : enable
+
+layout (local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
+
+layout (std430, binding = 0) readonly buffer SortedKeys {
+    uint64_t keys[];
+};
+
+layout (std430, binding = 1) writeonly buffer Boundaries {
+    uint boundaries[];  // [start, end] pairs for each tile
+};
+
+layout (std140, binding = 2) uniform Params {
+    uint num_instances;
+    uint num_tiles;
+};
+
+void main() {
+    uint index = gl_GlobalInvocationID.x;
+    if (index >= num_instances) {
+        return;
+    }
+
+    // Extract tile index from key (upper 32 bits)
+    uint tile_id = uint(keys[index] >> 32);
+
+    if (index == 0) {
+        // First element starts its tile
+        boundaries[tile_id * 2] = index;
+    } else {
+        uint prev_tile_id = uint(keys[index - 1] >> 32);
+        if (tile_id != prev_tile_id) {
+            // Tile boundary
+            boundaries[tile_id * 2] = index;       // Start of new tile
+            boundaries[prev_tile_id * 2 + 1] = index;  // End of previous tile
+        }
+    }
+
+    if (index == num_instances - 1) {
+        // Last element ends its tile
+        boundaries[tile_id * 2 + 1] = num_instances;
+    }
+}

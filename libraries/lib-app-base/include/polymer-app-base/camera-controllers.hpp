@@ -25,8 +25,9 @@ namespace polymer
         float2 lastCursor;
         
     public:
-        
+
         bool enableSpring = true;
+        bool leftHanded = false;  // Use LH convention (+Z forward) instead of RH (-Z forward)
         float movementSpeed = 14.0f;
         float3 velocity;
 
@@ -45,10 +46,11 @@ namespace polymer
         
         void update_yaw_pitch()
         {
-            const float3 worldNorth = {0, 0, -1};
+            const float3 worldNorth = leftHanded ? float3{0, 0, 1} : float3{0, 0, -1};
             float3 lookVec = cam->get_view_direction();
             float3 flatLookVec = safe_normalize(float3(lookVec.x, 0, lookVec.z));
-            camYaw = std::acos(clamp(dot(worldNorth, flatLookVec), -1.0f, +1.0f)) * (flatLookVec.x > 0 ? -1 : 1);
+            float yawSign = leftHanded ? 1.f : -1.f;
+            camYaw = std::acos(clamp(dot(worldNorth, flatLookVec), -1.0f, +1.0f)) * (flatLookVec.x > 0 ? yawSign : -yawSign);
             camPitch = std::acos(clamp(dot(lookVec, flatLookVec), -1.0f, +1.0f)) * (lookVec.y > 0 ? 1 : -1);
         }
 
@@ -81,7 +83,8 @@ namespace polymer
             case app_input_event::CURSOR:
                 if (mr)
                 {
-                    camYaw -= (e.cursor.x - lastCursor.x) * 0.01f;
+                    float yawSign = leftHanded ? 1.f : -1.f;
+                    camYaw += yawSign * (e.cursor.x - lastCursor.x) * 0.01f;
                     camPitch = clamp(camPitch - (e.cursor.y - lastCursor.y) * 0.01f, -1.57f, +1.57f);
                 }
                 break;
@@ -92,12 +95,13 @@ namespace polymer
         void update(float delta)
         {
             float3 move;
-            
+
             float instantaneousSpeed = movementSpeed;
+            float zSign = leftHanded ? 1.f : -1.f;  // LH: +Z forward, RH: -Z forward
 
             if (bf || (ml && mr))
             {
-                move.z -= 1 * instantaneousSpeed;
+                move.z += zSign * instantaneousSpeed;
                 instantaneousSpeed *= 0.75f;
             }
             if (bl)
@@ -107,7 +111,7 @@ namespace polymer
             }
             if (bb)
             {
-                move.z += 1 * instantaneousSpeed;
+                move.z -= zSign * instantaneousSpeed;
                 instantaneousSpeed *= 0.75f;
             }
             if (br)
@@ -115,10 +119,10 @@ namespace polymer
                 move.x += 1 * instantaneousSpeed;
                 instantaneousSpeed *= 0.75f;
             }
-            
+
             float3 & current = cam->pose.position;
             const float3 target = cam->pose.transform_coord(move);
-            
+
             if (enableSpring)
             {
                 critically_damped_spring(delta, target.x, 1.f, instantaneousSpeed, current.x, velocity.x);
@@ -129,12 +133,12 @@ namespace polymer
             {
                 cam->pose.position = target;
             }
-            
+
             float3 lookVec;
             lookVec.x = cam->get_eye_point().x - 1.f * cosf(camPitch) * sinf(camYaw);
             lookVec.y = cam->get_eye_point().y + 1.f * sinf(camPitch);
-            lookVec.z = cam->get_eye_point().z - 1.f * cosf(camPitch) * cosf(camYaw);
-            cam->look_at(lookVec);
+            lookVec.z = cam->get_eye_point().z + zSign * cosf(camPitch) * cosf(camYaw);
+            cam->pose = leftHanded ? lookat_lh(cam->get_eye_point(), lookVec) : lookat_rh(cam->get_eye_point(), lookVec);
         }
     };
 

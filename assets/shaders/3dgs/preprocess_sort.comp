@@ -1,0 +1,64 @@
+#version 450 core
+#extension GL_ARB_gpu_shader_int64 : enable
+
+layout (local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
+
+struct VertexAttribute {
+    vec4 conic_opacity;
+    vec4 color_radii;
+    uvec4 aabb;
+    vec2 uv;
+    float depth;
+    uint pad;
+};
+
+layout (std430, binding = 0) readonly buffer Attributes {
+    VertexAttribute attr[];
+};
+
+layout (std430, binding = 1) readonly buffer PrefixSum {
+    uint prefixSum[];
+};
+
+layout (std430, binding = 2) writeonly buffer SortKeys {
+    uint64_t keys[];
+};
+
+layout (std430, binding = 3) writeonly buffer SortPayloads {
+    uint payloads[];
+};
+
+layout (std140, binding = 4) uniform Params {
+    uint tiles_x;
+    uint num_gaussians;
+};
+
+void main() {
+    uint index = gl_GlobalInvocationID.x;
+    if (index >= num_gaussians) {
+        return;
+    }
+
+    // Skip culled gaussians
+    if (attr[index].color_radii.w == 0.0) {
+        return;
+    }
+
+    // Get starting index in output buffer
+    uint ind = (index == 0) ? 0 : prefixSum[index - 1];
+
+    // Generate keys for each overlapping tile
+    for (uint i = attr[index].aabb.x; i < attr[index].aabb.z; i++) {
+        for (uint j = attr[index].aabb.y; j < attr[index].aabb.w; j++) {
+            uint64_t tile_id = uint64_t(i + j * tiles_x);
+            uint depth_bits = floatBitsToUint(attr[index].depth);
+
+            // Key: tile_id in upper 32 bits, depth in lower 32 bits
+            uint64_t key = (tile_id << 32) | uint64_t(depth_bits);
+
+            keys[ind] = key;
+            payloads[ind] = index;
+            ind++;
+        }
+    }
+}

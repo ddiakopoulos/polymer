@@ -74,6 +74,7 @@ option(POLYMER_ENGINE_APPS "Build the Polymer Editor applications" ON)
 
 if(POLYMER_ENGINE_APPS)
     add_subdirectory(apps/editor polymer-scene-editor)
+    add_subdirectory(apps/3dgs-viewer 3dgs-viewer)
 endif()
 
 option(POLYMER_BUILD_SAMPLES "Build the Polymer sample applications" ON)

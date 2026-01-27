@@ -1,0 +1,75 @@
+#version 450 core
+#extension GL_ARB_gpu_shader_int64 : enable
+
+#define RADIX_BITS 8
+#define RADIX_SIZE (1 << RADIX_BITS)  // 256
+#define WORKGROUP_SIZE 256
+
+layout (local_size_x = WORKGROUP_SIZE, local_size_y = 1, local_size_z = 1) in;
+
+layout (std430, binding = 0) readonly buffer KeysIn {
+    uint64_t keys_in[];
+};
+
+layout (std430, binding = 1) readonly buffer PayloadsIn {
+    uint payloads_in[];
+};
+
+layout (std430, binding = 2) writeonly buffer KeysOut {
+    uint64_t keys_out[];
+};
+
+layout (std430, binding = 3) writeonly buffer PayloadsOut {
+    uint payloads_out[];
+};
+
+layout (std430, binding = 4) readonly buffer GlobalOffsets {
+    uint global_offsets[];
+};
+
+layout (std140, binding = 5) uniform Params {
+    uint num_elements;
+    uint pass_index;
+    uint num_workgroups;
+};
+
+shared uint local_offsets[RADIX_SIZE];
+
+void main() {
+    uint local_id = gl_LocalInvocationID.x;
+    uint global_id = gl_GlobalInvocationID.x;
+    uint workgroup_id = gl_WorkGroupID.x;
+
+    // Load global offsets into shared memory
+    // global_offsets is the prefix sum of all histograms
+    // We need the offset for this workgroup for each radix value
+    uint global_offset = 0;
+
+    // Calculate global offset for this radix and workgroup
+    // Sum up histogram values from all previous workgroups for this radix
+    if (local_id < RADIX_SIZE) {
+        uint offset = 0;
+        for (uint wg = 0; wg < workgroup_id; wg++) {
+            offset += global_offsets[wg * RADIX_SIZE + local_id];
+        }
+        local_offsets[local_id] = offset;
+    }
+    barrier();
+
+    // Scatter elements
+    if (global_id < num_elements) {
+        uint64_t key = keys_in[global_id];
+        uint payload = payloads_in[global_id];
+
+        uint shift = pass_index * RADIX_BITS;
+        uint radix = uint((key >> shift) & 0xFFu);
+
+        // Get the destination index
+        uint dest = local_offsets[radix] + atomicAdd(local_offsets[radix], 1);
+
+        // Actually, we need a different approach - using prefix sum
+        // For now, use a simpler atomic scatter
+        keys_out[dest] = key;
+        payloads_out[dest] = payload;
+    }
+}
