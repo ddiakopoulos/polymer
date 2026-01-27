@@ -657,6 +657,9 @@ namespace polymer
             base_object & obj = graph_objects[ent];
             obj.owning_scene = owning_scene;
 
+            // Initialize world transform from local transform
+            recalculate_world_transform(ent);
+
             // Retroactively register any existing components
             if (owning_scene)
             {

@@ -276,7 +276,7 @@ void polymer_pbr_standard::update_uniforms(material_component * comp)
     program.unbind();
 }
 
-void polymer_pbr_standard::update_uniforms_ibl(GLuint irradiance, GLuint radiance)
+void polymer_pbr_standard::update_uniforms_ibl(GLuint irradiance, GLuint radiance, GLuint dfg_lut)
 {
     resolve_variants();
     gl_shader & program = compiled_shader->shader;
@@ -285,6 +285,7 @@ void polymer_pbr_standard::update_uniforms_ibl(GLuint irradiance, GLuint radianc
     program.bind();
     program.texture("sc_irradiance", bindpoint++, irradiance, GL_TEXTURE_CUBE_MAP);
     program.texture("sc_radiance", bindpoint++, radiance, GL_TEXTURE_CUBE_MAP);
+    program.texture("s_dfg_lut", bindpoint++, dfg_lut, GL_TEXTURE_2D);
     program.unbind();
 }
 

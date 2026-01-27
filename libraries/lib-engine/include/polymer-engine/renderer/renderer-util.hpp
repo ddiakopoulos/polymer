@@ -97,12 +97,6 @@ namespace polymer
                 base_path + "/shaders/renderer/unlit_texture_frag.glsl",
                 base_path + "/shaders/renderer");
 
-            // [utility] used for the xr laser pointer
-            monitor.watch("xr-laser",
-                base_path + "/shaders/renderer/renderer_vert.glsl",
-                base_path + "/shaders/renderer/xr_laser_frag.glsl",
-                base_path + "/shaders/renderer");
-
             // [utility] used for shading the gizmo (both xr and desktop)
             monitor.watch("unlit-vertex-color",
                 base_path + "/shaders/renderer/renderer_vert.glsl",
@@ -163,6 +157,104 @@ namespace polymer
         t.stop();
 
         log::get()->import_log->info("load_required_renderer_assets completed in {} ms", t.elapsed_ms());
+    }
+
+    // Generates a DFG (D*F*G / (4*NdotL*NdotV)) integration LUT for IBL specular
+    // Based on Filament's implementation - stores (scale, bias) for split-sum approximation
+    inline gl_texture_2d generate_dfg_lut(uint32_t resolution = 128)
+    {
+        std::vector<float> lut_data(resolution * resolution * 2);
+        const float inv_resolution = 1.0f / static_cast<float>(resolution);
+
+        auto radical_inverse_vdc = [](uint32_t bits) -> float
+        {
+            bits = (bits << 16u) | (bits >> 16u);
+            bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
+            bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
+            bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
+            bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
+            return static_cast<float>(bits) * 2.3283064365386963e-10f;
+        };
+
+        auto hammersley = [&radical_inverse_vdc](uint32_t i, uint32_t n) -> float2
+        {
+            return float2(static_cast<float>(i) / static_cast<float>(n), radical_inverse_vdc(i));
+        };
+
+        auto importance_sample_ggx = [](float2 xi, float roughness) -> float3
+        {
+            float a = roughness * roughness;
+            float phi = 2.0f * 3.14159265359f * xi.x;
+            float cos_theta = std::sqrt((1.0f - xi.y) / (1.0f + (a * a - 1.0f) * xi.y));
+            float sin_theta = std::sqrt(1.0f - cos_theta * cos_theta);
+            return float3(std::cos(phi) * sin_theta, std::sin(phi) * sin_theta, cos_theta);
+        };
+
+        auto visibility_smith_ggx_correlated = [](float ndotv, float ndotl, float a) -> float
+        {
+            float a2 = a * a;
+            float ggxv = ndotl * std::sqrt(ndotv * ndotv * (1.0f - a2) + a2);
+            float ggxl = ndotv * std::sqrt(ndotl * ndotl * (1.0f - a2) + a2);
+            return 0.5f / (ggxv + ggxl);
+        };
+
+        const uint32_t sample_count = 1024;
+
+        for (uint32_t y = 0; y < resolution; ++y)
+        {
+            float roughness = (static_cast<float>(y) + 0.5f) * inv_resolution;
+            roughness = std::max(roughness, 0.089f);
+            float a = roughness * roughness;
+
+            for (uint32_t x = 0; x < resolution; ++x)
+            {
+                float ndotv = (static_cast<float>(x) + 0.5f) * inv_resolution;
+                ndotv = std::max(ndotv, 0.001f);
+
+                float3 V = float3(std::sqrt(1.0f - ndotv * ndotv), 0.0f, ndotv);
+                float scale = 0.0f;
+                float bias = 0.0f;
+
+                for (uint32_t i = 0; i < sample_count; ++i)
+                {
+                    float2 xi = hammersley(i, sample_count);
+                    float3 H = importance_sample_ggx(xi, roughness);
+                    float3 L = 2.0f * dot(V, H) * H - V;
+
+                    float ndotl = L.z > 0.0f ? L.z : 0.0f;
+                    float ndoth = H.z > 0.0f ? H.z : 0.0f;
+                    float vdoth_val = dot(V, H);
+                    float vdoth = vdoth_val > 0.0f ? vdoth_val : 0.0f;
+
+                    if (ndotl > 0.0f)
+                    {
+                        float vis = visibility_smith_ggx_correlated(ndotv, ndotl, a);
+                        float vis_scaled = vis * vdoth * ndotl / (ndoth > 0.0001f ? ndoth : 0.0001f);
+                        float fc = std::pow(1.0f - vdoth, 5.0f);
+                        scale += vis_scaled * (1.0f - fc);
+                        bias += vis_scaled * fc;
+                    }
+                }
+
+                scale *= 4.0f / static_cast<float>(sample_count);
+                bias *= 4.0f / static_cast<float>(sample_count);
+
+                uint32_t idx = (y * resolution + x) * 2;
+                lut_data[idx + 0] = scale;
+                lut_data[idx + 1] = bias;
+            }
+        }
+
+        gl_texture_2d dfg_lut;
+        dfg_lut.setup(resolution, resolution, GL_RG16F, GL_RG, GL_FLOAT, lut_data.data());
+        glTextureParameteri(dfg_lut, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTextureParameteri(dfg_lut, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTextureParameteri(dfg_lut, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTextureParameteri(dfg_lut, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        log::get()->import_log->info("Generated DFG LUT: {}x{}", resolution, resolution);
+
+        return dfg_lut;
     }
 
     inline void export_exr_image(const std::string & path, const uint32_t w, const uint32_t h, const uint32_t c, std::vector<float> & buffer)

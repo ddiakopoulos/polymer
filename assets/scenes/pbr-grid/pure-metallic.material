@@ -20,6 +20,8 @@
             "z": 0.75
         },
         "u_ambientStrength": 1.0,
+        "u_clearCoat": 0.0,
+        "u_clearCoatRoughness": 0.0,
         "u_emissive": {
             "x": 0.0,
             "y": 0.0,
@@ -28,6 +30,7 @@
         "u_emissiveStrength": 1.0,
         "u_metallic": 1.0,
         "u_occlusionStrength": 1.0,
+        "u_reflectance": 0.5,
         "u_roughness": 0.0,
         "u_shadowOpacity": 1.0,
         "u_specularLevel": 0.07165999710559845,

@@ -4,6 +4,7 @@
 #include "polymer-engine/material.hpp"
 #include "polymer-engine/system/system-render.hpp"
 #include "polymer-engine/renderer/renderer-pbr.hpp"
+#include "polymer-engine/renderer/renderer-util.hpp"
 
 using namespace polymer;
 
@@ -347,8 +348,9 @@ void pbr_renderer::run_forward_pass(std::vector<const render_component *> & rend
             if (settings.shadowsEnabled) mr->update_uniforms_shadow(shadow->get_output_texture());
             if (scene.ibl_cubemap)
             {
-                mr->update_uniforms_ibl(scene.ibl_cubemap->ibl_irradianceCubemap.get(), 
-                    scene.ibl_cubemap->ibl_radianceCubemap.get());
+                mr->update_uniforms_ibl(scene.ibl_cubemap->ibl_irradianceCubemap.get(),
+                    scene.ibl_cubemap->ibl_radianceCubemap.get(),
+                    dfg_lut.id());
             }
         }
 
@@ -390,7 +392,6 @@ void pbr_renderer::run_post_pass(const view_data & view, const render_payload & 
     GLboolean wasCullingEnabled = glIsEnabled(GL_CULL_FACE);
     GLboolean wasDepthTestingEnabled = glIsEnabled(GL_DEPTH_TEST);
 
-    // Disable culling and depth testing for post processing
     glDisable(GL_CULL_FACE);
     glDisable(GL_DEPTH_TEST);
 
@@ -399,6 +400,9 @@ void pbr_renderer::run_post_pass(const view_data & view, const render_payload & 
 
     auto & shader = renderPassTonemap.get()->get_variant()->shader;
     shader.bind();
+    shader.uniform("u_exposure", settings.exposure);
+    shader.uniform("u_gamma", settings.gamma);
+    shader.uniform("u_tonemapMode", settings.tonemapMode);
     shader.texture("s_texColor", 0, eyeTextures[view.index], GL_TEXTURE_2D);
     post_quad.draw_elements();
     shader.unbind();
@@ -464,11 +468,15 @@ pbr_renderer::pbr_renderer(const renderer_settings settings) : settings(settings
 
     gl_check_error(__FILE__, __LINE__);
 
-    // Only create shadow resources if the user has requested them. 
+    // Only create shadow resources if the user has requested them.
     if (settings.shadowsEnabled)
     {
         shadow.reset(new stable_cascaded_shadows());
     }
+
+    // Generate DFG LUT for IBL specular
+    dfg_lut = generate_dfg_lut(128);
+    gl_check_error(__FILE__, __LINE__);
 
     // Respect performance profiling settings on construction
     gpuProfiler.set_enabled(settings.performanceProfiling);

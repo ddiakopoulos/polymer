@@ -1,12 +1,8 @@
 #include "polymer-engine/renderer/renderer-debug.hpp"
 #include "polymer-engine/renderer/renderer-util.hpp"
-
 #include "editor-app.hpp"
 
-// Note: We avoid "using namespace polymer" because it conflicts with
-// imgui_internal.h's use of the global log() function
-
-scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
+scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Scene Editor")
 {
     working_dir_on_launch = get_current_directory();
 
@@ -19,23 +15,23 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Editor")
 
     polymer::log::get()->set_engine_logger(std::make_shared<ImGui::spdlog_editor_sink>(editor_console_log));
 
-    auto droidSansTTFBytes = read_file_binary("../assets/fonts/droid_sans.ttf");
+    auto asset_base = global_asset_dir::get()->get_asset_dir();
 
     igm.reset(new gui::imgui_instance(window));
     gui::make_light_theme();
-    igm->add_font(droidSansTTFBytes);
+    igm->add_font(read_file_binary(asset_base + "/fonts/droid_sans.ttf"));
 
     cam.look_at({ 0, 5.f, -5.f }, { 0, 3.5f, 0 });
-    cam.farclip = 24;
+    cam.farclip = 256.f;
     flycam.set_camera(&cam);
 
-    load_required_renderer_assets("../assets", shaderMonitor);
+    load_required_renderer_assets(asset_base, shaderMonitor);
 
     shaderMonitor.watch("wireframe",
-       "../assets/shaders/wireframe_vert.glsl",
-       "../assets/shaders/wireframe_frag.glsl",
-       "../assets/shaders/wireframe_geom.glsl",
-       "../assets/shaders/renderer");
+       asset_base + "/shaders/wireframe_vert.glsl",
+       asset_base + "/shaders/wireframe_frag.glsl",
+       asset_base + "/shaders/wireframe_geom.glsl",
+       asset_base + "/shaders/renderer");
 
     fullscreen_surface.reset(new simple_texture_view());
 
@@ -189,8 +185,10 @@ void scene_editor_app::import_scene(const std::string & path)
 
         the_scene.import_environment(path);
 
+        auto asset_base = global_asset_dir::get()->get_asset_dir();
+
         // Resolve polymer-local assets
-        the_scene.resolver->add_search_path("../assets/");
+        the_scene.resolver->add_search_path(asset_base);
 
         // Resolve project assets
         const auto parent_dir = parent_directory_from_filepath(path);
@@ -211,13 +209,13 @@ void scene_editor_app::import_scene(const std::string & path)
 
 void scene_editor_app::open_material_editor()
 {
-    material_editor.reset(new material_editor_window(get_shared_gl_context(), 500, 1200, "", 1, the_scene, gizmo));
+    material_editor.reset(new material_editor_window(get_shared_gl_context(), 600, 1200, "", 1, the_scene, gizmo));
     glfwMakeContextCurrent(window);
 }
 
 void scene_editor_app::open_asset_browser()
 {
-    asset_browser.reset(new asset_browser_window(get_shared_gl_context(), 800, 400, "assets", 1));
+    asset_browser.reset(new asset_browser_window(get_shared_gl_context(), 800, 400, "asset browser", 1));
     glfwMakeContextCurrent(window);
 }
 
@@ -322,7 +320,7 @@ void scene_editor_app::on_draw()
             r.mesh = obj.get_component<mesh_component>();
             if (auto * xform = obj.get_component<transform_component>())
             {
-                r.world_matrix = xform->get_world_transform().matrix();
+                r.world_matrix = xform->get_world_transform().matrix() * make_scaling_matrix(xform->local_scale);
             }
             r.render_sort_order = 0;
             return r;

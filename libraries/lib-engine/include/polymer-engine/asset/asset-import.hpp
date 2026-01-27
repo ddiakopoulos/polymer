@@ -8,7 +8,6 @@
 namespace polymer
 {
     // Creates a model entity with mesh, material, and geometry components
-    // Uses the new Unity-style pattern via scene.instantiate_mesh()
     inline entity create_model(const std::string & mesh_handle, scene & the_scene)
     {
         base_object & obj = the_scene.instantiate_mesh(

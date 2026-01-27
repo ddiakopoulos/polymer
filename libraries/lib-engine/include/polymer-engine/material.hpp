@@ -192,7 +192,7 @@ namespace polymer
         virtual uint32_t id() override final;
 
         void update_uniforms_shadow(GLuint handle);
-        void update_uniforms_ibl(GLuint irradiance, GLuint radiance);
+        void update_uniforms_ibl(GLuint irradiance, GLuint radiance, GLuint dfg_lut);
 
         std::unordered_map<std::string, uniform_variant_t> uniform_table
         {
@@ -202,10 +202,13 @@ namespace polymer
             {"u_emissive",          polymer::property<float3>({0.f, 0.f, 0.f}) },
             {"u_emissiveStrength",  polymer::property<float>(0.f) },
             {"u_specularLevel",     polymer::property<float>(0.01f) },
+            {"u_reflectance",       polymer::property<float>(0.5f) },
             {"u_occlusionStrength", polymer::property<float>(1.f) },
             {"u_ambientStrength",   polymer::property<float>(1.f) },
             {"u_shadowOpacity",     polymer::property<float>(1.f) },
-            {"u_texCoordScale",     polymer::property<float2>({1.f, 1.f}) }
+            {"u_texCoordScale",     polymer::property<float2>({1.f, 1.f}) },
+            {"u_clearCoat",         polymer::property<float>(0.f) },
+            {"u_clearCoatRoughness", polymer::property<float>(0.f) }
         };
 
         texture_handle albedo;

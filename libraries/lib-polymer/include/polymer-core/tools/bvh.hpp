@@ -384,7 +384,8 @@ namespace polymer
 
                 if (hit)
                 {
-                    if (node->type == bvh_node_type::leaf && node->object)
+                    // Check for object on this node (handles both leaf nodes and single-object root case)
+                    if (node->object)
                     {
                         results.emplace_back(std::make_pair(node->object, outMinT));
                     }
@@ -404,7 +405,8 @@ namespace polymer
             {
                 if (camera_frustum.intersects(node->bounds.center(), node->bounds.size()))
                 {
-                    if (node->type == bvh_node_type::leaf && node->object) 
+                    // Check for object on this node (handles both leaf nodes and single-object root case)
+                    if (node->object)
                     {
                         objects.emplace_back(node->object);
                     }
@@ -722,6 +724,13 @@ namespace polymer
                 else
                 {
                     // Care must be taken with the root node (the only internal node that may have null children).
+                    // Special case: single object in tree - root node has the object directly attached
+                    if (node->object)
+                    {
+                        node->bounds = node->object->bounds;
+                        return;
+                    }
+
                     fit_bounds_recursive(node->left);
                     fit_bounds_recursive(node->right);
 

@@ -75,6 +75,9 @@ namespace polymer
         bool useDepthPrepass{ false };
         bool tonemapEnabled{ true };
         bool shadowsEnabled{ true };
+        float exposure{ 1.0f };
+        float gamma{ 2.2f };
+        int tonemapMode{ 2 };  // 0 = none, 1 = Reinhard, 2 = ACES
     };
 
     struct view_data
@@ -118,13 +121,15 @@ namespace polymer
     //   pbr_renderer   //
     //////////////////////
 
-    class pbr_renderer 
+    class pbr_renderer
     {
         simple_cpu_timer timer;
 
         gl_buffer perScene;
         gl_buffer perView;
         gl_buffer perObject;
+
+        gl_texture_2d dfg_lut;
 
         // MSAA Targets
         gl_renderbuffer multisampleRenderbuffers[2]; // color, depth/stencil
@@ -176,6 +181,7 @@ namespace polymer
         void set_stencil_mask(const uint32_t idx, gl_mesh && m);
 
         stable_cascaded_shadows * get_shadow_pass() const;
+        GLuint get_dfg_lut() const { return dfg_lut.id(); }
     };
 
     template<class F> void visit_fields(pbr_renderer & o, F f)
@@ -186,6 +192,9 @@ namespace polymer
         f("depth_prepass",          o.settings.useDepthPrepass);
         f("tonemap_pass",           o.settings.tonemapEnabled);
         f("shadow_pass",            o.settings.shadowsEnabled);
+        f("exposure",               o.settings.exposure, range_metadata<float>{ 0.1f, 10.0f });
+        f("gamma",                  o.settings.gamma, range_metadata<float>{ 1.0f, 3.0f });
+        f("tonemap_mode",           o.settings.tonemapMode, range_metadata<int>{ 0, 2 });
     }
 }
 

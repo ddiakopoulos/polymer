@@ -55,9 +55,14 @@ uniform float u_shadowOpacity = 1.0;
 uniform vec3 u_albedo = vec3(1, 1, 1);
 uniform vec3 u_emissive = vec3(1, 1, 1);
 uniform float u_specularLevel = 0.04;
+uniform float u_reflectance = 0.5;
 uniform float u_occlusionStrength = 1.0;
 uniform float u_ambientStrength = 1.0;
 uniform float u_emissiveStrength = 1.0;
+
+// Clear coat layer parameters (Filament specification)
+uniform float u_clearCoat = 0.0;
+uniform float u_clearCoatRoughness = 0.0;
 
 #ifdef ENABLE_SHADOWS
     uniform sampler2DArray s_csmArray;
@@ -67,6 +72,7 @@ uniform float u_emissiveStrength = 1.0;
 #ifdef USE_IMAGE_BASED_LIGHTING
     uniform samplerCube sc_irradiance;
     uniform samplerCube sc_radiance;
+    uniform sampler2D s_dfg_lut;
 #endif
 
 out vec4 f_color;
@@ -95,19 +101,19 @@ vec3 specular_reflection(LightingInfo data)
     return data.reflectance0 + (data.reflectance90 - data.reflectance0) * pow(clamp(1.0 - data.VdotH, 0.0, 1.0), 5.0);
 }
 
-// This calculates the specular geometric attenuation (aka G()),
-// where rougher material will reflect less light back to the viewer.
-// This implementation is based on [1] Equation 4, and we adopt their modifications to
-// alphaRoughness as input as originally proposed in [2].
-float geometric_occlusion(LightingInfo data) 
+// Height-correlated Smith-GGX visibility function (Filament specification)
+// This is the V(l,v) term that combines G(l,v) / (4 * NdotL * NdotV)
+float visibility_smith_ggx_correlated(float NdotV, float NdotL, float roughness)
 {
-    float NdotL = data.NdotL;
-    float NdotV = data.NdotV;
-    float r = data.alphaRoughness;
+    float a2 = roughness * roughness;
+    float GGXV = NdotL * sqrt(NdotV * NdotV * (1.0 - a2) + a2);
+    float GGXL = NdotV * sqrt(NdotL * NdotL * (1.0 - a2) + a2);
+    return 0.5 / (GGXV + GGXL);
+}
 
-    float attenuationL = 2.0 * NdotL / (NdotL + sqrt(r * r + (1.0 - r * r) * (NdotL * NdotL)));
-    float attenuationV = 2.0 * NdotV / (NdotV + sqrt(r * r + (1.0 - r * r) * (NdotV * NdotV)));
-    return attenuationL * attenuationV;
+float geometric_occlusion(LightingInfo data)
+{
+    return visibility_smith_ggx_correlated(data.NdotV, data.NdotL, data.alphaRoughness);
 }
   
 // Implementation from "Average Irregularity Representation of a Roughened Surface for Ray Reflection" by T. S. Trowbridge, and K. P. Reitz
@@ -117,22 +123,36 @@ float geometric_occlusion(LightingInfo data)
 // Disney's reparametrization of alpha = roughness^2.
 float microfacet_distribution(LightingInfo data)
 {
-    float roughnessSq = data.alphaRoughness * data.alphaRoughness; // squared?
-    //float denom = (data.NdotH * data.NdotH) * (roughnessSq - 1.0) + 1.0;
-    //return roughnessSq / (PI * denom * denom);
+    float roughnessSq = data.alphaRoughness * data.alphaRoughness;
     float f = (data.NdotH * roughnessSq - data.NdotH) * data.NdotH + 1.0;
     return roughnessSq / (PI * f * f);
+}
+
+// GGX distribution for clear coat (takes alpha directly)
+float D_GGX(float NdotH, float a)
+{
+    float a2 = a * a;
+    float f = (NdotH * a2 - NdotH) * NdotH + 1.0;
+    return a2 / (PI * f * f);
+}
+
+// Kelemen visibility function for clear coat (Filament specification)
+// Cheaper than Smith-GGX, appropriate for the smooth clear coat layer
+float visibility_kelemen(float LdotH)
+{
+    return 0.25 / (LdotH * LdotH);
 }
 
 void compute_cook_torrance(LightingInfo data, float attenuation, out vec3 diffuseContribution, out vec3 specularContribution)
 {
     const vec3 F = specular_reflection(data);
-    const float G = geometric_occlusion(data);
+    const float V = geometric_occlusion(data);
     const float D = microfacet_distribution(data);
 
     // Calculation of analytical lighting contribution
-    diffuseContribution = ((1.0 - F) * (data.diffuseColor / PI)) * attenuation; 
-    specularContribution = ((F * G * D) / ((4.0 * data.NdotL * data.NdotV) + 0.001)) * attenuation;
+    // Note: V already includes the 1/(4*NdotL*NdotV) term (height-correlated visibility)
+    diffuseContribution = ((1.0 - F) * (data.diffuseColor / PI)) * attenuation;
+    specularContribution = (F * V * D) * attenuation;
 }
 
 void main()
@@ -141,7 +161,7 @@ void main()
     vec3 albedo = u_albedo;
     vec3 N = normalize(v_normal);
 
-    float roughness = clamp(u_roughness, 0.04, 1.0);
+    float roughness = clamp(u_roughness, 0.089, 1.0);
     float metallic = u_metallic;
 
 #ifdef HAS_NORMAL_MAP
@@ -175,30 +195,38 @@ void main()
     vec3 V = normalize(u_eyePos.xyz - v_world_position);
     float NdotV = abs(dot(N, V)) + 0.001;
 
-    vec3 F0 = vec3(u_specularLevel);
-    vec3 diffuseColor = albedo * (vec3(1.0) - F0);
-    //diffuseColor *= 1.0 - metallic;
+    // F0 calculation using Filament's reflectance parameter (0.16 * reflectance^2 maps to 4% for reflectance=0.5)
+    // For dielectrics: F0 = 0.16 * reflectance^2 (default 0.5 gives 4%)
+    // For metals: F0 = albedo (metal color is its specular color)
+    vec3 F0 = 0.16 * u_reflectance * u_reflectance * (1.0 - metallic) + albedo * metallic;
 
-    // Fresnel reflectance at normal incidence (for metals use albedo color).
-    vec3 specularColor = mix(F0, albedo, metallic);
-    float reflectance = max(max(specularColor.r, specularColor.g), specularColor.b);
+    // Diffuse color: metals have no diffuse, dielectrics use albedo
+    // The (1-F) Fresnel term is applied dynamically in the BRDF, not here
+    vec3 diffuseColor = (1.0 - metallic) * albedo;
+
+    // Specular color is F0 (used for Fresnel calculations)
+    vec3 specularColor = F0;
+    float reflectanceLuminance = max(max(specularColor.r, specularColor.g), specularColor.b);
 
     // For typical incident reflectance range (between 4% to 100%) set the grazing reflectance to 100% for typical fresnel effect.
-    // For very low reflectance range on highly diffuse objects (below 4%), incrementally reduce grazing reflecance to 0%.
-    float reflectance90 = clamp(reflectance * 25, 0.0, 1.0);
+    // For very low reflectance range on highly diffuse objects (below 4%), incrementally reduce grazing reflectance to 0%.
+    float reflectance90 = clamp(reflectanceLuminance * 25, 0.0, 1.0);
     vec3 specularEnvironmentR0 = specularColor.rgb;
     vec3 specularEnvironmentR90 = vec3(1.0, 1.0, 1.0) * reflectance90;
 
-    vec3 Lo = vec3(0, 0, 0);
+    // Separate lighting contributions for proper shadow application
+    vec3 Lo_direct = vec3(0, 0, 0);
+    vec3 Lo_indirect = vec3(0, 0, 0);
+    vec3 Lo_emissive = vec3(0, 0, 0);
 
     vec3 debugShadowColor;
-    float shadowVisibility = 1;
+    float shadowVisibility = 1.0;
 
-    // Compute directional light
+    // Compute directional light (direct lighting)
     if (sunlightActive > 0)
     {
-        vec3 L = normalize(u_directionalLight.direction); 
-        vec3 H = normalize(L + V);  
+        vec3 L = normalize(u_directionalLight.direction);
+        vec3 H = normalize(L + V);
         float NdotL = clamp(dot(N, L), 0.001, 1.0);
         float NdotH = clamp(dot(N, H), 0.0, 1.0);
         float LdotH = clamp(dot(L, H), 0.0, 1.0);
@@ -211,28 +239,27 @@ void main()
         );
 
         float NdotL_S = clamp(dot(v_normal, L), 0.001, 1.0);
-        const float slope_bias = 0.04;  // fixme - expose to user
-        const float normal_bias = 0.01; // fixme - expose to user
+        const float slope_bias = 0.04;
+        const float normal_bias = 0.01;
         vec3 biased_pos = get_biased_position(v_world_position, slope_bias, normal_bias, v_normal, L);
 
-        // The way this is structured, it impacts lighting if we stop updating shadow uniforms 
         float shadowTerm = 1.0;
         #ifdef ENABLE_SHADOWS
             shadowTerm = calculate_csm_coefficient(s_csmArray, biased_pos, v_view_space_position, u_cascadesMatrix, u_cascadesPlane, debugShadowColor);
-            shadowVisibility = 1.0 - ((shadowTerm  * NdotL) * u_shadowOpacity * u_receiveShadow);
+            shadowVisibility = 1.0 - ((shadowTerm * NdotL) * u_shadowOpacity * u_receiveShadow);
         #endif
 
         vec3 diffuseContrib, specContrib;
         compute_cook_torrance(data, u_directionalLight.amount, diffuseContrib, specContrib);
 
-        Lo += NdotL * u_directionalLight.color * (diffuseContrib + specContrib);
+        Lo_direct += NdotL * u_directionalLight.color * (diffuseContrib + specContrib);
     }
 
-    // Compute point lights
+    // Compute point lights (direct lighting)
     for (int i = 0; i < u_activePointLights; ++i)
     {
-        vec3 L = normalize(u_pointLights[i].position - v_world_position); 
-        vec3 H = normalize(L + V);  
+        vec3 L = normalize(u_pointLights[i].position - v_world_position);
+        vec3 H = normalize(L + V);
 
         float NdotL = clamp(dot(N, L), 0.001, 1.0);
         float NdotH = clamp(dot(N, H), 0.0, 1.0);
@@ -246,14 +273,15 @@ void main()
         );
 
         float dist = length(u_pointLights[i].position - v_world_position);
-        float attenuation = point_light_attenuation(u_pointLights[i].radius, 2.0, 0.1, dist); // reasonable intensity is 0.01 to 8
+        float attenuation = point_light_attenuation(u_pointLights[i].radius, 2.0, 0.1, dist);
 
         vec3 diffuseContrib, specContrib;
         compute_cook_torrance(data, attenuation, diffuseContrib, specContrib);
 
-        Lo += NdotL * u_pointLights[i].color * (diffuseContrib + specContrib) * attenuation;
+        Lo_direct += NdotL * u_pointLights[i].color * (diffuseContrib + specContrib) * attenuation;
     }
 
+    // Image-based lighting (indirect lighting - not affected by shadows)
     #ifdef USE_IMAGE_BASED_LIGHTING
     {
         const int NUM_MIP_LEVELS = 6;
@@ -263,36 +291,90 @@ void main()
         vec3 irradiance = sRGBToLinear(texture(sc_irradiance, N).rgb, DEFAULT_GAMMA) * u_ambientStrength;
         vec3 radiance = sRGBToLinear(textureLod(sc_radiance, cubemapLookup, mipLevel).rgb, DEFAULT_GAMMA) * u_ambientStrength;
 
-        vec3 environment_reflectance = env_brdf_approx(specularColor, pow(roughness, 4.0), NdotV);
+        // DFG LUT lookup for accurate split-sum approximation
+        vec2 dfg = texture(s_dfg_lut, vec2(NdotV, roughness)).rg;
+        vec3 specularDFG = specularColor * dfg.x + dfg.y;
 
-        vec3 iblDiffuse = (diffuseColor * irradiance);
-        vec3 iblSpecular = (environment_reflectance * radiance);
+        // Energy compensation for multiscatter (Filament specification)
+        // Clamped to prevent blowup when dfg.y is very small
+        float energyBias = max(dfg.y, 0.1);
+        vec3 energyCompensation = 1.0 + specularColor * (1.0 / energyBias - 1.0);
 
-        Lo += (iblDiffuse + iblSpecular);
+        vec3 iblDiffuse = diffuseColor * irradiance;
+        vec3 iblSpecular = specularDFG * radiance * energyCompensation;
+
+        Lo_indirect += iblDiffuse + iblSpecular;
     }
     #endif
 
+    // Emissive contribution (not affected by shadows)
     #ifdef HAS_EMISSIVE_MAP
-        Lo += texture(s_emissive, v_texcoord).rgb * u_emissiveStrength; 
+        Lo_emissive += texture(s_emissive, v_texcoord).rgb * u_emissiveStrength;
     #endif
 
+    Lo_emissive += u_emissive * u_emissiveStrength;
+
+    // Apply ambient occlusion to indirect lighting only
     #ifdef HAS_OCCLUSION_MAP
         float ao = texture(s_occlusion, v_texcoord).r;
-        Lo = mix(Lo, Lo * ao, u_occlusionStrength);
+        Lo_indirect = mix(Lo_indirect, Lo_indirect * ao, u_occlusionStrength);
     #endif
 
-    Lo += (u_emissive * u_emissiveStrength);
+    // Clear coat layer (Filament specification)
+    vec3 Lo_clearCoat = vec3(0.0);
+    float clearCoatAttenuation = 1.0;
 
-    // Debugging
-    //f_color = vec4(vec3(debugShadowColor), 1.0);
-    //f_color = vec4(mix(vec3(shadowVisibility), vec3(debugShadowColor), 0.5), 1.0);
-    //f_color = vec4(vec3(shadowVisibility), u_opacity); 
-    //f_color = vec4(vec3(0), 1.0);
-    //f_color = vec4(nSample, 1.0);
-    //f_color = vec4(vec3(roughness), 1.0);
-    //f_color = vec4(vec3(metallic), 1.0);
-    //f_color = vec4(specularEnvironmentR90, 1.0);
+    if (u_clearCoat > 0.0)
+    {
+        float ccRoughness = clamp(u_clearCoatRoughness, 0.089, 1.0);
+        float ccAlpha = ccRoughness * ccRoughness;
 
-    // Combine direct lighting, IBL, and shadow visbility
-    f_color = vec4(Lo * shadowVisibility, u_opacity); 
+        // Clear coat uses polyurethane IOR ~1.5, giving F0 = 0.04
+        float ccF0 = 0.04;
+
+        // Process directional light clear coat
+        if (sunlightActive > 0)
+        {
+            vec3 L = normalize(u_directionalLight.direction);
+            vec3 H = normalize(L + V);
+            float NdotL = clamp(dot(N, L), 0.001, 1.0);
+            float NdotH = clamp(dot(N, H), 0.0, 1.0);
+            float LdotH = clamp(dot(L, H), 0.0, 1.0);
+            float VdotH = clamp(dot(V, H), 0.0, 1.0);
+
+            float ccD = D_GGX(NdotH, ccAlpha);
+            float ccV = visibility_kelemen(LdotH);
+            float ccF = ccF0 + (1.0 - ccF0) * pow(1.0 - VdotH, 5.0);
+
+            Lo_clearCoat += u_directionalLight.color * u_directionalLight.amount * NdotL * ccD * ccV * ccF * u_clearCoat;
+        }
+
+        // Process point lights clear coat
+        for (int i = 0; i < u_activePointLights; ++i)
+        {
+            vec3 L = normalize(u_pointLights[i].position - v_world_position);
+            vec3 H = normalize(L + V);
+            float NdotL = clamp(dot(N, L), 0.001, 1.0);
+            float NdotH = clamp(dot(N, H), 0.0, 1.0);
+            float LdotH = clamp(dot(L, H), 0.0, 1.0);
+            float VdotH = clamp(dot(V, H), 0.0, 1.0);
+
+            float dist = length(u_pointLights[i].position - v_world_position);
+            float attenuation = point_light_attenuation(u_pointLights[i].radius, 2.0, 0.1, dist);
+
+            float ccD = D_GGX(NdotH, ccAlpha);
+            float ccV = visibility_kelemen(LdotH);
+            float ccF = ccF0 + (1.0 - ccF0) * pow(1.0 - VdotH, 5.0);
+
+            Lo_clearCoat += u_pointLights[i].color * attenuation * NdotL * ccD * ccV * ccF * u_clearCoat;
+        }
+
+        // Fresnel attenuation of base layer (clear coat absorbs some light)
+        float ccFresnel = ccF0 + (1.0 - ccF0) * pow(1.0 - NdotV, 5.0);
+        clearCoatAttenuation = 1.0 - ccFresnel * u_clearCoat;
+    }
+
+    // Combine: shadows affect direct lighting, clear coat is added on top
+    vec3 finalColor = (Lo_direct * clearCoatAttenuation + Lo_clearCoat) * shadowVisibility + Lo_indirect * clearCoatAttenuation + Lo_emissive;
+    f_color = vec4(finalColor, u_opacity);
 }

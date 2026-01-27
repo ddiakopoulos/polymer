@@ -130,6 +130,7 @@ namespace polymer
         {
             static_accelerator.reset();
             dynamic_accelerator.reset();
+            collidable_objects.clear();
         }
 
         void setup_acceleration()

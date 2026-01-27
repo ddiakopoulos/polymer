@@ -46,7 +46,7 @@ struct scene_editor_app final : public polymer_app
 
     ImGui::editor_app_log editor_console_log;
     bool show_imgui = true;
-    bool show_grid = false;
+    bool show_grid = true;
     bool should_open_material_window = false;
     bool should_open_asset_browser = false;
     std::string working_dir_on_launch;

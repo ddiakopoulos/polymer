@@ -72,17 +72,16 @@ vec3 get_biased_position(vec3 pos, float slope_bias, float normal_bias, vec3 nor
     return pos;
 }
 
-// https://imdoingitwrong.wordpress.com/2011/01/31/light-attenuation/
-// https://imdoingitwrong.wordpress.com/2011/02/10/improved-light-attenuation/
+// Physically-based inverse-square attenuation with smooth windowing (Filament specification)
+// Provides energy-conserving falloff with a smooth transition to zero at the light radius
 float point_light_attenuation(float radius, float intensity, float cutoff, float dist)
 {
-    float d = max(dist - radius, 0.0);
-    float denom = d / radius + 1.0;
-    float attenuation = 0.0;
-    attenuation = intensity / (denom * denom);
-    attenuation = (attenuation - cutoff) / (1.0 - cutoff);
-    attenuation = max(attenuation, 0.0);
-    return attenuation;
+    float d2 = dist * dist;
+    float inv_radius2 = 1.0 / (radius * radius);
+    float factor = d2 * inv_radius2;
+    float smooth_factor = max(1.0 - factor * factor, 0.0);
+    smooth_factor *= smooth_factor;
+    return intensity * smooth_factor / max(d2, 0.0001);
 }
 
 // http://blog.selfshadow.com/publications/blending-in-detail/

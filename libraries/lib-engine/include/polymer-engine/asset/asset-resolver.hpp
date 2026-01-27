@@ -36,6 +36,48 @@ namespace polymer
 {
     class scene;
 
+    class global_asset_dir : public singleton<global_asset_dir>
+    {
+        friend class polymer::singleton<global_asset_dir>;
+        std::string the_asset_dir = "";
+
+        std::string find_asset_directory(const std::vector<std::string> search_paths)
+        {
+            for (auto & search_path : search_paths)
+            {
+                log::get()->engine_log->info("searching {}", search_path);
+
+                for (const auto & entry : recursive_directory_iterator(search_path))
+                {
+                    if (is_directory(entry.path()) && entry.path().filename() == "assets")
+                    {
+                        log::get()->engine_log->info("found asset dir {}", entry.path().string());
+                        return entry.path().string();
+                    }
+                }
+            }
+
+            return {};
+        }
+
+        public:
+
+        global_asset_dir()
+        {
+            std::vector<std::string> search_paths = {std::filesystem::current_path().string(),
+                                                     std::filesystem::current_path().parent_path().string(),
+                                                     std::filesystem::current_path().parent_path().parent_path().string(),
+                                                     std::filesystem::current_path().parent_path().parent_path().parent_path().string()};
+
+            the_asset_dir = find_asset_directory(search_paths);
+        }
+
+        const std::string get_asset_dir() const
+        {
+            return the_asset_dir;
+        }
+    };
+
     template <typename T>
     inline void remove_duplicates(std::vector<T> & vec)
     {

@@ -6,6 +6,8 @@
 
 using namespace polymer;
 
+template <>global_asset_dir * polymer::singleton<global_asset_dir>::single = nullptr;
+
 void asset_resolver::resolve()
 {
     assert(the_scene != nullptr);
