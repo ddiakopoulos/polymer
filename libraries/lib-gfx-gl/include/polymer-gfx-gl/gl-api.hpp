@@ -491,7 +491,7 @@ public:
             glGetProgramInfoLog(program, (GLsizei)buffer.size(), nullptr, buffer.data());
             std::cerr << "GL Link Error: " << buffer.data() << std::endl;
             throw std::runtime_error("GLSL Link Failure");
-        }sdf
+        }
     }
 
     std::map<uint32_t, std::string> reflect()
@@ -583,6 +583,41 @@ public:
     void texture(const char * name, int unit, GLuint tex, GLenum target) const
     {
         texture(get_uniform_location(name), target, unit, tex);
+    }
+
+    void bind() const { glUseProgram(program); }
+    void unbind() const { glUseProgram(0); }
+
+    void bind_buffer(GLenum target, GLuint binding, GLuint buffer) const
+    {
+        glBindBufferBase(target, binding, buffer);
+    }
+
+    void bind_ssbo(GLuint binding, GLuint buffer) const
+    {
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding, buffer);
+    }
+
+    void bind_ubo(GLuint binding, GLuint buffer) const
+    {
+        glBindBufferBase(GL_UNIFORM_BUFFER, binding, buffer);
+    }
+
+    void bind_image(GLuint unit, GLuint texture, GLenum access, GLenum format, GLint level = 0, GLboolean layered = GL_FALSE, GLint layer = 0) const
+    {
+        glBindImageTexture(unit, texture, level, layered, layer, access, format);
+    }
+
+    void dispatch_and_barrier(GLuint num_groups_x, GLuint num_groups_y, GLuint num_groups_z, GLbitfield barrier_bits) const
+    {
+        glUseProgram(program);
+        glDispatchCompute(num_groups_x, num_groups_y, num_groups_z);
+        glMemoryBarrier(barrier_bits);
+    }
+
+    void dispatch_and_barrier(const linalg::aliases::uint3 & num_groups, GLbitfield barrier_bits) const
+    {
+        dispatch_and_barrier(num_groups.x, num_groups.y, num_groups.z, barrier_bits);
     }
 };
 

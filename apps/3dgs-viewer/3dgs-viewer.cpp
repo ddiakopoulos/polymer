@@ -2,6 +2,7 @@
 #include "polymer-app-base/glfw-app.hpp"
 #include "polymer-app-base/camera-controllers.hpp"
 #include "polymer-app-base/wrappers/gl-imgui.hpp"
+#include "polymer-gfx-gl/gl-api.hpp"
 #include "polymer-gfx-gl/gl-texture-view.hpp"
 #include "polymer-model-io/gaussian-splat-io.hpp"
 
@@ -47,8 +48,6 @@ public:
 
         if (num_gaussians_ == 0) return;
 
-        std::cout << "Creating buffers for " << num_gaussians_ << " gaussians" << std::endl;
-
         // Create vertex buffer
         const size_t vertex_size = sizeof(gaussian_vertex);
         vertex_buffer_.set_buffer_data(num_gaussians_ * vertex_size, scene_.vertices.data(), GL_STATIC_DRAW);
@@ -68,7 +67,6 @@ public:
 
         recreate_tile_buffers();
         recreate_sort_buffers();
-        std::cout << "Buffers created" << std::endl;
     }
 
     void render(const perspective_camera & cam, uint32_t sh_degree, float scale_modifier)
@@ -77,28 +75,21 @@ public:
 
         auto start_time = std::chrono::high_resolution_clock::now();
 
-        // Stage 1: Precompute 3D covariance
         precompute_cov3d(scale_modifier);
-
-        // Stage 2: Preprocess (project, cull, compute 2D cov, SH)
-        preprocess(cam, sh_degree);
-
-        // Stage 3: Prefix sum to compute instance offsets
+        preprocess(cam, sh_degree); // project, cull, compute 2D cov, SH
         compute_prefix_sum();
 
-        // Stage 4: Read back total count and generate sort keys
         uint32_t total_instances = 0;
         glGetNamedBufferSubData(prefix_sum_buffer_, (num_gaussians_ - 1) * sizeof(uint32_t), sizeof(uint32_t), &total_instances);
 
         if (total_instances == 0)
         {
-            // Clear output
-            glClearTexImage(output_texture_, 0, GL_RGBA, GL_FLOAT, nullptr);
+            glClearTexImage(output_texture_, 0, GL_RGBA, GL_FLOAT, nullptr); // Clear output
             return;
         }
 
-        // Safety check: limit to reasonable maximum (100M instances)
-        const uint32_t MAX_INSTANCES = 100000000;
+        // clamp to reasonable maximum (10M instances)
+        const uint32_t MAX_INSTANCES = 10000000;
         if (total_instances > MAX_INSTANCES)
         {
             std::cerr << "Warning: total_instances (" << total_instances << ") exceeds maximum, clamping." << std::endl;
@@ -114,16 +105,9 @@ public:
             recreate_sort_buffers();
         }
 
-        // Stage 5: Generate sort keys
         generate_sort_keys(total_instances);
-
-        // Stage 6: Sort (CPU fallback for now - GPU radix sort is complex)
-        sort_instances_cpu(total_instances);
-
-        // Stage 7: Compute tile boundaries
+        sort_instances_cpu(total_instances); // workaround until gpu radix support is implemented
         compute_tile_boundaries(total_instances);
-
-        // Stage 8: Render
         render_tiles();
 
         auto end_time = std::chrono::high_resolution_clock::now();
@@ -135,62 +119,21 @@ public:
     float get_frame_time_ms() const { return last_frame_time_ms_; }
 
 private:
+
     void load_shaders()
     {
-        auto load_compute_shader = [](const std::string & path) -> GLuint
-        {
-            std::string source = read_file_text(path);
-            GLuint program = glCreateProgram();
-            GLuint shader = glCreateShader(GL_COMPUTE_SHADER);
-            const char * src = source.c_str();
-            glShaderSource(shader, 1, &src, nullptr);
-            glCompileShader(shader);
-
-            GLint status;
-            glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
-            if (status == GL_FALSE)
-            {
-                GLint length;
-                glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &length);
-                std::vector<char> log(length);
-                glGetShaderInfoLog(shader, length, nullptr, log.data());
-                std::cerr << "Shader compile error (" << path << "): " << log.data() << std::endl;
-                return 0;
-            }
-
-            glAttachShader(program, shader);
-            glLinkProgram(program);
-            glDeleteShader(shader);
-
-            glGetProgramiv(program, GL_LINK_STATUS, &status);
-            if (status == GL_FALSE)
-            {
-                GLint length;
-                glGetProgramiv(program, GL_INFO_LOG_LENGTH, &length);
-                std::vector<char> log(length);
-                glGetProgramInfoLog(program, length, nullptr, log.data());
-                std::cerr << "Shader link error (" << path << "): " << log.data() << std::endl;
-                return 0;
-            }
-
-            return program;
-        };
-
-        precomp_cov3d_shader_ = load_compute_shader("../assets/shaders/3dgs/precomp_cov3d.comp");
-        preprocess_shader_ = load_compute_shader("../assets/shaders/3dgs/preprocess.comp");
-        prefix_sum_shader_ = load_compute_shader("../assets/shaders/3dgs/prefix_sum.comp");
-        preprocess_sort_shader_ = load_compute_shader("../assets/shaders/3dgs/preprocess_sort.comp");
-        tile_boundary_shader_ = load_compute_shader("../assets/shaders/3dgs/tile_boundary.comp");
-        render_shader_ = load_compute_shader("../assets/shaders/3dgs/render.comp");
+        precomp_cov3d_shader_ = std::make_unique<gl_shader_compute>(read_file_text("../assets/shaders/3dgs/precomp_cov3d.comp"));
+        preprocess_shader_ = std::make_unique<gl_shader_compute>(read_file_text("../assets/shaders/3dgs/preprocess.comp"));
+        prefix_sum_shader_ = std::make_unique<gl_shader_compute>(read_file_text("../assets/shaders/3dgs/prefix_sum.comp"));
+        preprocess_sort_shader_ = std::make_unique<gl_shader_compute>(read_file_text("../assets/shaders/3dgs/preprocess_sort.comp"));
+        tile_boundary_shader_ = std::make_unique<gl_shader_compute>(read_file_text("../assets/shaders/3dgs/tile_boundary.comp"));
+        render_shader_ = std::make_unique<gl_shader_compute>(read_file_text("../assets/shaders/3dgs/render.comp"));
     }
 
     void create_output_texture()
     {
-        if (output_texture_) glDeleteTextures(1, &output_texture_);
-        glCreateTextures(GL_TEXTURE_2D, 1, &output_texture_);
-        glTextureStorage2D(output_texture_, 1, GL_RGBA8, width_, height_);
-        glTextureParameteri(output_texture_, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTextureParameteri(output_texture_, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        output_texture_ = gl_texture_2d();
+        output_texture_.setup(width_, height_, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
     }
 
     void recreate_tile_buffers()
@@ -200,11 +143,7 @@ private:
         num_tiles_ = tiles_x * tiles_y;
 
         // Tile boundary buffer: [start, end] per tile
-        tile_boundary_buffer_.set_buffer_data(
-            num_tiles_ * 2 * sizeof(uint32_t),
-            nullptr,
-            GL_DYNAMIC_DRAW
-        );
+        tile_boundary_buffer_.set_buffer_data(num_tiles_ * 2 * sizeof(uint32_t), nullptr, GL_DYNAMIC_DRAW);
     }
 
     void recreate_sort_buffers()
@@ -229,12 +168,9 @@ private:
 
     void precompute_cov3d(float scale_modifier)
     {
-        glUseProgram(precomp_cov3d_shader_);
+        precomp_cov3d_shader_->bind_ssbo(0, vertex_buffer_);
+        precomp_cov3d_shader_->bind_ssbo(1, cov3d_buffer_);
 
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, vertex_buffer_);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, cov3d_buffer_);
-
-        // Uniform buffer
         struct {
             float scale_modifier;
             uint32_t num_gaussians;
@@ -244,25 +180,21 @@ private:
         GLuint ubo;
         glCreateBuffers(1, &ubo);
         glNamedBufferData(ubo, sizeof(params), &params, GL_DYNAMIC_DRAW);
-        glBindBufferBase(GL_UNIFORM_BUFFER, 2, ubo);
+        precomp_cov3d_shader_->bind_ubo(2, ubo);
 
         uint32_t groups = (num_gaussians_ + 255) / 256;
-        glDispatchCompute(groups, 1, 1);
-        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+        precomp_cov3d_shader_->dispatch_and_barrier(groups, 1, 1, GL_SHADER_STORAGE_BARRIER_BIT);
 
         glDeleteBuffers(1, &ubo);
     }
 
     void preprocess(const perspective_camera & cam, uint32_t sh_degree)
     {
-        glUseProgram(preprocess_shader_);
+        preprocess_shader_->bind_ssbo(0, vertex_buffer_);
+        preprocess_shader_->bind_ssbo(1, cov3d_buffer_);
+        preprocess_shader_->bind_ssbo(3, vertex_attr_buffer_);
+        preprocess_shader_->bind_ssbo(4, tile_overlap_buffer_);
 
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, vertex_buffer_);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, cov3d_buffer_);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, vertex_attr_buffer_);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, tile_overlap_buffer_);
-
-        // Build view and projection matrices (camera uses LH convention via lookat_lh)
         float4x4 view_mat = cam.get_view_matrix();
         float4x4 proj_mat = cam.get_projection_matrix(static_cast<float>(width_) / height_);
 
@@ -283,7 +215,7 @@ private:
         } params;
 
         params.camera_position = float4(cam.pose.position, 1.0f);
-        params.proj_mat = proj_mat * view_mat;  // Combined proj*view like reference implementation
+        params.proj_mat = proj_mat * view_mat;
         params.view_mat = view_mat;
         params.width = width_;
         params.height = height_;
@@ -295,11 +227,10 @@ private:
         GLuint ubo;
         glCreateBuffers(1, &ubo);
         glNamedBufferData(ubo, sizeof(params), &params, GL_DYNAMIC_DRAW);
-        glBindBufferBase(GL_UNIFORM_BUFFER, 2, ubo);
+        preprocess_shader_->bind_ubo(2, ubo);
 
         uint32_t groups = (num_gaussians_ + 255) / 256;
-        glDispatchCompute(groups, 1, 1);
-        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+        preprocess_shader_->dispatch_and_barrier(groups, 1, 1, GL_SHADER_STORAGE_BARRIER_BIT);
 
         glDeleteBuffers(1, &ubo);
     }
@@ -324,12 +255,10 @@ private:
 
     void generate_sort_keys(uint32_t total_instances)
     {
-        glUseProgram(preprocess_sort_shader_);
-
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, vertex_attr_buffer_);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, prefix_sum_buffer_);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, sort_keys_buffer_);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, sort_payloads_buffer_);
+        preprocess_sort_shader_->bind_ssbo(0, vertex_attr_buffer_);
+        preprocess_sort_shader_->bind_ssbo(1, prefix_sum_buffer_);
+        preprocess_sort_shader_->bind_ssbo(2, sort_keys_buffer_);
+        preprocess_sort_shader_->bind_ssbo(3, sort_payloads_buffer_);
 
         uint32_t tiles_x = (width_ + 15) / 16;
 
@@ -342,11 +271,10 @@ private:
         GLuint ubo;
         glCreateBuffers(1, &ubo);
         glNamedBufferData(ubo, sizeof(params), &params, GL_DYNAMIC_DRAW);
-        glBindBufferBase(GL_UNIFORM_BUFFER, 4, ubo);
+        preprocess_sort_shader_->bind_ubo(4, ubo);
 
         uint32_t groups = (num_gaussians_ + 255) / 256;
-        glDispatchCompute(groups, 1, 1);
-        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+        preprocess_sort_shader_->dispatch_and_barrier(groups, 1, 1, GL_SHADER_STORAGE_BARRIER_BIT);
 
         glDeleteBuffers(1, &ubo);
     }
@@ -382,14 +310,11 @@ private:
 
     void compute_tile_boundaries(uint32_t total_instances)
     {
-        // Clear boundaries
         std::vector<uint32_t> zeros(num_tiles_ * 2, 0);
         glNamedBufferSubData(tile_boundary_buffer_, 0, zeros.size() * sizeof(uint32_t), zeros.data());
 
-        glUseProgram(tile_boundary_shader_);
-
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, sort_keys_buffer_);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, tile_boundary_buffer_);
+        tile_boundary_shader_->bind_ssbo(0, sort_keys_buffer_);
+        tile_boundary_shader_->bind_ssbo(1, tile_boundary_buffer_);
 
         struct {
             uint32_t num_instances;
@@ -400,23 +325,20 @@ private:
         GLuint ubo;
         glCreateBuffers(1, &ubo);
         glNamedBufferData(ubo, sizeof(params), &params, GL_DYNAMIC_DRAW);
-        glBindBufferBase(GL_UNIFORM_BUFFER, 2, ubo);
+        tile_boundary_shader_->bind_ubo(2, ubo);
 
         uint32_t groups = (total_instances + 255) / 256;
-        glDispatchCompute(groups, 1, 1);
-        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+        tile_boundary_shader_->dispatch_and_barrier(groups, 1, 1, GL_SHADER_STORAGE_BARRIER_BIT);
 
         glDeleteBuffers(1, &ubo);
     }
 
     void render_tiles()
     {
-        glUseProgram(render_shader_);
-
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, vertex_attr_buffer_);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, tile_boundary_buffer_);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, sort_payloads_buffer_);
-        glBindImageTexture(3, output_texture_, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
+        render_shader_->bind_ssbo(0, vertex_attr_buffer_);
+        render_shader_->bind_ssbo(1, tile_boundary_buffer_);
+        render_shader_->bind_ssbo(2, sort_payloads_buffer_);
+        render_shader_->bind_image(3, output_texture_, GL_WRITE_ONLY, GL_RGBA8);
 
         struct {
             uint32_t width;
@@ -427,12 +349,11 @@ private:
         GLuint ubo;
         glCreateBuffers(1, &ubo);
         glNamedBufferData(ubo, sizeof(params), &params, GL_DYNAMIC_DRAW);
-        glBindBufferBase(GL_UNIFORM_BUFFER, 4, ubo);
+        render_shader_->bind_ubo(4, ubo);
 
         uint32_t tiles_x = (width_ + 15) / 16;
         uint32_t tiles_y = (height_ + 15) / 16;
-        glDispatchCompute(tiles_x, tiles_y, 1);
-        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+        render_shader_->dispatch_and_barrier(tiles_x, tiles_y, 1, GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
         glDeleteBuffers(1, &ubo);
     }
@@ -463,15 +384,15 @@ private:
     std::vector<uint32_t> sort_payloads_;
 
     // Shaders
-    GLuint precomp_cov3d_shader_ = 0;
-    GLuint preprocess_shader_ = 0;
-    GLuint prefix_sum_shader_ = 0;
-    GLuint preprocess_sort_shader_ = 0;
-    GLuint tile_boundary_shader_ = 0;
-    GLuint render_shader_ = 0;
+    std::unique_ptr<gl_shader_compute> precomp_cov3d_shader_;
+    std::unique_ptr<gl_shader_compute> preprocess_shader_;
+    std::unique_ptr<gl_shader_compute> prefix_sum_shader_;
+    std::unique_ptr<gl_shader_compute> preprocess_sort_shader_;
+    std::unique_ptr<gl_shader_compute> tile_boundary_shader_;
+    std::unique_ptr<gl_shader_compute> render_shader_;
 
     // Output
-    GLuint output_texture_ = 0;
+    gl_texture_2d output_texture_;
 };
 
 //////////////////////////
