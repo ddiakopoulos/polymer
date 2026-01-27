@@ -2,41 +2,23 @@
 
 [![License is BSD 3-Clause](https://img.shields.io/badge/license-BSD3-blue.svg?style=flat)](https://opensource.org/licenses/BSD-3-Clause)
 
-Platform | Build Status |
--------- | ------------ |
-MSVC 2017 x64 | [![Build status](https://ci.appveyor.com/api/projects/status/3hjvf03s8bwjciva?svg=true)](https://ci.appveyor.com/project/ddiakopoulos/polymer)
-
 <p align="center">
   <img src="https://s3-us-west-1.amazonaws.com/polymer-engine/polymer-github-hero.png"/>
 </p>
 
-Polymer is a research framework for spatial interaction and real-time rendering, presently targeting C++14 and desktop-class OpenGL on Windows. It was built to explore AR/VR prototyping tools as a core concept in-engine. It is inspired by projects such as NVIDIA's [Falcor](https://github.com/NVIDIAGameWorks/Falcor), Google's [Lullaby](https://github.com/google/lullaby), and Microsoft's [Mixed Reality Toolkit](https://github.com/Microsoft/MixedRealityToolkit-Unity). While the primary focus of Polymer is immersive media, the engine contains features useful to graphics research and general tool and utility development as well. 
-
-## Features
-
-* Physically-based, gamma-correct forward renderer with MSAA
-* Data-driven entity-component architecture with custom RTTI
-* Lightweight, object-oriented wrapper for modern OpenGL
-* Hot-reloadable assets including GLSL shaders
-* Asset import for common geometry and texture formats
-* Desktop scene editor application with json scene serialization
-* OpenVR integration
+Many C++ coders have a base library they use for a variety of experiments, tools, apps, utilities, etc. Polymer is mine. It started as a sandbox, complete with a scene editor + engine to explore AR/VR prototyping, but eventually became my go-to library of reusable components for most other side projects. The core `lib-polymer` has a lot of low-dependency utilities that I hope others might find useful.  
 
 ## Architecture
 
 Polymer is designed as a collection of static libraries. `lib-polymer` is a base library consisting of common data structures and algorithms familiar to game developers. `lib-engine` depends on `lib-polymer` and introduces an entity-component system alongside a physically-based rendering pipeline. `lib-engine` also offers a runtime asset management solution. Lastly, `lib-model-io` contains code to import, export, and optimize common geometry formats (presently obj, ply, and fbx). 
 
-In the future, rendering code will move to `lib-graphics` with an abstract render-hardware-interface capable of targeting multiple graphics backends such as Metal and Vulkan.
-
 ## Building
 
-Polymer requires a recent version of Windows 10 alongside a graphics driver capable of supporting an OpenGL 4.5 context. This repository hosts maintained project files for Visual Studio 2017. Most dependencies are included in source form without the use of submodules. 
+Polymer requires a recent version of Windows 10 alongside a graphics driver capable of supporting an OpenGL 4.5 context. The build system is CMake. 
 
 ### Prerequisites
 
 Windows SDK is required to build the project. You may download it [here](https://developer.microsoft.com/en-us/windows/downloads/windows-10-sdk)
-
-Use of the FBX 2017 SDK is gated by an environment variable (`SYSTEM_HAS_FBX_SDK` which should be set to evaluate to an identical token, `SYSTEM_HAS_FBX_SDK`); the extracted FBX SDK itself must be located in `polymer\lib-model-io\third-party\fbxsdk`. You may download the FBX SDK from [here](https://www.autodesk.com/developer-network/platform-technologies/fbx-sdk-2019-0)
 
 ### Building the projects
 
