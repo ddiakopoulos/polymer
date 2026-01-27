@@ -23,7 +23,7 @@ namespace polymer
 			return (onPlane * (1.0f / std::sqrt(norm)));
 		}
 
-		if (dot(axis, float3(0, 0, 1)) < 0.0001f) onPlane = float3(1, 0, 0);
+		if (std::abs(dot(axis, float3(0, 0, 1))) > 0.9999f) onPlane = float3(1, 0, 0);
 		else onPlane = safe_normalize(float3(-axis.y, axis.x, 0));
 
 		return onPlane;
@@ -54,33 +54,30 @@ namespace polymer
 
     public:
 
-        quatf initialQuat, currentQuat;
+        quatf currentQuat;
         float3 constraintAxis = { 0, 0, 0 };
 
-        arcball_controller(float2 windowSize) : windowSize(windowSize) { initialQuat = currentQuat = linalg::identity; }
+        arcball_controller(float2 windowSize) : windowSize(windowSize) { currentQuat = linalg::identity; }
 
 		void mouse_down(const float2 & mousePos)
 		{
 			initialMousePos = mousePos;
-            initialQuat = linalg::identity;
 		}
 
 		void mouse_drag(const float2 & mousePos)
 		{
-			auto a = mouse_on_sphere(initialMousePos);
-			auto b = mouse_on_sphere(mousePos);
+			float3 a = mouse_on_sphere(initialMousePos);
+			float3 b = mouse_on_sphere(mousePos);
 
-			if (length(constraintAxis))
+			if (length(constraintAxis) > 0.0f)
 			{
 				a = constrain_to_axis(a, constraintAxis);
 				b = constrain_to_axis(b, constraintAxis);
 			}
 
-			if (distance(a, b) <= 0.0005) return;
-			
-			auto rotation = safe_normalize(make_rotation_quat_between_vectors(a, b));
-			auto deltaRotation = safe_normalize(rotation * conjugate(initialQuat));
-			currentQuat = deltaRotation;
+			if (distance(a, b) <= 0.0005f) return;
+
+			currentQuat = safe_normalize(make_rotation_quat_between_vectors(a, b));
 			initialMousePos = mousePos;
 		}
 

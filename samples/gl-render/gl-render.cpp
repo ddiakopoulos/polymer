@@ -21,6 +21,7 @@
 
 #include "polymer-engine/asset/asset-handle-utils.hpp"
 #include "polymer-engine/shader-library.hpp"
+#include "polymer-engine/asset/asset-resolver.hpp"
 
 #include "polymer-model-io/model-io.hpp"
 
@@ -49,15 +50,17 @@ struct sample_gl_render final : public polymer_app
 
 // Polymer also contains a method `make_mesh_from_geometry` which is a canonical library version of this
 // function. That function handles all common vertex attribute types and assigns them to a layout we use
-// throughout other samples/applications. This is used purely for reference/englightenment. 
-void upload_mesh(const runtime_mesh & cpu, gl_mesh & gpu, bool indexed = true)
+// throughout other samples/applications. This is used purely for reference/englightenment.
+void upload_mesh(runtime_mesh & cpu, gl_mesh & gpu, bool indexed = true)
 {
     const uint32_t components = 6;
-    
-    std::vector<float> buffer;
-    buffer.reserve(cpu.vertices.size());
 
-    for (int v = 0; v < cpu.vertices.size(); v++)
+    if (cpu.normals.size() != cpu.vertices.size()) compute_normals(cpu);
+
+    std::vector<float> buffer;
+    buffer.reserve(cpu.vertices.size() * components);
+
+    for (size_t v = 0; v < cpu.vertices.size(); v++)
     {
         buffer.push_back(cpu.vertices[v].x);
         buffer.push_back(cpu.vertices[v].y);
@@ -67,7 +70,7 @@ void upload_mesh(const runtime_mesh & cpu, gl_mesh & gpu, bool indexed = true)
         buffer.push_back(cpu.normals[v].z);
     }
 
-    gpu.set_vertices(buffer.size() * sizeof(float), buffer.data(), GL_STATIC_DRAW);
+    gpu.set_vertices(buffer.size(), buffer.data(), GL_STATIC_DRAW);
     gpu.set_attribute(0, 3, GL_FLOAT, GL_FALSE, components * sizeof(float), ((float*)0) + 0);
     gpu.set_attribute(1, 3, GL_FLOAT, GL_FALSE, components * sizeof(float), ((float*)0) + 3);
     if (indexed) gpu.set_elements(cpu.faces, GL_STATIC_DRAW);
@@ -96,13 +99,15 @@ sample_gl_render::sample_gl_render() : polymer_app(1280, 720, "sample-gl-render"
     glfwGetWindowSize(window, &width, &height);
     glViewport(0, 0, width, height);
 
-    matcapTexture = load_image("../../assets/textures/matcap/chemical_carpaint_blue.png");
+    auto asset_base = global_asset_dir::get()->get_asset_dir();
+
+    matcapTexture = load_image(asset_base + "/textures/matcap/chemical_carpaint_blue.png");
 
     matcapShader = gl_shader(
-        read_file_text("../../assets/shaders/prototype/matcap_vert.glsl"),
-        read_file_text("../../assets/shaders/prototype/matcap_frag.glsl"));
+        read_file_text(asset_base + "/shaders/prototype/matcap_vert.glsl"),
+        read_file_text(asset_base + "/shaders/prototype/matcap_frag.glsl"));
 
-    auto imported_mesh_table = import_model("../../assets/models/runtime/torus-knot.mesh");
+    auto imported_mesh_table = import_model(asset_base + "/models/runtime/torus-knot.mesh");
     if (imported_mesh_table.size() == 0) throw std::runtime_error("model not found?");
 
     runtime_mesh & m = imported_mesh_table.begin()->second;
@@ -164,7 +169,7 @@ void sample_gl_render::on_draw()
 
     if (lastEvent.drag && deltaMotion)
     {
-        modelPose.orientation = safe_normalize(modelPose.orientation * arcball->currentQuat);
+        modelPose.orientation = safe_normalize(arcball->currentQuat * modelPose.orientation);
     }
 
     draw_mesh_matcap(matcapShader, model, matcapTexture, modelPose.matrix(), viewMatrix, projectionMatrix);

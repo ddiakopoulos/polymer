@@ -77,16 +77,40 @@ namespace polymer
     // http://lolengine.net/blog/2013/09/18/beautiful-maths-quaternion-from-vectors
     inline quatf make_rotation_quat_between_vectors(const float3 & from, const float3 & to)
     {
-        auto a = safe_normalize(from), b = safe_normalize(to);
-        return make_rotation_quat_axis_angle(safe_normalize(cross(a,b)), std::acos(dot(a,b)));
+        float3 a = safe_normalize(from);
+        float3 b = safe_normalize(to);
+        float d = std::clamp(dot(a, b), -1.0f, 1.0f);
+
+        if (d > 0.9999f) return linalg::identity;
+
+        if (d < -0.9999f)
+        {
+            float3 axis = cross(float3(1, 0, 0), a);
+            if (length2(axis) < 0.0001f) axis = cross(float3(0, 1, 0), a);
+            return make_rotation_quat_axis_angle(safe_normalize(axis), POLYMER_PI);
+        }
+
+        return make_rotation_quat_axis_angle(safe_normalize(cross(a, b)), std::acos(d));
     }
-    
+
     inline quatf make_rotation_quat_between_vectors_snapped(const float3 & from, const float3 & to, const float angle)
     {
-        auto a = safe_normalize(from);
-        auto b = safe_normalize(to);
-        auto snappedAcos = std::floor(std::acos(dot(a,b)) / angle) * angle;
-        return make_rotation_quat_axis_angle(safe_normalize(cross(a,b)), snappedAcos);
+        float3 a = safe_normalize(from);
+        float3 b = safe_normalize(to);
+        float d = std::clamp(dot(a, b), -1.0f, 1.0f);
+
+        if (d > 0.9999f) return linalg::identity;
+
+        if (d < -0.9999f)
+        {
+            float3 axis = cross(float3(1, 0, 0), a);
+            if (length2(axis) < 0.0001f) axis = cross(float3(0, 1, 0), a);
+            float snappedAngle = std::floor(POLYMER_PI / angle) * angle;
+            return make_rotation_quat_axis_angle(safe_normalize(axis), snappedAngle);
+        }
+
+        float snappedAcos = std::floor(std::acos(d) / angle) * angle;
+        return make_rotation_quat_axis_angle(safe_normalize(cross(a, b)), snappedAcos);
     }
     
     inline quatf make_rotation_quat_from_rotation_matrix(const float3x3 & m)
