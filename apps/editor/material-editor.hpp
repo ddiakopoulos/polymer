@@ -220,8 +220,12 @@ struct material_editor_window final : public glfw_window
                 else
                 {
                     inspected_entity = kInvalidEntity;
-                    // Don't reset assetSelection here - preserve the user's browse selection
                 }
+            }
+            else
+            {
+                // No selection or multiple selection - exit override mode
+                inspected_entity = kInvalidEntity;
             }
 
             // A valid asset selection means the preview mesh would have a valid material
@@ -342,8 +346,25 @@ struct material_editor_window final : public glfw_window
                 ImGui::Text("Material: %s", material_handle_name.c_str());
                 ImGui::Dummy({ 0, 12 });
 
-                // Inspect
-                inspect_material(mat_im_ui_ctx, mat.get());
+                // If we have a selected entity, show override mode. Otherwise edit base material.
+                if (inspected_entity != kInvalidEntity)
+                {
+                    base_object & insp_obj = the_scene.get_graph().get_object(inspected_entity);
+                    if (auto * mc = insp_obj.get_component<material_component>())
+                    {
+                        ImGui::Text("Object: %s", insp_obj.name.c_str());
+                        ImGui::Dummy({ 0, 8 });
+
+                        inspect_material_overrides(mat_im_ui_ctx, mat.get(), mc->override_table);
+                    }
+                }
+                else
+                {
+                    ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), "(editing base material)");
+                    ImGui::Dummy({ 0, 8 });
+
+                    inspect_material(mat_im_ui_ctx, mat.get());
+                }
 
                 ImGui::Dummy({ 0, 12 });
 

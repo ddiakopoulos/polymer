@@ -162,6 +162,11 @@ void scene_editor_app::on_input(const app_input_event & event)
                         gizmo->set_selection(selectedObjects);
                     }
                 }
+                else if (!(event.mods & GLFW_MOD_CONTROL))
+                {
+                    // Clicked on empty space without Ctrl - deselect all
+                    gizmo->clear();
+                }
             }
 
             if (gizmo->moved())

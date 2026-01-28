@@ -320,6 +320,161 @@ inline bool inspect_material(imgui_ui_context & ctx, base_material * material)
     return r;
 }
 
+inline void copy_uniform_variant(uniform_override_t & overrides, const std::string & uniform_name, const polymer::uniform_variant_t & base_value)
+{
+    if (auto * val = nonstd::get_if<polymer::property<int>>(&base_value))
+        overrides.table[uniform_name] = polymer::property<int>(static_cast<int>(*val));
+    else if (auto * val = nonstd::get_if<polymer::property<float>>(&base_value))
+        overrides.table[uniform_name] = polymer::property<float>(static_cast<float>(*val));
+    else if (auto * val = nonstd::get_if<polymer::property<float2>>(&base_value))
+        overrides.table[uniform_name] = polymer::property<float2>(static_cast<float2>(*val));
+    else if (auto * val = nonstd::get_if<polymer::property<float3>>(&base_value))
+        overrides.table[uniform_name] = polymer::property<float3>(static_cast<float3>(*val));
+    else if (auto * val = nonstd::get_if<polymer::property<float4>>(&base_value))
+        overrides.table[uniform_name] = polymer::property<float4>(static_cast<float4>(*val));
+}
+
+inline bool build_override_checkbox(const char * label, uniform_override_t & overrides, const std::string & uniform_name, const polymer::uniform_variant_t & base_value)
+{
+    bool is_overridden = overrides.table.find(uniform_name) != overrides.table.end();
+    bool was_overridden = is_overridden;
+
+    ImGui::PushID(uniform_name.c_str());
+
+    if (ImGui::Checkbox("##override", &is_overridden))
+    {
+        if (is_overridden && !was_overridden)
+        {
+            copy_uniform_variant(overrides, uniform_name, base_value);
+        }
+        else if (!is_overridden && was_overridden)
+        {
+            overrides.table.erase(uniform_name);
+        }
+    }
+
+    if (ImGui::IsItemHovered())
+    {
+        ImGui::SetTooltip(is_overridden ? "Click to revert to base material" : "Click to override this property");
+    }
+
+    ImGui::PopID();
+    return is_overridden != was_overridden;
+}
+
+template<typename T>
+inline bool build_override_field(imgui_ui_context & ctx, const char * label, uniform_override_t & overrides, const std::string & uniform_name, T & base_value)
+{
+    bool r = false;
+    bool is_overridden = overrides.table.find(uniform_name) != overrides.table.end();
+
+    if (is_overridden)
+    {
+        ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.3f, 0.5f, 0.3f, 1.0f));
+    }
+
+    if (is_overridden)
+    {
+        polymer::uniform_variant_t & override_variant = overrides.table[uniform_name];
+        if (auto * val = nonstd::get_if<polymer::property<T>>(&override_variant))
+        {
+            r |= build_imgui(ctx, label, val->raw());
+        }
+    }
+    else
+    {
+        ImGui::BeginDisabled(true);
+        T temp_value = base_value;
+        build_imgui(ctx, label, temp_value);
+        ImGui::EndDisabled();
+    }
+
+    if (is_overridden)
+    {
+        ImGui::PopStyleColor();
+    }
+
+    return r;
+}
+
+inline bool inspect_material_overrides(imgui_ui_context & ctx, base_material * material, uniform_override_t & overrides)
+{
+    bool r = false;
+
+    polymer_pbr_standard * pbr = dynamic_cast<polymer_pbr_standard *>(material);
+    if (pbr)
+    {
+        ImGui::TextColored(ImVec4(0.4f, 0.8f, 0.4f, 1.0f), ICON_FA_PENCIL " OVERRIDE MODE");
+        ImGui::SameLine();
+        ImGui::TextDisabled("(editing instance, not base material)");
+        ImGui::Dummy({0, 8});
+
+        if (ImGui::Button(" " ICON_FA_UNDO " Clear All Overrides "))
+        {
+            overrides.table.clear();
+            r = true;
+        }
+        ImGui::Dummy({0, 8});
+        ImGui::Separator();
+        ImGui::Dummy({0, 8});
+
+        for (auto & [uniform_name, base_variant] : pbr->uniform_table)
+        {
+            ImGui::PushID(uniform_name.c_str());
+
+            r |= build_override_checkbox(uniform_name.c_str(), overrides, uniform_name, base_variant);
+            ImGui::SameLine();
+
+            if (auto * val = nonstd::get_if<polymer::property<int>>(&base_variant))
+            {
+                r |= build_override_field<int>(ctx, uniform_name.c_str(), overrides, uniform_name, val->raw());
+            }
+            else if (auto * val = nonstd::get_if<polymer::property<float>>(&base_variant))
+            {
+                r |= build_override_field<float>(ctx, uniform_name.c_str(), overrides, uniform_name, val->raw());
+            }
+            else if (auto * val = nonstd::get_if<polymer::property<float2>>(&base_variant))
+            {
+                r |= build_override_field<float2>(ctx, uniform_name.c_str(), overrides, uniform_name, val->raw());
+            }
+            else if (auto * val = nonstd::get_if<polymer::property<float3>>(&base_variant))
+            {
+                r |= build_override_field<float3>(ctx, uniform_name.c_str(), overrides, uniform_name, val->raw());
+            }
+            else if (auto * val = nonstd::get_if<polymer::property<float4>>(&base_variant))
+            {
+                r |= build_override_field<float4>(ctx, uniform_name.c_str(), overrides, uniform_name, val->raw());
+            }
+
+            ImGui::PopID();
+        }
+
+        ImGui::Dummy({0, 8});
+        ImGui::Separator();
+        ImGui::Dummy({0, 8});
+        ImGui::Text("Texture Handles (shared with base):");
+        ImGui::Dummy({0, 4});
+
+        ImGui::BeginDisabled(true);
+        build_imgui(ctx, "albedo_handle", pbr->albedo);
+        build_imgui(ctx, "normal_handle", pbr->normal);
+        build_imgui(ctx, "metallic_handle", pbr->metallic);
+        build_imgui(ctx, "roughness_handle", pbr->roughness);
+        build_imgui(ctx, "emissive_handle", pbr->emissive);
+        build_imgui(ctx, "height_handle", pbr->height);
+        build_imgui(ctx, "occlusion_handle", pbr->occlusion);
+        ImGui::EndDisabled();
+    }
+    else
+    {
+        ImGui::TextColored(ImVec4(0.8f, 0.6f, 0.2f, 1.0f), "Override mode only supported for PBR materials");
+        ImGui::Dummy({0, 8});
+        r |= inspect_material(ctx, material);
+    }
+
+    return r;
+}
+
 // Additional imgui Utilities used in Polymer's scene editor only
 
 namespace ImGui

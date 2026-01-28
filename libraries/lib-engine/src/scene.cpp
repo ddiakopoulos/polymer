@@ -25,16 +25,126 @@ void scene::import_environment(const std::string & import_path)
     const std::string json_txt = read_file_text(import_path);
     const json env_doc = json::parse(json_txt);
 
+    // Track parent-child relationships to establish after all entities created
+    struct parent_child_link
+    {
+        entity child_entity;
+        entity parent_entity;
+    };
+    std::vector<parent_child_link> parent_child_links;
+
     for (auto entityIterator = env_doc.begin(); entityIterator != env_doc.end(); ++entityIterator)
     {
-        const entity parsed_entity = entityIterator.key().c_str();
+        const std::string entity_key = entityIterator.key();
+        const json & entity_json = entityIterator.value();
+
+        // Create entity with the parsed key as entity ID (must be valid GUID format)
+        entity parsed_entity = entity(entity_key);
+        base_object obj(parsed_entity);
+
+        // Parse identifier_component for name
+        if (entity_json.contains("@identifier_component"))
+        {
+            const json & id_json = entity_json["@identifier_component"];
+            if (id_json.contains("id")) obj.name = id_json["id"].get<std::string>();
+        }
+
+        // Parse local_transform_component
+        if (entity_json.contains("@local_transform_component"))
+        {
+            const json & xform_json = entity_json["@local_transform_component"];
+
+            transform_component xform_c;
+
+            if (xform_json.contains("local_pose")) xform_c.local_pose = xform_json["local_pose"].get<transform>();
+            if (xform_json.contains("local_scale")) xform_c.local_scale = xform_json["local_scale"].get<float3>();
+
+            obj.add_component(xform_c);
+
+            // Track parent relationship for later (parent should be GUID string or empty)
+            if (xform_json.contains("parent"))
+            {
+                const json & parent_val = xform_json["parent"];
+                entity parent_ent = kInvalidEntity;
+
+                if (parent_val.is_string())
+                {
+                    std::string parent_str = parent_val.get<std::string>();
+                    if (!parent_str.empty()) parent_ent = entity(parent_str);
+                }
+
+                if (parent_ent != kInvalidEntity) parent_child_links.push_back({parsed_entity, parent_ent});
+            }
+        }
+
+        // Parse mesh_component
+        if (entity_json.contains("@mesh_component"))
+        {
+            mesh_component mesh_c = entity_json["@mesh_component"].get<mesh_component>();
+            obj.add_component(mesh_c);
+        }
+
+        // Parse material_component
+        if (entity_json.contains("@material_component"))
+        {
+            material_component mat_c = entity_json["@material_component"].get<material_component>();
+            obj.add_component(mat_c);
+        }
+
+        // Parse geometry_component
+        if (entity_json.contains("@geometry_component"))
+        {
+            geometry_component geom_c = entity_json["@geometry_component"].get<geometry_component>();
+            obj.add_component(geom_c);
+        }
+
+        // Parse directional_light_component
+        if (entity_json.contains("@directional_light_component"))
+        {
+            directional_light_component light_c = entity_json["@directional_light_component"].get<directional_light_component>();
+            obj.add_component(light_c);
+        }
+
+        // Parse point_light_component
+        if (entity_json.contains("@point_light_component"))
+        {
+            point_light_component light_c = entity_json["@point_light_component"].get<point_light_component>();
+            obj.add_component(light_c);
+        }
+
+        // Parse procedural_skybox_component
+        if (entity_json.contains("@procedural_skybox_component"))
+        {
+            procedural_skybox_component skybox_c = entity_json["@procedural_skybox_component"].get<procedural_skybox_component>();
+            obj.add_component(skybox_c);
+        }
+
+        // Parse cubemap_component (ibl_component)
+        if (entity_json.contains("@cubemap_component"))
+        {
+            ibl_component ibl_c = entity_json["@cubemap_component"].get<ibl_component>();
+            obj.add_component(ibl_c);
+        }
+
+        instantiate(std::move(obj));
     }
+
+    // Establish parent-child relationships
+    for (const auto & link : parent_child_links)
+    {
+        if (graph.graph_objects.find(link.parent_entity) != graph.graph_objects.end())
+        {
+            graph.add_child(link.parent_entity, link.child_entity);
+        }
+    }
+
+    graph.refresh();
 
     t.stop();
     log::get()->engine_log->info("importing {} took {}ms", import_path, t.get());
 }
 
-void scene::export_environment(const std::string & export_path) 
+void scene::export_environment(const std::string & export_path)
 {
     manual_timer t;
     t.start();
@@ -43,7 +153,7 @@ void scene::export_environment(const std::string & export_path)
 
     // for (const auto & e : entity_list())
     // {
-    //     json entity; 
+    //     json entity;
     //     scene[e] = entity;
     // }
 

@@ -98,7 +98,18 @@ namespace polymer
     inline void from_json(const json & archive, transform & p) { p.position = archive.at("position").get<float3>(); p.orientation = archive.at("orientation").get<quatf>(); }
 
     inline void to_json(json & archive, const entity & m) { archive = m.as_string(); }
-    inline void from_json(const json & archive, entity & m) { m = entity(archive.get<std::string>()); }
+    inline void from_json(const json & archive, entity & m)
+    {
+        if (archive.is_string())
+        {
+            std::string str_val = archive.get<std::string>();
+            m = str_val.empty() ? kInvalidEntity : entity(str_val);
+        }
+        else
+        {
+            m = kInvalidEntity;
+        }
+    }
 }
 
 namespace polymer
@@ -288,6 +299,21 @@ namespace polymer
         f("is_static", o.is_static);
     }
 
+    inline void to_json(json & j, const geometry_component & p)
+    {
+        visit_fields(const_cast<geometry_component &>(p), [&j](const char * name, auto & field, auto... metadata) { j.push_back({name, field}); });
+    }
+
+    inline void from_json(const json & archive, geometry_component & m)
+    {
+        visit_fields(m, [&archive](const char * name, auto & field, auto... metadata) {
+            if (archive.contains(name))
+            {
+                field = archive.at(name).get<std::remove_reference_t<decltype(field)>>();
+            }
+        });
+    };
+
     ////////////////////////////
     //   material_component   //
     ////////////////////////////
@@ -318,19 +344,35 @@ namespace polymer
 
     inline void from_json(const json & archive, uniform_override_t & m) {
 
+        if (archive.is_null()) return;
+
         for (auto iter = archive.begin(); iter != archive.end(); ++iter)
         {
-            try 
-            { 
-                m.table[iter.key().c_str()] = polymer::property<int>(iter.value().get<int>());
-                m.table[iter.key().c_str()] = polymer::property<float>(iter.value().get<float>());
-                m.table[iter.key().c_str()] = polymer::property<float2>(iter.value().get<float2>());
-                m.table[iter.key().c_str()] = polymer::property<float3>(iter.value().get<float3>());
-                m.table[iter.key().c_str()] = polymer::property<float4>(iter.value().get<float4>());
+            const std::string key = iter.key();
+            const json & val = iter.value();
+
+            if (val.is_number_integer())
+            {
+                m.table[key] = polymer::property<int>(val.get<int>());
             }
-            catch (const std::exception & e) 
-            { 
-                log::get()->import_log->info("{} uniform_override", e.what()); 
+            else if (val.is_number_float())
+            {
+                m.table[key] = polymer::property<float>(val.get<float>());
+            }
+            else if (val.is_object())
+            {
+                if (val.contains("w"))
+                {
+                    m.table[key] = polymer::property<float4>(val.get<float4>());
+                }
+                else if (val.contains("z"))
+                {
+                    m.table[key] = polymer::property<float3>(val.get<float3>());
+                }
+                else if (val.contains("y"))
+                {
+                    m.table[key] = polymer::property<float2>(val.get<float2>());
+                }
             }
         }
     };
