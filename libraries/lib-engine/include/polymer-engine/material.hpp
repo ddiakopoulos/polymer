@@ -265,6 +265,87 @@ namespace polymer
         });
     }
 
+    ////////////////////////////
+    //   polymer_pbr_bubble   //
+    ////////////////////////////
+
+    class polymer_pbr_bubble final : public base_material
+    {
+        int bindpoint = 0;
+
+    public:
+
+        polymer_pbr_bubble();
+
+        virtual void update_uniforms(material_component * comp = nullptr) override final;
+        virtual void use() override final;
+        virtual void resolve_variants() override final;
+        virtual uint32_t id() override final;
+
+        void update_uniforms_ibl(GLuint irradiance, GLuint radiance, GLuint dfg_lut);
+        void update_uniforms_refraction(GLuint scene_color, GLuint scene_depth, float2 resolution);
+
+        std::unordered_map<std::string, uniform_variant_t> uniform_table
+        {
+            {"u_ior",                polymer::property<float>(1.15f) },
+            {"u_roughness",          polymer::property<float>(0.50f) },
+            {"u_transmission",       polymer::property<float>(0.25f) },
+            {"u_refractionScale",    polymer::property<float>(0.00f) },
+            {"u_tintColor",          polymer::property<float3>({0.95f, 0.98f, 1.0f}) },
+            {"u_absorptionDistance", polymer::property<float>(0.25f) },
+            {"u_normalStrength",     polymer::property<float>(1.0f) },
+            {"u_filmThicknessNm",    polymer::property<float>(400.0f) },
+            {"u_filmIor",            polymer::property<float>(1.30f) },
+            {"u_iridescenceStrength", polymer::property<float>(1.0f) },
+            {"u_iridescenceNoiseScale", polymer::property<float>(4.0f) },
+            {"u_iridescenceNoiseSpeed", polymer::property<float>(0.5f) },
+            {"u_texCoordScale",      polymer::property<float2>({1.f, 1.f}) }
+        };
+
+        texture_handle normal;
+        texture_handle thickness;
+    };
+
+    POLYMER_SETUP_TYPEID(polymer_pbr_bubble);
+
+    template<class F> void visit_fields(polymer_pbr_bubble & o, F f)
+    {
+        f("opacity", o.opacity.raw(), range_metadata<float>{ 0.f, 1.f });
+        f("double_sided", o.double_sided.raw());
+        f("depth_write", o.depth_write.raw());
+        f("depth_read", o.depth_read.raw());
+        f("cast_shadows", o.cast_shadows.raw());
+        f("blend_factor", o.blend_mode.raw());
+
+        for (auto & uniform : o.uniform_table)
+        {
+            if (auto * val = nonstd::get_if<polymer::property<int>>(&uniform.second))    f(uniform.first.c_str(), (*val).raw());
+            if (auto * val = nonstd::get_if<polymer::property<float>>(&uniform.second))  f(uniform.first.c_str(), (*val).raw());
+            if (auto * val = nonstd::get_if<polymer::property<float2>>(&uniform.second)) f(uniform.first.c_str(), (*val).raw());
+            if (auto * val = nonstd::get_if<polymer::property<float3>>(&uniform.second)) f(uniform.first.c_str(), (*val).raw());
+            if (auto * val = nonstd::get_if<polymer::property<float4>>(&uniform.second)) f(uniform.first.c_str(), (*val).raw());
+        }
+
+        f("normal_handle", o.normal);
+        f("thickness_handle", o.thickness);
+        f("program_handle", o.shader, editor_hidden{});
+
+        o.resolve_variants();
+    }
+
+    inline void to_json(json & j, const polymer_pbr_bubble & p) {
+        visit_fields(const_cast<polymer_pbr_bubble&>(p), [&j](const char * name, auto & field, auto... metadata) {
+            j[name] = field;
+        });
+    }
+
+    inline void from_json(const json & archive, polymer_pbr_bubble & m) {
+        visit_fields(m, [&archive](const char * name, auto & field, auto... metadata) {
+            try { field = archive.at(name).get<std::remove_reference_t<decltype(field)>>(); }
+            catch (const std::exception & e) { log::get()->import_log->info("{} not found in json", e.what()); }
+        });
+    }
+
     template<class F> void visit_subclasses(base_material * p, F f)
     {
         f("polymer_default_material",       dynamic_cast<polymer_default_material *>(p));
@@ -272,6 +353,7 @@ namespace polymer
         f("polymer_blinn_phong_standard",   dynamic_cast<polymer_blinn_phong_standard *>(p));
         f("polymer_wireframe_material",     dynamic_cast<polymer_wireframe_material *>(p));
         f("polymer_procedural_material",    dynamic_cast<polymer_procedural_material *>(p));
+        f("polymer_pbr_bubble",             dynamic_cast<polymer_pbr_bubble *>(p));
     }
 
 }

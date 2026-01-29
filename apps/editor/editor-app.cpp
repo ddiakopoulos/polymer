@@ -37,6 +37,10 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Scene Ed
 
     the_scene.reset({ width, height }, true);
 
+    // Load all materials from the assets directory at startup
+    the_scene.resolver->add_search_path(asset_base);
+    the_scene.resolver->resolve();
+
     polymer::global_debug_mesh_manager::get()->initialize_resources(&the_scene);
 
     gizmo.reset(new gizmo_controller(&the_scene));

@@ -169,9 +169,15 @@ namespace polymer
                         {
                             if (asset_resolve_cache(name, typeid(gl_texture_2d).name()))
                             {
-                                create_handle_for_asset(name.c_str(), load_image(path, false));
+                                if (is_srgb_texture(path))
+                                {
+                                    create_handle_for_asset(name.c_str(), load_image_srgb(path, false));
+                                }
+                                else
+                                {
+                                    create_handle_for_asset(name.c_str(), load_image(path, false));
+                                }
                             }
- 
                         }
                     }
                 }

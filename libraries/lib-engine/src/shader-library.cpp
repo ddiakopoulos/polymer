@@ -83,26 +83,40 @@ void gl_shader_monitor::watch(const std::string & name, const std::string & vert
 
 void gl_shader_monitor::walk_asset_dir()
 {
+    std::error_code ec;
+
     for (auto & sp : search_paths)
     {
         const path root = sp;
 
-        for (auto & entry : recursive_directory_iterator(root))
+        recursive_directory_iterator dir_iter(root, directory_options::skip_permission_denied, ec);
+        if (ec) continue;
+
+        for (auto it = begin(dir_iter); it != end(dir_iter); it.increment(ec))
         {
-            const size_t root_len = root.string().length(), ext_len = entry.path().extension().string().length();
-            auto path = entry.path().string(), name = path.substr(root_len + 1, path.size() - root_len - ext_len - 1);
+            if (ec)
+            {
+                ec.clear();
+                continue;
+            }
+
+            std::string entry_path_str;
+            std::string scanned_file;
+            try
+            {
+                entry_path_str = it->path().string();
+                scanned_file = get_filename_with_extension(entry_path_str);
+            }
+            catch (const std::exception &) { continue; }
 
             for (auto & asset : assets)
             {
-                // Compare file names + extension instead of paths directly
-                const auto scanned_file = get_filename_with_extension(path);
-
                 // Regular shader assets
                 if (scanned_file == get_filename_with_extension(asset.second->vertexPath) ||
                     scanned_file == get_filename_with_extension(asset.second->fragmentPath) ||
                     scanned_file == get_filename_with_extension(asset.second->geomPath))
                 {
-                    auto writeTime = duration_cast<seconds>(write_time(path).time_since_epoch()).count();
+                    auto writeTime = duration_cast<seconds>(write_time(entry_path_str).time_since_epoch()).count();
 
                     if (writeTime > asset.second->writeTime)
                     {
@@ -116,9 +130,9 @@ void gl_shader_monitor::walk_asset_dir()
                 // so we should be able to recompile shaders dependent on common includes
                 for (const std::string & includePath : asset.second->includes)
                 {
-                    if (get_filename_with_extension(path) == get_filename_with_extension(includePath))
+                    if (scanned_file == get_filename_with_extension(includePath))
                     {
-                        auto writeTime = duration_cast<seconds>(write_time(path).time_since_epoch()).count();
+                        auto writeTime = duration_cast<seconds>(write_time(entry_path_str).time_since_epoch()).count();
                         if (writeTime > asset.second->writeTime)
                         {
                             asset.second->writeTime = writeTime;

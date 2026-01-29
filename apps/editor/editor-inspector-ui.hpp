@@ -465,6 +465,64 @@ inline bool inspect_material_overrides(imgui_ui_context & ctx, base_material * m
         build_imgui(ctx, "occlusion_handle", pbr->occlusion);
         ImGui::EndDisabled();
     }
+    else if (polymer_pbr_bubble * bubble = dynamic_cast<polymer_pbr_bubble *>(material))
+    {
+        ImGui::TextColored(ImVec4(0.4f, 0.8f, 0.4f, 1.0f), ICON_FA_PENCIL " OVERRIDE MODE");
+        ImGui::SameLine();
+        ImGui::TextDisabled("(editing instance, not base material)");
+        ImGui::Dummy({0, 8});
+
+        if (ImGui::Button(" " ICON_FA_UNDO " Clear All Overrides "))
+        {
+            overrides.table.clear();
+            r = true;
+        }
+        ImGui::Dummy({0, 8});
+        ImGui::Separator();
+        ImGui::Dummy({0, 8});
+
+        for (auto & [uniform_name, base_variant] : bubble->uniform_table)
+        {
+            ImGui::PushID(uniform_name.c_str());
+
+            r |= build_override_checkbox(uniform_name.c_str(), overrides, uniform_name, base_variant);
+            ImGui::SameLine();
+
+            if (auto * val = nonstd::get_if<polymer::property<int>>(&base_variant))
+            {
+                r |= build_override_field<int>(ctx, uniform_name.c_str(), overrides, uniform_name, val->raw());
+            }
+            else if (auto * val = nonstd::get_if<polymer::property<float>>(&base_variant))
+            {
+                r |= build_override_field<float>(ctx, uniform_name.c_str(), overrides, uniform_name, val->raw());
+            }
+            else if (auto * val = nonstd::get_if<polymer::property<float2>>(&base_variant))
+            {
+                r |= build_override_field<float2>(ctx, uniform_name.c_str(), overrides, uniform_name, val->raw());
+            }
+            else if (auto * val = nonstd::get_if<polymer::property<float3>>(&base_variant))
+            {
+                r |= build_override_field<float3>(ctx, uniform_name.c_str(), overrides, uniform_name, val->raw());
+            }
+            else if (auto * val = nonstd::get_if<polymer::property<float4>>(&base_variant))
+            {
+                r |= build_override_field<float4>(ctx, uniform_name.c_str(), overrides, uniform_name, val->raw());
+            }
+
+            ImGui::PopID();
+        }
+
+        ImGui::Dummy({0, 8});
+        ImGui::Separator();
+        ImGui::Dummy({0, 8});
+        ImGui::Text("Texture Handles (shared with base):");
+        ImGui::Dummy({0, 4});
+
+        ImGui::BeginDisabled(true);
+        build_imgui(ctx, "normal_handle", bubble->normal);
+        build_imgui(ctx, "thickness_handle", bubble->thickness);
+        ImGui::EndDisabled();
+    }
     else
     {
         ImGui::TextColored(ImVec4(0.8f, 0.6f, 0.2f, 1.0f), "Override mode only supported for PBR materials");

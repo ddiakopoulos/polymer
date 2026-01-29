@@ -62,6 +62,16 @@ namespace polymer
         return std::move(result);
     }
 
+    inline bool is_srgb_texture(const std::string & filename)
+    {
+        std::string lower_name = filename;
+        std::transform(lower_name.begin(), lower_name.end(), lower_name.begin(), ::tolower);
+        return lower_name.find("basecolor") != std::string::npos ||
+               lower_name.find("albedo") != std::string::npos ||
+               lower_name.find("diffuse") != std::string::npos ||
+               lower_name.find("emissive") != std::string::npos;
+    }
+
     inline gl_texture_2d load_image(const std::string & path, bool flip = false)
     {
         auto binaryFile = polymer::read_file_binary(path);
@@ -79,6 +89,33 @@ namespace polymer
         case 2: tex.setup(width, height, GL_RED, GL_RED, GL_UNSIGNED_SHORT, data, true); break;
         case 3: tex.setup(width, height, GL_RGB, GL_RGB, GL_UNSIGNED_BYTE, data, true); break;
         case 4: tex.setup(width, height, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE, data, true); break;
+        default: throw std::runtime_error("unsupported number of channels");
+        }
+
+        glTextureParameteri(tex, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTextureParameteri(tex, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+
+        stbi_image_free(data);
+        return tex;
+    }
+
+    inline gl_texture_2d load_image_srgb(const std::string & path, bool flip = false)
+    {
+        auto binaryFile = polymer::read_file_binary(path);
+
+        if (flip) stbi_set_flip_vertically_on_load(1);
+        else stbi_set_flip_vertically_on_load(0);
+
+        int width, height, nBytes;
+        auto data = stbi_load_from_memory(binaryFile.data(), (int)binaryFile.size(), &width, &height, &nBytes, 0);
+
+        gl_texture_2d tex;
+        switch (nBytes)
+        {
+        case 1: tex.setup(width, height, GL_RED, GL_RED, GL_UNSIGNED_BYTE, data, true); break;
+        case 2: tex.setup(width, height, GL_RED, GL_RED, GL_UNSIGNED_SHORT, data, true); break;
+        case 3: tex.setup(width, height, GL_SRGB8, GL_RGB, GL_UNSIGNED_BYTE, data, true); break;
+        case 4: tex.setup(width, height, GL_SRGB8_ALPHA8, GL_RGBA, GL_UNSIGNED_BYTE, data, true); break;
         default: throw std::runtime_error("unsupported number of channels");
         }
 

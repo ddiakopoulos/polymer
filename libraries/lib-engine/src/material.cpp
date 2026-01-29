@@ -305,3 +305,108 @@ void polymer_pbr_standard::use()
     resolve_variants();
     compiled_shader->shader.bind();
 }
+
+////////////////////////////////////////
+//   PBR Bubble (Thin-Wall) Material  //
+////////////////////////////////////////
+
+polymer_pbr_bubble::polymer_pbr_bubble()
+{
+    shader = shader_handle("bubble-forward-lighting");
+    depth_write = false;
+    cast_shadows = false;
+}
+
+void polymer_pbr_bubble::resolve_variants()
+{
+    std::vector<std::string> processed_defines;
+
+    processed_defines.push_back("USE_IMAGE_BASED_LIGHTING");
+    processed_defines.push_back("USE_SCREEN_SPACE_REFRACTION");
+
+    if (normal.assigned()) processed_defines.push_back("HAS_NORMAL_MAP");
+    if (thickness.assigned()) processed_defines.push_back("HAS_THICKNESS_MAP");
+
+    const auto variant_hash = shader.get()->hash(processed_defines);
+
+    if (!compiled_shader)
+    {
+        compiled_shader = shader.get()->get_variant(processed_defines);
+    }
+    else if (compiled_shader->hash != variant_hash)
+    {
+        compiled_shader = shader.get()->get_variant(processed_defines);
+    }
+}
+
+uint32_t polymer_pbr_bubble::id()
+{
+    resolve_variants();
+    return compiled_shader->shader.handle();
+}
+
+void polymer_pbr_bubble::update_uniforms(material_component * comp)
+{
+    resolve_variants();
+    gl_shader & program = compiled_shader->shader;
+    program.bind();
+
+    program.uniform("u_opacity", opacity);
+
+    for (auto & uniform : uniform_table)
+    {
+        if (auto * val = nonstd::get_if<polymer::property<int>>(&uniform.second))    program.uniform(uniform.first, *val);
+        if (auto * val = nonstd::get_if<polymer::property<float>>(&uniform.second))  program.uniform(uniform.first, *val);
+        if (auto * val = nonstd::get_if<polymer::property<float2>>(&uniform.second)) program.uniform(uniform.first, *val);
+        if (auto * val = nonstd::get_if<polymer::property<float3>>(&uniform.second)) program.uniform(uniform.first, *val);
+        if (auto * val = nonstd::get_if<polymer::property<float4>>(&uniform.second)) program.uniform(uniform.first, *val);
+    }
+
+    for (auto & uniform_override : comp->override_table.table)
+    {
+        if (auto * val = nonstd::get_if<polymer::property<int>>(&uniform_override.second))    program.uniform(uniform_override.first, *val);
+        if (auto * val = nonstd::get_if<polymer::property<float>>(&uniform_override.second))  program.uniform(uniform_override.first, *val);
+        if (auto * val = nonstd::get_if<polymer::property<float2>>(&uniform_override.second)) program.uniform(uniform_override.first, *val);
+        if (auto * val = nonstd::get_if<polymer::property<float3>>(&uniform_override.second)) program.uniform(uniform_override.first, *val);
+        if (auto * val = nonstd::get_if<polymer::property<float4>>(&uniform_override.second)) program.uniform(uniform_override.first, *val);
+    }
+
+    bindpoint = 0;
+
+    if (compiled_shader->enabled("HAS_NORMAL_MAP"))    program.texture("s_normal",    bindpoint++, normal.get(),    GL_TEXTURE_2D);
+    if (compiled_shader->enabled("HAS_THICKNESS_MAP")) program.texture("s_thickness", bindpoint++, thickness.get(), GL_TEXTURE_2D);
+
+    program.unbind();
+}
+
+void polymer_pbr_bubble::update_uniforms_ibl(GLuint irradiance, GLuint radiance, GLuint dfg_lut)
+{
+    resolve_variants();
+    gl_shader & program = compiled_shader->shader;
+    if (!compiled_shader->enabled("USE_IMAGE_BASED_LIGHTING")) throw std::runtime_error("should not be called unless USE_IMAGE_BASED_LIGHTING is defined.");
+
+    program.bind();
+    program.texture("sc_irradiance", bindpoint++, irradiance, GL_TEXTURE_CUBE_MAP);
+    program.texture("sc_radiance", bindpoint++, radiance, GL_TEXTURE_CUBE_MAP);
+    program.texture("s_dfg_lut", bindpoint++, dfg_lut, GL_TEXTURE_2D);
+    program.unbind();
+}
+
+void polymer_pbr_bubble::update_uniforms_refraction(GLuint scene_color, GLuint scene_depth, float2 resolution)
+{
+    resolve_variants();
+    gl_shader & program = compiled_shader->shader;
+    if (!compiled_shader->enabled("USE_SCREEN_SPACE_REFRACTION")) throw std::runtime_error("should not be called unless USE_SCREEN_SPACE_REFRACTION is defined.");
+
+    program.bind();
+    program.texture("s_sceneColor", bindpoint++, scene_color, GL_TEXTURE_2D);
+    program.texture("s_sceneDepth", bindpoint++, scene_depth, GL_TEXTURE_2D);
+    program.uniform("u_screenResolution", resolution);
+    program.unbind();
+}
+
+void polymer_pbr_bubble::use()
+{
+    resolve_variants();
+    compiled_shader->shader.bind();
+}

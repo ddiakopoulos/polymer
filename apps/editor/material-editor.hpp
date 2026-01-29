@@ -294,7 +294,11 @@ struct material_editor_window final : public glfw_window
                             auto new_material = std::make_shared<polymer_wireframe_material>();
                             the_scene.mat_library->register_material(stringBuffer, new_material);
                         }
-                        // todo - fx material
+                        else if (selectedType == "polymer_pbr_bubble")
+                        {
+                            auto new_material = std::make_shared<polymer_pbr_bubble>();
+                            the_scene.mat_library->register_material(stringBuffer, new_material);
+                        }
                     }
 
                     stringBuffer.clear();

@@ -326,23 +326,33 @@ void pbr_renderer::run_forward_pass(std::vector<const render_component *> & rend
         glDepthMask(GL_FALSE); // depth already comes from the prepass
     }
 
+    // Separate opaque and translucent materials for proper rendering order
+    std::vector<const render_component *> opaque_queue;
+    std::vector<const render_component *> translucent_queue;
+
     for (const render_component * render_comp : render_queue)
+    {
+        base_material * the_material = render_comp->material->material.get().get();
+        if (dynamic_cast<polymer_pbr_bubble*>(the_material))
+        {
+            translucent_queue.push_back(render_comp);
+        }
+        else
+        {
+            opaque_queue.push_back(render_comp);
+        }
+    }
+
+    // Render opaque objects first
+    for (const render_component * render_comp : opaque_queue)
     {
         update_per_object_uniform_buffer(
             render_comp->world_matrix,
-            render_comp->material->receive_shadow, 
+            render_comp->material->receive_shadow,
             view);
 
         base_material * the_material = render_comp->material->material.get().get();
 
-        // Debugging -
-        // if (view.index == 0)
-        // {
-        //     std::cout << ">> material:  " << render_comp->get_entity() << " : " << render_comp->material->material.name << std::endl;
-        //     std::cout << "\t >> shader: " << the_material->shader.name << std::endl;
-        // }
-
-        // @todo - handle other specific material requirements here
         if (auto * mr = dynamic_cast<polymer_pbr_standard*>(the_material))
         {
             if (settings.shadowsEnabled) mr->update_uniforms_shadow(shadow->get_output_texture());
@@ -362,6 +372,58 @@ void pbr_renderer::run_forward_pass(std::vector<const render_component *> & rend
         the_material->update_uniforms(render_comp->material);
         the_material->use();
         render_comp->mesh->draw();
+    }
+
+    // Render translucent materials (bubble) after opaques
+    if (!translucent_queue.empty())
+    {
+        // Resolve multisample to eye texture so translucent materials can sample scene color
+        glDisable(GL_MULTISAMPLE);
+        glBlitNamedFramebuffer(multisampleFramebuffer, eyeFramebuffers[view.index],
+            0, 0, settings.renderSize.x, settings.renderSize.y, 0, 0,
+            settings.renderSize.x, settings.renderSize.y, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+        glBlitNamedFramebuffer(multisampleFramebuffer, eyeFramebuffers[view.index],
+            0, 0, settings.renderSize.x, settings.renderSize.y, 0, 0,
+            settings.renderSize.x, settings.renderSize.y, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+
+        // Continue rendering translucents to the multisample buffer
+        glEnable(GL_MULTISAMPLE);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, multisampleFramebuffer);
+
+        // Enable blending for translucent materials
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glDepthMask(GL_FALSE);
+
+        for (const render_component * render_comp : translucent_queue)
+        {
+            update_per_object_uniform_buffer(
+                render_comp->world_matrix,
+                render_comp->material->receive_shadow,
+                view);
+
+            base_material * the_material = render_comp->material->material.get().get();
+
+            if (auto * mr = dynamic_cast<polymer_pbr_bubble*>(the_material))
+            {
+                if (scene.ibl_cubemap)
+                {
+                    mr->update_uniforms_ibl(scene.ibl_cubemap->ibl_irradianceCubemap.get(),
+                        scene.ibl_cubemap->ibl_radianceCubemap.get(),
+                        dfg_lut.id());
+                }
+                mr->update_uniforms_refraction(eyeTextures[view.index].id(),
+                    eyeDepthTextures[view.index].id(),
+                    float2(settings.renderSize));
+            }
+
+            the_material->update_uniforms(render_comp->material);
+            the_material->use();
+            render_comp->mesh->draw();
+        }
+
+        glDisable(GL_BLEND);
+        glDepthMask(GL_TRUE);
     }
 
     if (settings.useDepthPrepass)

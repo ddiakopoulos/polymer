@@ -133,10 +133,16 @@ namespace polymer
                 base_path + "/shaders/renderer/phong_material_frag.glsl",
                 base_path + "/shaders/renderer");
 
-            // [renderer-pbr] standard gLTF 2.0-style PBR forward model 
+            // [renderer-pbr] standard gLTF 2.0-style PBR forward model
             monitor.watch("pbr-forward-lighting",
                 base_path + "/shaders/renderer/renderer_vert.glsl",
                 base_path + "/shaders/renderer/pbr_material_frag.glsl",
+                base_path + "/shaders/renderer");
+
+            // [renderer-pbr] thin-walled bubble material with iridescence
+            monitor.watch("bubble-forward-lighting",
+                base_path + "/shaders/renderer/renderer_vert.glsl",
+                base_path + "/shaders/renderer/bubble_material_frag.glsl",
                 base_path + "/shaders/renderer");
 
             // [renderer-pbr] post-process tonemapping
