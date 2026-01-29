@@ -149,15 +149,87 @@ void scene::export_environment(const std::string & export_path)
     manual_timer t;
     t.start();
 
-    json scene;
+    json scene_json;
 
-    // for (const auto & e : entity_list())
-    // {
-    //     json entity;
-    //     scene[e] = entity;
-    // }
+    for (const auto & [e, obj] : graph.graph_objects)
+    {
+        if (!obj.serializable) continue;
 
-    write_file_text(export_path, scene.dump(4));
+        json entity_json;
+
+        // Serialize identifier (name)
+        if (!obj.name.empty())
+        {
+            entity_json["@identifier_component"] = json{{"id", obj.name}};
+        }
+
+        // Serialize transform
+        if (auto * xform = const_cast<base_object &>(obj).get_component<transform_component>())
+        {
+            json xform_json;
+            xform_json["local_pose"] = xform->local_pose;
+            xform_json["local_scale"] = xform->local_scale;
+
+            // Get parent from scene graph
+            entity parent = graph.get_parent(e);
+            if (parent != kInvalidEntity)
+            {
+                xform_json["parent"] = parent.as_string();
+            }
+            else
+            {
+                xform_json["parent"] = "";
+            }
+
+            entity_json["@local_transform_component"] = xform_json;
+        }
+
+        // Serialize mesh_component
+        if (auto * mesh = const_cast<base_object &>(obj).get_component<mesh_component>())
+        {
+            entity_json["@mesh_component"] = *mesh;
+        }
+
+        // Serialize material_component
+        if (auto * mat = const_cast<base_object &>(obj).get_component<material_component>())
+        {
+            entity_json["@material_component"] = *mat;
+        }
+
+        // Serialize geometry_component
+        if (auto * geom = const_cast<base_object &>(obj).get_component<geometry_component>())
+        {
+            entity_json["@geometry_component"] = *geom;
+        }
+
+        // Serialize directional_light_component
+        if (auto * light = const_cast<base_object &>(obj).get_component<directional_light_component>())
+        {
+            entity_json["@directional_light_component"] = *light;
+        }
+
+        // Serialize point_light_component
+        if (auto * light = const_cast<base_object &>(obj).get_component<point_light_component>())
+        {
+            entity_json["@point_light_component"] = *light;
+        }
+
+        // Serialize procedural_skybox_component
+        if (auto * skybox = const_cast<base_object &>(obj).get_component<procedural_skybox_component>())
+        {
+            entity_json["@procedural_skybox_component"] = *skybox;
+        }
+
+        // Serialize ibl_component (cubemap)
+        if (auto * ibl = const_cast<base_object &>(obj).get_component<ibl_component>())
+        {
+            entity_json["@cubemap_component"] = *ibl;
+        }
+
+        scene_json[e.as_string()] = entity_json;
+    }
+
+    write_file_text(export_path, scene_json.dump(4));
 
     t.stop();
     log::get()->engine_log->info("exporting {} took {}ms", export_path, t.get());
