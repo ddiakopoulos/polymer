@@ -424,7 +424,7 @@ pbr_renderer::pbr_renderer(const renderer_settings settings) : settings(settings
     eyeDepthTextures.resize(settings.cameraCount);
 
     // Generate multisample render buffers for color and depth, attach to multi-sampled framebuffer target
-    glNamedRenderbufferStorageMultisample(multisampleRenderbuffers[0], settings.msaaSamples, GL_RGBA, settings.renderSize.x, settings.renderSize.y);
+    glNamedRenderbufferStorageMultisample(multisampleRenderbuffers[0], settings.msaaSamples, GL_RGBA16F, settings.renderSize.x, settings.renderSize.y);
     glNamedFramebufferRenderbuffer(multisampleFramebuffer, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, multisampleRenderbuffers[0]);
     glNamedRenderbufferStorageMultisample(multisampleRenderbuffers[1], settings.msaaSamples, GL_DEPTH24_STENCIL8, settings.renderSize.x, settings.renderSize.y);
     glNamedFramebufferRenderbuffer(multisampleFramebuffer, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, multisampleRenderbuffers[1]);
@@ -437,8 +437,8 @@ pbr_renderer::pbr_renderer(const renderer_settings settings) : settings(settings
         // Depth
         eyeDepthTextures[camIdx].setup(settings.renderSize.x, settings.renderSize.y, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
 
-        // Color
-        eyeTextures[camIdx].setup(settings.renderSize.x, settings.renderSize.y, GL_RGBA, GL_RGBA, GL_FLOAT, nullptr, false);
+        // Color (16-bit float for HDR precision, eliminates banding on smooth gradients)
+        eyeTextures[camIdx].setup(settings.renderSize.x, settings.renderSize.y, GL_RGBA16F, GL_RGBA, GL_FLOAT, nullptr, false);
         glTextureParameteri(eyeTextures[camIdx], GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTextureParameteri(eyeTextures[camIdx], GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTextureParameteri(eyeTextures[camIdx], GL_TEXTURE_MAX_LEVEL, 0);

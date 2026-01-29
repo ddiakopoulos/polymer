@@ -22,7 +22,7 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Scene Ed
     igm->add_font(read_file_binary(asset_base + "/fonts/droid_sans.ttf"));
 
     cam.look_at({ 0, 5.f, -5.f }, { 0, 3.5f, 0 });
-    cam.farclip = 256.f;
+    cam.farclip = 32.f;
     flycam.set_camera(&cam);
 
     load_required_renderer_assets(asset_base, shaderMonitor);
