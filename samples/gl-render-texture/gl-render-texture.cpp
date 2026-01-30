@@ -51,7 +51,7 @@ struct sample_gl_render_offscreen final : public polymer_app
     std::unique_ptr<simple_texture_view> view;
     gl_shader_monitor shader_mon{ "../../assets/" };
     shader_handle wireframe_handle{ "wireframe" };
-    gl_renderable_grid grid{ 0.5f, 24, 24 };
+    gl_renderable_grid grid;
 
     std::vector<sample_object> objects;
     sample_object * selected_object{ nullptr };
@@ -202,7 +202,7 @@ void sample_gl_render_offscreen::on_draw()
         }
         wireframe_prog.unbind();
 
-        grid.draw(viewProjectionMatrix);
+        grid.draw(viewMatrix, projectionMatrix, cam.get_eye_point());
     }
 
     // Render to default framebuffer (the screen)

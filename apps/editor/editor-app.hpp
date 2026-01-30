@@ -39,7 +39,7 @@ struct scene_editor_app final : public polymer_app
     camera_controller_fps flycam;
     profiler<simple_cpu_timer> editorProfiler;
     gl_shader_monitor shaderMonitor { "../assets/" };
-    gl_renderable_grid grid{ 1.f, 512, 512 };
+    gl_renderable_grid grid;
 
     imgui_ui_context im_ui_ctx;
     undo_manager undo_mgr;

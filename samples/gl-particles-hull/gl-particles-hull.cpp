@@ -65,7 +65,7 @@ struct sample_gl_particle_hull final : public polymer_app
     perspective_camera cam;
     camera_controller_fps flycam;
     app_update_event last_update;
-    gl_renderable_grid grid{ 0.5f, 16, 16 };
+    gl_renderable_grid grid;
 
     std::unique_ptr<gl_shader_monitor> shaderMonitor;
 
@@ -220,7 +220,7 @@ void sample_gl_particle_hull::on_draw()
     }
     glEnable(GL_DEPTH_TEST);
 
-    grid.draw(viewProjectionMatrix);
+    grid.draw(viewMatrix, projectionMatrix, cam.get_eye_point());
 
     // Draw the particle system
     shader_handle particle_shader_h("particle-shader");

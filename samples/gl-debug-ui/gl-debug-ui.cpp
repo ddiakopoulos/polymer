@@ -92,7 +92,7 @@ struct sample_gl_debug_ui final : public polymer_app
 {
     camera_controller_orbit cam;
 
-    gl_renderable_grid grid{ 0.5f, 24, 24 };
+    gl_renderable_grid grid;
     int which_cookie = 0;
 
     gl_mesh box_mesh;
@@ -274,7 +274,7 @@ void sample_gl_debug_ui::on_draw()
     }
 
     // Draw the floor grid
-    grid.draw(viewProjectionMatrix);
+    grid.draw(viewMatrix, projectionMatrix, cam.get_transform().position);
 
     imgui->begin_frame();
 

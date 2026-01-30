@@ -114,8 +114,8 @@ struct sample_gl_camera_trajectory final : public polymer_app
     perspective_camera debug_cam, follow_cam;
     camera_controller_fps fly_controller;
 
-    gl_renderable_grid grid_ctrl{ 2.f, 8, 8 };
-    gl_renderable_grid grid_world{ 1.f, 32, 32};
+    gl_renderable_grid grid_ctrl;
+    gl_renderable_grid grid_world;
     transport_frames frames;
 
     std::unique_ptr<gl_gizmo> gizmo;
@@ -239,7 +239,7 @@ void sample_gl_camera_trajectory::render_scene(const GLuint framebuffer, const p
     glEnable(GL_DEPTH_TEST);
 
     // Draw the floor
-    grid_world.draw(viewProjectionMatrix);
+    grid_world.draw(viewMatrix, projectionMatrix, cam.get_eye_point());
 }
 
 void sample_gl_camera_trajectory::on_draw()
@@ -273,7 +273,9 @@ void sample_gl_camera_trajectory::on_draw()
         }
     }
 
-    const float4x4 viewProjectionMatrix = debug_cam.get_projection_matrix(float(width) / float(height)) * debug_cam.get_view_matrix();
+    const float4x4 debugProjectionMatrix = debug_cam.get_projection_matrix(float(width) / float(height));
+    const float4x4 debugViewMatrix = debug_cam.get_view_matrix();
+    const float4x4 viewProjectionMatrix = debugProjectionMatrix * debugViewMatrix;
 
     basic_shader.bind();
     if (frames.get().size() > 0)
@@ -288,7 +290,7 @@ void sample_gl_camera_trajectory::on_draw()
     }
     basic_shader.unbind();
 
-    grid_ctrl.draw(viewProjectionMatrix);
+    grid_ctrl.draw(debugViewMatrix, debugProjectionMatrix, debug_cam.get_eye_point());
     gizmo->draw();
     view->draw({ { 10, 10 },{ 320, 180 } }, { static_cast<float>(width), static_cast<float>(height) }, renderTextureRGBA);
 

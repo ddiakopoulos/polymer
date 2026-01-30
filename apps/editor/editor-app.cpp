@@ -424,7 +424,7 @@ void scene_editor_app::on_draw()
 
         if (show_grid)
         {
-            grid.draw(viewProjectionMatrix, Identity4x4, float4(1, 1, 1, 0.25f));
+            grid.draw(viewMatrix, projectionMatrix, cam.get_eye_point(), grid_plane::xz, 0.25f);
         }
         gl_check_error(__FILE__, __LINE__);
     }
