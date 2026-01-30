@@ -48,12 +48,15 @@ namespace polymer
                     {
                         if (skybox->sun_directional_light == kInvalidEntity) return;
 
-                        base_object & sun_obj = the_scene->get_graph().get_object(skybox->sun_directional_light);
-                        if (auto * dir_light = sun_obj.get_component<directional_light_component>())
+                        // Use scene::get_object which safely returns nullptr for invalid entities
+                        if (base_object * sun_obj = the_scene->get_object(skybox->sun_directional_light))
                         {
-                            dir_light->data.direction = skybox->sky.get_sun_direction();
-                            dir_light->data.color = float3(1.f, 1.f, 1.f);
-                            dir_light->data.amount = 1.f;
+                            if (auto * dir_light = sun_obj->get_component<directional_light_component>())
+                            {
+                                dir_light->data.direction = skybox->sky.get_sun_direction();
+                                dir_light->data.color = float3(1.f, 1.f, 1.f);
+                                dir_light->data.amount = 1.f;
+                            }
                         }
                     };
 

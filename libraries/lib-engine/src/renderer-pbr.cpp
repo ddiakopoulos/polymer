@@ -353,6 +353,10 @@ void pbr_renderer::run_forward_pass(std::vector<const render_component *> & rend
 
         base_material * the_material = render_comp->material->material.get().get();
 
+        // update_uniforms must be called FIRST because it resets bindpoint to 0.
+        // Shadow and IBL textures are then appended to higher texture units.
+        the_material->update_uniforms(render_comp->material);
+
         if (auto * mr = dynamic_cast<polymer_pbr_standard*>(the_material))
         {
             if (settings.shadowsEnabled) mr->update_uniforms_shadow(shadow->get_output_texture());
@@ -369,7 +373,6 @@ void pbr_renderer::run_forward_pass(std::vector<const render_component *> & rend
             if (settings.shadowsEnabled) mr->update_uniforms_shadow(shadow->get_output_texture());
         }
 
-        the_material->update_uniforms(render_comp->material);
         the_material->use();
         render_comp->mesh->draw();
     }

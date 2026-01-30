@@ -1,232 +1,5 @@
 {
-    "10": {
-        "@identifier_component": {
-            "id": "dev-room"
-        },
-        "@local_transform_component": {
-            "children": [
-                6,
-                7,
-                8,
-                9
-            ],
-            "local_pose": {
-                "orientation": {
-                    "w": 1.0,
-                    "x": 0.0,
-                    "y": 0.0,
-                    "z": 0.0
-                },
-                "position": {
-                    "x": 0.0,
-                    "y": 0.0,
-                    "z": 0.0
-                }
-            },
-            "local_scale": {
-                "x": 1.0,
-                "y": 1.0,
-                "z": 1.0
-            },
-            "parent": 0
-        }
-    },
-    "11": {
-        "@identifier_component": {
-            "id": "magenta-pointlight"
-        },
-        "@local_transform_component": {
-            "children": [],
-            "local_pose": {
-                "orientation": {
-                    "w": 1.0,
-                    "x": 0.0,
-                    "y": 0.0,
-                    "z": 0.0
-                },
-                "position": {
-                    "x": 0.0,
-                    "y": 5.0,
-                    "z": 0.0
-                }
-            },
-            "local_scale": {
-                "x": 1.0,
-                "y": 1.0,
-                "z": 1.0
-            },
-            "parent": 0
-        },
-        "@point_light_component": {
-            "color": {
-                "x": 1.0,
-                "y": 0.75,
-                "z": 1.0
-            },
-            "enabled": true,
-            "position": {
-                "x": 0.0,
-                "y": 5.0,
-                "z": 0.0
-            },
-            "radius": 12.0
-        }
-    },
-    "12": {
-        "@identifier_component": {
-            "id": "procedural-skybox"
-        },
-        "@local_transform_component": {
-            "children": [],
-            "local_pose": {
-                "orientation": {
-                    "w": 1.0,
-                    "x": 0.0,
-                    "y": 0.0,
-                    "z": 0.0
-                },
-                "position": {
-                    "x": 0.0,
-                    "y": 0.0,
-                    "z": 0.0
-                }
-            },
-            "local_scale": {
-                "x": 0.0,
-                "y": 0.0,
-                "z": 0.0
-            },
-            "parent": 0
-        },
-        "@procedural_skybox_component": {
-            "procedural_skybox": {
-                "albedo": 0.10000000149011612,
-                "normalized_sun_y": 1.149999976158142,
-                "sun_position_theta_phi": {
-                    "x": 0.8726646304130554,
-                    "y": 1.919862151145935
-                },
-                "turbidity": 4.0
-            },
-            "sun_directional_light": 13
-        }
-    },
-    "13": {
-        "@directional_light_component": {
-            "amount": 1.0,
-            "color": {
-                "x": 1.0,
-                "y": 1.0,
-                "z": 1.0
-            },
-            "direction": {
-                "x": 0.604022741317749,
-                "y": 0.7660444378852844,
-                "z": -0.21984626352787018
-            },
-            "enabled": true
-        },
-        "@identifier_component": {
-            "id": "procedural-skybox-sun"
-        },
-        "@local_transform_component": {
-            "children": [],
-            "local_pose": {
-                "orientation": {
-                    "w": 1.0,
-                    "x": 0.0,
-                    "y": 0.0,
-                    "z": 0.0
-                },
-                "position": {
-                    "x": 0.0,
-                    "y": 0.0,
-                    "z": 0.0
-                }
-            },
-            "local_scale": {
-                "x": 0.0,
-                "y": 0.0,
-                "z": 0.0
-            },
-            "parent": 0
-        }
-    },
-    "14": {
-        "@identifier_component": {
-            "id": "debug_renderer-14"
-        },
-        "@local_transform_component": {
-            "children": [],
-            "local_pose": {
-                "orientation": {
-                    "w": 1.0,
-                    "x": 0.0,
-                    "y": 0.0,
-                    "z": 0.0
-                },
-                "position": {
-                    "x": 0.0,
-                    "y": 0.0,
-                    "z": 0.0
-                }
-            },
-            "local_scale": {
-                "x": 1.0,
-                "y": 1.0,
-                "z": 1.0
-            },
-            "parent": 0
-        },
-        "@material_component": {
-            "cast_shadow": false,
-            "material_handle": "debug-renderer-material",
-            "receive_shadow": false
-        },
-        "@mesh_component": {
-            "gpu_mesh_handle": "debug-renderer"
-        }
-    },
-    "15": {
-        "@geometry_component": {
-            "cpu_mesh_handle": "dome",
-            "cpu_mesh_proxy_handle": ""
-        },
-        "@identifier_component": {
-            "id": "metallic-dome"
-        },
-        "@local_transform_component": {
-            "children": [],
-            "local_pose": {
-                "orientation": {
-                    "w": 1.0,
-                    "x": 0.0,
-                    "y": 0.0,
-                    "z": 0.0
-                },
-                "position": {
-                    "x": 0.0,
-                    "y": 0.983440637588501,
-                    "z": 0.0
-                }
-            },
-            "local_scale": {
-                "x": 2.0,
-                "y": 2.0,
-                "z": 2.0
-            },
-            "parent": 0
-        },
-        "@material_component": {
-            "cast_shadow": true,
-            "material_handle": "pure-metallic",
-            "receive_shadow": true
-        },
-        "@mesh_component": {
-            "gpu_mesh_handle": "dome"
-        }
-    },
-    "5": {
+    "d0000005-0000-0000-0000-000000000005": {
         "@cubemap_component": {
             "force_draw": false,
             "ibl_irradiance_cubemap": "default-irradiance-cubemap",
@@ -236,7 +9,6 @@
             "id": "ibl-cubemap"
         },
         "@local_transform_component": {
-            "children": [],
             "local_pose": {
                 "orientation": {
                     "w": 1.0,
@@ -251,23 +23,23 @@
                 }
             },
             "local_scale": {
-                "x": 0.0,
-                "y": 0.0,
-                "z": 0.0
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
             },
-            "parent": 0
+            "parent": ""
         }
     },
-    "6": {
+    "d0000006-0000-0000-0000-000000000006": {
         "@geometry_component": {
             "cpu_mesh_handle": "room/room",
-            "cpu_mesh_proxy_handle": ""
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
         },
         "@identifier_component": {
             "id": "room/room"
         },
         "@local_transform_component": {
-            "children": [],
             "local_pose": {
                 "orientation": {
                     "w": 1.0,
@@ -286,27 +58,28 @@
                 "y": 10.0,
                 "z": 10.0
             },
-            "parent": 10
+            "parent": "d0000010-0000-0000-0000-000000000010"
         },
         "@material_component": {
             "cast_shadow": true,
             "material_handle": "concrete-tile-1024",
-            "receive_shadow": true
+            "receive_shadow": true,
+            "uniform_overrides": null
         },
         "@mesh_component": {
             "gpu_mesh_handle": "room/room"
         }
     },
-    "7": {
+    "d0000007-0000-0000-0000-000000000007": {
         "@geometry_component": {
             "cpu_mesh_handle": "floor-bevels/floor-bevels",
-            "cpu_mesh_proxy_handle": ""
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
         },
         "@identifier_component": {
             "id": "floor-bevels/floor-bevels"
         },
         "@local_transform_component": {
-            "children": [],
             "local_pose": {
                 "orientation": {
                     "w": 1.0,
@@ -325,7 +98,7 @@
                 "y": 10.0,
                 "z": 10.0
             },
-            "parent": 10
+            "parent": "d0000010-0000-0000-0000-000000000010"
         },
         "@material_component": {
             "cast_shadow": true,
@@ -339,16 +112,16 @@
             "gpu_mesh_handle": "floor-bevels/floor-bevels"
         }
     },
-    "8": {
+    "d0000008-0000-0000-0000-000000000008": {
         "@geometry_component": {
             "cpu_mesh_handle": "ceiling/ceiling",
-            "cpu_mesh_proxy_handle": ""
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
         },
         "@identifier_component": {
             "id": "ceiling/ceiling"
         },
         "@local_transform_component": {
-            "children": [],
             "local_pose": {
                 "orientation": {
                     "w": 1.0,
@@ -367,27 +140,28 @@
                 "y": 10.0,
                 "z": 10.0
             },
-            "parent": 10
+            "parent": "d0000010-0000-0000-0000-000000000010"
         },
         "@material_component": {
             "cast_shadow": true,
             "material_handle": "concrete-tile-1024",
-            "receive_shadow": true
+            "receive_shadow": true,
+            "uniform_overrides": null
         },
         "@mesh_component": {
             "gpu_mesh_handle": "ceiling/ceiling"
         }
     },
-    "9": {
+    "d0000009-0000-0000-0000-000000000009": {
         "@geometry_component": {
             "cpu_mesh_handle": "floor/floor",
-            "cpu_mesh_proxy_handle": ""
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
         },
         "@identifier_component": {
             "id": "floor/floor"
         },
         "@local_transform_component": {
-            "children": [],
             "local_pose": {
                 "orientation": {
                     "w": 1.0,
@@ -406,15 +180,235 @@
                 "y": 10.0,
                 "z": 10.0
             },
-            "parent": 10
+            "parent": "d0000010-0000-0000-0000-000000000010"
         },
         "@material_component": {
             "cast_shadow": true,
             "material_handle": "concrete-tile-1024",
-            "receive_shadow": true
+            "receive_shadow": true,
+            "uniform_overrides": null
         },
         "@mesh_component": {
             "gpu_mesh_handle": "floor/floor"
+        }
+    },
+    "d0000010-0000-0000-0000-000000000010": {
+        "@identifier_component": {
+            "id": "dev-room"
+        },
+        "@local_transform_component": {
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                }
+            },
+            "local_scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "parent": ""
+        }
+    },
+    "d0000011-0000-0000-0000-000000000011": {
+        "@identifier_component": {
+            "id": "magenta-pointlight"
+        },
+        "@local_transform_component": {
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 0.0,
+                    "y": 5.0,
+                    "z": 0.0
+                }
+            },
+            "local_scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "parent": ""
+        },
+        "@point_light_component": {
+            "color": {
+                "x": 1.0,
+                "y": 0.75,
+                "z": 1.0
+            },
+            "enabled": true,
+            "position": {
+                "x": 0.0,
+                "y": 5.0,
+                "z": 0.0
+            },
+            "radius": 12.0
+        }
+    },
+    "d0000012-0000-0000-0000-000000000012": {
+        "@identifier_component": {
+            "id": "procedural-skybox"
+        },
+        "@local_transform_component": {
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                }
+            },
+            "local_scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "parent": ""
+        },
+        "@procedural_skybox_component": {
+            "procedural_skybox": {
+                "albedo": 0.10000000149011612,
+                "normalized_sun_y": 1.149999976158142,
+                "sun_position_theta_phi": {
+                    "x": 0.8726646304130554,
+                    "y": 1.919862151145935
+                },
+                "turbidity": 4.0
+            },
+            "sun_directional_light": "d0000013-0000-0000-0000-000000000013"
+        }
+    },
+    "d0000013-0000-0000-0000-000000000013": {
+        "@directional_light_component": {
+            "amount": 1.0,
+            "color": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "direction": {
+                "x": 0.604022741317749,
+                "y": 0.7660444378852844,
+                "z": -0.21984626352787018
+            },
+            "enabled": true
+        },
+        "@identifier_component": {
+            "id": "procedural-skybox-sun"
+        },
+        "@local_transform_component": {
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                }
+            },
+            "local_scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "parent": ""
+        }
+    },
+    "d0000014-0000-0000-0000-000000000014": {
+        "@identifier_component": {
+            "id": "debug_renderer-14"
+        },
+        "@local_transform_component": {
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                }
+            },
+            "local_scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "parent": ""
+        },
+        "@material_component": {
+            "cast_shadow": false,
+            "material_handle": "debug-renderer-material",
+            "receive_shadow": false,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "debug-renderer"
+        }
+    },
+    "d0000015-0000-0000-0000-000000000015": {
+        "@geometry_component": {
+            "cpu_mesh_handle": "dome",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "metallic-dome"
+        },
+        "@local_transform_component": {
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 0.0,
+                    "y": 0.983440637588501,
+                    "z": 0.0
+                }
+            },
+            "local_scale": {
+                "x": 2.0,
+                "y": 2.0,
+                "z": 2.0
+            },
+            "parent": ""
+        },
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "pure-metallic",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "dome"
         }
     }
 }

@@ -23,9 +23,9 @@
         "u_clearCoat": 0.0,
         "u_clearCoatRoughness": 0.0,
         "u_emissive": {
-            "x": 1.0,
-            "y": 1.0,
-            "z": 1.0
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
         },
         "u_emissiveStrength": 0.0,
         "u_metallic": 0.0,
@@ -35,8 +35,8 @@
         "u_shadowOpacity": 1.0,
         "u_specularLevel": 0.0,
         "u_texCoordScale": {
-            "x": 0.07500000298023224,
-            "y": 5.0
+            "x": 0.10000000149011612,
+            "y": 0.10000000149011612
         }
     }
 }

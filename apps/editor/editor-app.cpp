@@ -2,6 +2,16 @@
 #include "polymer-engine/renderer/renderer-util.hpp"
 #include "editor-app.hpp"
 
+inline void delete_selected_entity(gizmo_controller * gizmo, scene & scene)
+{
+    const auto selection_list = gizmo->get_selection();
+    if (!selection_list.empty() && selection_list[0] != kInvalidEntity)
+    {
+        scene.destroy(selection_list[0]);
+    }
+    gizmo->clear();
+}
+
 scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Scene Editor")
 {
     working_dir_on_launch = get_current_directory();
@@ -102,13 +112,20 @@ void scene_editor_app::on_input(const app_input_event & event)
                 }
             }
 
-            // Togle drawing ImGUI
             if (event.value[0] == GLFW_KEY_TAB && event.action == GLFW_RELEASE)
             {
                 show_imgui = !show_imgui;
             }
 
-            if (event.value[0] == GLFW_KEY_SPACE && event.action == GLFW_RELEASE) {}
+            if (event.value[0] == GLFW_KEY_SPACE && event.action == GLFW_RELEASE) 
+            {
+            
+            }
+
+            if (event.value[0] == GLFW_KEY_DELETE && event.action == GLFW_RELEASE)
+            {
+                delete_selected_entity(gizmo.get(), the_scene);
+            }
 
             // XZ plane nudging
             if (event.action == GLFW_RELEASE)
@@ -360,10 +377,14 @@ void scene_editor_app::on_draw()
                 renderer_payload.procedural_skybox = proc_skybox;
                 if (proc_skybox->sun_directional_light != kInvalidEntity)
                 {
-                    base_object & sun_obj = the_scene.get_graph().get_object(proc_skybox->sun_directional_light);
-                    if (auto * sunlight = sun_obj.get_component<directional_light_component>())
+                    // Use scene::get_object which returns nullptr for invalid entities,
+                    // not scene_graph::get_object which creates empty entries via operator[]
+                    if (base_object * sun_obj = the_scene.get_object(proc_skybox->sun_directional_light))
                     {
-                        renderer_payload.sunlight = sunlight;
+                        if (auto * sunlight = sun_obj->get_component<directional_light_component>())
+                        {
+                            renderer_payload.sunlight = sunlight;
+                        }
                     }
                 }
             }
@@ -540,14 +561,9 @@ void scene_editor_app::on_draw()
                 gizmo->set_selection(new_selection_list);
             }
         }
-        if (menu.item("Delete", 0, GLFW_KEY_DELETE)) 
+        if (menu.item("Delete", 0, GLFW_KEY_DELETE))
         {
-            const auto selection_list = gizmo->get_selection();
-            if (!selection_list.empty() && selection_list[0] != kInvalidEntity) 
-            {
-                the_scene.destroy(selection_list[0]);
-            }
-            gizmo->clear();
+            delete_selected_entity(gizmo.get(), the_scene);
         }
         if (menu.item("Select All", GLFW_MOD_CONTROL, GLFW_KEY_A))
         {

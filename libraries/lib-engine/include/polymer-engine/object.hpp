@@ -66,6 +66,23 @@ namespace polymer
 {
     using json = nlohmann::json;
 
+    inline json normalize_json_format(const json & archive)
+    {
+        if (archive.is_array())
+        {
+            json obj = json::object();
+            for (const auto & pair : archive)
+            {
+                if (pair.is_array() && pair.size() == 2 && pair[0].is_string())
+                {
+                    obj[pair[0].get<std::string>()] = pair[1];
+                }
+            }
+            return obj;
+        }
+        return archive;
+    }
+
     template<class F> void visit_fields(polymer::transform & o, F f) { f("position", o.position); f("orientation", o.orientation); }
 
     // Polymer Asset Handles
@@ -147,12 +164,14 @@ namespace polymer
     }
 
     inline void to_json(json & j, const procedural_skybox_component & p) {
-        visit_fields(const_cast<procedural_skybox_component&>(p), [&j](const char * name, auto & field, auto... metadata) { j.push_back({ name, field }); });
+        j = json::object();
+        visit_fields(const_cast<procedural_skybox_component&>(p), [&j](const char * name, auto & field, auto... metadata) { j[name] = field; });
     }
 
     inline void from_json(const json & archive, procedural_skybox_component & m) {
-        visit_fields(m, [&archive](const char * name, auto & field, auto... metadata) {
-            field = archive.at(name).get<std::remove_reference_t<decltype(field)>>();
+        const json obj = normalize_json_format(archive);
+        visit_fields(m, [&obj](const char * name, auto & field, auto... metadata) {
+            field = obj.at(name).get<std::remove_reference_t<decltype(field)>>();
         });
     };
 
@@ -177,12 +196,14 @@ namespace polymer
     }
 
     inline void to_json(json & j, const point_light_component & p) {
-        visit_fields(const_cast<point_light_component&>(p), [&j](const char * name, auto & field, auto... metadata) { j.push_back({ name, field }); });
+        j = json::object();
+        visit_fields(const_cast<point_light_component&>(p), [&j](const char * name, auto & field, auto... metadata) { j[name] = field; });
     }
 
     inline void from_json(const json & archive, point_light_component & m) {
-        visit_fields(m, [&archive](const char * name, auto & field, auto... metadata) {
-            field = archive.at(name).get<std::remove_reference_t<decltype(field)>>();
+        const json obj = normalize_json_format(archive);
+        visit_fields(m, [&obj](const char * name, auto & field, auto... metadata) {
+            field = obj.at(name).get<std::remove_reference_t<decltype(field)>>();
         });
     };
 
@@ -208,12 +229,14 @@ namespace polymer
     }
 
     inline void to_json(json & j, const directional_light_component & p) {
-        visit_fields(const_cast<directional_light_component&>(p), [&j](const char * name, auto & field, auto... metadata) { j.push_back({ name, field }); });
+        j = json::object();
+        visit_fields(const_cast<directional_light_component&>(p), [&j](const char * name, auto & field, auto... metadata) { j[name] = field; });
     }
 
     inline void from_json(const json & archive, directional_light_component & m) {
-        visit_fields(m, [&archive](const char * name, auto & field, auto... metadata) {
-            field = archive.at(name).get<std::remove_reference_t<decltype(field)>>();
+        const json obj = normalize_json_format(archive);
+        visit_fields(m, [&obj](const char * name, auto & field, auto... metadata) {
+            field = obj.at(name).get<std::remove_reference_t<decltype(field)>>();
         });
     };
 
@@ -238,12 +261,14 @@ namespace polymer
     }
 
     inline void to_json(json & j, const ibl_component & p) {
-        visit_fields(const_cast<ibl_component&>(p), [&j](const char * name, auto & field, auto... metadata) { j.push_back({ name, field }); });
+        j = json::object();
+        visit_fields(const_cast<ibl_component&>(p), [&j](const char * name, auto & field, auto... metadata) { j[name] = field; });
     }
 
     inline void from_json(const json & archive, ibl_component & m) {
-        visit_fields(m, [&archive](const char * name, auto & field, auto... metadata) {
-            field = archive.at(name).get<std::remove_reference_t<decltype(field)>>();
+        const json obj = normalize_json_format(archive);
+        visit_fields(m, [&obj](const char * name, auto & field, auto... metadata) {
+            field = obj.at(name).get<std::remove_reference_t<decltype(field)>>();
         });
     };
 
@@ -267,12 +292,14 @@ namespace polymer
     }
 
     inline void to_json(json & j, const mesh_component & p) {
-        visit_fields(const_cast<mesh_component&>(p), [&j](const char * name, auto & field, auto... metadata) { j.push_back({ name, field }); });
+        j = json::object();
+        visit_fields(const_cast<mesh_component&>(p), [&j](const char * name, auto & field, auto... metadata) { j[name] = field; });
     }
 
     inline void from_json(const json & archive, mesh_component & m) {
-        visit_fields(m, [&archive](const char * name, auto & field, auto... metadata) {
-            field = archive.at(name).get<std::remove_reference_t<decltype(field)>>();
+        const json obj = normalize_json_format(archive);
+        visit_fields(m, [&obj](const char * name, auto & field, auto... metadata) {
+            field = obj.at(name).get<std::remove_reference_t<decltype(field)>>();
         });
     };
 
@@ -301,15 +328,17 @@ namespace polymer
 
     inline void to_json(json & j, const geometry_component & p)
     {
-        visit_fields(const_cast<geometry_component &>(p), [&j](const char * name, auto & field, auto... metadata) { j.push_back({name, field}); });
+        j = json::object();
+        visit_fields(const_cast<geometry_component &>(p), [&j](const char * name, auto & field, auto... metadata) { j[name] = field; });
     }
 
     inline void from_json(const json & archive, geometry_component & m)
     {
-        visit_fields(m, [&archive](const char * name, auto & field, auto... metadata) {
-            if (archive.contains(name))
+        const json obj = normalize_json_format(archive);
+        visit_fields(m, [&obj](const char * name, auto & field, auto... metadata) {
+            if (obj.contains(name))
             {
-                field = archive.at(name).get<std::remove_reference_t<decltype(field)>>();
+                field = obj.at(name).get<std::remove_reference_t<decltype(field)>>();
             }
         });
     };
@@ -399,14 +428,16 @@ namespace polymer
 
     inline void to_json(json & j, const material_component & p)
     {
-        visit_fields(const_cast<material_component &>(p), [&j](const char * name, auto & field, auto... metadata) { j.push_back({name, field}); });
+        j = json::object();
+        visit_fields(const_cast<material_component &>(p), [&j](const char * name, auto & field, auto... metadata) { j[name] = field; });
     }
 
     inline void from_json(const json & archive, material_component & m)
     {
-        visit_fields(m, [&archive](const char * name, auto & field, auto... metadata) {
-            try { field = archive.at(name).get<std::remove_reference_t<decltype(field)>>(); }
-            catch (const std::exception & e) { log::get()->import_log->info("{} not found in json", e.what()); } 
+        const json obj = normalize_json_format(archive);
+        visit_fields(m, [&obj](const char * name, auto & field, auto... metadata) {
+            try { field = obj.at(name).get<std::remove_reference_t<decltype(field)>>(); }
+            catch (const std::exception & e) { log::get()->import_log->info("{} not found in json", e.what()); }
         });
     };
 
@@ -682,6 +713,12 @@ namespace polymer
 
         scene_graph()  = default;
         ~scene_graph() = default;
+
+        // Clear all objects from the graph
+        void clear()
+        {
+            graph_objects.clear();
+        }
 
         // Set scene pointer (called by scene constructor)
         void set_scene(scene * s) { owning_scene = s; }

@@ -301,15 +301,33 @@ namespace polymer
 
     inline void to_json(json & j, const gl_procedural_sky & p) {
         j = json::object();
-        visit_fields(const_cast<gl_procedural_sky&>(p), [&j](const char * name, auto & field, auto... metadata) 
-        { 
-            j.push_back({ name, field }); 
+        visit_fields(const_cast<gl_procedural_sky&>(p), [&j](const char * name, auto & field, auto... metadata)
+        {
+            j[name] = field;
         });
     }
     
+    inline json normalize_sky_json_format(const json & archive)
+    {
+        if (archive.is_array())
+        {
+            json obj = json::object();
+            for (const auto & pair : archive)
+            {
+                if (pair.is_array() && pair.size() == 2 && pair[0].is_string())
+                {
+                    obj[pair[0].get<std::string>()] = pair[1];
+                }
+            }
+            return obj;
+        }
+        return archive;
+    }
+
     inline void from_json(const json & archive, gl_procedural_sky & m) {
-        visit_fields(m, [&archive](const char * name, auto & field, auto... metadata) {
-            field = archive.at(name).get<std::remove_reference_t<decltype(field)>>();
+        const json obj = normalize_sky_json_format(archive);
+        visit_fields(m, [&obj](const char * name, auto & field, auto... metadata) {
+            field = obj.at(name).get<std::remove_reference_t<decltype(field)>>();
         });
     };
 

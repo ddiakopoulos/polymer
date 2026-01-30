@@ -237,6 +237,9 @@ void scene::export_environment(const std::string & export_path)
 
 void scene::reset(int2 default_renderer_resolution, bool create_default_entities)
 {
+    // Clear existing scene graph objects first
+    graph.clear();
+
     graph.set_scene(this);  // Ensure graph has scene pointer
 
     // Create renderer with the specified resolution (requires GL context to be current)

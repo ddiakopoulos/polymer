@@ -4,19 +4,34 @@
             "id": "procedural-skybox"
         },
         "@local_transform_component": {
-            "children": [],
             "local_pose": {
-                "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 },
-                "position": { "x": 0.0, "y": 0.0, "z": 0.0 }
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                }
             },
-            "local_scale": { "x": 1.0, "y": 1.0, "z": 1.0 },
+            "local_scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
             "parent": ""
         },
         "@procedural_skybox_component": {
             "procedural_skybox": {
-                "albedo": 0.1,
-                "normalized_sun_y": 1.15,
-                "sun_position_theta_phi": { "x": 0.8726646304130554, "y": 1.919862151145935 },
+                "albedo": 0.10000000149011612,
+                "normalized_sun_y": 1.149999976158142,
+                "sun_position_theta_phi": {
+                    "x": 0.8726646304130554,
+                    "y": 1.919862151145935
+                },
                 "turbidity": 4.0
             },
             "sun_directional_light": "a0000002-0000-0000-0000-000000000002"
@@ -25,20 +40,40 @@
     "a0000002-0000-0000-0000-000000000002": {
         "@directional_light_component": {
             "amount": 1.0,
-            "color": { "x": 1.0, "y": 1.0, "z": 1.0 },
-            "direction": { "x": 0.604022741317749, "y": 0.7660444378852844, "z": -0.21984626352787018 },
+            "color": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "direction": {
+                "x": 0.604022741317749,
+                "y": 0.7660444378852844,
+                "z": -0.21984626352787018
+            },
             "enabled": true
         },
         "@identifier_component": {
             "id": "procedural-skybox-sun"
         },
         "@local_transform_component": {
-            "children": [],
             "local_pose": {
-                "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 },
-                "position": { "x": 0.0, "y": 0.0, "z": 0.0 }
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                }
             },
-            "local_scale": { "x": 1.0, "y": 1.0, "z": 1.0 },
+            "local_scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
             "parent": ""
         }
     },
@@ -52,797 +87,2630 @@
             "id": "ibl-cubemap"
         },
         "@local_transform_component": {
-            "children": [],
             "local_pose": {
-                "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 },
-                "position": { "x": 0.0, "y": 0.0, "z": 0.0 }
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                }
             },
-            "local_scale": { "x": 1.0, "y": 1.0, "z": 1.0 },
+            "local_scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
             "parent": ""
         }
     },
     "a0000004-0000-0000-0000-000000000004": {
-        "@geometry_component": { "cpu_mesh_handle": "cube-uniform", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "ground-plane" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "cube-uniform",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "ground-plane"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 7.5, "y": -0.1, "z": 1.5 } },
-            "local_scale": { "x": 22.0, "y": 0.2, "z": 6.0 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 9.0,
+                    "y": -0.10000000149011612,
+                    "z": 1.5
+                }
+            },
+            "local_scale": {
+                "x": 12.0,
+                "y": 0.20000000298023224,
+                "z": 4.0
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": false, "material_handle": "concrete-wall-2-grunge-bottom", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "cube-uniform" }
+        "@material_component": {
+            "cast_shadow": false,
+            "material_handle": "concrete-wall-2-grunge-bottom",
+            "receive_shadow": true,
+            "uniform_overrides": {
+                "u_texCoordScale": {
+                    "x": 16.0,
+                    "y": 4.0
+                }
+            }
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "cube-uniform"
+        }
     },
-
     "b0000001-0000-0000-0000-000000000001": {
-        "@geometry_component": { "cpu_mesh_handle": "sphere-cuboid", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "sphere-cuboid-0" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "sphere-cuboid",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "sphere-cuboid-0"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 0.0, "y": 0.5, "z": 0.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 0.0,
+                    "y": 0.5,
+                    "z": 0.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "aged-brass", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "sphere-cuboid" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "aged-brass",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "sphere-cuboid"
+        }
     },
     "b0000002-0000-0000-0000-000000000002": {
-        "@geometry_component": { "cpu_mesh_handle": "sphere-cuboid", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "sphere-cuboid-1" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "sphere-cuboid",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "sphere-cuboid-1"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 1.0, "y": 0.5, "z": 0.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 1.0,
+                    "y": 0.5,
+                    "z": 0.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "aged-walnut", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "sphere-cuboid" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "aged-walnut",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "sphere-cuboid"
+        }
     },
     "b0000003-0000-0000-0000-000000000003": {
-        "@geometry_component": { "cpu_mesh_handle": "sphere-cuboid", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "sphere-cuboid-2" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "sphere-cuboid",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "sphere-cuboid-2"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 2.0, "y": 0.5, "z": 0.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 2.0,
+                    "y": 0.5,
+                    "z": 0.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "clean-rosewood", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "sphere-cuboid" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "clean-rosewood",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "sphere-cuboid"
+        }
     },
     "b0000004-0000-0000-0000-000000000004": {
-        "@geometry_component": { "cpu_mesh_handle": "sphere-cuboid", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "sphere-cuboid-3" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "sphere-cuboid",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "sphere-cuboid-3"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 3.0, "y": 0.5, "z": 0.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 3.0,
+                    "y": 0.5,
+                    "z": 0.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "clean-scifi-metal-panel-b", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "sphere-cuboid" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "clean-scifi-metal-panel-b",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "sphere-cuboid"
+        }
     },
     "b0000005-0000-0000-0000-000000000005": {
-        "@geometry_component": { "cpu_mesh_handle": "sphere-cuboid", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "sphere-cuboid-4" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "sphere-cuboid",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "sphere-cuboid-4"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 0.0, "y": 0.5, "z": 1.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 0.0,
+                    "y": 0.5,
+                    "z": 1.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "damaged-iron-metal", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "sphere-cuboid" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "damaged-iron-metal",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "sphere-cuboid"
+        }
     },
     "b0000006-0000-0000-0000-000000000006": {
-        "@geometry_component": { "cpu_mesh_handle": "sphere-cuboid", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "sphere-cuboid-5" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "sphere-cuboid",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "sphere-cuboid-5"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 1.0, "y": 0.5, "z": 1.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 1.0,
+                    "y": 0.5,
+                    "z": 1.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "hardened-tempered-steel", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "sphere-cuboid" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "hardened-tempered-steel",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "sphere-cuboid"
+        }
     },
     "b0000007-0000-0000-0000-000000000007": {
-        "@geometry_component": { "cpu_mesh_handle": "sphere-cuboid", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "sphere-cuboid-6" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "sphere-cuboid",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "sphere-cuboid-6"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 2.0, "y": 0.5, "z": 1.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 2.0,
+                    "y": 0.5,
+                    "z": 1.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "magic-triangloid-stone", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "sphere-cuboid" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "magic-triangloid-stone",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "sphere-cuboid"
+        }
     },
     "b0000008-0000-0000-0000-000000000008": {
-        "@geometry_component": { "cpu_mesh_handle": "sphere-cuboid", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "sphere-cuboid-7" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "sphere-cuboid",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "sphere-cuboid-7"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 3.0, "y": 0.5, "z": 1.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 3.0,
+                    "y": 0.5,
+                    "z": 1.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "marble-iso-triangle", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "sphere-cuboid" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "marble-iso-triangle",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "sphere-cuboid"
+        }
     },
     "b0000009-0000-0000-0000-000000000009": {
-        "@geometry_component": { "cpu_mesh_handle": "sphere-cuboid", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "sphere-cuboid-8" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "sphere-cuboid",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "sphere-cuboid-8"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 0.0, "y": 0.5, "z": 2.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 0.0,
+                    "y": 0.5,
+                    "z": 2.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "marble-trapezoid-triangle", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "sphere-cuboid" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "marble-trapezoid-triangle",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "sphere-cuboid"
+        }
     },
     "b0000010-0000-0000-0000-000000000010": {
-        "@geometry_component": { "cpu_mesh_handle": "sphere-cuboid", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "sphere-cuboid-9" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "sphere-cuboid",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "sphere-cuboid-9"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 1.0, "y": 0.5, "z": 2.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 1.0,
+                    "y": 0.5,
+                    "z": 2.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "modern-metal-pentasplit-hexa-tile", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "sphere-cuboid" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "modern-metal-pentasplit-hexa-tile",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "sphere-cuboid"
+        }
     },
     "b0000011-0000-0000-0000-000000000011": {
-        "@geometry_component": { "cpu_mesh_handle": "sphere-cuboid", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "sphere-cuboid-10" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "sphere-cuboid",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "sphere-cuboid-10"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 2.0, "y": 0.5, "z": 2.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 2.0,
+                    "y": 0.5,
+                    "z": 2.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "old-blue-steel", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "sphere-cuboid" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "old-blue-steel",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "sphere-cuboid"
+        }
     },
     "b0000012-0000-0000-0000-000000000012": {
-        "@geometry_component": { "cpu_mesh_handle": "sphere-cuboid", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "sphere-cuboid-11" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "sphere-cuboid",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "sphere-cuboid-11"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 3.0, "y": 0.5, "z": 2.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 3.0,
+                    "y": 0.5,
+                    "z": 2.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "oxidized-aluminum", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "sphere-cuboid" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "oxidized-aluminum",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "sphere-cuboid"
+        }
     },
     "b0000013-0000-0000-0000-000000000013": {
-        "@geometry_component": { "cpu_mesh_handle": "sphere-cuboid", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "sphere-cuboid-12" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "sphere-cuboid",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "sphere-cuboid-12"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 0.0, "y": 0.5, "z": 3.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 0.0,
+                    "y": 0.5,
+                    "z": 3.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "sci-fi-metal-with-weave", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "sphere-cuboid" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "sci-fi-metal-with-weave",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "sphere-cuboid"
+        }
     },
     "b0000014-0000-0000-0000-000000000014": {
-        "@geometry_component": { "cpu_mesh_handle": "sphere-cuboid", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "sphere-cuboid-13" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "sphere-cuboid",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "sphere-cuboid-13"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 1.0, "y": 0.5, "z": 3.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 1.0,
+                    "y": 0.5,
+                    "z": 3.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "sci-fi-plastic-hexagons", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "sphere-cuboid" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "sci-fi-plastic-hexagons",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "sphere-cuboid"
+        }
     },
     "b0000015-0000-0000-0000-000000000015": {
-        "@geometry_component": { "cpu_mesh_handle": "sphere-cuboid", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "sphere-cuboid-14" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "sphere-cuboid",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "sphere-cuboid-14"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 2.0, "y": 0.5, "z": 3.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 2.0,
+                    "y": 0.5,
+                    "z": 3.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "white-italian-marble", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "sphere-cuboid" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "white-italian-marble",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "sphere-cuboid"
+        }
     },
     "b0000016-0000-0000-0000-000000000016": {
-        "@geometry_component": { "cpu_mesh_handle": "sphere-cuboid", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "sphere-cuboid-15" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "sphere-cuboid",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "sphere-cuboid-15"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 3.0, "y": 0.5, "z": 3.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 3.0,
+                    "y": 0.5,
+                    "z": 3.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "aged-brass", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "sphere-cuboid" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "aged-brass",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "sphere-cuboid"
+        }
     },
-
     "c0000001-0000-0000-0000-000000000001": {
-        "@geometry_component": { "cpu_mesh_handle": "cube-rounded", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "cube-rounded-0" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "cube-rounded",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "cube-rounded-0"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 5.0, "y": 0.5, "z": 0.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 5.0,
+                    "y": 0.5,
+                    "z": 0.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "aged-brass", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "cube-rounded" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "aged-brass",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "cube-rounded"
+        }
     },
     "c0000002-0000-0000-0000-000000000002": {
-        "@geometry_component": { "cpu_mesh_handle": "cube-rounded", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "cube-rounded-1" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "cube-rounded",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "cube-rounded-1"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 6.0, "y": 0.5, "z": 0.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 6.0,
+                    "y": 0.5,
+                    "z": 0.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "aged-walnut", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "cube-rounded" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "aged-walnut",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "cube-rounded"
+        }
     },
     "c0000003-0000-0000-0000-000000000003": {
-        "@geometry_component": { "cpu_mesh_handle": "cube-rounded", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "cube-rounded-2" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "cube-rounded",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "cube-rounded-2"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 7.0, "y": 0.5, "z": 0.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 7.0,
+                    "y": 0.5,
+                    "z": 0.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "clean-rosewood", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "cube-rounded" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "clean-rosewood",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "cube-rounded"
+        }
     },
     "c0000004-0000-0000-0000-000000000004": {
-        "@geometry_component": { "cpu_mesh_handle": "cube-rounded", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "cube-rounded-3" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "cube-rounded",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "cube-rounded-3"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 8.0, "y": 0.5, "z": 0.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 8.0,
+                    "y": 0.5,
+                    "z": 0.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "clean-scifi-metal-panel-b", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "cube-rounded" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "clean-scifi-metal-panel-b",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "cube-rounded"
+        }
     },
     "c0000005-0000-0000-0000-000000000005": {
-        "@geometry_component": { "cpu_mesh_handle": "cube-rounded", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "cube-rounded-4" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "cube-rounded",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "cube-rounded-4"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 5.0, "y": 0.5, "z": 1.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 5.0,
+                    "y": 0.5,
+                    "z": 1.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "damaged-iron-metal", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "cube-rounded" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "damaged-iron-metal",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "cube-rounded"
+        }
     },
     "c0000006-0000-0000-0000-000000000006": {
-        "@geometry_component": { "cpu_mesh_handle": "cube-rounded", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "cube-rounded-5" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "cube-rounded",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "cube-rounded-5"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 6.0, "y": 0.5, "z": 1.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 6.0,
+                    "y": 0.5,
+                    "z": 1.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "hardened-tempered-steel", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "cube-rounded" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "hardened-tempered-steel",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "cube-rounded"
+        }
     },
     "c0000007-0000-0000-0000-000000000007": {
-        "@geometry_component": { "cpu_mesh_handle": "cube-rounded", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "cube-rounded-6" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "cube-rounded",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "cube-rounded-6"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 7.0, "y": 0.5, "z": 1.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 7.0,
+                    "y": 0.5,
+                    "z": 1.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "magic-triangloid-stone", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "cube-rounded" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "magic-triangloid-stone",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "cube-rounded"
+        }
     },
     "c0000008-0000-0000-0000-000000000008": {
-        "@geometry_component": { "cpu_mesh_handle": "cube-rounded", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "cube-rounded-7" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "cube-rounded",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "cube-rounded-7"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 8.0, "y": 0.5, "z": 1.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 8.0,
+                    "y": 0.5,
+                    "z": 1.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "marble-iso-triangle", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "cube-rounded" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "marble-iso-triangle",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "cube-rounded"
+        }
     },
     "c0000009-0000-0000-0000-000000000009": {
-        "@geometry_component": { "cpu_mesh_handle": "cube-rounded", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "cube-rounded-8" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "cube-rounded",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "cube-rounded-8"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 5.0, "y": 0.5, "z": 2.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 5.0,
+                    "y": 0.5,
+                    "z": 2.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "marble-trapezoid-triangle", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "cube-rounded" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "marble-trapezoid-triangle",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "cube-rounded"
+        }
     },
     "c0000010-0000-0000-0000-000000000010": {
-        "@geometry_component": { "cpu_mesh_handle": "cube-rounded", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "cube-rounded-9" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "cube-rounded",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "cube-rounded-9"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 6.0, "y": 0.5, "z": 2.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 6.0,
+                    "y": 0.5,
+                    "z": 2.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "modern-metal-pentasplit-hexa-tile", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "cube-rounded" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "modern-metal-pentasplit-hexa-tile",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "cube-rounded"
+        }
     },
     "c0000011-0000-0000-0000-000000000011": {
-        "@geometry_component": { "cpu_mesh_handle": "cube-rounded", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "cube-rounded-10" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "cube-rounded",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "cube-rounded-10"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 7.0, "y": 0.5, "z": 2.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 7.0,
+                    "y": 0.5,
+                    "z": 2.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "old-blue-steel", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "cube-rounded" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "old-blue-steel",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "cube-rounded"
+        }
     },
     "c0000012-0000-0000-0000-000000000012": {
-        "@geometry_component": { "cpu_mesh_handle": "cube-rounded", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "cube-rounded-11" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "cube-rounded",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "cube-rounded-11"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 8.0, "y": 0.5, "z": 2.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 8.0,
+                    "y": 0.5,
+                    "z": 2.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "oxidized-aluminum", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "cube-rounded" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "oxidized-aluminum",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "cube-rounded"
+        }
     },
     "c0000013-0000-0000-0000-000000000013": {
-        "@geometry_component": { "cpu_mesh_handle": "cube-rounded", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "cube-rounded-12" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "cube-rounded",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "cube-rounded-12"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 5.0, "y": 0.5, "z": 3.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 5.0,
+                    "y": 0.5,
+                    "z": 3.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "sci-fi-metal-with-weave", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "cube-rounded" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "sci-fi-metal-with-weave",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "cube-rounded"
+        }
     },
     "c0000014-0000-0000-0000-000000000014": {
-        "@geometry_component": { "cpu_mesh_handle": "cube-rounded", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "cube-rounded-13" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "cube-rounded",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "cube-rounded-13"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 6.0, "y": 0.5, "z": 3.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 6.0,
+                    "y": 0.5,
+                    "z": 3.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "sci-fi-plastic-hexagons", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "cube-rounded" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "sci-fi-plastic-hexagons",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "cube-rounded"
+        }
     },
     "c0000015-0000-0000-0000-000000000015": {
-        "@geometry_component": { "cpu_mesh_handle": "cube-rounded", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "cube-rounded-14" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "cube-rounded",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "cube-rounded-14"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 7.0, "y": 0.5, "z": 3.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 7.0,
+                    "y": 0.5,
+                    "z": 3.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "white-italian-marble", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "cube-rounded" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "white-italian-marble",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "cube-rounded"
+        }
     },
     "c0000016-0000-0000-0000-000000000016": {
-        "@geometry_component": { "cpu_mesh_handle": "cube-rounded", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "cube-rounded-15" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "cube-rounded",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "cube-rounded-15"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 8.0, "y": 0.5, "z": 3.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 8.0,
+                    "y": 0.5,
+                    "z": 3.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "aged-brass", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "cube-rounded" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "aged-brass",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "cube-rounded"
+        }
     },
-
     "d0000001-0000-0000-0000-000000000001": {
-        "@geometry_component": { "cpu_mesh_handle": "tetrahedron-uniform", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "tetrahedron-uniform-0" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "tetrahedron-uniform",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "tetrahedron-uniform-0"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 10.0, "y": 0.5, "z": 0.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 10.0,
+                    "y": 0.5,
+                    "z": 0.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "aged-brass", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "tetrahedron-uniform" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "aged-brass",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "tetrahedron-uniform"
+        }
     },
     "d0000002-0000-0000-0000-000000000002": {
-        "@geometry_component": { "cpu_mesh_handle": "tetrahedron-uniform", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "tetrahedron-uniform-1" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "tetrahedron-uniform",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "tetrahedron-uniform-1"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 11.0, "y": 0.5, "z": 0.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 11.0,
+                    "y": 0.5,
+                    "z": 0.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "aged-walnut", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "tetrahedron-uniform" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "aged-walnut",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "tetrahedron-uniform"
+        }
     },
     "d0000003-0000-0000-0000-000000000003": {
-        "@geometry_component": { "cpu_mesh_handle": "tetrahedron-uniform", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "tetrahedron-uniform-2" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "tetrahedron-uniform",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "tetrahedron-uniform-2"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 12.0, "y": 0.5, "z": 0.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 12.0,
+                    "y": 0.5,
+                    "z": 0.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "clean-rosewood", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "tetrahedron-uniform" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "clean-rosewood",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "tetrahedron-uniform"
+        }
     },
     "d0000004-0000-0000-0000-000000000004": {
-        "@geometry_component": { "cpu_mesh_handle": "tetrahedron-uniform", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "tetrahedron-uniform-3" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "tetrahedron-uniform",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "tetrahedron-uniform-3"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 13.0, "y": 0.5, "z": 0.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 13.0,
+                    "y": 0.5,
+                    "z": 0.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "clean-scifi-metal-panel-b", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "tetrahedron-uniform" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "clean-scifi-metal-panel-b",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "tetrahedron-uniform"
+        }
     },
     "d0000005-0000-0000-0000-000000000005": {
-        "@geometry_component": { "cpu_mesh_handle": "tetrahedron-uniform", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "tetrahedron-uniform-4" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "tetrahedron-uniform",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "tetrahedron-uniform-4"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 10.0, "y": 0.5, "z": 1.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 10.0,
+                    "y": 0.5,
+                    "z": 1.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "damaged-iron-metal", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "tetrahedron-uniform" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "damaged-iron-metal",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "tetrahedron-uniform"
+        }
     },
     "d0000006-0000-0000-0000-000000000006": {
-        "@geometry_component": { "cpu_mesh_handle": "tetrahedron-uniform", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "tetrahedron-uniform-5" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "tetrahedron-uniform",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "tetrahedron-uniform-5"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 11.0, "y": 0.5, "z": 1.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 11.0,
+                    "y": 0.5,
+                    "z": 1.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "hardened-tempered-steel", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "tetrahedron-uniform" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "hardened-tempered-steel",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "tetrahedron-uniform"
+        }
     },
     "d0000007-0000-0000-0000-000000000007": {
-        "@geometry_component": { "cpu_mesh_handle": "tetrahedron-uniform", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "tetrahedron-uniform-6" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "tetrahedron-uniform",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "tetrahedron-uniform-6"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 12.0, "y": 0.5, "z": 1.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 12.0,
+                    "y": 0.5,
+                    "z": 1.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "magic-triangloid-stone", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "tetrahedron-uniform" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "magic-triangloid-stone",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "tetrahedron-uniform"
+        }
     },
     "d0000008-0000-0000-0000-000000000008": {
-        "@geometry_component": { "cpu_mesh_handle": "tetrahedron-uniform", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "tetrahedron-uniform-7" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "tetrahedron-uniform",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "tetrahedron-uniform-7"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 13.0, "y": 0.5, "z": 1.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 13.0,
+                    "y": 0.5,
+                    "z": 1.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "marble-iso-triangle", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "tetrahedron-uniform" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "marble-iso-triangle",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "tetrahedron-uniform"
+        }
     },
     "d0000009-0000-0000-0000-000000000009": {
-        "@geometry_component": { "cpu_mesh_handle": "tetrahedron-uniform", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "tetrahedron-uniform-8" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "tetrahedron-uniform",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "tetrahedron-uniform-8"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 10.0, "y": 0.5, "z": 2.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 10.0,
+                    "y": 0.5,
+                    "z": 2.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "marble-trapezoid-triangle", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "tetrahedron-uniform" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "marble-trapezoid-triangle",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "tetrahedron-uniform"
+        }
     },
     "d0000010-0000-0000-0000-000000000010": {
-        "@geometry_component": { "cpu_mesh_handle": "tetrahedron-uniform", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "tetrahedron-uniform-9" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "tetrahedron-uniform",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "tetrahedron-uniform-9"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 11.0, "y": 0.5, "z": 2.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 11.0,
+                    "y": 0.5,
+                    "z": 2.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "modern-metal-pentasplit-hexa-tile", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "tetrahedron-uniform" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "modern-metal-pentasplit-hexa-tile",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "tetrahedron-uniform"
+        }
     },
     "d0000011-0000-0000-0000-000000000011": {
-        "@geometry_component": { "cpu_mesh_handle": "tetrahedron-uniform", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "tetrahedron-uniform-10" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "tetrahedron-uniform",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "tetrahedron-uniform-10"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 12.0, "y": 0.5, "z": 2.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 12.0,
+                    "y": 0.5,
+                    "z": 2.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "old-blue-steel", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "tetrahedron-uniform" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "old-blue-steel",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "tetrahedron-uniform"
+        }
     },
     "d0000012-0000-0000-0000-000000000012": {
-        "@geometry_component": { "cpu_mesh_handle": "tetrahedron-uniform", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "tetrahedron-uniform-11" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "tetrahedron-uniform",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "tetrahedron-uniform-11"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 13.0, "y": 0.5, "z": 2.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 13.0,
+                    "y": 0.5,
+                    "z": 2.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "oxidized-aluminum", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "tetrahedron-uniform" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "oxidized-aluminum",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "tetrahedron-uniform"
+        }
     },
     "d0000013-0000-0000-0000-000000000013": {
-        "@geometry_component": { "cpu_mesh_handle": "tetrahedron-uniform", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "tetrahedron-uniform-12" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "tetrahedron-uniform",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "tetrahedron-uniform-12"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 10.0, "y": 0.5, "z": 3.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 10.0,
+                    "y": 0.5,
+                    "z": 3.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "sci-fi-metal-with-weave", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "tetrahedron-uniform" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "sci-fi-metal-with-weave",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "tetrahedron-uniform"
+        }
     },
     "d0000014-0000-0000-0000-000000000014": {
-        "@geometry_component": { "cpu_mesh_handle": "tetrahedron-uniform", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "tetrahedron-uniform-13" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "tetrahedron-uniform",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "tetrahedron-uniform-13"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 11.0, "y": 0.5, "z": 3.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 11.0,
+                    "y": 0.5,
+                    "z": 3.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "sci-fi-plastic-hexagons", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "tetrahedron-uniform" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "sci-fi-plastic-hexagons",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "tetrahedron-uniform"
+        }
     },
     "d0000015-0000-0000-0000-000000000015": {
-        "@geometry_component": { "cpu_mesh_handle": "tetrahedron-uniform", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "tetrahedron-uniform-14" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "tetrahedron-uniform",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "tetrahedron-uniform-14"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 12.0, "y": 0.5, "z": 3.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 12.0,
+                    "y": 0.5,
+                    "z": 3.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "white-italian-marble", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "tetrahedron-uniform" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "white-italian-marble",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "tetrahedron-uniform"
+        }
     },
     "d0000016-0000-0000-0000-000000000016": {
-        "@geometry_component": { "cpu_mesh_handle": "tetrahedron-uniform", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "tetrahedron-uniform-15" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "tetrahedron-uniform",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "tetrahedron-uniform-15"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 13.0, "y": 0.5, "z": 3.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 13.0,
+                    "y": 0.5,
+                    "z": 3.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "aged-brass", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "tetrahedron-uniform" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "aged-brass",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "tetrahedron-uniform"
+        }
     },
-
     "e0000001-0000-0000-0000-000000000001": {
-        "@geometry_component": { "cpu_mesh_handle": "hexagon-uniform", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "hexagon-uniform-0" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "hexagon-uniform",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "hexagon-uniform-0"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 15.0, "y": 0.5, "z": 0.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 15.0,
+                    "y": 0.5,
+                    "z": 0.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "aged-brass", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "hexagon-uniform" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "aged-brass",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "hexagon-uniform"
+        }
     },
     "e0000002-0000-0000-0000-000000000002": {
-        "@geometry_component": { "cpu_mesh_handle": "hexagon-uniform", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "hexagon-uniform-1" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "hexagon-uniform",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "hexagon-uniform-1"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 16.0, "y": 0.5, "z": 0.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 16.0,
+                    "y": 0.5,
+                    "z": 0.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "aged-walnut", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "hexagon-uniform" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "aged-walnut",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "hexagon-uniform"
+        }
     },
     "e0000003-0000-0000-0000-000000000003": {
-        "@geometry_component": { "cpu_mesh_handle": "hexagon-uniform", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "hexagon-uniform-2" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "hexagon-uniform",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "hexagon-uniform-2"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 17.0, "y": 0.5, "z": 0.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 17.0,
+                    "y": 0.5,
+                    "z": 0.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "clean-rosewood", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "hexagon-uniform" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "clean-rosewood",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "hexagon-uniform"
+        }
     },
     "e0000004-0000-0000-0000-000000000004": {
-        "@geometry_component": { "cpu_mesh_handle": "hexagon-uniform", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "hexagon-uniform-3" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "hexagon-uniform",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "hexagon-uniform-3"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 18.0, "y": 0.5, "z": 0.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 18.0,
+                    "y": 0.5,
+                    "z": 0.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "clean-scifi-metal-panel-b", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "hexagon-uniform" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "clean-scifi-metal-panel-b",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "hexagon-uniform"
+        }
     },
     "e0000005-0000-0000-0000-000000000005": {
-        "@geometry_component": { "cpu_mesh_handle": "hexagon-uniform", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "hexagon-uniform-4" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "hexagon-uniform",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "hexagon-uniform-4"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 15.0, "y": 0.5, "z": 1.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 15.0,
+                    "y": 0.5,
+                    "z": 1.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "damaged-iron-metal", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "hexagon-uniform" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "damaged-iron-metal",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "hexagon-uniform"
+        }
     },
     "e0000006-0000-0000-0000-000000000006": {
-        "@geometry_component": { "cpu_mesh_handle": "hexagon-uniform", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "hexagon-uniform-5" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "hexagon-uniform",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "hexagon-uniform-5"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 16.0, "y": 0.5, "z": 1.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 16.0,
+                    "y": 0.5,
+                    "z": 1.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "hardened-tempered-steel", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "hexagon-uniform" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "hardened-tempered-steel",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "hexagon-uniform"
+        }
     },
     "e0000007-0000-0000-0000-000000000007": {
-        "@geometry_component": { "cpu_mesh_handle": "hexagon-uniform", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "hexagon-uniform-6" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "hexagon-uniform",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "hexagon-uniform-6"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 17.0, "y": 0.5, "z": 1.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 17.0,
+                    "y": 0.5,
+                    "z": 1.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "magic-triangloid-stone", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "hexagon-uniform" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "magic-triangloid-stone",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "hexagon-uniform"
+        }
     },
     "e0000008-0000-0000-0000-000000000008": {
-        "@geometry_component": { "cpu_mesh_handle": "hexagon-uniform", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "hexagon-uniform-7" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "hexagon-uniform",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "hexagon-uniform-7"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 18.0, "y": 0.5, "z": 1.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 18.0,
+                    "y": 0.5,
+                    "z": 1.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "marble-iso-triangle", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "hexagon-uniform" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "marble-iso-triangle",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "hexagon-uniform"
+        }
     },
     "e0000009-0000-0000-0000-000000000009": {
-        "@geometry_component": { "cpu_mesh_handle": "hexagon-uniform", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "hexagon-uniform-8" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "hexagon-uniform",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "hexagon-uniform-8"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 15.0, "y": 0.5, "z": 2.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 15.0,
+                    "y": 0.5,
+                    "z": 2.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "marble-trapezoid-triangle", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "hexagon-uniform" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "marble-trapezoid-triangle",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "hexagon-uniform"
+        }
     },
     "e0000010-0000-0000-0000-000000000010": {
-        "@geometry_component": { "cpu_mesh_handle": "hexagon-uniform", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "hexagon-uniform-9" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "hexagon-uniform",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "hexagon-uniform-9"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 16.0, "y": 0.5, "z": 2.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 16.0,
+                    "y": 0.5,
+                    "z": 2.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "modern-metal-pentasplit-hexa-tile", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "hexagon-uniform" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "modern-metal-pentasplit-hexa-tile",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "hexagon-uniform"
+        }
     },
     "e0000011-0000-0000-0000-000000000011": {
-        "@geometry_component": { "cpu_mesh_handle": "hexagon-uniform", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "hexagon-uniform-10" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "hexagon-uniform",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "hexagon-uniform-10"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 17.0, "y": 0.5, "z": 2.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 17.0,
+                    "y": 0.5,
+                    "z": 2.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "old-blue-steel", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "hexagon-uniform" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "old-blue-steel",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "hexagon-uniform"
+        }
     },
     "e0000012-0000-0000-0000-000000000012": {
-        "@geometry_component": { "cpu_mesh_handle": "hexagon-uniform", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "hexagon-uniform-11" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "hexagon-uniform",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "hexagon-uniform-11"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 18.0, "y": 0.5, "z": 2.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 18.0,
+                    "y": 0.5,
+                    "z": 2.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "oxidized-aluminum", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "hexagon-uniform" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "oxidized-aluminum",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "hexagon-uniform"
+        }
     },
     "e0000013-0000-0000-0000-000000000013": {
-        "@geometry_component": { "cpu_mesh_handle": "hexagon-uniform", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "hexagon-uniform-12" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "hexagon-uniform",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "hexagon-uniform-12"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 15.0, "y": 0.5, "z": 3.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 15.0,
+                    "y": 0.5,
+                    "z": 3.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "sci-fi-metal-with-weave", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "hexagon-uniform" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "sci-fi-metal-with-weave",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "hexagon-uniform"
+        }
     },
     "e0000014-0000-0000-0000-000000000014": {
-        "@geometry_component": { "cpu_mesh_handle": "hexagon-uniform", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "hexagon-uniform-13" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "hexagon-uniform",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "hexagon-uniform-13"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 16.0, "y": 0.5, "z": 3.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 16.0,
+                    "y": 0.5,
+                    "z": 3.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "sci-fi-plastic-hexagons", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "hexagon-uniform" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "sci-fi-plastic-hexagons",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "hexagon-uniform"
+        }
     },
     "e0000015-0000-0000-0000-000000000015": {
-        "@geometry_component": { "cpu_mesh_handle": "hexagon-uniform", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "hexagon-uniform-14" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "hexagon-uniform",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "hexagon-uniform-14"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 17.0, "y": 0.5, "z": 3.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 17.0,
+                    "y": 0.5,
+                    "z": 3.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "white-italian-marble", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "hexagon-uniform" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "white-italian-marble",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "hexagon-uniform"
+        }
     },
     "e0000016-0000-0000-0000-000000000016": {
-        "@geometry_component": { "cpu_mesh_handle": "hexagon-uniform", "cpu_mesh_proxy_handle": "" },
-        "@identifier_component": { "id": "hexagon-uniform-15" },
+        "@geometry_component": {
+            "cpu_mesh_handle": "hexagon-uniform",
+            "cpu_mesh_proxy_handle": "",
+            "is_static": true
+        },
+        "@identifier_component": {
+            "id": "hexagon-uniform-15"
+        },
         "@local_transform_component": {
-            "children": [],
-            "local_pose": { "orientation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }, "position": { "x": 18.0, "y": 0.5, "z": 3.0 } },
-            "local_scale": { "x": 0.4, "y": 0.4, "z": 0.4 },
+            "local_pose": {
+                "orientation": {
+                    "w": 1.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "position": {
+                    "x": 18.0,
+                    "y": 0.5,
+                    "z": 3.0
+                }
+            },
+            "local_scale": {
+                "x": 0.4000000059604645,
+                "y": 0.4000000059604645,
+                "z": 0.4000000059604645
+            },
             "parent": ""
         },
-        "@material_component": { "cast_shadow": true, "material_handle": "aged-brass", "receive_shadow": true, "uniform_overrides": {} },
-        "@mesh_component": { "gpu_mesh_handle": "hexagon-uniform" }
+        "@material_component": {
+            "cast_shadow": true,
+            "material_handle": "aged-brass",
+            "receive_shadow": true,
+            "uniform_overrides": null
+        },
+        "@mesh_component": {
+            "gpu_mesh_handle": "hexagon-uniform"
+        }
     }
 }

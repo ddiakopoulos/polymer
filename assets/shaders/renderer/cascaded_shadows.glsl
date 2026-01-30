@@ -101,7 +101,8 @@ float calculate_csm_coefficient(sampler2DArray map, vec3 biasedWorldPos, vec3 vi
     // Compute perspective divide and transform to 0-1 range
     const vec3 coords = (vertexLightPostion.xyz / vertexLightPostion.w) / 2.0 + 0.5;
 
-    if (!(coords.z > 0.0 && coords.x > 0.0 && coords.y > 0.0 && coords.x <= 1.0 && coords.y <= 1.0)) return 1;
+    // If coordinates are outside shadow map bounds, return 0 (fully lit, not shadowed)
+    if (!(coords.z > 0.0 && coords.x > 0.0 && coords.y > 0.0 && coords.x <= 1.0 && coords.y <= 1.0)) return 0;
 
     // float shadow_bias[5] = {0.00005, 0.00014, 0.0006, 0.0012, 0.005};
 
