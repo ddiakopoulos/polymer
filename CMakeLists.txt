@@ -48,6 +48,13 @@ if (NOT TARGET spdlog)
     add_subdirectory(${THIRD_PARTY_DIR}/spdlog spdlog)
 endif()
 
+if (NOT TARGET kissfft)
+    set(KISSFFT_TEST OFF CACHE INTERNAL "Build kissfft tests")
+    set(KISSFFT_TOOLS OFF CACHE INTERNAL "Build kissfft tools")
+    set(KISSFFT_STATIC ON CACHE INTERNAL "Build kissfft as static library")
+    add_subdirectory(${THIRD_PARTY_DIR}/kissfft kissfft)
+endif()
+
 # Libraries 
 
 if (NOT TARGET polymer-engine)
@@ -93,4 +100,5 @@ if(POLYMER_BUILD_SAMPLES)
     add_subdirectory(samples/gl-render gl-render)
     add_subdirectory(samples/gl-render-texture gl-render-texture)
     add_subdirectory(samples/gl-spline-2d gl-spline-2d)
+    add_subdirectory(samples/waterfall-fft waterfall-fft)
 endif()

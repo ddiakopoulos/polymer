@@ -55,6 +55,7 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Scene Ed
 
     gizmo.reset(new gizmo_controller(&the_scene));
 
+    /*
     // glTF test imports - load test models at different positions
     {
         // Test 1: Triangle (basic indexed geometry)
@@ -96,6 +97,7 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Scene Ed
                 xform->local_pose.position = float3(6.f, 0.5f, 0.f);
             }
         }
+        */
 
         the_scene.get_graph().refresh();
     }
