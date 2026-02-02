@@ -7,13 +7,16 @@
 #include "polymer-model-io/model-io.hpp"
 #include "polymer-model-io/model-io-util.hpp"
 #include "polymer-model-io/gaussian-splat-io.hpp"
+#include "polymer-model-io/gltf-io.hpp"
 
 #include "polymer-core/util/file-io.hpp"
 #include "polymer-core/util/string-utils.hpp"
 
 #define TINYPLY_IMPLEMENTATION
 #include "tinyply/tinyply.h"
+
 #include "tinyobj/tiny_obj_loader.h"
+
 #include "meshoptimizer/meshoptimizer.h"
 
 using namespace polymer;
@@ -40,6 +43,11 @@ std::unordered_map<std::string, runtime_mesh> polymer::import_model(const std::s
     {
         auto m = import_polymer_binary_model(path);
         models[get_filename_without_extension(path)] = m;
+    }
+    else if (ext == "gltf" || ext == "glb")
+    {
+        auto asset = import_gltf_model(path);
+        for (auto & a : asset) models[a.first] = a.second;
     }
     else
     {

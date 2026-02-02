@@ -54,6 +54,51 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Scene Ed
     polymer::global_debug_mesh_manager::get()->initialize_resources(&the_scene);
 
     gizmo.reset(new gizmo_controller(&the_scene));
+
+    // glTF test imports - load test models at different positions
+    {
+        // Test 1: Triangle (basic indexed geometry)
+        auto triangle_entities = import_asset_runtime(asset_base + "/gltf/Triangle/glTF/Triangle.gltf", the_scene);
+        for (entity e : triangle_entities)
+        {
+            if (auto * xform = the_scene.get_graph().get_object(e).get_component<transform_component>())
+            {
+                xform->local_pose.position = float3(-3.f, 0.f, 0.f);
+            }
+        }
+
+        // Test 2: SciFiHelmet (textured PBR model)
+        auto helmet_entities = import_asset_runtime(asset_base + "/gltf/SciFiHelmet/glTF/SciFiHelmet.gltf", the_scene);
+        for (entity e : helmet_entities)
+        {
+            if (auto * xform = the_scene.get_graph().get_object(e).get_component<transform_component>())
+            {
+                xform->local_pose.position = float3(0.f, 1.f, 0.f);
+            }
+        }
+
+        // Test 3: RiggedSimple (skinned mesh with skeleton)
+        auto rigged_entities = import_asset_runtime(asset_base + "/gltf/RiggedSimple/glTF/RiggedSimple.gltf", the_scene);
+        for (entity e : rigged_entities)
+        {
+            if (auto * xform = the_scene.get_graph().get_object(e).get_component<transform_component>())
+            {
+                xform->local_pose.position = float3(3.f, 0.f, 0.f);
+            }
+        }
+
+        // Test 4: AnimatedCube (animation tracks)
+        auto animated_entities = import_asset_runtime(asset_base + "/gltf/AnimatedCube/glTF/AnimatedCube.gltf", the_scene);
+        for (entity e : animated_entities)
+        {
+            if (auto * xform = the_scene.get_graph().get_object(e).get_component<transform_component>())
+            {
+                xform->local_pose.position = float3(6.f, 0.5f, 0.f);
+            }
+        }
+
+        the_scene.get_graph().refresh();
+    }
 }
 
 void scene_editor_app::on_drop(std::vector<std::string> filepaths)

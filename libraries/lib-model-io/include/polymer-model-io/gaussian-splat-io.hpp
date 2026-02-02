@@ -9,7 +9,6 @@
 
 namespace polymer
 {
-
     struct gaussian_vertex
     {
         float4 position;       // xyz + w=1

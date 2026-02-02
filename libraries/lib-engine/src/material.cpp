@@ -217,14 +217,12 @@ void polymer_pbr_standard::resolve_variants()
 
     const auto variant_hash = shader.get()->hash(processed_defines);
 
-    // First time
     if (!compiled_shader)
     {
         compiled_shader = shader.get()->get_variant(processed_defines);
     }
     else if (compiled_shader->hash != variant_hash)
     {
-        // We updated the set of defines and need to recompile
         compiled_shader = shader.get()->get_variant(processed_defines);
     }
 }
@@ -243,7 +241,6 @@ void polymer_pbr_standard::update_uniforms(material_component * comp)
 
     program.uniform("u_opacity", opacity);
 
-    // Update uniforms
     for (auto & uniform : uniform_table)
     {
         if (auto * val = nonstd::get_if<polymer::property<int>>(&uniform.second))    program.uniform(uniform.first, *val);
@@ -253,7 +250,6 @@ void polymer_pbr_standard::update_uniforms(material_component * comp)
         if (auto * val = nonstd::get_if<polymer::property<float4>>(&uniform.second)) program.uniform(uniform.first, *val);
     }
 
-    // Update uniform overrides. This method can be greatly improved in the future.
     for (auto & uniform_override : comp->override_table.table)
     {
         if (auto * val = nonstd::get_if<polymer::property<int>>(&uniform_override.second))    program.uniform(uniform_override.first, *val);
