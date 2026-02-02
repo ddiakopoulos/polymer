@@ -57,18 +57,19 @@ struct spectrogram_params
     window_type window = window_type::hann;
     scale_type scale = scale_type::logarithmic;
     float dynamic_range_db = 80.0f;
-    colormap::colormap_t colormap = colormap::colormap_t::mpl_viridis;
+    colormap::colormap_t colormap = colormap::colormap_t::ampl;
 };
 
 struct visualization_params
 {
     float time_window_seconds = 5.0f;
-    float height_scale = 2.0f;
+    float height_scale = 1.0f;
     float mesh_width = 10.0f;
     float mesh_depth = 10.0f;
     int32_t frequency_resolution = 256;
-    float edge_fade_intensity = 0.5f;
-    float edge_fade_distance = 0.15f;
+    float edge_fade_intensity = 1.0f;
+    float edge_fade_distance = 0.50f;
+    float grid_density = 0.5f;  // >1 = more lines (subdivisions), <1 = fewer lines (sparser grid)
 };
 
 struct post_processing_params
@@ -80,7 +81,7 @@ struct post_processing_params
     int32_t bloom_blur_passes = 2;
     float exposure = 1.0f;
     float gamma = 2.2f;
-    int32_t tonemap_mode = 2;  // 0=none, 1=Reinhard, 2=ACES
+    int32_t tonemap_mode = 1;  // 0=none, 1=Reinhard, 2=ACES
 };
 
 // ============================================================================
@@ -428,7 +429,7 @@ void sample_waterfall_fft::setup_waterfall_mesh()
 
     // Allocate vertex buffer
     int32_t vertex_count = history_rows * freq_bins;
-    vertex_buffer.resize(vertex_count * 6); // 3 pos + 3 color
+    vertex_buffer.resize(vertex_count * 8); // 3 pos + 3 color + 2 grid_uv
 
     rebuild_mesh_vertices();
 }
@@ -493,19 +494,26 @@ void sample_waterfall_fft::rebuild_mesh_vertices()
             // Color from colormap
             double3 color = colormap::get_color(static_cast<double>(magnitude), params.colormap);
 
+            // Grid UV for quad-based wireframe (normalized [0,1] across entire grid)
+            float grid_u = static_cast<float>(x) / static_cast<float>(freq_bins - 1);
+            float grid_v = static_cast<float>(z) / static_cast<float>(history_rows - 1);
+
             vertex_buffer[vi++] = px;
             vertex_buffer[vi++] = py;
             vertex_buffer[vi++] = pz;
             vertex_buffer[vi++] = static_cast<float>(color.x);
             vertex_buffer[vi++] = static_cast<float>(color.y);
             vertex_buffer[vi++] = static_cast<float>(color.z);
+            vertex_buffer[vi++] = grid_u;
+            vertex_buffer[vi++] = grid_v;
         }
     }
 
     // Upload to GPU
     waterfall_mesh.set_vertex_data(vertex_buffer.size() * sizeof(float), vertex_buffer.data(), GL_DYNAMIC_DRAW);
-    waterfall_mesh.set_attribute(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), reinterpret_cast<void *>(0));
-    waterfall_mesh.set_attribute(2, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), reinterpret_cast<void *>(3 * sizeof(float)));
+    waterfall_mesh.set_attribute(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), reinterpret_cast<void *>(0));
+    waterfall_mesh.set_attribute(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), reinterpret_cast<void *>(3 * sizeof(float)));
+    waterfall_mesh.set_attribute(3, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), reinterpret_cast<void *>(6 * sizeof(float)));
 
     if (!index_buffer.empty())
     {
@@ -756,6 +764,8 @@ void sample_waterfall_fft::on_draw()
             glBlendFunc(GL_SRC_ALPHA, GL_ONE);
             glDisable(GL_CULL_FACE);
 
+            int32_t freq_bins = fft_history.empty() ? 1 : static_cast<int32_t>(fft_history[0].size());
+
             waterfall_wireframe_shader.bind();
             waterfall_wireframe_shader.uniform("u_mvp", mvp);
             waterfall_wireframe_shader.uniform("u_edge_fade_intensity", viz_params.edge_fade_intensity);
@@ -763,6 +773,9 @@ void sample_waterfall_fft::on_draw()
             waterfall_wireframe_shader.uniform("u_mesh_depth", viz_params.mesh_depth);
             waterfall_wireframe_shader.uniform("u_line_width", wireframe_line_width);
             waterfall_wireframe_shader.uniform("u_glow_intensity", wireframe_glow_intensity);
+            waterfall_wireframe_shader.uniform("u_grid_cols", static_cast<float>(freq_bins - 1));
+            waterfall_wireframe_shader.uniform("u_grid_rows", static_cast<float>(history_rows - 1));
+            waterfall_wireframe_shader.uniform("u_grid_density", viz_params.grid_density);
             waterfall_mesh.draw_elements();
             waterfall_wireframe_shader.unbind();
         }
@@ -849,6 +862,8 @@ void sample_waterfall_fft::on_draw()
     {
         ImGui::SliderFloat("Line Width", &wireframe_line_width, 0.5f, 5.0f);
         ImGui::SliderFloat("Glow Intensity", &wireframe_glow_intensity, 0.5f, 5.0f);
+        ImGui::SliderFloat("Grid Density", &viz_params.grid_density, 0.1f, 8.0f, "%.2f");
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("<1 = sparser grid, >1 = denser grid");
     }
 
     ImGui::Separator();

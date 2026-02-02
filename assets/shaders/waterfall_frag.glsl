@@ -3,6 +3,7 @@
 in vec3 v_color;
 in vec3 v_position;
 in float v_fade;
+in vec2 v_grid_uv;
 
 out vec4 f_color;
 

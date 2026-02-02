@@ -2,6 +2,7 @@
 
 layout(location = 0) in vec3 inPosition;
 layout(location = 2) in vec3 inVertexColor;
+layout(location = 3) in vec2 inGridUV;
 
 uniform mat4 u_mvp;
 uniform float u_edge_fade_intensity;
@@ -11,11 +12,13 @@ uniform float u_mesh_depth;
 out vec3 v_color;
 out vec3 v_position;
 out float v_fade;
+out vec2 v_grid_uv;
 
 void main()
 {
     v_color = inVertexColor;
     v_position = inPosition;
+    v_grid_uv = inGridUV;
 
     // Compute edge fade based on Z position
     float z_norm = (inPosition.z / u_mesh_depth) + 0.5;
