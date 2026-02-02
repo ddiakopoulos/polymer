@@ -1,7 +1,8 @@
 // This sample demonstrates real-time audio FFT visualization using a 3D waterfall
 // display with orbit camera, displaced mesh geometry, and colormap-based vertex coloring.
 // It uses kissfft for FFT processing and supports multiple window functions, colormaps,
-// and visualization parameters.
+// and visualization parameters. Features include HDR rendering with bloom post-processing,
+// holographic wireframe mode, and edge fade effects.
 
 #include "polymer-core/lib-polymer.hpp"
 
@@ -35,6 +36,12 @@ enum class scale_type : uint32_t
     logarithmic
 };
 
+enum class render_mode : uint32_t
+{
+    solid,
+    wireframe
+};
+
 struct wav_data
 {
     uint32_t sample_rate = 0;
@@ -60,6 +67,20 @@ struct visualization_params
     float mesh_width = 10.0f;
     float mesh_depth = 10.0f;
     int32_t frequency_resolution = 256;
+    float edge_fade_intensity = 0.5f;
+    float edge_fade_distance = 0.15f;
+};
+
+struct post_processing_params
+{
+    bool bloom_enabled = true;
+    float bloom_threshold = 0.8f;
+    float bloom_intensity = 1.0f;
+    float bloom_radius = 1.0f;
+    int32_t bloom_blur_passes = 2;
+    float exposure = 1.0f;
+    float gamma = 2.2f;
+    int32_t tonemap_mode = 2;  // 0=none, 1=Reinhard, 2=ACES
 };
 
 // ============================================================================
@@ -231,10 +252,12 @@ struct sample_waterfall_fft final : public polymer_app
     float playback_position = 0.0f;
     bool is_playing = false;
     bool audio_loaded = false;
+    bool loop_enabled = true;
 
     kiss_fftr_cfg fft_cfg = nullptr;
     spectrogram_params params;
     visualization_params viz_params;
+    post_processing_params post_params;
     std::vector<float> window_coefficients;
     std::vector<float> fft_input;
     std::vector<kiss_fft_cpx> fft_output;
@@ -252,12 +275,40 @@ struct sample_waterfall_fft final : public polymer_app
     // Camera
     camera_controller_orbit cam;
 
+    // Shaders
     gl_shader waterfall_shader;
+    gl_shader waterfall_wireframe_shader;
+    gl_shader brightness_shader;
+    gl_shader blur_shader;
+    gl_shader composite_shader;
+
+    // Render mode
+    render_mode current_render_mode = render_mode::solid;
+    float wireframe_line_width = 1.5f;
+    float wireframe_glow_intensity = 2.0f;
+
+    // HDR framebuffer resources
+    gl_framebuffer hdr_framebuffer;
+    gl_texture_2d hdr_color_texture;
+    gl_texture_2d hdr_depth_texture;
+
+    // Bloom ping-pong buffers (half resolution)
+    gl_framebuffer blur_fb_ping;
+    gl_framebuffer blur_fb_pong;
+    gl_texture_2d blur_tex_ping;
+    gl_texture_2d blur_tex_pong;
+
+    // Empty VAO for fullscreen passes (gl_VertexID technique)
+    gl_vertex_array_object fullscreen_vao;
+
+    int32_t current_width = 0;
+    int32_t current_height = 0;
 
     int32_t selected_fft_size_index = 3;   // Default 2048
     int32_t selected_window_index = 1;     // Default Hann
     int32_t selected_scale_index = 1;      // Default Logarithmic
     int32_t selected_colormap_index = 7;   // Default Viridis
+    int32_t selected_render_mode_index = 0; // Default Solid
 
     sample_waterfall_fft();
     ~sample_waterfall_fft();
@@ -270,9 +321,11 @@ struct sample_waterfall_fft final : public polymer_app
 
     void setup_fft();
     void setup_waterfall_mesh();
+    void setup_post_processing(int32_t width, int32_t height);
     void rebuild_mesh_vertices();
     void load_audio(const std::string & path);
     void process_fft_frame();
+    void render_bloom_pass(int32_t width, int32_t height);
 };
 
 sample_waterfall_fft::sample_waterfall_fft() : polymer_app(1920, 1200, "waterfall-fft")
@@ -296,12 +349,29 @@ sample_waterfall_fft::sample_waterfall_fft() : polymer_app(1920, 1200, "waterfal
 
     std::string asset_base = global_asset_dir::get()->get_asset_dir();
 
+    // Load solid shader
     waterfall_shader = gl_shader(
         read_file_text(asset_base + "/shaders/waterfall_vert.glsl"),
         read_file_text(asset_base + "/shaders/waterfall_frag.glsl"));
 
+    // Load wireframe shader with geometry stage
+    waterfall_wireframe_shader = gl_shader(
+        read_file_text(asset_base + "/shaders/waterfall_wireframe_vert.glsl"),
+        read_file_text(asset_base + "/shaders/waterfall_wireframe_frag.glsl"),
+        read_file_text(asset_base + "/shaders/waterfall_wireframe_geom.glsl"));
+
+    // Load post-processing shaders
+    std::string fullscreen_vert = read_file_text(asset_base + "/shaders/waterfall_fullscreen_vert.glsl");
+    brightness_shader = gl_shader(fullscreen_vert, read_file_text(asset_base + "/shaders/waterfall_brightness_frag.glsl"));
+    blur_shader = gl_shader(fullscreen_vert, read_file_text(asset_base + "/shaders/waterfall_blur_frag.glsl"));
+    composite_shader = gl_shader(fullscreen_vert, read_file_text(asset_base + "/shaders/waterfall_composite_frag.glsl"));
+
     setup_fft();
     setup_waterfall_mesh();
+    setup_post_processing(width, height);
+
+    current_width = width;
+    current_height = height;
 }
 
 sample_waterfall_fft::~sample_waterfall_fft()
@@ -363,6 +433,40 @@ void sample_waterfall_fft::setup_waterfall_mesh()
     rebuild_mesh_vertices();
 }
 
+void sample_waterfall_fft::setup_post_processing(int32_t width, int32_t height)
+{
+    // HDR framebuffer at full resolution
+    hdr_color_texture.setup(width, height, GL_RGBA16F, GL_RGBA, GL_FLOAT, nullptr);
+    glTextureParameteri(hdr_color_texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(hdr_color_texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    hdr_depth_texture.setup(width, height, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+
+    glNamedFramebufferTexture(hdr_framebuffer, GL_COLOR_ATTACHMENT0, hdr_color_texture, 0);
+    glNamedFramebufferTexture(hdr_framebuffer, GL_DEPTH_ATTACHMENT, hdr_depth_texture, 0);
+    hdr_framebuffer.check_complete();
+
+    // Half-resolution bloom buffers
+    int32_t half_w = width / 2;
+    int32_t half_h = height / 2;
+
+    blur_tex_ping.setup(half_w, half_h, GL_RGBA16F, GL_RGBA, GL_FLOAT, nullptr);
+    glTextureParameteri(blur_tex_ping, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(blur_tex_ping, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    blur_tex_pong.setup(half_w, half_h, GL_RGBA16F, GL_RGBA, GL_FLOAT, nullptr);
+    glTextureParameteri(blur_tex_pong, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(blur_tex_pong, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glNamedFramebufferTexture(blur_fb_ping, GL_COLOR_ATTACHMENT0, blur_tex_ping, 0);
+    blur_fb_ping.check_complete();
+
+    glNamedFramebufferTexture(blur_fb_pong, GL_COLOR_ATTACHMENT0, blur_tex_pong, 0);
+    blur_fb_pong.check_complete();
+
+    gl_check_error(__FILE__, __LINE__);
+}
+
 void sample_waterfall_fft::rebuild_mesh_vertices()
 {
     if (fft_history.empty() || fft_history[0].empty()) return;
@@ -415,11 +519,13 @@ void sample_waterfall_fft::load_audio(const std::string & path)
     {
         audio = load_wav_file(path);
         playback_position = 0.0f;
-        is_playing = false;
         audio_loaded = true;
 
         // Reset FFT history and rebuild mesh
         setup_waterfall_mesh();
+
+        // Auto-play on drop
+        is_playing = true;
 
         std::cout << "Loaded audio: " << path << std::endl;
         std::cout << "  Sample rate: " << audio.sample_rate << " Hz" << std::endl;
@@ -482,7 +588,25 @@ void sample_waterfall_fft::process_fft_frame()
     rebuild_mesh_vertices();
 }
 
-void sample_waterfall_fft::on_window_resize(int2 size) {}
+void sample_waterfall_fft::on_window_resize(int2 size)
+{
+    if (size.x > 0 && size.y > 0 && (size.x != current_width || size.y != current_height))
+    {
+        current_width = size.x;
+        current_height = size.y;
+
+        // Recreate framebuffers - we need new texture objects
+        hdr_color_texture = gl_texture_2d();
+        hdr_depth_texture = gl_texture_2d();
+        blur_tex_ping = gl_texture_2d();
+        blur_tex_pong = gl_texture_2d();
+        hdr_framebuffer = gl_framebuffer();
+        blur_fb_ping = gl_framebuffer();
+        blur_fb_pong = gl_framebuffer();
+
+        setup_post_processing(size.x, size.y);
+    }
+}
 
 void sample_waterfall_fft::on_input(const app_input_event & event)
 {
@@ -522,11 +646,66 @@ void sample_waterfall_fft::on_update(const app_update_event & e)
         playback_position += hop_duration;
 
         float duration = audio.samples.size() / static_cast<float>(audio.sample_rate);
-        if (playback_position >= duration - (params.fft_size / static_cast<float>(audio.sample_rate)))
+        float buffer_time = params.fft_size / static_cast<float>(audio.sample_rate);
+
+        if (playback_position >= duration - buffer_time)
         {
-            is_playing = false;
-            playback_position = 0.0f;
+            if (loop_enabled)
+            {
+                playback_position = 0.0f;  // Loop back to start
+            }
+            else
+            {
+                is_playing = false;
+                playback_position = 0.0f;
+            }
         }
+    }
+}
+
+void sample_waterfall_fft::render_bloom_pass(int32_t width, int32_t height)
+{
+    int32_t half_w = width / 2;
+    int32_t half_h = height / 2;
+
+    glDisable(GL_DEPTH_TEST);
+    glBindVertexArray(fullscreen_vao);
+
+    // Step 1: Brightness extraction to ping buffer
+    glBindFramebuffer(GL_FRAMEBUFFER, blur_fb_ping);
+    glViewport(0, 0, half_w, half_h);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    brightness_shader.bind();
+    brightness_shader.texture("s_hdr_color", 0, hdr_color_texture, GL_TEXTURE_2D);
+    brightness_shader.uniform("u_threshold", post_params.bloom_threshold);
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+    brightness_shader.unbind();
+
+    // Step 2: Gaussian blur passes (ping-pong)
+    for (int32_t pass = 0; pass < post_params.bloom_blur_passes; ++pass)
+    {
+        // Horizontal blur: ping -> pong
+        glBindFramebuffer(GL_FRAMEBUFFER, blur_fb_pong);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        blur_shader.bind();
+        blur_shader.texture("s_source", 0, blur_tex_ping, GL_TEXTURE_2D);
+        blur_shader.uniform("u_direction", float2(1.0f / half_w, 0.0f));
+        blur_shader.uniform("u_radius", post_params.bloom_radius);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+        blur_shader.unbind();
+
+        // Vertical blur: pong -> ping
+        glBindFramebuffer(GL_FRAMEBUFFER, blur_fb_ping);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        blur_shader.bind();
+        blur_shader.texture("s_source", 0, blur_tex_pong, GL_TEXTURE_2D);
+        blur_shader.uniform("u_direction", float2(0.0f, 1.0f / half_h));
+        blur_shader.uniform("u_radius", post_params.bloom_radius);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+        blur_shader.unbind();
     }
 }
 
@@ -537,32 +716,88 @@ void sample_waterfall_fft::on_draw()
     int width, height;
     glfwGetWindowSize(window, &width, &height);
 
+    // Check for resize
+    if (width != current_width || height != current_height)
+    {
+        on_window_resize({width, height});
+    }
+
+    // Step 1: Render scene to HDR framebuffer
+    glBindFramebuffer(GL_FRAMEBUFFER, hdr_framebuffer);
     glViewport(0, 0, width, height);
-    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClearColor(0.05f, 0.05f, 0.08f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
+    glEnable(GL_BLEND);
 
     // Draw 3D mesh
     {
         float aspect = static_cast<float>(width) / static_cast<float>(height);
         float4x4 mvp = cam.get_viewproj_matrix(aspect);
 
-        waterfall_shader.bind();
-        waterfall_shader.uniform("u_mvp", mvp);
-        waterfall_mesh.draw_elements();
-        waterfall_shader.unbind();
+        if (current_render_mode == render_mode::solid)
+        {
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            glEnable(GL_CULL_FACE);
+            glCullFace(GL_BACK);
+
+            waterfall_shader.bind();
+            waterfall_shader.uniform("u_mvp", mvp);
+            waterfall_shader.uniform("u_edge_fade_intensity", viz_params.edge_fade_intensity);
+            waterfall_shader.uniform("u_edge_fade_distance", viz_params.edge_fade_distance);
+            waterfall_shader.uniform("u_mesh_depth", viz_params.mesh_depth);
+            waterfall_mesh.draw_elements();
+            waterfall_shader.unbind();
+        }
+        else
+        {
+            // Wireframe mode with additive blending for glow
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+            glDisable(GL_CULL_FACE);
+
+            waterfall_wireframe_shader.bind();
+            waterfall_wireframe_shader.uniform("u_mvp", mvp);
+            waterfall_wireframe_shader.uniform("u_edge_fade_intensity", viz_params.edge_fade_intensity);
+            waterfall_wireframe_shader.uniform("u_edge_fade_distance", viz_params.edge_fade_distance);
+            waterfall_wireframe_shader.uniform("u_mesh_depth", viz_params.mesh_depth);
+            waterfall_wireframe_shader.uniform("u_line_width", wireframe_line_width);
+            waterfall_wireframe_shader.uniform("u_glow_intensity", wireframe_glow_intensity);
+            waterfall_mesh.draw_elements();
+            waterfall_wireframe_shader.unbind();
+        }
     }
 
-    // ImGui
-    glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
+    glDisable(GL_BLEND);
 
+    // Step 2: Bloom pass (if enabled)
+    if (post_params.bloom_enabled)
+    {
+        render_bloom_pass(width, height);
+    }
+
+    // Step 3: Final composite to screen
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, width, height);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glDisable(GL_DEPTH_TEST);
+    glBindVertexArray(fullscreen_vao);
+
+    composite_shader.bind();
+    composite_shader.texture("s_hdr_color", 0, hdr_color_texture, GL_TEXTURE_2D);
+    composite_shader.texture("s_bloom", 1, blur_tex_ping, GL_TEXTURE_2D);
+    composite_shader.uniform("u_bloom_intensity", post_params.bloom_enabled ? post_params.bloom_intensity : 0.0f);
+    composite_shader.uniform("u_exposure", post_params.exposure);
+    composite_shader.uniform("u_gamma", post_params.gamma);
+    composite_shader.uniform("u_tonemap_mode", post_params.tonemap_mode);
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+    composite_shader.unbind();
+
+    // ImGui
     imgui->begin_frame();
 
-    gui::imgui_fixed_window_begin("Waterfall FFT", {{0, 0}, {320, height}});
+    gui::imgui_fixed_window_begin("Waterfall FFT", {{0, 0}, {340, height}});
 
     ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
     ImGui::Separator();
@@ -594,11 +829,32 @@ void sample_waterfall_fft::on_draw()
             current_history_row = 0;
             rebuild_mesh_vertices();
         }
+        ImGui::Checkbox("Loop Playback", &loop_enabled);
     }
     else
     {
         ImGui::TextDisabled("No audio loaded");
     }
+
+    ImGui::Separator();
+    ImGui::Text("Render Mode");
+
+    const char * render_modes[] = {"Solid", "Wireframe (Holographic)"};
+    if (ImGui::Combo("Mode", &selected_render_mode_index, render_modes, IM_ARRAYSIZE(render_modes)))
+    {
+        current_render_mode = static_cast<render_mode>(selected_render_mode_index);
+    }
+
+    if (current_render_mode == render_mode::wireframe)
+    {
+        ImGui::SliderFloat("Line Width", &wireframe_line_width, 0.5f, 5.0f);
+        ImGui::SliderFloat("Glow Intensity", &wireframe_glow_intensity, 0.5f, 5.0f);
+    }
+
+    ImGui::Separator();
+    ImGui::Text("Edge Fade");
+    ImGui::SliderFloat("Fade Intensity", &viz_params.edge_fade_intensity, 0.0f, 1.0f);
+    ImGui::SliderFloat("Fade Distance", &viz_params.edge_fade_distance, 0.05f, 0.4f);
 
     ImGui::Separator();
     ImGui::Text("FFT Settings");
@@ -673,6 +929,23 @@ void sample_waterfall_fft::on_draw()
     {
         setup_waterfall_mesh();
     }
+
+    ImGui::Separator();
+    ImGui::Text("Post Processing");
+
+    ImGui::Checkbox("Enable Bloom", &post_params.bloom_enabled);
+    if (post_params.bloom_enabled)
+    {
+        ImGui::SliderFloat("Threshold", &post_params.bloom_threshold, 0.0f, 2.0f);
+        ImGui::SliderFloat("Intensity", &post_params.bloom_intensity, 0.0f, 3.0f);
+        ImGui::SliderFloat("Radius", &post_params.bloom_radius, 0.5f, 3.0f);
+        ImGui::SliderInt("Blur Passes", &post_params.bloom_blur_passes, 1, 4);
+    }
+    ImGui::SliderFloat("Exposure", &post_params.exposure, 0.1f, 5.0f);
+    ImGui::SliderFloat("Gamma", &post_params.gamma, 1.0f, 3.0f);
+
+    const char * tonemap_names[] = {"None", "Reinhard", "ACES Filmic"};
+    ImGui::Combo("Tonemapping", &post_params.tonemap_mode, tonemap_names, IM_ARRAYSIZE(tonemap_names));
 
     ImGui::Separator();
     ImGui::Text("Camera Controls");
