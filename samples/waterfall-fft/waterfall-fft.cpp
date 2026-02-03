@@ -90,6 +90,7 @@ struct taa_params
     int32_t jitter_sequence_length = 16;
     float feedback_min = 0.88f;
     float feedback_max = 0.97f;
+    int32_t debug_mode = 0; // 0=off, 1=velocity, 2=current
 };
 
 struct taa_state
@@ -296,8 +297,9 @@ inline float4x4 apply_jitter_to_projection(float4x4 proj, float2 jitter_pixels, 
         2.0f * jitter_pixels.y / screen_size.y
     );
     float4x4 jittered = proj;
-    jittered[2][0] += jitter_ndc.x;
-    jittered[2][1] += jitter_ndc.y;
+    // Note: projection's [2][0/1] contributes with a negative sign in NDC for this matrix layout.
+    jittered[2][0] -= jitter_ndc.x;
+    jittered[2][1] -= jitter_ndc.y;
     return jittered;
 }
 
@@ -366,6 +368,7 @@ struct sample_waterfall_fft final : public polymer_app
     gl_texture_2d taa_history_tex[2];         // RGBA16F ping-pong
     std::vector<float> previous_vertex_buffer;
     gl_mesh velocity_mesh;
+    bool mesh_updated_this_frame = false;
 
     // Empty VAO for fullscreen passes (gl_VertexID technique)
     gl_vertex_array_object fullscreen_vao;
@@ -402,7 +405,7 @@ struct sample_waterfall_fft final : public polymer_app
     void render_taa_resolve_pass(int32_t width, int32_t height);
 };
 
-sample_waterfall_fft::sample_waterfall_fft() : polymer_app(1920, 1200, "waterfall-fft")
+sample_waterfall_fft::sample_waterfall_fft() : polymer_app(1920, 1200, "waterfall-fft", 4)
 {
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
@@ -417,9 +420,9 @@ sample_waterfall_fft::sample_waterfall_fft() : polymer_app(1920, 1200, "waterfal
     // Initialize orbit camera
     cam.set_eye_position({0, 5, 15});
     cam.set_target({0, 0, 0});
-    cam.yfov = 1.0f;
+    cam.yfov = to_radians(65.0);
     cam.near_clip = 0.1f;
-    cam.far_clip = 100.0f;
+    cam.far_clip = 24.0f;
 
     std::string asset_base = global_asset_dir::get()->get_asset_dir();
 
@@ -587,12 +590,6 @@ void sample_waterfall_fft::rebuild_mesh_vertices()
 {
     if (fft_history.empty() || fft_history[0].empty()) return;
 
-    // Store previous vertex positions for TAA velocity
-    if (taa_config.enabled && !vertex_buffer.empty())
-    {
-        previous_vertex_buffer = vertex_buffer;
-    }
-
     int32_t freq_bins = static_cast<int32_t>(fft_history[0].size());
     float x_scale = viz_params.mesh_width / freq_bins;
     float z_scale = viz_params.mesh_depth / history_rows;
@@ -641,11 +638,7 @@ void sample_waterfall_fft::rebuild_mesh_vertices()
         waterfall_mesh.set_elements(index_buffer, GL_STATIC_DRAW);
     }
 
-    // Update velocity mesh for TAA
-    if (taa_config.enabled)
-    {
-        update_velocity_mesh();
-    }
+    mesh_updated_this_frame = true;
 }
 
 void sample_waterfall_fft::update_velocity_mesh()
@@ -690,6 +683,10 @@ void sample_waterfall_fft::update_velocity_mesh()
     {
         velocity_mesh.set_elements(index_buffer, GL_STATIC_DRAW);
     }
+
+    // Advance previous positions for next frame if the mesh doesn't change.
+    previous_vertex_buffer = vertex_buffer;
+    mesh_updated_this_frame = false;
 }
 
 void sample_waterfall_fft::load_audio(const std::string & path)
@@ -908,6 +905,12 @@ void sample_waterfall_fft::render_bloom_pass(int32_t width, int32_t height)
 
 void sample_waterfall_fft::update_taa_jitter(int32_t width, int32_t height)
 {
+    if (!taa.first_frame)
+    {
+        // Preserve last frame's unjittered view-projection before overwriting current matrices.
+        taa.previous_viewproj = taa.current_proj_unjittered * taa.current_view_matrix;
+    }
+
     taa.previous_jitter = taa.current_jitter;
     taa.previous_view_matrix = taa.current_view_matrix;
 
@@ -924,10 +927,7 @@ void sample_waterfall_fft::update_taa_jitter(int32_t width, int32_t height)
         float2(static_cast<float>(width), static_cast<float>(height))
     );
 
-    if (!taa.first_frame)
-    {
-        taa.previous_viewproj = taa.current_proj_unjittered * taa.previous_view_matrix;
-    }
+    // previous_viewproj already captured above from last frame's matrices
 }
 
 void sample_waterfall_fft::render_velocity_pass(int32_t width, int32_t height)
@@ -942,10 +942,12 @@ void sample_waterfall_fft::render_velocity_pass(int32_t width, int32_t height)
 
     float4x4 current_mvp = taa.current_proj_unjittered * taa.current_view_matrix;
     float4x4 previous_mvp = taa.first_frame ? current_mvp : taa.previous_viewproj;
+    float4x4 raster_mvp = taa.current_proj_jittered * taa.current_view_matrix;
 
     taa_velocity_shader.bind();
     taa_velocity_shader.uniform("u_current_mvp", current_mvp);
     taa_velocity_shader.uniform("u_previous_mvp", previous_mvp);
+    taa_velocity_shader.uniform("u_raster_mvp", raster_mvp);
     velocity_mesh.draw_elements();
     taa_velocity_shader.unbind();
 
@@ -991,6 +993,7 @@ void sample_waterfall_fft::render_taa_resolve_pass(int32_t width, int32_t height
     taa_resolve_shader.uniform("u_texel_size", float2(1.0f / width, 1.0f / height));
     taa_resolve_shader.uniform("u_feedback_min", taa_config.feedback_min);
     taa_resolve_shader.uniform("u_feedback_max", taa_config.feedback_max);
+    taa_resolve_shader.uniform("u_debug_mode", taa_config.debug_mode);
     glDrawArrays(GL_TRIANGLES, 0, 3);
     taa_resolve_shader.unbind();
 
@@ -1081,6 +1084,7 @@ void sample_waterfall_fft::on_draw()
     // Step 2: TAA passes (if enabled)
     if (taa_config.enabled)
     {
+        update_velocity_mesh();
         render_velocity_pass(width, height);
         render_taa_resolve_pass(width, height);
     }
@@ -1290,6 +1294,9 @@ void sample_waterfall_fft::on_draw()
         {
             taa_config.jitter_sequence_length = (jitter_idx == 0) ? 8 : (jitter_idx == 1) ? 16 : 32;
         }
+
+        const char * taa_debug_modes[] = {"Off", "Velocity", "Current"};
+        ImGui::Combo("TAA Debug", &taa_config.debug_mode, taa_debug_modes, IM_ARRAYSIZE(taa_debug_modes));
     }
 
     ImGui::Separator();

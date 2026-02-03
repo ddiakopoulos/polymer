@@ -7,6 +7,7 @@ layout(location = 3) in vec2 in_grid_uv;
 
 uniform mat4 u_current_mvp;
 uniform mat4 u_previous_mvp;
+uniform mat4 u_raster_mvp;
 
 out vec4 v_current_clip;
 out vec4 v_previous_clip;
@@ -15,5 +16,6 @@ void main()
 {
     v_current_clip = u_current_mvp * vec4(in_position, 1.0);
     v_previous_clip = u_previous_mvp * vec4(in_previous_position, 1.0);
-    gl_Position = v_current_clip;
+    // Rasterize against the jittered projection so depth matches the scene.
+    gl_Position = u_raster_mvp * vec4(in_position, 1.0);
 }

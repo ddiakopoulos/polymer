@@ -9,6 +9,7 @@ uniform vec4 u_jitter_uv;      // xy=current, zw=previous
 uniform vec2 u_texel_size;
 uniform float u_feedback_min;
 uniform float u_feedback_max;
+uniform int u_debug_mode;      // 0=off, 1=velocity, 2=current
 
 in vec2 v_texcoord;
 out vec4 f_color;
@@ -81,8 +82,21 @@ void main()
     vec2 velocity = texture(s_velocity, closest.xy).rg;
 
     // Sample current (unjittered)
-    vec2 current_uv = v_texcoord - u_jitter_uv.xy;
+    vec2 current_uv = v_texcoord + u_jitter_uv.xy;
     vec4 current_color = sample_color(s_current, current_uv);
+
+    if (u_debug_mode == 1)
+    {
+        // Visualize velocity in UV space
+        vec2 vis = velocity * 10.0 + vec2(0.5);
+        f_color = vec4(vis, 0.0, 1.0);
+        return;
+    }
+    else if (u_debug_mode == 2)
+    {
+        f_color = vec4(ycocg_to_rgb(current_color.rgb), 1.0);
+        return;
+    }
 
     // Sample history (reprojected)
     vec2 history_uv = v_texcoord - velocity;

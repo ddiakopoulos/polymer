@@ -291,7 +291,7 @@ namespace polymer
                 {
                     const linalg::aliases::float3 local_y = -normalize(f.yDir);
                     const linalg::aliases::float3 flat_x = normalize(f.xDir * linalg::aliases::float3(1, 0, 1));
-                    const linalg::aliases::float3 delta_pan_offset = (flat_x * -delta.delta_pan_x) + (local_y * -delta.delta_pan_y);
+                    const linalg::aliases::float3 delta_pan_offset = (flat_x * -delta.delta_pan_x) + (local_y * -delta.delta_pan_y) * float3(0.25f);
                     target += delta_pan_offset;
                 }
 
