@@ -84,6 +84,28 @@ struct post_processing_params
     int32_t tonemap_mode = 1;  // 0=none, 1=Reinhard, 2=ACES
 };
 
+struct taa_params
+{
+    bool enabled = true;
+    int32_t jitter_sequence_length = 16;
+    float feedback_min = 0.88f;
+    float feedback_max = 0.97f;
+};
+
+struct taa_state
+{
+    int32_t jitter_index = 0;
+    float2 current_jitter = {0.0f, 0.0f};
+    float2 previous_jitter = {0.0f, 0.0f};
+    float4x4 current_view_matrix;
+    float4x4 previous_view_matrix;
+    float4x4 current_proj_jittered;
+    float4x4 current_proj_unjittered;
+    float4x4 previous_viewproj;
+    int32_t history_index = 0;
+    bool first_frame = true;
+};
+
 // ============================================================================
 // Inline Free Functions
 // ============================================================================
@@ -245,6 +267,40 @@ inline float compute_magnitude_db(float real, float imag, float dynamic_range_db
     return clamp<float>(normalized, 0.0f, 1.0f);
 }
 
+inline float halton_sequence(int32_t index, int32_t base)
+{
+    float result = 0.0f;
+    float f = 1.0f;
+    int32_t i = index;
+    while (i > 0)
+    {
+        f = f / static_cast<float>(base);
+        result = result + f * static_cast<float>(i % base);
+        i = i / base;
+    }
+    return result;
+}
+
+inline float2 halton_2_3(int32_t index)
+{
+    return float2(
+        halton_sequence(index + 1, 2) - 0.5f,
+        halton_sequence(index + 1, 3) - 0.5f
+    );
+}
+
+inline float4x4 apply_jitter_to_projection(float4x4 proj, float2 jitter_pixels, float2 screen_size)
+{
+    float2 jitter_ndc = float2(
+        2.0f * jitter_pixels.x / screen_size.x,
+        2.0f * jitter_pixels.y / screen_size.y
+    );
+    float4x4 jittered = proj;
+    jittered[2][0] += jitter_ndc.x;
+    jittered[2][1] += jitter_ndc.y;
+    return jittered;
+}
+
 struct sample_waterfall_fft final : public polymer_app
 {
     std::unique_ptr<imgui_instance> imgui;
@@ -259,6 +315,8 @@ struct sample_waterfall_fft final : public polymer_app
     spectrogram_params params;
     visualization_params viz_params;
     post_processing_params post_params;
+    taa_params taa_config;
+    taa_state taa;
     std::vector<float> window_coefficients;
     std::vector<float> fft_input;
     std::vector<kiss_fft_cpx> fft_output;
@@ -282,10 +340,12 @@ struct sample_waterfall_fft final : public polymer_app
     gl_shader brightness_shader;
     gl_shader blur_shader;
     gl_shader composite_shader;
+    gl_shader taa_velocity_shader;
+    gl_shader taa_resolve_shader;
 
     // Render mode
-    render_mode current_render_mode = render_mode::solid;
-    float wireframe_line_width = 1.5f;
+    render_mode current_render_mode = render_mode::wireframe;
+    float wireframe_line_width = 1.0f;
     float wireframe_glow_intensity = 2.0f;
 
     // HDR framebuffer resources
@@ -298,6 +358,14 @@ struct sample_waterfall_fft final : public polymer_app
     gl_framebuffer blur_fb_pong;
     gl_texture_2d blur_tex_ping;
     gl_texture_2d blur_tex_pong;
+
+    // TAA framebuffer resources
+    gl_framebuffer velocity_fb;
+    gl_texture_2d velocity_texture;           // RG16F
+    gl_framebuffer taa_history_fb[2];
+    gl_texture_2d taa_history_tex[2];         // RGBA16F ping-pong
+    std::vector<float> previous_vertex_buffer;
+    gl_mesh velocity_mesh;
 
     // Empty VAO for fullscreen passes (gl_VertexID technique)
     gl_vertex_array_object fullscreen_vao;
@@ -323,10 +391,15 @@ struct sample_waterfall_fft final : public polymer_app
     void setup_fft();
     void setup_waterfall_mesh();
     void setup_post_processing(int32_t width, int32_t height);
+    void setup_taa_buffers(int32_t width, int32_t height);
     void rebuild_mesh_vertices();
+    void update_velocity_mesh();
     void load_audio(const std::string & path);
     void process_fft_frame();
     void render_bloom_pass(int32_t width, int32_t height);
+    void update_taa_jitter(int32_t width, int32_t height);
+    void render_velocity_pass(int32_t width, int32_t height);
+    void render_taa_resolve_pass(int32_t width, int32_t height);
 };
 
 sample_waterfall_fft::sample_waterfall_fft() : polymer_app(1920, 1200, "waterfall-fft")
@@ -367,9 +440,22 @@ sample_waterfall_fft::sample_waterfall_fft() : polymer_app(1920, 1200, "waterfal
     blur_shader = gl_shader(fullscreen_vert, read_file_text(asset_base + "/shaders/waterfall_blur_frag.glsl"));
     composite_shader = gl_shader(fullscreen_vert, read_file_text(asset_base + "/shaders/waterfall_composite_frag.glsl"));
 
+    // Load TAA shaders
+    taa_velocity_shader = gl_shader(
+        read_file_text(asset_base + "/shaders/waterfall_taa_velocity_vert.glsl"),
+        read_file_text(asset_base + "/shaders/waterfall_taa_velocity_frag.glsl"));
+    taa_resolve_shader = gl_shader(
+        fullscreen_vert,
+        read_file_text(asset_base + "/shaders/waterfall_taa_resolve_frag.glsl"));
+
     setup_fft();
     setup_waterfall_mesh();
     setup_post_processing(width, height);
+
+    if (taa_config.enabled)
+    {
+        setup_taa_buffers(width, height);
+    }
 
     current_width = width;
     current_height = height;
@@ -468,9 +554,44 @@ void sample_waterfall_fft::setup_post_processing(int32_t width, int32_t height)
     gl_check_error(__FILE__, __LINE__);
 }
 
+void sample_waterfall_fft::setup_taa_buffers(int32_t width, int32_t height)
+{
+    // Velocity buffer (RG16F)
+    velocity_texture.setup(width, height, GL_RG16F, GL_RG, GL_FLOAT, nullptr);
+    glTextureParameteri(velocity_texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(velocity_texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(velocity_texture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTextureParameteri(velocity_texture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    glNamedFramebufferTexture(velocity_fb, GL_COLOR_ATTACHMENT0, velocity_texture, 0);
+    glNamedFramebufferTexture(velocity_fb, GL_DEPTH_ATTACHMENT, hdr_depth_texture, 0);
+    velocity_fb.check_complete();
+
+    // History buffers (RGBA16F ping-pong)
+    for (int32_t i = 0; i < 2; ++i)
+    {
+        taa_history_tex[i].setup(width, height, GL_RGBA16F, GL_RGBA, GL_FLOAT, nullptr);
+        glTextureParameteri(taa_history_tex[i], GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTextureParameteri(taa_history_tex[i], GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTextureParameteri(taa_history_tex[i], GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTextureParameteri(taa_history_tex[i], GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        glNamedFramebufferTexture(taa_history_fb[i], GL_COLOR_ATTACHMENT0, taa_history_tex[i], 0);
+        taa_history_fb[i].check_complete();
+    }
+
+    gl_check_error(__FILE__, __LINE__);
+}
+
 void sample_waterfall_fft::rebuild_mesh_vertices()
 {
     if (fft_history.empty() || fft_history[0].empty()) return;
+
+    // Store previous vertex positions for TAA velocity
+    if (taa_config.enabled && !vertex_buffer.empty())
+    {
+        previous_vertex_buffer = vertex_buffer;
+    }
 
     int32_t freq_bins = static_cast<int32_t>(fft_history[0].size());
     float x_scale = viz_params.mesh_width / freq_bins;
@@ -518,6 +639,56 @@ void sample_waterfall_fft::rebuild_mesh_vertices()
     if (!index_buffer.empty())
     {
         waterfall_mesh.set_elements(index_buffer, GL_STATIC_DRAW);
+    }
+
+    // Update velocity mesh for TAA
+    if (taa_config.enabled)
+    {
+        update_velocity_mesh();
+    }
+}
+
+void sample_waterfall_fft::update_velocity_mesh()
+{
+    if (previous_vertex_buffer.empty())
+    {
+        previous_vertex_buffer = vertex_buffer;
+    }
+
+    int32_t vertex_count = static_cast<int32_t>(vertex_buffer.size() / 8);
+    std::vector<float> velocity_data(vertex_count * 11);
+
+    for (int32_t i = 0; i < vertex_count; ++i)
+    {
+        int32_t src = i * 8;
+        int32_t dst = i * 11;
+
+        // Current position
+        velocity_data[dst + 0] = vertex_buffer[src + 0];
+        velocity_data[dst + 1] = vertex_buffer[src + 1];
+        velocity_data[dst + 2] = vertex_buffer[src + 2];
+        // Previous position
+        velocity_data[dst + 3] = previous_vertex_buffer[src + 0];
+        velocity_data[dst + 4] = previous_vertex_buffer[src + 1];
+        velocity_data[dst + 5] = previous_vertex_buffer[src + 2];
+        // Color
+        velocity_data[dst + 6] = vertex_buffer[src + 3];
+        velocity_data[dst + 7] = vertex_buffer[src + 4];
+        velocity_data[dst + 8] = vertex_buffer[src + 5];
+        // UV
+        velocity_data[dst + 9] = vertex_buffer[src + 6];
+        velocity_data[dst + 10] = vertex_buffer[src + 7];
+    }
+
+    velocity_mesh.set_vertex_data(velocity_data.size() * sizeof(float), velocity_data.data(), GL_DYNAMIC_DRAW);
+    velocity_mesh.set_attribute(0, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(float), reinterpret_cast<void *>(0));
+    velocity_mesh.set_attribute(1, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(float), reinterpret_cast<void *>(3 * sizeof(float)));
+    velocity_mesh.set_attribute(2, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(float), reinterpret_cast<void *>(6 * sizeof(float)));
+    velocity_mesh.set_attribute(3, 2, GL_FLOAT, GL_FALSE, 11 * sizeof(float), reinterpret_cast<void *>(9 * sizeof(float)));
+
+    if (!index_buffer.empty())
+    {
+        velocity_mesh.set_elements(index_buffer, GL_STATIC_DRAW);
     }
 }
 
@@ -613,6 +784,21 @@ void sample_waterfall_fft::on_window_resize(int2 size)
         blur_fb_pong = gl_framebuffer();
 
         setup_post_processing(size.x, size.y);
+
+        // Recreate TAA buffers on resize
+        if (taa_config.enabled)
+        {
+            velocity_texture = gl_texture_2d();
+            velocity_fb = gl_framebuffer();
+            for (int32_t i = 0; i < 2; ++i)
+            {
+                taa_history_tex[i] = gl_texture_2d();
+                taa_history_fb[i] = gl_framebuffer();
+            }
+            setup_taa_buffers(size.x, size.y);
+            taa.first_frame = true;
+            taa.jitter_index = 0;
+        }
     }
 }
 
@@ -679,13 +865,16 @@ void sample_waterfall_fft::render_bloom_pass(int32_t width, int32_t height)
     glDisable(GL_DEPTH_TEST);
     glBindVertexArray(fullscreen_vao);
 
+    // Use TAA output if enabled, otherwise use HDR directly
+    GLuint bloom_source = taa_config.enabled ? taa_history_tex[taa.history_index] : hdr_color_texture;
+
     // Step 1: Brightness extraction to ping buffer
     glBindFramebuffer(GL_FRAMEBUFFER, blur_fb_ping);
     glViewport(0, 0, half_w, half_h);
     glClear(GL_COLOR_BUFFER_BIT);
 
     brightness_shader.bind();
-    brightness_shader.texture("s_hdr_color", 0, hdr_color_texture, GL_TEXTURE_2D);
+    brightness_shader.texture("s_hdr_color", 0, bloom_source, GL_TEXTURE_2D);
     brightness_shader.uniform("u_threshold", post_params.bloom_threshold);
     glDrawArrays(GL_TRIANGLES, 0, 3);
     brightness_shader.unbind();
@@ -717,6 +906,97 @@ void sample_waterfall_fft::render_bloom_pass(int32_t width, int32_t height)
     }
 }
 
+void sample_waterfall_fft::update_taa_jitter(int32_t width, int32_t height)
+{
+    taa.previous_jitter = taa.current_jitter;
+    taa.previous_view_matrix = taa.current_view_matrix;
+
+    taa.jitter_index = (taa.jitter_index + 1) % taa_config.jitter_sequence_length;
+    taa.current_jitter = halton_2_3(taa.jitter_index);
+
+    taa.current_view_matrix = cam.get_view_matrix();
+
+    float aspect = static_cast<float>(width) / static_cast<float>(height);
+    taa.current_proj_unjittered = cam.get_projection_matrix(aspect);
+    taa.current_proj_jittered = apply_jitter_to_projection(
+        taa.current_proj_unjittered,
+        taa.current_jitter,
+        float2(static_cast<float>(width), static_cast<float>(height))
+    );
+
+    if (!taa.first_frame)
+    {
+        taa.previous_viewproj = taa.current_proj_unjittered * taa.previous_view_matrix;
+    }
+}
+
+void sample_waterfall_fft::render_velocity_pass(int32_t width, int32_t height)
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, velocity_fb);
+    glViewport(0, 0, width, height);
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
+
+    float4x4 current_mvp = taa.current_proj_unjittered * taa.current_view_matrix;
+    float4x4 previous_mvp = taa.first_frame ? current_mvp : taa.previous_viewproj;
+
+    taa_velocity_shader.bind();
+    taa_velocity_shader.uniform("u_current_mvp", current_mvp);
+    taa_velocity_shader.uniform("u_previous_mvp", previous_mvp);
+    velocity_mesh.draw_elements();
+    taa_velocity_shader.unbind();
+
+    glDepthFunc(GL_LESS);
+}
+
+void sample_waterfall_fft::render_taa_resolve_pass(int32_t width, int32_t height)
+{
+    int32_t read_idx = taa.history_index;
+    int32_t write_idx = (taa.history_index + 1) % 2;
+
+    if (taa.first_frame)
+    {
+        glBlitNamedFramebuffer(
+            hdr_framebuffer, taa_history_fb[write_idx],
+            0, 0, width, height,
+            0, 0, width, height,
+            GL_COLOR_BUFFER_BIT, GL_NEAREST
+        );
+        taa.first_frame = false;
+        taa.history_index = write_idx;
+        return;
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, taa_history_fb[write_idx]);
+    glViewport(0, 0, width, height);
+    glDisable(GL_DEPTH_TEST);
+    glBindVertexArray(fullscreen_vao);
+
+    float4 jitter_uv(
+        taa.current_jitter.x / static_cast<float>(width),
+        taa.current_jitter.y / static_cast<float>(height),
+        taa.previous_jitter.x / static_cast<float>(width),
+        taa.previous_jitter.y / static_cast<float>(height)
+    );
+
+    taa_resolve_shader.bind();
+    taa_resolve_shader.texture("s_current", 0, hdr_color_texture, GL_TEXTURE_2D);
+    taa_resolve_shader.texture("s_history", 1, taa_history_tex[read_idx], GL_TEXTURE_2D);
+    taa_resolve_shader.texture("s_velocity", 2, velocity_texture, GL_TEXTURE_2D);
+    taa_resolve_shader.texture("s_depth", 3, hdr_depth_texture, GL_TEXTURE_2D);
+    taa_resolve_shader.uniform("u_jitter_uv", jitter_uv);
+    taa_resolve_shader.uniform("u_texel_size", float2(1.0f / width, 1.0f / height));
+    taa_resolve_shader.uniform("u_feedback_min", taa_config.feedback_min);
+    taa_resolve_shader.uniform("u_feedback_max", taa_config.feedback_max);
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+    taa_resolve_shader.unbind();
+
+    taa.history_index = write_idx;
+}
+
 void sample_waterfall_fft::on_draw()
 {
     glfwMakeContextCurrent(window);
@@ -728,6 +1008,12 @@ void sample_waterfall_fft::on_draw()
     if (width != current_width || height != current_height)
     {
         on_window_resize({width, height});
+    }
+
+    // Update TAA jitter
+    if (taa_config.enabled)
+    {
+        update_taa_jitter(width, height);
     }
 
     // Step 1: Render scene to HDR framebuffer
@@ -742,7 +1028,15 @@ void sample_waterfall_fft::on_draw()
     // Draw 3D mesh
     {
         float aspect = static_cast<float>(width) / static_cast<float>(height);
-        float4x4 mvp = cam.get_viewproj_matrix(aspect);
+        float4x4 mvp;
+        if (taa_config.enabled)
+        {
+            mvp = taa.current_proj_jittered * taa.current_view_matrix;
+        }
+        else
+        {
+            mvp = cam.get_viewproj_matrix(aspect);
+        }
 
         if (current_render_mode == render_mode::solid)
         {
@@ -784,21 +1078,31 @@ void sample_waterfall_fft::on_draw()
     glDisable(GL_CULL_FACE);
     glDisable(GL_BLEND);
 
-    // Step 2: Bloom pass (if enabled)
+    // Step 2: TAA passes (if enabled)
+    if (taa_config.enabled)
+    {
+        render_velocity_pass(width, height);
+        render_taa_resolve_pass(width, height);
+    }
+
+    // Step 3: Bloom pass (if enabled)
     if (post_params.bloom_enabled)
     {
         render_bloom_pass(width, height);
     }
 
-    // Step 3: Final composite to screen
+    // Step 4: Final composite to screen
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, width, height);
     glClear(GL_COLOR_BUFFER_BIT);
     glDisable(GL_DEPTH_TEST);
     glBindVertexArray(fullscreen_vao);
 
+    // Use TAA output if enabled, otherwise use HDR directly
+    GLuint source_texture = taa_config.enabled ? taa_history_tex[taa.history_index] : hdr_color_texture;
+
     composite_shader.bind();
-    composite_shader.texture("s_hdr_color", 0, hdr_color_texture, GL_TEXTURE_2D);
+    composite_shader.texture("s_hdr_color", 0, source_texture, GL_TEXTURE_2D);
     composite_shader.texture("s_bloom", 1, blur_tex_ping, GL_TEXTURE_2D);
     composite_shader.uniform("u_bloom_intensity", post_params.bloom_enabled ? post_params.bloom_intensity : 0.0f);
     composite_shader.uniform("u_exposure", post_params.exposure);
@@ -862,8 +1166,8 @@ void sample_waterfall_fft::on_draw()
     {
         ImGui::SliderFloat("Line Width", &wireframe_line_width, 0.5f, 5.0f);
         ImGui::SliderFloat("Glow Intensity", &wireframe_glow_intensity, 0.5f, 5.0f);
-        ImGui::SliderFloat("Grid Density", &viz_params.grid_density, 0.1f, 8.0f, "%.2f");
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("<1 = sparser grid, >1 = denser grid");
+        ImGui::SliderFloat("Grid Density", &viz_params.grid_density, 0.1f, 1.0f, "%.2f");
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Lower = sparser grid (0.5 = every other line)");
     }
 
     ImGui::Separator();
@@ -961,6 +1265,32 @@ void sample_waterfall_fft::on_draw()
 
     const char * tonemap_names[] = {"None", "Reinhard", "ACES Filmic"};
     ImGui::Combo("Tonemapping", &post_params.tonemap_mode, tonemap_names, IM_ARRAYSIZE(tonemap_names));
+
+    ImGui::Separator();
+    ImGui::Text("Temporal Anti-Aliasing");
+
+    if (ImGui::Checkbox("Enable TAA", &taa_config.enabled))
+    {
+        if (taa_config.enabled)
+        {
+            setup_taa_buffers(current_width, current_height);
+            taa.first_frame = true;
+        }
+    }
+
+    if (taa_config.enabled)
+    {
+        ImGui::SliderFloat("Feedback Min", &taa_config.feedback_min, 0.5f, 0.99f);
+        ImGui::SliderFloat("Feedback Max", &taa_config.feedback_max, 0.5f, 0.99f);
+
+        const char * jitter_lengths[] = {"8", "16", "32"};
+        int32_t jitter_idx = (taa_config.jitter_sequence_length == 8) ? 0 :
+                             (taa_config.jitter_sequence_length == 16) ? 1 : 2;
+        if (ImGui::Combo("Jitter Samples", &jitter_idx, jitter_lengths, 3))
+        {
+            taa_config.jitter_sequence_length = (jitter_idx == 0) ? 8 : (jitter_idx == 1) ? 16 : 32;
+        }
+    }
 
     ImGui::Separator();
     ImGui::Text("Camera Controls");
