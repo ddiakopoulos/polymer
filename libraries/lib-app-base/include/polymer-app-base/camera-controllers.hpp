@@ -183,6 +183,7 @@ namespace polymer
 
         bool ml = 0, mr = 0, mm = 0;
         linalg::aliases::float2 last_cursor{ 0.f, 0.f };
+        bool has_cursor = false;
 
         float focus = 10.f;
 
@@ -229,6 +230,13 @@ namespace polymer
             }
             else if (e.type == app_input_event::CURSOR)
             {
+                if (!has_cursor)
+                {
+                    last_cursor = e.cursor;
+                    has_cursor = true;
+                    return;
+                }
+
                 const linalg::aliases::float2 delta_cursor = e.cursor - last_cursor;
 
                 if (mr)

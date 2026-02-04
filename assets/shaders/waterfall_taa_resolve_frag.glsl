@@ -10,6 +10,8 @@ uniform vec2 u_texel_size;
 uniform float u_feedback_min;
 uniform float u_feedback_max;
 uniform int u_debug_mode;      // 0=off, 1=velocity, 2=current
+uniform float u_depth_threshold;
+uniform float u_velocity_feedback_scale;
 
 in vec2 v_texcoord;
 out vec4 f_color;
@@ -75,6 +77,23 @@ vec3 find_closest_fragment_3x3(vec2 uv)
     return vec3(uv + dmin.xy * u_texel_size, dmin.z);
 }
 
+vec2 depth_minmax_3x3(vec2 uv)
+{
+    float dmin = 1.0;
+    float dmax = 0.0;
+    for (int y = -1; y <= 1; y++)
+    {
+        for (int x = -1; x <= 1; x++)
+        {
+            vec2 offset = vec2(float(x), float(y));
+            float d = texture(s_depth, uv + offset * u_texel_size).r;
+            dmin = min(dmin, d);
+            dmax = max(dmax, d);
+        }
+    }
+    return vec2(dmin, dmax);
+}
+
 void main()
 {
     // Depth-based dilation for velocity
@@ -82,7 +101,7 @@ void main()
     vec2 velocity = texture(s_velocity, closest.xy).rg;
 
     // Sample current (unjittered)
-    vec2 current_uv = v_texcoord + u_jitter_uv.xy;
+    vec2 current_uv = clamp(v_texcoord + u_jitter_uv.xy, vec2(0.0), vec2(1.0));
     vec4 current_color = sample_color(s_current, current_uv);
 
     if (u_debug_mode == 1)
@@ -103,6 +122,23 @@ void main()
 
     // Bounds check
     if (any(lessThan(history_uv, vec2(0.0))) || any(greaterThan(history_uv, vec2(1.0))))
+    {
+        f_color = vec4(ycocg_to_rgb(current_color.rgb), 1.0);
+        return;
+    }
+
+    // Depth-based rejection for disocclusion/edge stability
+    float current_depth = texture(s_depth, v_texcoord).r;
+    float history_depth = texture(s_depth, history_uv).r;
+    if (abs(current_depth - history_depth) > u_depth_threshold)
+    {
+        f_color = vec4(ycocg_to_rgb(current_color.rgb), 1.0);
+        return;
+    }
+
+    // Neighborhood depth clamp to handle thin geometry shimmering
+    vec2 depth_mm = depth_minmax_3x3(v_texcoord);
+    if (history_depth < depth_mm.x || history_depth > depth_mm.y)
     {
         f_color = vec4(ycocg_to_rgb(current_color.rgb), 1.0);
         return;
@@ -150,6 +186,10 @@ void main()
     float diff = abs(lum_curr - lum_hist) / max(lum_curr, max(lum_hist, 0.2));
     float weight = 1.0 - diff;
     float feedback = mix(u_feedback_min, u_feedback_max, weight * weight);
+    float vel_mag = length(velocity);
+    float vel_scale = clamp(vel_mag * u_velocity_feedback_scale, 0.0, 1.0);
+    // Reduce feedback as velocity grows; keep full feedback when velocity is near zero.
+    feedback *= (1.0 - vel_scale);
 
     // Blend
     vec4 result = mix(current_color, clipped, feedback);

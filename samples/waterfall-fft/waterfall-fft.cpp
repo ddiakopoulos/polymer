@@ -17,6 +17,8 @@
 
 #include <fstream>
 #include <cmath>
+#include <future>
+#include <chrono>
 
 using namespace polymer;
 using namespace gui;
@@ -69,7 +71,15 @@ struct visualization_params
     int32_t frequency_resolution = 256;
     float edge_fade_intensity = 1.0f;
     float edge_fade_distance = 0.50f;
-    float grid_density = 0.5f;  // >1 = more lines (subdivisions), <1 = fewer lines (sparser grid)
+    float grid_density = 1.0f;  // >1 = more lines (subdivisions), <1 = fewer lines (sparser grid)
+    float wireframe_distance_fade_start = 0.2f; // normalized [0,1] of view distance
+    float wireframe_distance_fade_end = 0.9f;   // normalized [0,1] of view distance
+    float wireframe_width_boost = 2.0f;
+    int32_t wireframe_blend_mode = 0; // 0=Additive, 1=Alpha, 2=Premultiplied
+    bool enable_time_smoothing = true;
+    float time_smoothing_alpha = 0.30f;
+    bool enable_freq_smoothing = true;
+    float freq_smoothing_strength = 0.50f;
 };
 
 struct post_processing_params
@@ -87,10 +97,12 @@ struct post_processing_params
 struct taa_params
 {
     bool enabled = true;
+    int32_t debug_mode = 0;  // 0=off, 1=velocity, 2=current
     int32_t jitter_sequence_length = 16;
     float feedback_min = 0.88f;
     float feedback_max = 0.97f;
-    int32_t debug_mode = 0; // 0=off, 1=velocity, 2=current
+    float depth_threshold = 0.001f;
+    float velocity_feedback_scale = 120.0f;
 };
 
 struct taa_state
@@ -314,6 +326,7 @@ struct sample_waterfall_fft final : public polymer_app
     bool loop_enabled = true;
 
     kiss_fftr_cfg fft_cfg = nullptr;
+    kiss_fftr_cfg fft_cfg_async = nullptr;
     spectrogram_params params;
     visualization_params viz_params;
     post_processing_params post_params;
@@ -332,6 +345,11 @@ struct sample_waterfall_fft final : public polymer_app
     gl_mesh waterfall_mesh;
     std::vector<float> vertex_buffer;
     std::vector<uint3> index_buffer;
+    std::vector<float> spectrum_raw;
+    std::vector<float> spectrum_time;
+    std::vector<float> spectrum_freq;
+    std::future<std::vector<float>> fft_future;
+    bool fft_task_active = false;
 
     // Camera
     camera_controller_orbit cam;
@@ -347,8 +365,8 @@ struct sample_waterfall_fft final : public polymer_app
 
     // Render mode
     render_mode current_render_mode = render_mode::wireframe;
-    float wireframe_line_width = 1.0f;
-    float wireframe_glow_intensity = 2.0f;
+    float wireframe_line_width = 0.5f;
+    float wireframe_glow_intensity = 1.0f;
 
     // HDR framebuffer resources
     gl_framebuffer hdr_framebuffer;
@@ -363,14 +381,13 @@ struct sample_waterfall_fft final : public polymer_app
 
     // TAA framebuffer resources
     gl_framebuffer velocity_fb;
-    gl_texture_2d velocity_texture;           // RG16F
+    gl_texture_2d velocity_texture; // RG16F
     gl_framebuffer taa_history_fb[2];
-    gl_texture_2d taa_history_tex[2];         // RGBA16F ping-pong
+    gl_texture_2d taa_history_tex[2]; // RGBA16F ping-pong
     std::vector<float> previous_vertex_buffer;
     gl_mesh velocity_mesh;
     bool mesh_updated_this_frame = false;
 
-    // Empty VAO for fullscreen passes (gl_VertexID technique)
     gl_vertex_array_object fullscreen_vao;
 
     int32_t current_width = 0;
@@ -398,7 +415,10 @@ struct sample_waterfall_fft final : public polymer_app
     void rebuild_mesh_vertices();
     void update_velocity_mesh();
     void load_audio(const std::string & path);
+    std::vector<float> compute_fft_spectrum(int32_t sample_index, int32_t fft_size, const std::vector<float> & window, int32_t freq_bins, scale_type scale_mode, float dynamic_range_db);
+    void wait_for_fft_task();
     void process_fft_frame();
+    void try_consume_fft_task();
     void render_bloom_pass(int32_t width, int32_t height);
     void update_taa_jitter(int32_t width, int32_t height);
     void render_velocity_pass(int32_t width, int32_t height);
@@ -437,28 +457,18 @@ sample_waterfall_fft::sample_waterfall_fft() : polymer_app(1920, 1200, "waterfal
         read_file_text(asset_base + "/shaders/waterfall_wireframe_frag.glsl"),
         read_file_text(asset_base + "/shaders/waterfall_wireframe_geom.glsl"));
 
-    // Load post-processing shaders
     std::string fullscreen_vert = read_file_text(asset_base + "/shaders/waterfall_fullscreen_vert.glsl");
     brightness_shader = gl_shader(fullscreen_vert, read_file_text(asset_base + "/shaders/waterfall_brightness_frag.glsl"));
     blur_shader = gl_shader(fullscreen_vert, read_file_text(asset_base + "/shaders/waterfall_blur_frag.glsl"));
     composite_shader = gl_shader(fullscreen_vert, read_file_text(asset_base + "/shaders/waterfall_composite_frag.glsl"));
 
-    // Load TAA shaders
-    taa_velocity_shader = gl_shader(
-        read_file_text(asset_base + "/shaders/waterfall_taa_velocity_vert.glsl"),
-        read_file_text(asset_base + "/shaders/waterfall_taa_velocity_frag.glsl"));
-    taa_resolve_shader = gl_shader(
-        fullscreen_vert,
-        read_file_text(asset_base + "/shaders/waterfall_taa_resolve_frag.glsl"));
+    taa_velocity_shader = gl_shader( read_file_text(asset_base + "/shaders/waterfall_taa_velocity_vert.glsl"), read_file_text(asset_base + "/shaders/waterfall_taa_velocity_frag.glsl"));
+    taa_resolve_shader = gl_shader(fullscreen_vert, read_file_text(asset_base + "/shaders/waterfall_taa_resolve_frag.glsl"));
 
     setup_fft();
     setup_waterfall_mesh();
     setup_post_processing(width, height);
-
-    if (taa_config.enabled)
-    {
-        setup_taa_buffers(width, height);
-    }
+    if (taa_config.enabled) setup_taa_buffers(width, height);
 
     current_width = width;
     current_height = height;
@@ -466,18 +476,37 @@ sample_waterfall_fft::sample_waterfall_fft() : polymer_app(1920, 1200, "waterfal
 
 sample_waterfall_fft::~sample_waterfall_fft()
 {
+    wait_for_fft_task();
     if (fft_cfg) kiss_fftr_free(fft_cfg);
+    if (fft_cfg_async) kiss_fftr_free(fft_cfg_async);
+}
+
+void sample_waterfall_fft::wait_for_fft_task()
+{
+    if (fft_task_active && fft_future.valid())
+    {
+        fft_future.wait();
+        fft_task_active = false;
+    }
 }
 
 void sample_waterfall_fft::setup_fft()
 {
+    wait_for_fft_task();
+
     if (fft_cfg)
     {
         kiss_fftr_free(fft_cfg);
         fft_cfg = nullptr;
     }
+    if (fft_cfg_async)
+    {
+        kiss_fftr_free(fft_cfg_async);
+        fft_cfg_async = nullptr;
+    }
 
     fft_cfg = kiss_fftr_alloc(params.fft_size, 0, nullptr, nullptr);
+    fft_cfg_async = kiss_fftr_alloc(params.fft_size, 0, nullptr, nullptr);
     fft_input.resize(params.fft_size);
     fft_output.resize(params.fft_size / 2 + 1);
     compute_window_coefficients(window_coefficients, params.fft_size, params.window);
@@ -485,6 +514,8 @@ void sample_waterfall_fft::setup_fft()
 
 void sample_waterfall_fft::setup_waterfall_mesh()
 {
+    wait_for_fft_task();
+
     // Calculate grid dimensions based on time window
     float hop_size = params.fft_size * (1.0f - params.overlap_percent / 100.0f);
     float frames_per_second = audio_loaded ? (audio.sample_rate / hop_size) : 44100.0f / hop_size;
@@ -500,6 +531,10 @@ void sample_waterfall_fft::setup_waterfall_mesh()
         row.resize(freq_bins, 0.0f);
     }
     current_history_row = 0;
+
+    spectrum_raw.assign(freq_bins, 0.0f);
+    spectrum_time.assign(freq_bins, 0.0f);
+    spectrum_freq.assign(freq_bins, 0.0f);
 
     // Build index buffer (triangles for grid)
     index_buffer.clear();
@@ -643,7 +678,12 @@ void sample_waterfall_fft::rebuild_mesh_vertices()
 
 void sample_waterfall_fft::update_velocity_mesh()
 {
-    if (previous_vertex_buffer.empty())
+    if (vertex_buffer.empty())
+    {
+        return;
+    }
+
+    if (previous_vertex_buffer.empty() || previous_vertex_buffer.size() != vertex_buffer.size())
     {
         previous_vertex_buffer = vertex_buffer;
     }
@@ -693,6 +733,8 @@ void sample_waterfall_fft::load_audio(const std::string & path)
 {
     try
     {
+        wait_for_fft_task();
+
         audio = load_wav_file(path);
         playback_position = 0.0f;
         audio_loaded = true;
@@ -734,7 +776,7 @@ void sample_waterfall_fft::process_fft_frame()
     // Perform FFT
     kiss_fftr(fft_cfg, fft_input.data(), fft_output.data());
 
-    // Store in ring buffer
+    // Store in ring buffer (sync path)
     int32_t freq_bins = static_cast<int32_t>(fft_history[0].size());
     int32_t fft_bins = params.fft_size / 2;
 
@@ -755,12 +797,134 @@ void sample_waterfall_fft::process_fft_frame()
             magnitude = clamp<float>(mag / (params.fft_size * 0.5f), 0.0f, 1.0f);
         }
 
-        fft_history[current_history_row][i] = magnitude;
+        spectrum_raw[i] = magnitude;
+    }
+
+    // Time smoothing (EMA)
+    if (viz_params.enable_time_smoothing)
+    {
+        float alpha = clamp<float>(viz_params.time_smoothing_alpha, 0.0f, 1.0f);
+        for (int32_t i = 0; i < freq_bins; ++i)
+        {
+            spectrum_time[i] = spectrum_time[i] + alpha * (spectrum_raw[i] - spectrum_time[i]);
+        }
+    }
+    else
+    {
+        spectrum_time = spectrum_raw;
+    }
+
+    // Frequency smoothing (3-tap)
+    if (viz_params.enable_freq_smoothing)
+    {
+        for (int32_t i = 0; i < freq_bins; ++i)
+        {
+            int32_t i0 = (i == 0) ? 0 : i - 1;
+            int32_t i1 = i;
+            int32_t i2 = (i == freq_bins - 1) ? freq_bins - 1 : i + 1;
+            spectrum_freq[i] = (spectrum_time[i0] + spectrum_time[i1] + spectrum_time[i2]) / 3.0f;
+        }
+    }
+
+    float freq_strength = clamp<float>(viz_params.freq_smoothing_strength, 0.0f, 1.0f);
+    for (int32_t i = 0; i < freq_bins; ++i)
+    {
+        float final_mag = viz_params.enable_freq_smoothing
+            ? (spectrum_time[i] + (spectrum_freq[i] - spectrum_time[i]) * freq_strength)
+            : spectrum_time[i];
+        fft_history[current_history_row][i] = final_mag;
     }
 
     current_history_row = (current_history_row + 1) % history_rows;
 
     // Rebuild mesh with new data
+    rebuild_mesh_vertices();
+}
+
+std::vector<float> sample_waterfall_fft::compute_fft_spectrum(int32_t sample_index, int32_t fft_size, const std::vector<float> & window, int32_t freq_bins, scale_type scale_mode, float dynamic_range_db)
+{
+    std::vector<float> output(freq_bins, 0.0f);
+    if (!audio_loaded || audio.samples.empty()) return output;
+    if (!fft_cfg_async) return output;
+    if (sample_index + fft_size > static_cast<int32_t>(audio.samples.size())) return output;
+
+    std::vector<float> local_input(fft_size);
+    std::vector<kiss_fft_cpx> local_output(fft_size / 2 + 1);
+
+    for (int32_t i = 0; i < fft_size; ++i)
+    {
+        local_input[i] = audio.samples[sample_index + i] * window[i];
+    }
+
+    kiss_fftr(fft_cfg_async, local_input.data(), local_output.data());
+
+    int32_t fft_bins = fft_size / 2;
+    for (int32_t i = 0; i < freq_bins; ++i)
+    {
+        int32_t fft_idx = (i * fft_bins) / freq_bins;
+        fft_idx = clamp<int32_t>(fft_idx, 0, fft_bins - 1);
+
+        float magnitude;
+        if (scale_mode == scale_type::logarithmic)
+        {
+            magnitude = compute_magnitude_db(local_output[fft_idx].r, local_output[fft_idx].i, dynamic_range_db);
+        }
+        else
+        {
+            float mag = std::sqrt(local_output[fft_idx].r * local_output[fft_idx].r + local_output[fft_idx].i * local_output[fft_idx].i);
+            magnitude = clamp<float>(mag / (fft_size * 0.5f), 0.0f, 1.0f);
+        }
+        output[i] = magnitude;
+    }
+    return output;
+}
+
+void sample_waterfall_fft::try_consume_fft_task()
+{
+    if (!fft_task_active || !fft_future.valid()) return;
+    if (fft_future.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready) return;
+
+    spectrum_raw = fft_future.get();
+    fft_task_active = false;
+
+    int32_t freq_bins = static_cast<int32_t>(fft_history[0].size());
+
+    // Time smoothing (EMA)
+    if (viz_params.enable_time_smoothing)
+    {
+        float alpha = clamp<float>(viz_params.time_smoothing_alpha, 0.0f, 1.0f);
+        for (int32_t i = 0; i < freq_bins; ++i)
+        {
+            spectrum_time[i] = spectrum_time[i] + alpha * (spectrum_raw[i] - spectrum_time[i]);
+        }
+    }
+    else
+    {
+        spectrum_time = spectrum_raw;
+    }
+
+    // Frequency smoothing (3-tap)
+    if (viz_params.enable_freq_smoothing)
+    {
+        for (int32_t i = 0; i < freq_bins; ++i)
+        {
+            int32_t i0 = (i == 0) ? 0 : i - 1;
+            int32_t i1 = i;
+            int32_t i2 = (i == freq_bins - 1) ? freq_bins - 1 : i + 1;
+            spectrum_freq[i] = (spectrum_time[i0] + spectrum_time[i1] + spectrum_time[i2]) / 3.0f;
+        }
+    }
+
+    float freq_strength = clamp<float>(viz_params.freq_smoothing_strength, 0.0f, 1.0f);
+    for (int32_t i = 0; i < freq_bins; ++i)
+    {
+        float final_mag = viz_params.enable_freq_smoothing
+            ? (spectrum_time[i] + (spectrum_freq[i] - spectrum_time[i]) * freq_strength)
+            : spectrum_time[i];
+        fft_history[current_history_row][i] = final_mag;
+    }
+
+    current_history_row = (current_history_row + 1) % history_rows;
     rebuild_mesh_vertices();
 }
 
@@ -826,13 +990,29 @@ void sample_waterfall_fft::on_update(const app_update_event & e)
 {
     cam.update(e.timestep_ms);
 
+    try_consume_fft_task();
+
     if (is_playing && audio_loaded)
     {
         float hop_size = params.fft_size * (1.0f - params.overlap_percent / 100.0f);
         float hop_duration = hop_size / audio.sample_rate;
 
-        // Process one FFT frame per update at appropriate rate
-        process_fft_frame();
+        // Process one FFT frame per update at appropriate rate (async)
+        if (!fft_task_active)
+        {
+            int32_t sample_index = static_cast<int32_t>(playback_position * audio.sample_rate);
+            int32_t freq_bins = static_cast<int32_t>(fft_history[0].size());
+            int32_t fft_size = params.fft_size;
+            std::vector<float> window = window_coefficients;
+            scale_type scale_mode = params.scale;
+            float dynamic_range_db = params.dynamic_range_db;
+
+            fft_task_active = true;
+            fft_future = std::async(std::launch::async, [this, sample_index, fft_size, window, freq_bins, scale_mode, dynamic_range_db]()
+            {
+                return compute_fft_spectrum(sample_index, fft_size, window, freq_bins, scale_mode, dynamic_range_db);
+            });
+        }
 
         playback_position += hop_duration;
 
@@ -994,6 +1174,8 @@ void sample_waterfall_fft::render_taa_resolve_pass(int32_t width, int32_t height
     taa_resolve_shader.uniform("u_feedback_min", taa_config.feedback_min);
     taa_resolve_shader.uniform("u_feedback_max", taa_config.feedback_max);
     taa_resolve_shader.uniform("u_debug_mode", taa_config.debug_mode);
+    taa_resolve_shader.uniform("u_depth_threshold", taa_config.depth_threshold);
+    taa_resolve_shader.uniform("u_velocity_feedback_scale", taa_config.velocity_feedback_scale);
     glDrawArrays(GL_TRIANGLES, 0, 3);
     taa_resolve_shader.unbind();
 
@@ -1057,8 +1239,19 @@ void sample_waterfall_fft::on_draw()
         }
         else
         {
-            // Wireframe mode with additive blending for glow
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+            // Wireframe mode with selectable blending for glow
+            switch (viz_params.wireframe_blend_mode)
+            {
+                case 1: // Alpha
+                    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                    break;
+                case 2: // Premultiplied
+                    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+                    break;
+                default: // Additive
+                    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+                    break;
+            }
             glDisable(GL_CULL_FACE);
 
             int32_t freq_bins = fft_history.empty() ? 1 : static_cast<int32_t>(fft_history[0].size());
@@ -1070,6 +1263,11 @@ void sample_waterfall_fft::on_draw()
             waterfall_wireframe_shader.uniform("u_mesh_depth", viz_params.mesh_depth);
             waterfall_wireframe_shader.uniform("u_line_width", wireframe_line_width);
             waterfall_wireframe_shader.uniform("u_glow_intensity", wireframe_glow_intensity);
+            waterfall_wireframe_shader.uniform("u_near", cam.near_clip);
+            waterfall_wireframe_shader.uniform("u_far", cam.far_clip);
+            waterfall_wireframe_shader.uniform("u_distance_fade_start", viz_params.wireframe_distance_fade_start);
+            waterfall_wireframe_shader.uniform("u_distance_fade_end", viz_params.wireframe_distance_fade_end);
+            waterfall_wireframe_shader.uniform("u_line_width_boost", viz_params.wireframe_width_boost);
             waterfall_wireframe_shader.uniform("u_grid_cols", static_cast<float>(freq_bins - 1));
             waterfall_wireframe_shader.uniform("u_grid_rows", static_cast<float>(history_rows - 1));
             waterfall_wireframe_shader.uniform("u_grid_density", viz_params.grid_density);
@@ -1134,20 +1332,24 @@ void sample_waterfall_fft::on_draw()
         ImGui::Text("Position: %.2f s", playback_position);
         ImGui::Separator();
 
-        if (ImGui::Button(is_playing ? "Pause" : "Play"))
-        {
-            is_playing = !is_playing;
-        }
+    if (ImGui::Button(is_playing ? "Pause" : "Play"))
+    {
+        is_playing = !is_playing;
+    }
         ImGui::SameLine();
         if (ImGui::Button("Reset"))
         {
             playback_position = 0.0f;
             is_playing = false;
+            wait_for_fft_task();
             for (std::vector<float> & row : fft_history)
             {
                 std::fill(row.begin(), row.end(), 0.0f);
             }
             current_history_row = 0;
+            std::fill(spectrum_raw.begin(), spectrum_raw.end(), 0.0f);
+            std::fill(spectrum_time.begin(), spectrum_time.end(), 0.0f);
+            std::fill(spectrum_freq.begin(), spectrum_freq.end(), 0.0f);
             rebuild_mesh_vertices();
         }
         ImGui::Checkbox("Loop Playback", &loop_enabled);
@@ -1172,6 +1374,11 @@ void sample_waterfall_fft::on_draw()
         ImGui::SliderFloat("Glow Intensity", &wireframe_glow_intensity, 0.5f, 5.0f);
         ImGui::SliderFloat("Grid Density", &viz_params.grid_density, 0.1f, 1.0f, "%.2f");
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("Lower = sparser grid (0.5 = every other line)");
+        ImGui::SliderFloat("Wire Fade Start", &viz_params.wireframe_distance_fade_start, 0.0f, 1.0f, "%.2f");
+        ImGui::SliderFloat("Wire Fade End", &viz_params.wireframe_distance_fade_end, 0.0f, 1.0f, "%.2f");
+        ImGui::SliderFloat("Wire Width Boost", &viz_params.wireframe_width_boost, 1.0f, 4.0f, "%.2f");
+        const char * wire_blend_modes[] = {"Additive", "Alpha", "Premultiplied"};
+        ImGui::Combo("Wire Blend", &viz_params.wireframe_blend_mode, wire_blend_modes, IM_ARRAYSIZE(wire_blend_modes));
     }
 
     ImGui::Separator();
@@ -1186,6 +1393,7 @@ void sample_waterfall_fft::on_draw()
     int32_t fft_size_values[] = {256, 512, 1024, 2048, 4096, 8192, 16384};
     if (ImGui::Combo("FFT Size", &selected_fft_size_index, fft_sizes, IM_ARRAYSIZE(fft_sizes)))
     {
+        wait_for_fft_task();
         params.fft_size = fft_size_values[selected_fft_size_index];
         setup_fft();
         setup_waterfall_mesh();
@@ -1193,12 +1401,14 @@ void sample_waterfall_fft::on_draw()
 
     if (ImGui::SliderFloat("Overlap %", &params.overlap_percent, 0.0f, 95.0f, "%.0f%%"))
     {
+        wait_for_fft_task();
         setup_waterfall_mesh();
     }
 
     const char * window_names[] = {"Rectangular", "Hann", "Hamming", "Blackman"};
     if (ImGui::Combo("Window", &selected_window_index, window_names, IM_ARRAYSIZE(window_names)))
     {
+        wait_for_fft_task();
         params.window = static_cast<window_type>(selected_window_index);
         compute_window_coefficients(window_coefficients, params.fft_size, params.window);
     }
@@ -1206,12 +1416,27 @@ void sample_waterfall_fft::on_draw()
     const char * scale_names[] = {"Linear", "Logarithmic (dB)"};
     if (ImGui::Combo("Scale", &selected_scale_index, scale_names, IM_ARRAYSIZE(scale_names)))
     {
+        wait_for_fft_task();
         params.scale = static_cast<scale_type>(selected_scale_index);
     }
 
     if (params.scale == scale_type::logarithmic)
     {
-        ImGui::SliderFloat("Dynamic Range", &params.dynamic_range_db, 20.0f, 120.0f, "%.0f dB");
+        if (ImGui::SliderFloat("Dynamic Range", &params.dynamic_range_db, 20.0f, 120.0f, "%.0f dB"))
+        {
+            wait_for_fft_task();
+        }
+    }
+
+    ImGui::Checkbox("Time Smoothing", &viz_params.enable_time_smoothing);
+    if (viz_params.enable_time_smoothing)
+    {
+        ImGui::SliderFloat("Time Smooth Alpha", &viz_params.time_smoothing_alpha, 0.0f, 1.0f, "%.2f");
+    }
+    ImGui::Checkbox("Freq Smoothing", &viz_params.enable_freq_smoothing);
+    if (viz_params.enable_freq_smoothing)
+    {
+        ImGui::SliderFloat("Freq Smooth Strength", &viz_params.freq_smoothing_strength, 0.0f, 1.0f, "%.2f");
     }
 
     ImGui::Separator();
@@ -1233,6 +1458,7 @@ void sample_waterfall_fft::on_draw()
 
     if (ImGui::SliderFloat("Time Window", &viz_params.time_window_seconds, 1.0f, 30.0f, "%.1f s"))
     {
+        wait_for_fft_task();
         setup_waterfall_mesh();
     }
 
@@ -1250,6 +1476,7 @@ void sample_waterfall_fft::on_draw()
 
     if (ImGui::SliderInt("Freq Resolution", &viz_params.frequency_resolution, 32, 512))
     {
+        wait_for_fft_task();
         setup_waterfall_mesh();
     }
 
@@ -1297,11 +1524,10 @@ void sample_waterfall_fft::on_draw()
 
         const char * taa_debug_modes[] = {"Off", "Velocity", "Current"};
         ImGui::Combo("TAA Debug", &taa_config.debug_mode, taa_debug_modes, IM_ARRAYSIZE(taa_debug_modes));
-    }
 
-    ImGui::Separator();
-    ImGui::Text("Camera Controls");
-    ImGui::TextWrapped("RMB: Orbit, Shift+RMB/MMB: Pan, Scroll: Zoom");
+        ImGui::SliderFloat("Depth Reject", &taa_config.depth_threshold, 0.0001f, 0.02f, "%.5f");
+        ImGui::SliderFloat("Velocity Scale", &taa_config.velocity_feedback_scale, 10.0f, 400.0f, "%.0f");
+    }
 
     gui::imgui_fixed_window_end();
     imgui->end_frame();
