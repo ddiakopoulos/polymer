@@ -8,6 +8,8 @@
 
 #include "polymer-gfx-gl/gl-loaders.hpp"
 #include "polymer-gfx-gl/gl-procedural-mesh.hpp"
+#include "polymer-gfx-gl/gl-post-processing.hpp"
+#include "polymer-gfx-gl/post/gl-unreal-bloom.hpp"
 #include "polymer-app-base/glfw-app.hpp"
 #include "polymer-app-base/wrappers/gl-imgui.hpp"
 #include "polymer-app-base/camera-controllers.hpp"
@@ -80,18 +82,6 @@ struct visualization_params
     float time_smoothing_alpha = 0.30f;
     bool enable_freq_smoothing = true;
     float freq_smoothing_strength = 0.50f;
-};
-
-struct post_processing_params
-{
-    bool bloom_enabled = true;
-    float bloom_threshold = 0.8f;
-    float bloom_knee = 0.5f;
-    float bloom_strength = 1.0f;
-    float bloom_radius = 0.5f;
-    float exposure = 1.0f;
-    float gamma = 2.2f;
-    int32_t tonemap_mode = 1;  // 0=none, 1=Reinhard, 2=ACES
 };
 
 struct taa_params
@@ -315,15 +305,6 @@ inline float4x4 apply_jitter_to_projection(float4x4 proj, float2 jitter_pixels, 
     return jittered;
 }
 
-inline std::vector<float> compute_gaussian_weights(int32_t kernel_radius)
-{
-    std::vector<float> weights(kernel_radius + 1);
-    float sigma = static_cast<float>(kernel_radius) / 3.0f;
-    for (int32_t i = 0; i <= kernel_radius; ++i)
-        weights[i] = 0.39894228f * std::exp(-0.5f * i * i / (sigma * sigma)) / sigma;
-    return weights;
-}
-
 struct sample_waterfall_fft final : public polymer_app
 {
     std::unique_ptr<imgui_instance> imgui;
@@ -339,8 +320,11 @@ struct sample_waterfall_fft final : public polymer_app
     kiss_fftr_cfg fft_cfg_async = nullptr;
     spectrogram_params params;
     visualization_params viz_params;
-    post_processing_params post_params;
     taa_params taa_config;
+
+    // Post-processing
+    gl_effect_composer composer;
+    std::shared_ptr<gl_unreal_bloom> bloom_pass;
     taa_state taa;
     std::vector<float> window_coefficients;
     std::vector<float> fft_input;
@@ -367,9 +351,6 @@ struct sample_waterfall_fft final : public polymer_app
     // Shaders
     gl_shader waterfall_shader;
     gl_shader waterfall_wireframe_shader;
-    gl_shader brightness_shader;
-    gl_shader blur_shader;
-    gl_shader composite_shader;
     gl_shader taa_velocity_shader;
     gl_shader taa_resolve_shader;
 
@@ -382,12 +363,6 @@ struct sample_waterfall_fft final : public polymer_app
     gl_framebuffer hdr_framebuffer;
     gl_texture_2d hdr_color_texture;
     gl_texture_2d hdr_depth_texture;
-
-    // Multi-mip bloom buffers (5 levels)
-    gl_framebuffer bloom_fb_h[5];
-    gl_framebuffer bloom_fb_v[5];
-    gl_texture_2d bloom_tex_h[5];
-    gl_texture_2d bloom_tex_v[5];
 
     // TAA framebuffer resources
     gl_framebuffer velocity_fb;
@@ -420,7 +395,7 @@ struct sample_waterfall_fft final : public polymer_app
 
     void setup_fft();
     void setup_waterfall_mesh();
-    void setup_post_processing(int32_t width, int32_t height);
+    void setup_hdr_framebuffer(int32_t width, int32_t height);
     void setup_taa_buffers(int32_t width, int32_t height);
     void rebuild_mesh_vertices();
     void update_velocity_mesh();
@@ -429,7 +404,6 @@ struct sample_waterfall_fft final : public polymer_app
     void wait_for_fft_task();
     void process_fft_frame();
     void try_consume_fft_task();
-    void render_bloom_pass(int32_t width, int32_t height);
     void update_taa_jitter(int32_t width, int32_t height);
     void render_velocity_pass(int32_t width, int32_t height);
     void render_taa_resolve_pass(int32_t width, int32_t height);
@@ -468,17 +442,19 @@ sample_waterfall_fft::sample_waterfall_fft() : polymer_app(1920, 1200, "waterfal
         read_file_text(asset_base + "/shaders/waterfall_wireframe_geom.glsl"));
 
     std::string fullscreen_vert = read_file_text(asset_base + "/shaders/waterfall_fullscreen_vert.glsl");
-    brightness_shader = gl_shader(fullscreen_vert, read_file_text(asset_base + "/shaders/bloom/bloom_brightness_frag.glsl"));
-    blur_shader = gl_shader(fullscreen_vert, read_file_text(asset_base + "/shaders/bloom/bloom_blur_frag.glsl"));
-    composite_shader = gl_shader(fullscreen_vert, read_file_text(asset_base + "/shaders/bloom/bloom_composite_frag.glsl"));
-
     taa_velocity_shader = gl_shader( read_file_text(asset_base + "/shaders/waterfall_taa_velocity_vert.glsl"), read_file_text(asset_base + "/shaders/waterfall_taa_velocity_frag.glsl"));
     taa_resolve_shader = gl_shader(fullscreen_vert, read_file_text(asset_base + "/shaders/waterfall_taa_resolve_frag.glsl"));
 
+    // Post-processing (bloom + tonemapping)
+    bloom_pass = std::make_shared<gl_unreal_bloom>(asset_base);
+    bloom_pass->config.tonemap_mode = 3; // ACES 2.0
+    composer.add_pass(bloom_pass);
+
     setup_fft();
     setup_waterfall_mesh();
-    setup_post_processing(width, height);
+    setup_hdr_framebuffer(width, height);
     if (taa_config.enabled) setup_taa_buffers(width, height);
+    composer.resize(width, height);
 
     current_width = width;
     current_height = height;
@@ -568,9 +544,8 @@ void sample_waterfall_fft::setup_waterfall_mesh()
     rebuild_mesh_vertices();
 }
 
-void sample_waterfall_fft::setup_post_processing(int32_t width, int32_t height)
+void sample_waterfall_fft::setup_hdr_framebuffer(int32_t width, int32_t height)
 {
-    // HDR framebuffer at full resolution
     hdr_color_texture.setup(width, height, GL_RGBA16F, GL_RGBA, GL_FLOAT, nullptr);
     glTextureParameteri(hdr_color_texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTextureParameteri(hdr_color_texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -580,32 +555,6 @@ void sample_waterfall_fft::setup_post_processing(int32_t width, int32_t height)
     glNamedFramebufferTexture(hdr_framebuffer, GL_COLOR_ATTACHMENT0, hdr_color_texture, 0);
     glNamedFramebufferTexture(hdr_framebuffer, GL_DEPTH_ATTACHMENT, hdr_depth_texture, 0);
     hdr_framebuffer.check_complete();
-
-    // Multi-mip bloom buffers (5 levels, each half the previous)
-    int32_t mip_w = width / 2;
-    int32_t mip_h = height / 2;
-
-    for (int32_t i = 0; i < 5; ++i)
-    {
-        bloom_tex_h[i].setup(mip_w, mip_h, GL_RGBA16F, GL_RGBA, GL_FLOAT, nullptr);
-        glTextureParameteri(bloom_tex_h[i], GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTextureParameteri(bloom_tex_h[i], GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTextureParameteri(bloom_tex_h[i], GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTextureParameteri(bloom_tex_h[i], GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glNamedFramebufferTexture(bloom_fb_h[i], GL_COLOR_ATTACHMENT0, bloom_tex_h[i], 0);
-        bloom_fb_h[i].check_complete();
-
-        bloom_tex_v[i].setup(mip_w, mip_h, GL_RGBA16F, GL_RGBA, GL_FLOAT, nullptr);
-        glTextureParameteri(bloom_tex_v[i], GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTextureParameteri(bloom_tex_v[i], GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTextureParameteri(bloom_tex_v[i], GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTextureParameteri(bloom_tex_v[i], GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glNamedFramebufferTexture(bloom_fb_v[i], GL_COLOR_ATTACHMENT0, bloom_tex_v[i], 0);
-        bloom_fb_v[i].check_complete();
-
-        mip_w = std::max(1, mip_w / 2);
-        mip_h = std::max(1, mip_h / 2);
-    }
 
     gl_check_error(__FILE__, __LINE__);
 }
@@ -953,19 +902,12 @@ void sample_waterfall_fft::on_window_resize(int2 size)
         current_width = size.x;
         current_height = size.y;
 
-        // Recreate framebuffers - we need new texture objects
         hdr_color_texture = gl_texture_2d();
         hdr_depth_texture = gl_texture_2d();
         hdr_framebuffer = gl_framebuffer();
-        for (int32_t i = 0; i < 5; ++i)
-        {
-            bloom_tex_h[i] = gl_texture_2d();
-            bloom_tex_v[i] = gl_texture_2d();
-            bloom_fb_h[i] = gl_framebuffer();
-            bloom_fb_v[i] = gl_framebuffer();
-        }
 
-        setup_post_processing(size.x, size.y);
+        setup_hdr_framebuffer(size.x, size.y);
+        composer.resize(size.x, size.y);
 
         // Recreate TAA buffers on resize
         if (taa_config.enabled)
@@ -1063,74 +1005,6 @@ void sample_waterfall_fft::on_update(const app_update_event & e)
                 playback_position = 0.0f;
             }
         }
-    }
-}
-
-void sample_waterfall_fft::render_bloom_pass(int32_t width, int32_t height)
-{
-    glDisable(GL_DEPTH_TEST);
-    glBindVertexArray(fullscreen_vao);
-
-    int32_t mip_w = width / 2;
-    int32_t mip_h = height / 2;
-
-    // Use TAA output if enabled, otherwise use HDR directly
-    GLuint bloom_source = taa_config.enabled ? taa_history_tex[taa.history_index] : hdr_color_texture;
-
-    // Step 1: Brightness extraction -> bloom_v[0]
-    glBindFramebuffer(GL_FRAMEBUFFER, bloom_fb_v[0]);
-    glViewport(0, 0, mip_w, mip_h);
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    brightness_shader.bind();
-    brightness_shader.texture("s_hdr_color", 0, bloom_source, GL_TEXTURE_2D);
-    brightness_shader.uniform("u_threshold", post_params.bloom_threshold);
-    brightness_shader.uniform("u_knee", post_params.bloom_knee);
-    glDrawArrays(GL_TRIANGLES, 0, 3);
-    brightness_shader.unbind();
-
-    // Step 2: Multi-mip blur chain
-    int32_t cur_w = mip_w;
-    int32_t cur_h = mip_h;
-
-    for (int32_t i = 0; i < 5; ++i)
-    {
-        if (i > 0)
-        {
-            cur_w = std::max(1, cur_w / 2);
-            cur_h = std::max(1, cur_h / 2);
-        }
-
-        int32_t kernel_radius = 3 + i * 2;
-        std::vector<float> weights = compute_gaussian_weights(kernel_radius);
-
-        GLuint input_tex = (i == 0) ? bloom_tex_v[0] : bloom_tex_v[i - 1];
-
-        // Horizontal blur: input -> bloom_h[i]
-        glBindFramebuffer(GL_FRAMEBUFFER, bloom_fb_h[i]);
-        glViewport(0, 0, cur_w, cur_h);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        blur_shader.bind();
-        blur_shader.texture("s_source", 0, input_tex, GL_TEXTURE_2D);
-        blur_shader.uniform("u_direction", float2(1.0f / cur_w, 0.0f));
-        blur_shader.uniform("u_kernel_radius", kernel_radius);
-        blur_shader.uniform("u_weights", kernel_radius + 1, weights);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-        blur_shader.unbind();
-
-        // Vertical blur: bloom_h[i] -> bloom_v[i]
-        glBindFramebuffer(GL_FRAMEBUFFER, bloom_fb_v[i]);
-        glViewport(0, 0, cur_w, cur_h);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        blur_shader.bind();
-        blur_shader.texture("s_source", 0, bloom_tex_h[i], GL_TEXTURE_2D);
-        blur_shader.uniform("u_direction", float2(0.0f, 1.0f / cur_h));
-        blur_shader.uniform("u_kernel_radius", kernel_radius);
-        blur_shader.uniform("u_weights", kernel_radius + 1, weights);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-        blur_shader.unbind();
     }
 }
 
@@ -1338,36 +1212,9 @@ void sample_waterfall_fft::on_draw()
         render_taa_resolve_pass(width, height);
     }
 
-    // Step 3: Bloom pass (if enabled)
-    if (post_params.bloom_enabled)
-    {
-        render_bloom_pass(width, height);
-    }
-
-    // Step 4: Final composite to screen
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0, 0, width, height);
-    glClear(GL_COLOR_BUFFER_BIT);
-    glDisable(GL_DEPTH_TEST);
-    glBindVertexArray(fullscreen_vao);
-
-    // Use TAA output if enabled, otherwise use HDR directly
-    GLuint source_texture = taa_config.enabled ? taa_history_tex[taa.history_index] : hdr_color_texture;
-
-    composite_shader.bind();
-    composite_shader.texture("s_hdr_color", 0, source_texture, GL_TEXTURE_2D);
-    composite_shader.texture("s_bloom_0", 1, bloom_tex_v[0], GL_TEXTURE_2D);
-    composite_shader.texture("s_bloom_1", 2, bloom_tex_v[1], GL_TEXTURE_2D);
-    composite_shader.texture("s_bloom_2", 3, bloom_tex_v[2], GL_TEXTURE_2D);
-    composite_shader.texture("s_bloom_3", 4, bloom_tex_v[3], GL_TEXTURE_2D);
-    composite_shader.texture("s_bloom_4", 5, bloom_tex_v[4], GL_TEXTURE_2D);
-    composite_shader.uniform("u_bloom_strength", post_params.bloom_enabled ? post_params.bloom_strength : 0.0f);
-    composite_shader.uniform("u_bloom_radius", post_params.bloom_radius);
-    composite_shader.uniform("u_exposure", post_params.exposure);
-    composite_shader.uniform("u_gamma", post_params.gamma);
-    composite_shader.uniform("u_tonemap_mode", post_params.tonemap_mode);
-    glDrawArrays(GL_TRIANGLES, 0, 3);
-    composite_shader.unbind();
+    // Step 3: Bloom + composite to screen
+    GLuint source_texture = taa_config.enabled ? static_cast<GLuint>(taa_history_tex[taa.history_index]) : static_cast<GLuint>(hdr_color_texture);
+    composer.render(source_texture, width, height);
 
     if (show_imgui)
     {
@@ -1542,19 +1389,19 @@ void sample_waterfall_fft::on_draw()
         ImGui::Separator();
         ImGui::Text("Post Processing");
 
-        ImGui::Checkbox("Enable Bloom", &post_params.bloom_enabled);
-        if (post_params.bloom_enabled)
+        ImGui::Checkbox("Enable Bloom", &bloom_pass->config.bloom_enabled);
+        if (bloom_pass->config.bloom_enabled)
         {
-        ImGui::SliderFloat("Threshold", &post_params.bloom_threshold, 0.0f, 2.0f);
-        ImGui::SliderFloat("Knee", &post_params.bloom_knee, 0.0f, 1.0f);
-        ImGui::SliderFloat("Strength", &post_params.bloom_strength, 0.0f, 3.0f);
-        ImGui::SliderFloat("Radius", &post_params.bloom_radius, 0.0f, 1.0f);
+        ImGui::SliderFloat("Threshold", &bloom_pass->config.threshold, 0.0f, 2.0f);
+        ImGui::SliderFloat("Knee", &bloom_pass->config.knee, 0.0f, 1.0f);
+        ImGui::SliderFloat("Strength", &bloom_pass->config.strength, 0.0f, 3.0f);
+        ImGui::SliderFloat("Radius", &bloom_pass->config.radius, 0.0f, 1.0f);
         }
-        ImGui::SliderFloat("Exposure", &post_params.exposure, 0.1f, 5.0f);
-        ImGui::SliderFloat("Gamma", &post_params.gamma, 1.0f, 3.0f);
+        ImGui::SliderFloat("Exposure", &bloom_pass->config.exposure, 0.1f, 5.0f);
+        ImGui::SliderFloat("Gamma", &bloom_pass->config.gamma, 1.0f, 3.0f);
 
-        const char * tonemap_names[] = {"None", "Reinhard", "ACES Filmic"};
-        ImGui::Combo("Tonemapping", &post_params.tonemap_mode, tonemap_names, IM_ARRAYSIZE(tonemap_names));
+        const char * tonemap_names[] = {"None", "Filmic", "Hejl", "ACES 2.0", "ACES 1.0"};
+        ImGui::Combo("Tonemapping", &bloom_pass->config.tonemap_mode, tonemap_names, IM_ARRAYSIZE(tonemap_names));
 
         ImGui::Separator();
         ImGui::Text("Temporal Anti-Aliasing");

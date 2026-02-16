@@ -203,16 +203,17 @@ namespace polymer
         void set_target(const linalg::aliases::float3 & new_target)
         {
             target = new_target;
+            focus = length(eye - target);
             const linalg::aliases::float3 lookat = normalize(eye - target);
             pitch = asinf(lookat.y);
             yaw = acosf(lookat.x);
             f = frame_rh(eye, target);
-            // @todo - set focus
         }
 
         void set_eye_position(const linalg::aliases::float3 & new_eye)
         {
             eye = new_eye;
+            focus = length(eye - target);
             f = frame_rh(eye, target);
         }
 
@@ -227,6 +228,7 @@ namespace polymer
                 if (e.value[0] == GLFW_MOUSE_BUTTON_LEFT) ml = e.is_down();
                 else if (e.value[0] == GLFW_MOUSE_BUTTON_RIGHT) mr = e.is_down();
                 else if (e.value[0] == GLFW_MOUSE_BUTTON_MIDDLE) mm = e.is_down();
+                if (e.is_down()) last_cursor = e.cursor;
             }
             else if (e.type == app_input_event::CURSOR)
             {

@@ -158,4 +158,4 @@ public:
     
 }
 
-#endif // GlRenderableMeshline
+#endif // meshline_h

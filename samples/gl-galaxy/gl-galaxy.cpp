@@ -1,6 +1,8 @@
 #include "polymer-core/lib-polymer.hpp"
 
 #include "polymer-gfx-gl/gl-loaders.hpp"
+#include "polymer-gfx-gl/gl-post-processing.hpp"
+#include "polymer-gfx-gl/post/gl-unreal-bloom.hpp"
 #include "polymer-app-base/glfw-app.hpp"
 #include "polymer-app-base/wrappers/gl-imgui.hpp"
 #include "polymer-app-base/camera-controllers.hpp"
@@ -20,15 +22,6 @@ inline void uniform3f(const gl_shader_compute & shader, const std::string & name
 inline float3 hex_to_float3(uint32_t hex)
 {
     return float3(((hex >> 16) & 0xFF) / 255.0f,((hex >> 8) & 0xFF) / 255.0f,  (hex & 0xFF) / 255.0f);
-}
-
-inline std::vector<float> compute_gaussian_weights(int32_t kernel_radius)
-{
-    std::vector<float> weights(kernel_radius + 1);
-    float sigma = static_cast<float>(kernel_radius) / 3.0f;
-    for (int32_t i = 0; i <= kernel_radius; ++i)
-        weights[i] = 0.39894228f * std::exp(-0.5f * i * i / (sigma * sigma)) / sigma;
-    return weights;
 }
 
 struct galaxy_config
@@ -53,25 +46,16 @@ struct galaxy_config
     float3 cloud_tint = hex_to_float3(0xFFDACE);    // light pink
 };
 
-struct bloom_config
-{
-    bool enabled = true;
-    float threshold = 0.1f;
-    float knee = 0.5f;
-    float strength = 1.5f;
-    float radius = 0.5f;
-    float exposure = 1.0f;
-    float gamma = 2.2f;
-    int32_t tonemap_mode = 2; // 0=none, 1=Reinhard, 2=ACES
-};
-
 struct sample_gl_galaxy final : public polymer_app
 {
     camera_controller_orbit cam;
     std::unique_ptr<imgui_instance> imgui;
 
     galaxy_config config;
-    bloom_config bloom;
+
+    // Post-processing
+    gl_effect_composer composer;
+    std::shared_ptr<gl_unreal_bloom> bloom_pass;
 
     // Compute shaders
     gl_shader_compute star_init_compute;
@@ -83,9 +67,6 @@ struct sample_gl_galaxy final : public polymer_app
     gl_shader star_shader;
     gl_shader cloud_shader;
     gl_shader starfield_shader;
-    gl_shader brightness_shader;
-    gl_shader blur_shader;
-    gl_shader composite_shader;
 
     // Star SSBOs (bindings 0-3)
     gl_buffer star_positions_buf;
@@ -110,18 +91,10 @@ struct sample_gl_galaxy final : public polymer_app
     // Empty VAO for SSBO-based particle draws
     gl_vertex_array_object particle_vao;
 
-    // Fullscreen triangle VAO for post-processing
-    gl_vertex_array_object fullscreen_vao;
-
-    // HDR + bloom FBOs
+    // HDR FBO
     gl_framebuffer hdr_framebuffer;
     gl_texture_2d hdr_color_texture;
     gl_texture_2d hdr_depth_texture;
-
-    gl_framebuffer bloom_fb_h[5];
-    gl_framebuffer bloom_fb_v[5];
-    gl_texture_2d bloom_tex_h[5];
-    gl_texture_2d bloom_tex_v[5];
 
     // State
     bool stars_initialized = false;
@@ -142,9 +115,8 @@ struct sample_gl_galaxy final : public polymer_app
 
     void allocate_star_ssbos();
     void allocate_cloud_ssbos();
-    void setup_post_processing(int32_t width, int32_t height);
+    void setup_hdr_framebuffer(int32_t width, int32_t height);
     void generate_starfield();
-    void render_bloom_pass(int32_t width, int32_t height);
 
     void on_input(const app_input_event & event) override;
     void on_update(const app_update_event & e) override;
@@ -183,12 +155,12 @@ sample_gl_galaxy::sample_gl_galaxy() : polymer_app(1920, 1080, "galaxy-sim", 4)
     cloud_shader = gl_shader(read_file_text(shader_base + "galaxy_cloud_vert.glsl"), read_file_text(shader_base + "galaxy_cloud_frag.glsl"));
     starfield_shader = gl_shader(read_file_text(shader_base + "galaxy_starfield_vert.glsl"),read_file_text(shader_base + "galaxy_starfield_frag.glsl"));
 
-    // Post-processing shaders (shared bloom shaders)
-    const std::string pp_base = asset_base + "/shaders/";
-    const std::string bloom_base = asset_base + "/shaders/bloom/";
-    brightness_shader = gl_shader(read_file_text(pp_base + "waterfall_fullscreen_vert.glsl"), read_file_text(bloom_base + "bloom_brightness_frag.glsl"));
-    blur_shader = gl_shader(read_file_text(pp_base + "waterfall_fullscreen_vert.glsl"), read_file_text(bloom_base + "bloom_blur_frag.glsl"));
-    composite_shader = gl_shader(read_file_text(pp_base + "waterfall_fullscreen_vert.glsl"), read_file_text(bloom_base + "bloom_composite_frag.glsl"));
+    // Post-processing (bloom + tonemapping)
+    bloom_pass = std::make_shared<gl_unreal_bloom>(asset_base);
+    bloom_pass->config.threshold = 0.1f;
+    bloom_pass->config.strength = 1.5f;
+    bloom_pass->config.tonemap_mode = 3; // ACES 2.0
+    composer.add_pass(bloom_pass);
 
     cloud_texture = load_image(asset_base + "/textures/cloud.png", true);
 
@@ -196,12 +168,13 @@ sample_gl_galaxy::sample_gl_galaxy() : polymer_app(1920, 1080, "galaxy-sim", 4)
     allocate_star_ssbos();
     allocate_cloud_ssbos();
 
-    // Setup post-processing FBOs
+    // Setup HDR framebuffer
     int width, height;
     glfwGetWindowSize(window, &width, &height);
     current_width = width;
     current_height = height;
-    setup_post_processing(width, height);
+    setup_hdr_framebuffer(width, height);
+    composer.resize(width, height);
 
     // Generate background starfield
     generate_starfield();
@@ -236,9 +209,8 @@ void sample_gl_galaxy::allocate_cloud_ssbos()
     clouds_initialized = false;
 }
 
-void sample_gl_galaxy::setup_post_processing(int32_t width, int32_t height)
+void sample_gl_galaxy::setup_hdr_framebuffer(int32_t width, int32_t height)
 {
-    // HDR framebuffer
     hdr_color_texture.setup(width, height, GL_RGBA16F, GL_RGBA, GL_FLOAT, nullptr);
     glTextureParameteri(hdr_color_texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTextureParameteri(hdr_color_texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -248,32 +220,6 @@ void sample_gl_galaxy::setup_post_processing(int32_t width, int32_t height)
     glNamedFramebufferTexture(hdr_framebuffer, GL_COLOR_ATTACHMENT0, hdr_color_texture, 0);
     glNamedFramebufferTexture(hdr_framebuffer, GL_DEPTH_ATTACHMENT, hdr_depth_texture, 0);
     hdr_framebuffer.check_complete();
-
-    // Multi-mip bloom buffers (5 levels, each half the previous)
-    int32_t mip_w = width / 2;
-    int32_t mip_h = height / 2;
-
-    for (int32_t i = 0; i < 5; ++i)
-    {
-        bloom_tex_h[i].setup(mip_w, mip_h, GL_RGBA16F, GL_RGBA, GL_FLOAT, nullptr);
-        glTextureParameteri(bloom_tex_h[i], GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTextureParameteri(bloom_tex_h[i], GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTextureParameteri(bloom_tex_h[i], GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTextureParameteri(bloom_tex_h[i], GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glNamedFramebufferTexture(bloom_fb_h[i], GL_COLOR_ATTACHMENT0, bloom_tex_h[i], 0);
-        bloom_fb_h[i].check_complete();
-
-        bloom_tex_v[i].setup(mip_w, mip_h, GL_RGBA16F, GL_RGBA, GL_FLOAT, nullptr);
-        glTextureParameteri(bloom_tex_v[i], GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTextureParameteri(bloom_tex_v[i], GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTextureParameteri(bloom_tex_v[i], GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTextureParameteri(bloom_tex_v[i], GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glNamedFramebufferTexture(bloom_fb_v[i], GL_COLOR_ATTACHMENT0, bloom_tex_v[i], 0);
-        bloom_fb_v[i].check_complete();
-
-        mip_w = std::max(1, mip_w / 2);
-        mip_h = std::max(1, mip_h / 2);
-    }
 
     gl_check_error(__FILE__, __LINE__);
 }
@@ -326,71 +272,6 @@ void sample_gl_galaxy::generate_starfield()
     starfield_mesh.set_non_indexed(GL_POINTS);
 }
 
-void sample_gl_galaxy::render_bloom_pass(int32_t width, int32_t height)
-{
-    glDisable(GL_DEPTH_TEST);
-    glBindVertexArray(fullscreen_vao);
-
-    int32_t mip_w = width / 2;
-    int32_t mip_h = height / 2;
-
-    // Step 1: Brightness extraction -> bloom_v[0]
-    glBindFramebuffer(GL_FRAMEBUFFER, bloom_fb_v[0]);
-    glViewport(0, 0, mip_w, mip_h);
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    brightness_shader.bind();
-    brightness_shader.texture("s_hdr_color", 0, hdr_color_texture, GL_TEXTURE_2D);
-    brightness_shader.uniform("u_threshold", bloom.threshold);
-    brightness_shader.uniform("u_knee", bloom.knee);
-    glDrawArrays(GL_TRIANGLES, 0, 3);
-    brightness_shader.unbind();
-
-    // Step 2: Multi-mip blur chain
-    int32_t cur_w = mip_w;
-    int32_t cur_h = mip_h;
-
-    for (int32_t i = 0; i < 5; ++i)
-    {
-        if (i > 0)
-        {
-            cur_w = std::max(1, cur_w / 2);
-            cur_h = std::max(1, cur_h / 2);
-        }
-
-        int32_t kernel_radius = 3 + i * 2;
-        std::vector<float> weights = compute_gaussian_weights(kernel_radius);
-
-        GLuint input_tex = (i == 0) ? bloom_tex_v[0] : bloom_tex_v[i - 1];
-
-        // Horizontal blur: input -> bloom_h[i]
-        glBindFramebuffer(GL_FRAMEBUFFER, bloom_fb_h[i]);
-        glViewport(0, 0, cur_w, cur_h);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        blur_shader.bind();
-        blur_shader.texture("s_source", 0, input_tex, GL_TEXTURE_2D);
-        blur_shader.uniform("u_direction", float2(1.0f / cur_w, 0.0f));
-        blur_shader.uniform("u_kernel_radius", kernel_radius);
-        blur_shader.uniform("u_weights", kernel_radius + 1, weights);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-        blur_shader.unbind();
-
-        // Vertical blur: bloom_h[i] -> bloom_v[i]
-        glBindFramebuffer(GL_FRAMEBUFFER, bloom_fb_v[i]);
-        glViewport(0, 0, cur_w, cur_h);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        blur_shader.bind();
-        blur_shader.texture("s_source", 0, bloom_tex_h[i], GL_TEXTURE_2D);
-        blur_shader.uniform("u_direction", float2(0.0f, 1.0f / cur_h));
-        blur_shader.uniform("u_kernel_radius", kernel_radius);
-        blur_shader.uniform("u_weights", kernel_radius + 1, weights);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-        blur_shader.unbind();
-    }
-}
-
 void sample_gl_galaxy::on_window_resize(int2 size)
 {
     if (size.x == current_width && size.y == current_height) return;
@@ -400,15 +281,9 @@ void sample_gl_galaxy::on_window_resize(int2 size)
     hdr_color_texture = gl_texture_2d();
     hdr_depth_texture = gl_texture_2d();
     hdr_framebuffer = gl_framebuffer();
-    for (int32_t i = 0; i < 5; ++i)
-    {
-        bloom_tex_h[i] = gl_texture_2d();
-        bloom_tex_v[i] = gl_texture_2d();
-        bloom_fb_h[i] = gl_framebuffer();
-        bloom_fb_v[i] = gl_framebuffer();
-    }
 
-    setup_post_processing(size.x, size.y);
+    setup_hdr_framebuffer(size.x, size.y);
+    composer.resize(size.x, size.y);
 }
 
 void sample_gl_galaxy::on_input(const app_input_event & event)
@@ -635,33 +510,7 @@ void sample_gl_galaxy::on_draw()
     glDepthMask(GL_TRUE);
     glDisable(GL_DEPTH_TEST);
 
-    if (bloom.enabled)
-    {
-        render_bloom_pass(width, height);
-    }
-
-    // Final Composite to Screen
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0, 0, width, height);
-    glClear(GL_COLOR_BUFFER_BIT);
-    glDisable(GL_DEPTH_TEST);
-    glBindVertexArray(fullscreen_vao);
-
-    composite_shader.bind();
-    composite_shader.texture("s_hdr_color", 0, hdr_color_texture, GL_TEXTURE_2D);
-    composite_shader.texture("s_bloom_0", 1, bloom_tex_v[0], GL_TEXTURE_2D);
-    composite_shader.texture("s_bloom_1", 2, bloom_tex_v[1], GL_TEXTURE_2D);
-    composite_shader.texture("s_bloom_2", 3, bloom_tex_v[2], GL_TEXTURE_2D);
-    composite_shader.texture("s_bloom_3", 4, bloom_tex_v[3], GL_TEXTURE_2D);
-    composite_shader.texture("s_bloom_4", 5, bloom_tex_v[4], GL_TEXTURE_2D);
-    composite_shader.uniform("u_bloom_strength", bloom.enabled ? bloom.strength : 0.0f);
-    composite_shader.uniform("u_bloom_radius", bloom.radius);
-    composite_shader.uniform("u_exposure", bloom.exposure);
-    composite_shader.uniform("u_gamma", bloom.gamma);
-    composite_shader.uniform("u_tonemap_mode", bloom.tonemap_mode);
-    glDrawArrays(GL_TRIANGLES, 0, 3);
-    composite_shader.unbind();
+    composer.render(hdr_color_texture, width, height);
 
     imgui->begin_frame();
 
@@ -704,15 +553,15 @@ void sample_gl_galaxy::on_draw()
 
     if (ImGui::CollapsingHeader("Bloom", ImGuiTreeNodeFlags_DefaultOpen))
     {
-        ImGui::Checkbox("Enabled", &bloom.enabled);
-        ImGui::SliderFloat("Threshold", &bloom.threshold, 0.0f, 1.0f);
-        ImGui::SliderFloat("Knee", &bloom.knee, 0.0f, 1.0f);
-        ImGui::SliderFloat("Strength", &bloom.strength, 0.0f, 3.0f);
-        ImGui::SliderFloat("Radius", &bloom.radius, 0.0f, 1.0f);
-        ImGui::SliderFloat("Exposure", &bloom.exposure, 0.1f, 5.0f);
-        ImGui::SliderFloat("Gamma", &bloom.gamma, 1.0f, 3.0f);
-        const char * tonemap_modes[] = {"None", "Reinhard", "ACES"};
-        ImGui::Combo("Tonemap", &bloom.tonemap_mode, tonemap_modes, IM_ARRAYSIZE(tonemap_modes));
+        ImGui::Checkbox("Enabled", &bloom_pass->config.bloom_enabled);
+        ImGui::SliderFloat("Threshold", &bloom_pass->config.threshold, 0.0f, 1.0f);
+        ImGui::SliderFloat("Knee", &bloom_pass->config.knee, 0.0f, 1.0f);
+        ImGui::SliderFloat("Strength", &bloom_pass->config.strength, 0.0f, 3.0f);
+        ImGui::SliderFloat("Radius", &bloom_pass->config.radius, 0.0f, 1.0f);
+        ImGui::SliderFloat("Exposure", &bloom_pass->config.exposure, 0.1f, 5.0f);
+        ImGui::SliderFloat("Gamma", &bloom_pass->config.gamma, 1.0f, 3.0f);
+        const char * tonemap_modes[] = {"None", "Filmic", "Hejl", "ACES 2.0", "ACES 1.0"};
+        ImGui::Combo("Tonemap", &bloom_pass->config.tonemap_mode, tonemap_modes, IM_ARRAYSIZE(tonemap_modes));
     }
 
     if (ImGui::CollapsingHeader("Galaxy Structure"))

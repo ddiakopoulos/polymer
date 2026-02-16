@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.7)
 project(polymer-gfx-gl LANGUAGES CXX)
 
-file(GLOB INCLUDE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/include/polymer-gfx-gl/*.hpp")
+file(GLOB_RECURSE INCLUDE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/include/polymer-gfx-gl/*.hpp")
 
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/include")
 
