@@ -86,9 +86,9 @@ struct post_processing_params
 {
     bool bloom_enabled = true;
     float bloom_threshold = 0.8f;
-    float bloom_intensity = 1.0f;
-    float bloom_radius = 1.0f;
-    int32_t bloom_blur_passes = 2;
+    float bloom_knee = 0.5f;
+    float bloom_strength = 1.0f;
+    float bloom_radius = 0.5f;
     float exposure = 1.0f;
     float gamma = 2.2f;
     int32_t tonemap_mode = 1;  // 0=none, 1=Reinhard, 2=ACES
@@ -315,6 +315,15 @@ inline float4x4 apply_jitter_to_projection(float4x4 proj, float2 jitter_pixels, 
     return jittered;
 }
 
+inline std::vector<float> compute_gaussian_weights(int32_t kernel_radius)
+{
+    std::vector<float> weights(kernel_radius + 1);
+    float sigma = static_cast<float>(kernel_radius) / 3.0f;
+    for (int32_t i = 0; i <= kernel_radius; ++i)
+        weights[i] = 0.39894228f * std::exp(-0.5f * i * i / (sigma * sigma)) / sigma;
+    return weights;
+}
+
 struct sample_waterfall_fft final : public polymer_app
 {
     std::unique_ptr<imgui_instance> imgui;
@@ -324,6 +333,7 @@ struct sample_waterfall_fft final : public polymer_app
     bool is_playing = false;
     bool audio_loaded = false;
     bool loop_enabled = true;
+    bool show_imgui = true;
 
     kiss_fftr_cfg fft_cfg = nullptr;
     kiss_fftr_cfg fft_cfg_async = nullptr;
@@ -373,11 +383,11 @@ struct sample_waterfall_fft final : public polymer_app
     gl_texture_2d hdr_color_texture;
     gl_texture_2d hdr_depth_texture;
 
-    // Bloom ping-pong buffers (half resolution)
-    gl_framebuffer blur_fb_ping;
-    gl_framebuffer blur_fb_pong;
-    gl_texture_2d blur_tex_ping;
-    gl_texture_2d blur_tex_pong;
+    // Multi-mip bloom buffers (5 levels)
+    gl_framebuffer bloom_fb_h[5];
+    gl_framebuffer bloom_fb_v[5];
+    gl_texture_2d bloom_tex_h[5];
+    gl_texture_2d bloom_tex_v[5];
 
     // TAA framebuffer resources
     gl_framebuffer velocity_fb;
@@ -458,9 +468,9 @@ sample_waterfall_fft::sample_waterfall_fft() : polymer_app(1920, 1200, "waterfal
         read_file_text(asset_base + "/shaders/waterfall_wireframe_geom.glsl"));
 
     std::string fullscreen_vert = read_file_text(asset_base + "/shaders/waterfall_fullscreen_vert.glsl");
-    brightness_shader = gl_shader(fullscreen_vert, read_file_text(asset_base + "/shaders/waterfall_brightness_frag.glsl"));
-    blur_shader = gl_shader(fullscreen_vert, read_file_text(asset_base + "/shaders/waterfall_blur_frag.glsl"));
-    composite_shader = gl_shader(fullscreen_vert, read_file_text(asset_base + "/shaders/waterfall_composite_frag.glsl"));
+    brightness_shader = gl_shader(fullscreen_vert, read_file_text(asset_base + "/shaders/bloom/bloom_brightness_frag.glsl"));
+    blur_shader = gl_shader(fullscreen_vert, read_file_text(asset_base + "/shaders/bloom/bloom_blur_frag.glsl"));
+    composite_shader = gl_shader(fullscreen_vert, read_file_text(asset_base + "/shaders/bloom/bloom_composite_frag.glsl"));
 
     taa_velocity_shader = gl_shader( read_file_text(asset_base + "/shaders/waterfall_taa_velocity_vert.glsl"), read_file_text(asset_base + "/shaders/waterfall_taa_velocity_frag.glsl"));
     taa_resolve_shader = gl_shader(fullscreen_vert, read_file_text(asset_base + "/shaders/waterfall_taa_resolve_frag.glsl"));
@@ -571,23 +581,31 @@ void sample_waterfall_fft::setup_post_processing(int32_t width, int32_t height)
     glNamedFramebufferTexture(hdr_framebuffer, GL_DEPTH_ATTACHMENT, hdr_depth_texture, 0);
     hdr_framebuffer.check_complete();
 
-    // Half-resolution bloom buffers
-    int32_t half_w = width / 2;
-    int32_t half_h = height / 2;
+    // Multi-mip bloom buffers (5 levels, each half the previous)
+    int32_t mip_w = width / 2;
+    int32_t mip_h = height / 2;
 
-    blur_tex_ping.setup(half_w, half_h, GL_RGBA16F, GL_RGBA, GL_FLOAT, nullptr);
-    glTextureParameteri(blur_tex_ping, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTextureParameteri(blur_tex_ping, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    for (int32_t i = 0; i < 5; ++i)
+    {
+        bloom_tex_h[i].setup(mip_w, mip_h, GL_RGBA16F, GL_RGBA, GL_FLOAT, nullptr);
+        glTextureParameteri(bloom_tex_h[i], GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTextureParameteri(bloom_tex_h[i], GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTextureParameteri(bloom_tex_h[i], GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTextureParameteri(bloom_tex_h[i], GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glNamedFramebufferTexture(bloom_fb_h[i], GL_COLOR_ATTACHMENT0, bloom_tex_h[i], 0);
+        bloom_fb_h[i].check_complete();
 
-    blur_tex_pong.setup(half_w, half_h, GL_RGBA16F, GL_RGBA, GL_FLOAT, nullptr);
-    glTextureParameteri(blur_tex_pong, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTextureParameteri(blur_tex_pong, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        bloom_tex_v[i].setup(mip_w, mip_h, GL_RGBA16F, GL_RGBA, GL_FLOAT, nullptr);
+        glTextureParameteri(bloom_tex_v[i], GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTextureParameteri(bloom_tex_v[i], GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTextureParameteri(bloom_tex_v[i], GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTextureParameteri(bloom_tex_v[i], GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glNamedFramebufferTexture(bloom_fb_v[i], GL_COLOR_ATTACHMENT0, bloom_tex_v[i], 0);
+        bloom_fb_v[i].check_complete();
 
-    glNamedFramebufferTexture(blur_fb_ping, GL_COLOR_ATTACHMENT0, blur_tex_ping, 0);
-    blur_fb_ping.check_complete();
-
-    glNamedFramebufferTexture(blur_fb_pong, GL_COLOR_ATTACHMENT0, blur_tex_pong, 0);
-    blur_fb_pong.check_complete();
+        mip_w = std::max(1, mip_w / 2);
+        mip_h = std::max(1, mip_h / 2);
+    }
 
     gl_check_error(__FILE__, __LINE__);
 }
@@ -938,11 +956,14 @@ void sample_waterfall_fft::on_window_resize(int2 size)
         // Recreate framebuffers - we need new texture objects
         hdr_color_texture = gl_texture_2d();
         hdr_depth_texture = gl_texture_2d();
-        blur_tex_ping = gl_texture_2d();
-        blur_tex_pong = gl_texture_2d();
         hdr_framebuffer = gl_framebuffer();
-        blur_fb_ping = gl_framebuffer();
-        blur_fb_pong = gl_framebuffer();
+        for (int32_t i = 0; i < 5; ++i)
+        {
+            bloom_tex_h[i] = gl_texture_2d();
+            bloom_tex_v[i] = gl_texture_2d();
+            bloom_fb_h[i] = gl_framebuffer();
+            bloom_fb_v[i] = gl_framebuffer();
+        }
 
         setup_post_processing(size.x, size.y);
 
@@ -967,11 +988,22 @@ void sample_waterfall_fft::on_input(const app_input_event & event)
 {
     imgui->update_input(event);
 
+    if (event.type == app_input_event::KEY)
+    {
+        // De-select all objects
+        if (event.value[0] == GLFW_KEY_TAB && event.action == GLFW_RELEASE)
+        {
+            show_imgui = !show_imgui;
+            return;
+        }
+    }
+
     // Only handle camera input if ImGui doesn't want it
     if (!ImGui::GetIO().WantCaptureMouse)
     {
         cam.handle_input(event);
     }
+
 }
 
 void sample_waterfall_fft::on_drop(std::vector<std::string> names)
@@ -1036,48 +1068,67 @@ void sample_waterfall_fft::on_update(const app_update_event & e)
 
 void sample_waterfall_fft::render_bloom_pass(int32_t width, int32_t height)
 {
-    int32_t half_w = width / 2;
-    int32_t half_h = height / 2;
-
     glDisable(GL_DEPTH_TEST);
     glBindVertexArray(fullscreen_vao);
+
+    int32_t mip_w = width / 2;
+    int32_t mip_h = height / 2;
 
     // Use TAA output if enabled, otherwise use HDR directly
     GLuint bloom_source = taa_config.enabled ? taa_history_tex[taa.history_index] : hdr_color_texture;
 
-    // Step 1: Brightness extraction to ping buffer
-    glBindFramebuffer(GL_FRAMEBUFFER, blur_fb_ping);
-    glViewport(0, 0, half_w, half_h);
+    // Step 1: Brightness extraction -> bloom_v[0]
+    glBindFramebuffer(GL_FRAMEBUFFER, bloom_fb_v[0]);
+    glViewport(0, 0, mip_w, mip_h);
     glClear(GL_COLOR_BUFFER_BIT);
 
     brightness_shader.bind();
     brightness_shader.texture("s_hdr_color", 0, bloom_source, GL_TEXTURE_2D);
     brightness_shader.uniform("u_threshold", post_params.bloom_threshold);
+    brightness_shader.uniform("u_knee", post_params.bloom_knee);
     glDrawArrays(GL_TRIANGLES, 0, 3);
     brightness_shader.unbind();
 
-    // Step 2: Gaussian blur passes (ping-pong)
-    for (int32_t pass = 0; pass < post_params.bloom_blur_passes; ++pass)
+    // Step 2: Multi-mip blur chain
+    int32_t cur_w = mip_w;
+    int32_t cur_h = mip_h;
+
+    for (int32_t i = 0; i < 5; ++i)
     {
-        // Horizontal blur: ping -> pong
-        glBindFramebuffer(GL_FRAMEBUFFER, blur_fb_pong);
+        if (i > 0)
+        {
+            cur_w = std::max(1, cur_w / 2);
+            cur_h = std::max(1, cur_h / 2);
+        }
+
+        int32_t kernel_radius = 3 + i * 2;
+        std::vector<float> weights = compute_gaussian_weights(kernel_radius);
+
+        GLuint input_tex = (i == 0) ? bloom_tex_v[0] : bloom_tex_v[i - 1];
+
+        // Horizontal blur: input -> bloom_h[i]
+        glBindFramebuffer(GL_FRAMEBUFFER, bloom_fb_h[i]);
+        glViewport(0, 0, cur_w, cur_h);
         glClear(GL_COLOR_BUFFER_BIT);
 
         blur_shader.bind();
-        blur_shader.texture("s_source", 0, blur_tex_ping, GL_TEXTURE_2D);
-        blur_shader.uniform("u_direction", float2(1.0f / half_w, 0.0f));
-        blur_shader.uniform("u_radius", post_params.bloom_radius);
+        blur_shader.texture("s_source", 0, input_tex, GL_TEXTURE_2D);
+        blur_shader.uniform("u_direction", float2(1.0f / cur_w, 0.0f));
+        blur_shader.uniform("u_kernel_radius", kernel_radius);
+        blur_shader.uniform("u_weights", kernel_radius + 1, weights);
         glDrawArrays(GL_TRIANGLES, 0, 3);
         blur_shader.unbind();
 
-        // Vertical blur: pong -> ping
-        glBindFramebuffer(GL_FRAMEBUFFER, blur_fb_ping);
+        // Vertical blur: bloom_h[i] -> bloom_v[i]
+        glBindFramebuffer(GL_FRAMEBUFFER, bloom_fb_v[i]);
+        glViewport(0, 0, cur_w, cur_h);
         glClear(GL_COLOR_BUFFER_BIT);
 
         blur_shader.bind();
-        blur_shader.texture("s_source", 0, blur_tex_pong, GL_TEXTURE_2D);
-        blur_shader.uniform("u_direction", float2(0.0f, 1.0f / half_h));
-        blur_shader.uniform("u_radius", post_params.bloom_radius);
+        blur_shader.texture("s_source", 0, bloom_tex_h[i], GL_TEXTURE_2D);
+        blur_shader.uniform("u_direction", float2(0.0f, 1.0f / cur_h));
+        blur_shader.uniform("u_kernel_radius", kernel_radius);
+        blur_shader.uniform("u_weights", kernel_radius + 1, weights);
         glDrawArrays(GL_TRIANGLES, 0, 3);
         blur_shader.unbind();
     }
@@ -1305,37 +1356,45 @@ void sample_waterfall_fft::on_draw()
 
     composite_shader.bind();
     composite_shader.texture("s_hdr_color", 0, source_texture, GL_TEXTURE_2D);
-    composite_shader.texture("s_bloom", 1, blur_tex_ping, GL_TEXTURE_2D);
-    composite_shader.uniform("u_bloom_intensity", post_params.bloom_enabled ? post_params.bloom_intensity : 0.0f);
+    composite_shader.texture("s_bloom_0", 1, bloom_tex_v[0], GL_TEXTURE_2D);
+    composite_shader.texture("s_bloom_1", 2, bloom_tex_v[1], GL_TEXTURE_2D);
+    composite_shader.texture("s_bloom_2", 3, bloom_tex_v[2], GL_TEXTURE_2D);
+    composite_shader.texture("s_bloom_3", 4, bloom_tex_v[3], GL_TEXTURE_2D);
+    composite_shader.texture("s_bloom_4", 5, bloom_tex_v[4], GL_TEXTURE_2D);
+    composite_shader.uniform("u_bloom_strength", post_params.bloom_enabled ? post_params.bloom_strength : 0.0f);
+    composite_shader.uniform("u_bloom_radius", post_params.bloom_radius);
     composite_shader.uniform("u_exposure", post_params.exposure);
     composite_shader.uniform("u_gamma", post_params.gamma);
     composite_shader.uniform("u_tonemap_mode", post_params.tonemap_mode);
     glDrawArrays(GL_TRIANGLES, 0, 3);
     composite_shader.unbind();
 
-    // ImGui
-    imgui->begin_frame();
-
-    gui::imgui_fixed_window_begin("Waterfall FFT", {{0, 0}, {340, height}});
-
-    ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-    ImGui::Separator();
-
-    ImGui::Text("Drop a .wav file onto the window to load");
-    ImGui::Separator();
-
-    if (audio_loaded)
+    if (show_imgui)
     {
+    
+        // ImGui
+        imgui->begin_frame();
+
+        gui::imgui_fixed_window_begin("Waterfall FFT", {{0, 0}, {340, height}});
+
+        ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+        ImGui::Separator();
+
+        ImGui::Text("Drop a .wav file onto the window to load");
+        ImGui::Separator();
+
+        if (audio_loaded)
+        {
         float duration = audio.samples.size() / static_cast<float>(audio.sample_rate);
         ImGui::Text("Duration: %.2f seconds", duration);
         ImGui::Text("Sample Rate: %d Hz", audio.sample_rate);
         ImGui::Text("Position: %.2f s", playback_position);
         ImGui::Separator();
 
-    if (ImGui::Button(is_playing ? "Pause" : "Play"))
-    {
+        if (ImGui::Button(is_playing ? "Pause" : "Play"))
+        {
         is_playing = !is_playing;
-    }
+        }
         ImGui::SameLine();
         if (ImGui::Button("Reset"))
         {
@@ -1353,23 +1412,23 @@ void sample_waterfall_fft::on_draw()
             rebuild_mesh_vertices();
         }
         ImGui::Checkbox("Loop Playback", &loop_enabled);
-    }
-    else
-    {
+        }
+        else
+        {
         ImGui::TextDisabled("No audio loaded");
-    }
+        }
 
-    ImGui::Separator();
-    ImGui::Text("Render Mode");
+        ImGui::Separator();
+        ImGui::Text("Render Mode");
 
-    const char * render_modes[] = {"Solid", "Wireframe (Holographic)"};
-    if (ImGui::Combo("Mode", &selected_render_mode_index, render_modes, IM_ARRAYSIZE(render_modes)))
-    {
+        const char * render_modes[] = {"Solid", "Wireframe (Holographic)"};
+        if (ImGui::Combo("Mode", &selected_render_mode_index, render_modes, IM_ARRAYSIZE(render_modes)))
+        {
         current_render_mode = static_cast<render_mode>(selected_render_mode_index);
-    }
+        }
 
-    if (current_render_mode == render_mode::wireframe)
-    {
+        if (current_render_mode == render_mode::wireframe)
+        {
         ImGui::SliderFloat("Line Width", &wireframe_line_width, 0.5f, 5.0f);
         ImGui::SliderFloat("Glow Intensity", &wireframe_glow_intensity, 0.5f, 5.0f);
         ImGui::SliderFloat("Grid Density", &viz_params.grid_density, 0.1f, 1.0f, "%.2f");
@@ -1379,144 +1438,144 @@ void sample_waterfall_fft::on_draw()
         ImGui::SliderFloat("Wire Width Boost", &viz_params.wireframe_width_boost, 1.0f, 4.0f, "%.2f");
         const char * wire_blend_modes[] = {"Additive", "Alpha", "Premultiplied"};
         ImGui::Combo("Wire Blend", &viz_params.wireframe_blend_mode, wire_blend_modes, IM_ARRAYSIZE(wire_blend_modes));
-    }
+        }
 
-    ImGui::Separator();
-    ImGui::Text("Edge Fade");
-    ImGui::SliderFloat("Fade Intensity", &viz_params.edge_fade_intensity, 0.0f, 1.0f);
-    ImGui::SliderFloat("Fade Distance", &viz_params.edge_fade_distance, 0.05f, 0.4f);
+        ImGui::Separator();
+        ImGui::Text("Edge Fade");
+        ImGui::SliderFloat("Fade Intensity", &viz_params.edge_fade_intensity, 0.0f, 1.0f);
+        ImGui::SliderFloat("Fade Distance", &viz_params.edge_fade_distance, 0.05f, 0.4f);
 
-    ImGui::Separator();
-    ImGui::Text("FFT Settings");
+        ImGui::Separator();
+        ImGui::Text("FFT Settings");
 
-    const char * fft_sizes[] = {"256", "512", "1024", "2048", "4096", "8192", "16384"};
-    int32_t fft_size_values[] = {256, 512, 1024, 2048, 4096, 8192, 16384};
-    if (ImGui::Combo("FFT Size", &selected_fft_size_index, fft_sizes, IM_ARRAYSIZE(fft_sizes)))
-    {
+        const char * fft_sizes[] = {"256", "512", "1024", "2048", "4096", "8192", "16384"};
+        int32_t fft_size_values[] = {256, 512, 1024, 2048, 4096, 8192, 16384};
+        if (ImGui::Combo("FFT Size", &selected_fft_size_index, fft_sizes, IM_ARRAYSIZE(fft_sizes)))
+        {
         wait_for_fft_task();
         params.fft_size = fft_size_values[selected_fft_size_index];
         setup_fft();
         setup_waterfall_mesh();
-    }
+        }
 
-    if (ImGui::SliderFloat("Overlap %", &params.overlap_percent, 0.0f, 95.0f, "%.0f%%"))
-    {
+        if (ImGui::SliderFloat("Overlap %", &params.overlap_percent, 0.0f, 95.0f, "%.0f%%"))
+        {
         wait_for_fft_task();
         setup_waterfall_mesh();
-    }
+        }
 
-    const char * window_names[] = {"Rectangular", "Hann", "Hamming", "Blackman"};
-    if (ImGui::Combo("Window", &selected_window_index, window_names, IM_ARRAYSIZE(window_names)))
-    {
+        const char * window_names[] = {"Rectangular", "Hann", "Hamming", "Blackman"};
+        if (ImGui::Combo("Window", &selected_window_index, window_names, IM_ARRAYSIZE(window_names)))
+        {
         wait_for_fft_task();
         params.window = static_cast<window_type>(selected_window_index);
         compute_window_coefficients(window_coefficients, params.fft_size, params.window);
-    }
+        }
 
-    const char * scale_names[] = {"Linear", "Logarithmic (dB)"};
-    if (ImGui::Combo("Scale", &selected_scale_index, scale_names, IM_ARRAYSIZE(scale_names)))
-    {
+        const char * scale_names[] = {"Linear", "Logarithmic (dB)"};
+        if (ImGui::Combo("Scale", &selected_scale_index, scale_names, IM_ARRAYSIZE(scale_names)))
+        {
         wait_for_fft_task();
         params.scale = static_cast<scale_type>(selected_scale_index);
-    }
+        }
 
-    if (params.scale == scale_type::logarithmic)
-    {
+        if (params.scale == scale_type::logarithmic)
+        {
         if (ImGui::SliderFloat("Dynamic Range", &params.dynamic_range_db, 20.0f, 120.0f, "%.0f dB"))
         {
             wait_for_fft_task();
         }
-    }
+        }
 
-    ImGui::Checkbox("Time Smoothing", &viz_params.enable_time_smoothing);
-    if (viz_params.enable_time_smoothing)
-    {
+        ImGui::Checkbox("Time Smoothing", &viz_params.enable_time_smoothing);
+        if (viz_params.enable_time_smoothing)
+        {
         ImGui::SliderFloat("Time Smooth Alpha", &viz_params.time_smoothing_alpha, 0.0f, 1.0f, "%.2f");
-    }
-    ImGui::Checkbox("Freq Smoothing", &viz_params.enable_freq_smoothing);
-    if (viz_params.enable_freq_smoothing)
-    {
+        }
+        ImGui::Checkbox("Freq Smoothing", &viz_params.enable_freq_smoothing);
+        if (viz_params.enable_freq_smoothing)
+        {
         ImGui::SliderFloat("Freq Smooth Strength", &viz_params.freq_smoothing_strength, 0.0f, 1.0f, "%.2f");
-    }
+        }
 
-    ImGui::Separator();
-    ImGui::Text("Colormap");
+        ImGui::Separator();
+        ImGui::Text("Colormap");
 
-    const char * colormap_names[] = {
+        const char * colormap_names[] = {
         "Jet", "Hot", "Gray", "Parula", "Magma", "Inferno", "Plasma", "Viridis",
         "Cividis", "Turbo", "Twilight", "Spectral", "Cubehelix", "CMR Map",
         "Speed", "Ice", "Haline", "Deep", "Balance", "Azzurro", "Ampl"
-    };
-    if (ImGui::Combo("Colormap", &selected_colormap_index, colormap_names, IM_ARRAYSIZE(colormap_names)))
-    {
+        };
+        if (ImGui::Combo("Colormap", &selected_colormap_index, colormap_names, IM_ARRAYSIZE(colormap_names)))
+        {
         params.colormap = static_cast<colormap::colormap_t>(selected_colormap_index);
         rebuild_mesh_vertices();
-    }
+        }
 
-    ImGui::Separator();
-    ImGui::Text("3D Visualization");
+        ImGui::Separator();
+        ImGui::Text("3D Visualization");
 
-    if (ImGui::SliderFloat("Time Window", &viz_params.time_window_seconds, 1.0f, 30.0f, "%.1f s"))
-    {
+        if (ImGui::SliderFloat("Time Window", &viz_params.time_window_seconds, 1.0f, 30.0f, "%.1f s"))
+        {
         wait_for_fft_task();
         setup_waterfall_mesh();
-    }
+        }
 
-    ImGui::SliderFloat("Height Scale", &viz_params.height_scale, 0.1f, 10.0f, "%.1f");
+        ImGui::SliderFloat("Height Scale", &viz_params.height_scale, 0.1f, 10.0f, "%.1f");
 
-    if (ImGui::SliderFloat("Mesh Width", &viz_params.mesh_width, 5.0f, 50.0f, "%.1f"))
-    {
+        if (ImGui::SliderFloat("Mesh Width", &viz_params.mesh_width, 5.0f, 50.0f, "%.1f"))
+        {
         rebuild_mesh_vertices();
-    }
+        }
 
-    if (ImGui::SliderFloat("Mesh Depth", &viz_params.mesh_depth, 5.0f, 50.0f, "%.1f"))
-    {
+        if (ImGui::SliderFloat("Mesh Depth", &viz_params.mesh_depth, 5.0f, 50.0f, "%.1f"))
+        {
         rebuild_mesh_vertices();
-    }
+        }
 
-    if (ImGui::SliderInt("Freq Resolution", &viz_params.frequency_resolution, 32, 512))
-    {
+        if (ImGui::SliderInt("Freq Resolution", &viz_params.frequency_resolution, 32, 512))
+        {
         wait_for_fft_task();
         setup_waterfall_mesh();
-    }
+        }
 
-    ImGui::Separator();
-    ImGui::Text("Post Processing");
+        ImGui::Separator();
+        ImGui::Text("Post Processing");
 
-    ImGui::Checkbox("Enable Bloom", &post_params.bloom_enabled);
-    if (post_params.bloom_enabled)
-    {
+        ImGui::Checkbox("Enable Bloom", &post_params.bloom_enabled);
+        if (post_params.bloom_enabled)
+        {
         ImGui::SliderFloat("Threshold", &post_params.bloom_threshold, 0.0f, 2.0f);
-        ImGui::SliderFloat("Intensity", &post_params.bloom_intensity, 0.0f, 3.0f);
-        ImGui::SliderFloat("Radius", &post_params.bloom_radius, 0.5f, 3.0f);
-        ImGui::SliderInt("Blur Passes", &post_params.bloom_blur_passes, 1, 4);
-    }
-    ImGui::SliderFloat("Exposure", &post_params.exposure, 0.1f, 5.0f);
-    ImGui::SliderFloat("Gamma", &post_params.gamma, 1.0f, 3.0f);
+        ImGui::SliderFloat("Knee", &post_params.bloom_knee, 0.0f, 1.0f);
+        ImGui::SliderFloat("Strength", &post_params.bloom_strength, 0.0f, 3.0f);
+        ImGui::SliderFloat("Radius", &post_params.bloom_radius, 0.0f, 1.0f);
+        }
+        ImGui::SliderFloat("Exposure", &post_params.exposure, 0.1f, 5.0f);
+        ImGui::SliderFloat("Gamma", &post_params.gamma, 1.0f, 3.0f);
 
-    const char * tonemap_names[] = {"None", "Reinhard", "ACES Filmic"};
-    ImGui::Combo("Tonemapping", &post_params.tonemap_mode, tonemap_names, IM_ARRAYSIZE(tonemap_names));
+        const char * tonemap_names[] = {"None", "Reinhard", "ACES Filmic"};
+        ImGui::Combo("Tonemapping", &post_params.tonemap_mode, tonemap_names, IM_ARRAYSIZE(tonemap_names));
 
-    ImGui::Separator();
-    ImGui::Text("Temporal Anti-Aliasing");
+        ImGui::Separator();
+        ImGui::Text("Temporal Anti-Aliasing");
 
-    if (ImGui::Checkbox("Enable TAA", &taa_config.enabled))
-    {
+        if (ImGui::Checkbox("Enable TAA", &taa_config.enabled))
+        {
         if (taa_config.enabled)
         {
             setup_taa_buffers(current_width, current_height);
             taa.first_frame = true;
         }
-    }
+        }
 
-    if (taa_config.enabled)
-    {
+        if (taa_config.enabled)
+        {
         ImGui::SliderFloat("Feedback Min", &taa_config.feedback_min, 0.5f, 0.99f);
         ImGui::SliderFloat("Feedback Max", &taa_config.feedback_max, 0.5f, 0.99f);
 
         const char * jitter_lengths[] = {"8", "16", "32"};
         int32_t jitter_idx = (taa_config.jitter_sequence_length == 8) ? 0 :
-                             (taa_config.jitter_sequence_length == 16) ? 1 : 2;
+                                (taa_config.jitter_sequence_length == 16) ? 1 : 2;
         if (ImGui::Combo("Jitter Samples", &jitter_idx, jitter_lengths, 3))
         {
             taa_config.jitter_sequence_length = (jitter_idx == 0) ? 8 : (jitter_idx == 1) ? 16 : 32;
@@ -1527,10 +1586,11 @@ void sample_waterfall_fft::on_draw()
 
         ImGui::SliderFloat("Depth Reject", &taa_config.depth_threshold, 0.0001f, 0.02f, "%.5f");
         ImGui::SliderFloat("Velocity Scale", &taa_config.velocity_feedback_scale, 10.0f, 400.0f, "%.0f");
-    }
+        }
 
-    gui::imgui_fixed_window_end();
-    imgui->end_frame();
+        gui::imgui_fixed_window_end();
+        imgui->end_frame();
+    } // show_imgui
 
     gl_check_error(__FILE__, __LINE__);
 

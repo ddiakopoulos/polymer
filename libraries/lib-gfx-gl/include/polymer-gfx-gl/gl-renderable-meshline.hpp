@@ -61,9 +61,9 @@ class gl_meshline
 
 public:
 
-    gl_meshline()
+    gl_meshline(const std::string & asset_base)
     {
-        shader = gl_shader(read_file_text("../assets/shaders/prototype/meshline_vert.glsl"), read_file_text("../assets/shaders/prototype/meshline_frag.glsl"));
+        shader = gl_shader(read_file_text(asset_base + "/shaders/prototype/meshline_vert.glsl"), read_file_text(asset_base + "/shaders/prototype/meshline_frag.glsl"));
     }
     
     void set_vertices(const std::vector<float3> & vertices)
@@ -130,7 +130,7 @@ public:
         mesh = make_line_mesh(vertices);
     }
     
-    void render(const perspective_camera & camera, const float4x4 model, const float2 screenDims, const float3 color, const float lineWidth = 24.f)
+    void render(const perspective_camera & camera, const float4x4 & model, const float2 screenDims, const float3 color, const float lineWidth = 24.f)
     {
         shader.bind();
 
