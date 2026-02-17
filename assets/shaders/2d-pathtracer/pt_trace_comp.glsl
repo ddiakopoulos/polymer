@@ -168,7 +168,7 @@ bool test_visibility(vec2 from, vec2 to, int target_prim_id, int num_prims)
 // Path Trace
 // ============================================================================
 
-vec3 trace_path(vec2 origin, vec2 dir, int num_prims, inout rng_state rng)
+vec3 trace_path(vec2 origin, vec2 dir, int num_prims, inout rng_state rng, vec2 cp_offset, int sample_base)
 {
     vec3 throughput = vec3(1.0);
     vec3 radiance = vec3(0.0);
@@ -242,12 +242,14 @@ vec3 trace_path(vec2 origin, vec2 dir, int num_prims, inout rng_state rng)
 
         if (mat == MAT_DIFFUSE)
         {
+            vec2 xi = lds_sample(cp_offset, sample_base, u_max_bounces + 2, bounce + 2);
+
             // ================================================================
             // NEE: sample an emitter directly
             // ================================================================
             if (num_emitters > 0)
             {
-                int eidx = int(rand_float(rng) * float(num_emitters));
+                int eidx = int(xi.y * float(num_emitters));
                 eidx = min(eidx, num_emitters - 1);
                 int emitter_id = emitter_ids[eidx];
 
@@ -289,7 +291,7 @@ vec3 trace_path(vec2 origin, vec2 dir, int num_prims, inout rng_state rng)
             // BSDF sample
             // ================================================================
             throughput *= prim.albedo;
-            dir = sample_cosine_half_circle(rng, normal);
+            dir = sample_cosine_half_circle_u(xi.x, normal);
             origin = mr.pos + normal * EPSILON_SPAWN;
             prev_was_diffuse = true;
             prev_bsdf_pdf = max(dot(dir, normal), 0.0) / 2.0;
@@ -429,6 +431,7 @@ void main()
     ivec2 size = ivec2(u_resolution);
     if (pixel.x >= size.x || pixel.y >= size.y) return;
 
+    vec2 cp_offset = cranley_patterson_offset(uvec2(pixel));
     rng_state rng = rng_init(uvec2(pixel), uint(u_frame_index));
 
     vec3 frame_radiance = vec3(0.0);
@@ -437,18 +440,22 @@ void main()
 
     for (int s = 0; s < u_samples_per_frame; ++s)
     {
-        float jx = rand_float(rng) - 0.5;
-        float jy = rand_float(rng) - 0.5;
+        int sample_base = u_frame_index * u_samples_per_frame + s;
+
+        vec2 jitter = lds_sample(cp_offset, sample_base, u_max_bounces + 2, 0);
+        float jx = jitter.x - 0.5;
+        float jy = jitter.y - 0.5;
 
         vec2 uv = (vec2(pixel) + vec2(0.5) + vec2(jx, jy)) / u_resolution;
         vec2 ndc = uv * 2.0 - 1.0;
 
         vec2 world_pos = vec2(ndc.x * aspect, ndc.y) / u_camera_zoom + u_camera_center;
 
-        float theta = rand_float(rng) * TWO_PI;
+        vec2 angle_xi = lds_sample(cp_offset, sample_base, u_max_bounces + 2, 1);
+        float theta = angle_xi.x * TWO_PI;
         vec2 ray_dir = vec2(cos(theta), sin(theta));
 
-        frame_radiance += trace_path(world_pos, ray_dir, u_num_prims, rng);
+        frame_radiance += trace_path(world_pos, ray_dir, u_num_prims, rng, cp_offset, sample_base);
         frame_count += 1.0;
     }
 

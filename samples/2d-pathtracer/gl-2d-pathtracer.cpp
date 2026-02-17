@@ -1,104 +1,14 @@
-#include "polymer-core/lib-polymer.hpp"
+#include "scenes.hpp"
 
 #include "polymer-gfx-gl/gl-loaders.hpp"
 #include "polymer-app-base/glfw-app.hpp"
 #include "polymer-app-base/wrappers/gl-imgui.hpp"
 #include "polymer-engine/asset/asset-resolver.hpp"
+#include "polymer-engine/renderer/renderer-util.hpp"
 
-#include <cmath>
-#include <vector>
 #include <string>
 
-using namespace polymer;
 using namespace gui;
-
-// ============================================================================
-// Enums
-// ============================================================================
-
-enum class prim_type : uint32_t { circle = 0, box = 1, capsule = 2, segment = 3, lens = 4, ngon = 5 };
-enum class material_type : uint32_t { diffuse = 0, mirror = 1, glass = 2, water = 3, diamond = 4 };
-
-// ============================================================================
-// GPU SDF Primitive (80 bytes, maps 1:1 to GLSL std430)
-// ============================================================================
-
-struct gpu_sdf_primitive
-{
-    float2 position    = {0.0f, 0.0f};
-    float rotation     = 0.0f;
-    uint32_t prim      = 0;
-    float4 params      = {1.0f, 0.0f, 0.0f, 0.0f};
-    uint32_t material  = 0;
-    float ior_base     = 1.5f;
-    float cauchy_b     = 0.0f;
-    float cauchy_c     = 0.0f;
-    float3 albedo      = {1.0f, 1.0f, 1.0f};
-    float emission     = 0.0f;
-    float3 absorption           = {0.0f, 0.0f, 0.0f};
-    float emission_half_angle   = POLYMER_PI;
-};
-
-static_assert(sizeof(gpu_sdf_primitive) == 80, "gpu_sdf_primitive must be 80 bytes to match GLSL std430 layout");
-
-// ============================================================================
-// Scene Primitive (C++ side, richer for UI)
-// ============================================================================
-
-struct scene_primitive
-{
-    prim_type type       = prim_type::circle;
-    material_type mat    = material_type::diffuse;
-    float2 position      = {0.0f, 0.0f};
-    float rotation       = 0.0f;
-    float4 params        = {1.0f, 0.0f, 0.0f, 0.0f};
-    float3 albedo        = {1.0f, 1.0f, 1.0f};
-    float emission       = 0.0f;
-    float ior_base       = 1.5f;
-    float cauchy_b       = 0.0f;
-    float cauchy_c       = 0.0f;
-    float3 absorption           = {0.0f, 0.0f, 0.0f};
-    float emission_half_angle   = POLYMER_PI;
-    bool selected               = false;
-
-    gpu_sdf_primitive pack() const
-    {
-        gpu_sdf_primitive g;
-        g.position   = position;
-        g.rotation   = rotation;
-        g.prim       = static_cast<uint32_t>(type);
-        g.params     = params;
-        g.material   = static_cast<uint32_t>(mat);
-        g.ior_base   = ior_base;
-        g.cauchy_b   = cauchy_b;
-        g.cauchy_c   = cauchy_c;
-        g.albedo     = albedo;
-        g.emission   = emission;
-        g.absorption = absorption;
-        g.emission_half_angle = emission_half_angle;
-        return g;
-    }
-};
-
-// ============================================================================
-// Path Tracer Config
-// ============================================================================
-
-struct path_tracer_config
-{
-    int32_t max_bounces         = 12;
-    int32_t samples_per_frame   = 2;
-    float environment_intensity = 0.025f;
-    float firefly_clamp         = 128.0f;
-    float camera_zoom           = 1.0f;
-    float2 camera_center        = {0.0f, 0.0f};
-    float exposure              = 0.25;
-    bool debug_overlay          = false;
-};
-
-// ============================================================================
-// CPU-side SDF evaluation for selection
-// ============================================================================
 
 inline float2 rotate_2d(float2 p, float angle)
 {
@@ -179,18 +89,46 @@ inline float eval_primitive_cpu(float2 world_pos, const scene_primitive & sp)
     }
 }
 
-// ============================================================================
-// Utility
-// ============================================================================
-
 inline void uniform3f(const gl_shader_compute & shader, const std::string & name, const float3 & v)
 {
     glProgramUniform3fv(shader.handle(), shader.get_uniform_location(name), 1, &v.x);
 }
 
-// ============================================================================
-// Application
-// ============================================================================
+struct camera_controller_2d
+{
+    float2 center = {0.0f, 0.0f};
+    float zoom = 0.30f;
+    bool panning = false;
+    float2 last_cursor = {0.0f, 0.0f};
+
+    float2 cursor_to_world(float2 cursor_px, int32_t viewport_w, int32_t viewport_h) const
+    {
+        float ndc_x = (cursor_px.x / static_cast<float>(viewport_w)) * 2.0f - 1.0f;
+        float ndc_y = 1.0f - (cursor_px.y / static_cast<float>(viewport_h)) * 2.0f;
+        float aspect = static_cast<float>(viewport_w) / static_cast<float>(viewport_h);
+        return float2{ndc_x * aspect, ndc_y} / zoom + center;
+    }
+
+    bool handle_scroll(float scroll_y)
+    {
+        float zoom_factor = 1.1f;
+        if (scroll_y > 0) zoom *= zoom_factor;
+        else if (scroll_y < 0) zoom /= zoom_factor;
+        zoom = clamp(zoom, 0.1f, 50.0f);
+        return true;
+    }
+
+    bool handle_pan(float2 cursor, int32_t viewport_h)
+    {
+        float2 delta = cursor - last_cursor;
+        float scale = 2.0f / (zoom * static_cast<float>(viewport_h));
+        center.x -= delta.x * scale;
+        center.y += delta.y * scale;
+        return true;
+    }
+
+    void update_cursor(float2 cursor) { last_cursor = cursor; }
+};
 
 struct sample_2d_pathtracer final : public polymer_app
 {
@@ -199,40 +137,29 @@ struct sample_2d_pathtracer final : public polymer_app
     path_tracer_config config;
     std::vector<scene_primitive> scene;
 
-    // Shaders
     gl_shader_compute trace_compute;
     gl_shader display_shader;
-
-    // Accumulation (RGBA32F compute image)
     gl_texture_2d accumulation_texture;
-
-    // Primitives SSBO
     gl_buffer primitives_ssbo;
-
-    // Empty VAO for fullscreen triangle
     gl_vertex_array_object empty_vao;
 
-    // State
     int32_t current_width = 0;
     int32_t current_height = 0;
     int32_t frame_index = 0;
     bool scene_dirty = true;
 
-    // Selection and interaction
+    camera_controller_2d camera;
+
     int32_t selected_index = -1;
     bool left_mouse_down = false;
-    bool right_mouse_down = false;
     bool dragging = false;
-    float2 last_cursor = {0.0f, 0.0f};
     float2 drag_offset = {0.0f, 0.0f};
 
-    // Pending add primitive type (-1 = none)
     int32_t pending_add_type = -1;
 
     sample_2d_pathtracer();
     ~sample_2d_pathtracer() = default;
 
-    float2 cursor_to_world(float2 cursor_px) const;
     int32_t pick_primitive(float2 world_pos) const;
 
     void build_default_scene();
@@ -240,20 +167,13 @@ struct sample_2d_pathtracer final : public polymer_app
     void setup_accumulation(int32_t width, int32_t height);
     void clear_accumulation();
     void add_primitive(prim_type type, float2 world_pos);
+    void export_exr();
 
     void on_input(const app_input_event & event) override;
     void on_update(const app_update_event & e) override;
     void on_draw() override;
     void on_window_resize(int2 size) override;
 };
-
-float2 sample_2d_pathtracer::cursor_to_world(float2 cursor_px) const
-{
-    float ndc_x = (cursor_px.x / static_cast<float>(current_width)) * 2.0f - 1.0f;
-    float ndc_y = 1.0f - (cursor_px.y / static_cast<float>(current_height)) * 2.0f;
-    float aspect = static_cast<float>(current_width) / static_cast<float>(current_height);
-    return float2{ndc_x * aspect, ndc_y} / config.camera_zoom + config.camera_center;
-}
 
 int32_t sample_2d_pathtracer::pick_primitive(float2 world_pos) const
 {
@@ -285,7 +205,11 @@ void sample_2d_pathtracer::add_primitive(prim_type type, float2 world_pos)
         case prim_type::box:     sp.params = {0.5f, 0.5f, 0.0f, 0.0f}; break;
         case prim_type::capsule: sp.params = {0.2f, 0.5f, 0.0f, 0.0f}; break;
         case prim_type::segment: sp.params = {0.5f, 0.05f, 0.0f, 0.0f}; break;
-        case prim_type::lens:    sp.params = {0.8f, 0.8f, 0.6f, 0.0f}; sp.mat = material_type::glass; sp.ior_base = 1.5f; sp.cauchy_b = 0.004f; break;
+        case prim_type::lens:    sp.params = {0.8f, 0.8f, 0.6f, 0.0f}; 
+                                 sp.mat = material_type::glass; 
+                                 sp.ior_base = 1.5f; 
+                                 sp.cauchy_b = 0.004f; 
+                                 break;
         case prim_type::ngon:    sp.params = {0.5f, 6.0f, 0.0f, 0.0f}; break;
     }
 
@@ -327,78 +251,7 @@ sample_2d_pathtracer::sample_2d_pathtracer() : polymer_app(1920, 1080, "pathtrac
 
 void sample_2d_pathtracer::build_default_scene()
 {
-    scene.clear();
-
-    // Emissive circle (light source)
-    {
-        scene_primitive light;
-        light.type = prim_type::circle;
-        light.mat = material_type::diffuse;
-        light.position = {0.0f, 2.3f};
-        light.params = {0.4f, 0.0f, 0.0f, 0.0f};
-        light.albedo = {1.0f, 0.95f, 0.9f};
-        light.emission = 15.0f;
-        scene.push_back(light);
-    }
-
-    // Floor
-    {
-        scene_primitive floor;
-        floor.type = prim_type::box;
-        floor.mat = material_type::diffuse;
-        floor.position = {0.0f, -3.0f};
-        floor.params = {3.3f, 0.3f, 0.0f, 0.0f};
-        floor.albedo = {0.8f, 0.8f, 0.8f};
-        scene.push_back(floor);
-    }
-
-    // Left wall (red)
-    {
-        scene_primitive wall;
-        wall.type = prim_type::box;
-        wall.mat = material_type::diffuse;
-        wall.position = {-3.0f, 0.0f};
-        wall.params = {0.3f, 3.3f, 0.0f, 0.0f};
-        wall.albedo = {0.8f, 0.2f, 0.2f};
-        scene.push_back(wall);
-    }
-
-    // Right wall (green)
-    {
-        scene_primitive wall;
-        wall.type = prim_type::box;
-        wall.mat = material_type::diffuse;
-        wall.position = {3.0f, 0.0f};
-        wall.params = {0.3f, 3.3f, 0.0f, 0.0f};
-        wall.albedo = {0.2f, 0.8f, 0.2f};
-        scene.push_back(wall);
-    }
-
-    // Ceiling
-    {
-        scene_primitive ceiling;
-        ceiling.type = prim_type::box;
-        ceiling.mat = material_type::diffuse;
-        ceiling.position = {0.0f, 3.0f};
-        ceiling.params = {3.3f, 0.3f, 0.0f, 0.0f};
-        ceiling.albedo = {0.8f, 0.8f, 0.8f};
-        scene.push_back(ceiling);
-    }
-
-    // Glass sphere
-    {
-        scene_primitive sphere;
-        sphere.type = prim_type::circle;
-        sphere.mat = material_type::glass;
-        sphere.position = {0.0f, -1.5f};
-        sphere.params = {0.7f, 0.0f, 0.0f, 0.0f};
-        sphere.albedo = {1.0f, 1.0f, 1.0f};
-        sphere.ior_base = 1.5f;
-        sphere.cauchy_b = 0.004f;
-        sphere.cauchy_c = 0.0f;
-        scene.push_back(sphere);
-    }
-
+    scene = scene_cornell_box();
     selected_index = -1;
     scene_dirty = true;
 }
@@ -441,6 +294,40 @@ void sample_2d_pathtracer::clear_accumulation()
     frame_index = 0;
 }
 
+void sample_2d_pathtracer::export_exr()
+{
+    std::vector<float> rgba(current_width * current_height * 4);
+    glGetTextureImage(accumulation_texture, 0, GL_RGBA, GL_FLOAT, static_cast<GLsizei>(rgba.size() * sizeof(float)), rgba.data());
+
+    std::vector<float> rgb(current_width * current_height * 3);
+    for (int32_t y = 0; y < current_height; ++y)
+    {
+        int32_t flipped_y = current_height - 1 - y;
+        for (int32_t x = 0; x < current_width; ++x)
+        {
+            int32_t src = (flipped_y * current_width + x) * 4;
+            int32_t dst = (y * current_width + x) * 3;
+            float sample_count = rgba[src + 3];
+            if (sample_count > 0.0f)
+            {
+                float inv = 1.0f / sample_count;
+                rgb[dst + 0] = rgba[src + 0] * inv;
+                rgb[dst + 1] = rgba[src + 1] * inv;
+                rgb[dst + 2] = rgba[src + 2] * inv;
+            }
+            else
+            {
+                rgb[dst + 0] = 0.0f;
+                rgb[dst + 1] = 0.0f;
+                rgb[dst + 2] = 0.0f;
+            }
+        }
+    }
+
+    std::string filename = "pathtracer_" + make_timestamp() + ".exr";
+    export_exr_image(filename, current_width, current_height, 3, rgb);
+}
+
 void sample_2d_pathtracer::on_window_resize(int2 size)
 {
     if (size.x == current_width && size.y == current_height) return;
@@ -462,7 +349,7 @@ void sample_2d_pathtracer::on_input(const app_input_event & event)
     if (event.type == app_input_event::MOUSE && event.value.x == GLFW_MOUSE_BUTTON_LEFT)
     {
         left_mouse_down = event.is_down();
-        float2 world = cursor_to_world(last_cursor);
+        float2 world = camera.cursor_to_world(camera.last_cursor, current_width, current_height);
 
         if (event.is_down())
         {
@@ -488,7 +375,7 @@ void sample_2d_pathtracer::on_input(const app_input_event & event)
     // Right click drag: pan camera
     if (event.type == app_input_event::MOUSE && event.value.x == GLFW_MOUSE_BUTTON_RIGHT)
     {
-        right_mouse_down = event.is_down();
+        camera.panning = event.is_down();
     }
 
     if (event.type == app_input_event::CURSOR)
@@ -497,29 +384,23 @@ void sample_2d_pathtracer::on_input(const app_input_event & event)
 
         if (dragging && left_mouse_down && selected_index >= 0)
         {
-            float2 world = cursor_to_world(cursor);
+            float2 world = camera.cursor_to_world(cursor, current_width, current_height);
             scene[selected_index].position = world + drag_offset;
             scene_dirty = true;
         }
-        else if (right_mouse_down)
+        else if (camera.panning)
         {
-            float2 delta = cursor - last_cursor;
-            float scale = 2.0f / (config.camera_zoom * static_cast<float>(current_height));
-            config.camera_center.x -= delta.x * scale;
-            config.camera_center.y += delta.y * scale;
+            camera.handle_pan(cursor, current_height);
             scene_dirty = true;
         }
 
-        last_cursor = cursor;
+        camera.update_cursor(cursor);
     }
 
     // Scroll to zoom
     if (event.type == app_input_event::SCROLL)
     {
-        float zoom_factor = 1.1f;
-        if (event.value.y > 0) config.camera_zoom *= zoom_factor;
-        else if (event.value.y < 0) config.camera_zoom /= zoom_factor;
-        config.camera_zoom = clamp(config.camera_zoom, 0.1f, 50.0f);
+        camera.handle_scroll(event.value.y);
         scene_dirty = true;
     }
 
@@ -556,9 +437,7 @@ void sample_2d_pathtracer::on_draw()
         scene_dirty = false;
     }
 
-    // ========================================================================
-    // Compute pass: path trace + accumulate
-    // ========================================================================
+    // path trace + accumulate
     {
         trace_compute.bind();
         trace_compute.bind_ssbo(0, primitives_ssbo);
@@ -570,8 +449,8 @@ void sample_2d_pathtracer::on_draw()
         trace_compute.uniform("u_samples_per_frame", config.samples_per_frame);
         trace_compute.uniform("u_environment_intensity", config.environment_intensity);
         trace_compute.uniform("u_firefly_clamp", config.firefly_clamp);
-        trace_compute.uniform("u_camera_zoom", config.camera_zoom);
-        trace_compute.uniform("u_camera_center", config.camera_center);
+        trace_compute.uniform("u_camera_zoom", camera.zoom);
+        trace_compute.uniform("u_camera_center", camera.center);
         trace_compute.uniform("u_resolution", float2(static_cast<float>(width), static_cast<float>(height)));
 
         uint32_t groups_x = (width + 15) / 16;
@@ -582,9 +461,7 @@ void sample_2d_pathtracer::on_draw()
         frame_index++;
     }
 
-    // ========================================================================
-    // Display pass (direct to backbuffer with tonemapping)
-    // ========================================================================
+    // output pass 
     {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, width, height);
@@ -596,8 +473,8 @@ void sample_2d_pathtracer::on_draw()
         display_shader.uniform("u_exposure", config.exposure);
 
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, primitives_ssbo);
-        display_shader.uniform("u_camera_zoom", config.camera_zoom);
-        display_shader.uniform("u_camera_center", config.camera_center);
+        display_shader.uniform("u_camera_zoom", camera.zoom);
+        display_shader.uniform("u_camera_center", camera.center);
         display_shader.uniform("u_resolution", float2(static_cast<float>(width), static_cast<float>(height)));
         display_shader.uniform("u_num_prims", static_cast<int>(scene.size()));
         display_shader.uniform("u_selected_prim", selected_index);
@@ -608,9 +485,7 @@ void sample_2d_pathtracer::on_draw()
         display_shader.unbind();
     }
 
-    // ========================================================================
-    // ImGui
-    // ========================================================================
+
     imgui->begin_frame();
     gui::imgui_fixed_window_begin("PT Settings", ui_rect{{0, 0}, {320, height}});
 
@@ -619,7 +494,6 @@ void sample_2d_pathtracer::on_draw()
     ImGui::Text("Samples: %d", total_samples);
     ImGui::Separator();
 
-    // ------ Scene Controls ------
     if (ImGui::CollapsingHeader("Scene Controls", ImGuiTreeNodeFlags_DefaultOpen))
     {
         if (ImGui::SliderInt("Max Bounces", &config.max_bounces, 1, 32)) scene_dirty = true;
@@ -631,17 +505,17 @@ void sample_2d_pathtracer::on_draw()
         if (ImGui::Button("Reset Accumulation")) clear_accumulation();
         ImGui::SameLine();
         if (ImGui::Button("Reset Scene")) build_default_scene();
+        ImGui::SameLine();
+        if (ImGui::Button("Export EXR")) export_exr();
         ImGui::Checkbox("Debug Overlay", &config.debug_overlay);
     }
 
-    // ------ Camera ------
     if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_DefaultOpen))
     {
-        if (ImGui::SliderFloat("Zoom", &config.camera_zoom, 0.1f, 10.0f)) scene_dirty = true;
-        if (ImGui::SliderFloat2("Center", &config.camera_center.x, -10.0f, 10.0f)) scene_dirty = true;
+        if (ImGui::SliderFloat("Zoom", &camera.zoom, 0.1f, 10.0f)) scene_dirty = true;
+        if (ImGui::SliderFloat2("Center", &camera.center.x, -10.0f, 10.0f)) scene_dirty = true;
     }
 
-    // ------ Add Primitive ------
     if (ImGui::CollapsingHeader("Add Primitive", ImGuiTreeNodeFlags_DefaultOpen))
     {
         const char * labels[] = {"Circle", "Box", "Capsule", "Segment", "Lens", "N-gon"};
@@ -659,7 +533,6 @@ void sample_2d_pathtracer::on_draw()
         if (pending_add_type >= 0) ImGui::TextColored(ImVec4(0.3f, 0.6f, 1.0f, 1.0f), "Click canvas to place");
     }
 
-    // ------ Primitive List ------
     if (ImGui::CollapsingHeader("Primitives", ImGuiTreeNodeFlags_DefaultOpen))
     {
         const char * type_names[] = {"Circle", "Box", "Capsule", "Segment", "Lens", "N-gon"};
@@ -694,7 +567,6 @@ void sample_2d_pathtracer::on_draw()
         }
     }
 
-    // ------ Selected Primitive Properties ------
     if (selected_index >= 0 && selected_index < static_cast<int32_t>(scene.size()))
     {
         if (ImGui::CollapsingHeader("Selected Primitive", ImGuiTreeNodeFlags_DefaultOpen))
@@ -786,321 +658,17 @@ void sample_2d_pathtracer::on_draw()
         }
     }
 
-    // ------ Presets ------
-    if (ImGui::CollapsingHeader("Presets"))
+    if (ImGui::CollapsingHeader("Presets", ImGuiTreeNodeFlags_DefaultOpen))
     {
-        if (ImGui::Button("Prism"))
+        const std::vector<scene_preset> & presets = get_scene_presets();
+        for (size_t i = 0; i < presets.size(); ++i)
         {
-            scene.clear();
-            selected_index = -1;
-
-            scene_primitive light;
-            light.type = prim_type::box;
-            light.mat = material_type::diffuse;
-            light.position = {-3.0f, 0.0f};
-            light.params = {0.1f, 1.5f, 0.0f, 0.0f};
-            light.albedo = {1.0f, 1.0f, 1.0f};
-            light.emission = 20.0f;
-            light.emission_half_angle = static_cast<float>(POLYMER_PI) * 0.5f;
-            scene.push_back(light);
-
-            scene_primitive prism;
-            prism.type = prim_type::ngon;
-            prism.mat = material_type::glass;
-            prism.position = {0.0f, 0.0f};
-            prism.params = {1.0f, 3.0f, 0.0f, 0.0f};
-            prism.albedo = {1.0f, 1.0f, 1.0f};
-            prism.ior_base = 1.5f;
-            prism.cauchy_b = 0.01f;
-            scene.push_back(prism);
-
-            scene_primitive screen;
-            screen.type = prim_type::box;
-            screen.mat = material_type::diffuse;
-            screen.position = {4.0f, 0.0f};
-            screen.params = {0.1f, 3.0f, 0.0f, 0.0f};
-            screen.albedo = {0.9f, 0.9f, 0.9f};
-            scene.push_back(screen);
-
-            scene_dirty = true;
-        }
-
-        ImGui::SameLine();
-        if (ImGui::Button("Converging Lens"))
-        {
-            scene.clear();
-            selected_index = -1;
-
-            scene_primitive light;
-            light.type = prim_type::box;
-            light.mat = material_type::diffuse;
-            light.position = {-4.0f, 0.0f};
-            light.params = {0.1f, 2.0f, 0.0f, 0.0f};
-            light.albedo = {1.0f, 1.0f, 1.0f};
-            light.emission = 20.0f;
-            light.emission_half_angle = static_cast<float>(POLYMER_PI) * 0.5f;
-            scene.push_back(light);
-
-            scene_primitive lens;
-            lens.type = prim_type::lens;
-            lens.mat = material_type::glass;
-            lens.position = {0.0f, 0.0f};
-            lens.params = {2.0f, 2.0f, 1.5f, 0.0f};
-            lens.albedo = {1.0f, 1.0f, 1.0f};
-            lens.ior_base = 1.5f;
-            lens.cauchy_b = 0.004f;
-            scene.push_back(lens);
-
-            scene_primitive screen;
-            screen.type = prim_type::box;
-            screen.mat = material_type::diffuse;
-            screen.position = {4.0f, 0.0f};
-            screen.params = {0.1f, 3.0f, 0.0f, 0.0f};
-            screen.albedo = {0.9f, 0.9f, 0.9f};
-            scene.push_back(screen);
-
-            scene_dirty = true;
-        }
-
-        if (ImGui::Button("Diamond"))
-        {
-            scene.clear();
-            selected_index = -1;
-
-            scene_primitive light;
-            light.type = prim_type::circle;
-            light.mat = material_type::diffuse;
-            light.position = {0.0f, 3.0f};
-            light.params = {0.5f, 0.0f, 0.0f, 0.0f};
-            light.albedo = {1.0f, 1.0f, 1.0f};
-            light.emission = 25.0f;
-            scene.push_back(light);
-
-            scene_primitive diamond;
-            diamond.type = prim_type::ngon;
-            diamond.mat = material_type::diamond;
-            diamond.position = {0.0f, 0.0f};
-            diamond.params = {1.0f, 8.0f, 0.0f, 0.0f};
-            diamond.albedo = {1.0f, 1.0f, 1.0f};
-            diamond.ior_base = 2.42f;
-            diamond.cauchy_b = 0.044f;
-            diamond.cauchy_c = 0.001f;
-            scene.push_back(diamond);
-
-            scene_primitive floor;
-            floor.type = prim_type::box;
-            floor.mat = material_type::diffuse;
-            floor.position = {0.0f, -2.0f};
-            floor.params = {5.0f, 0.3f, 0.0f, 0.0f};
-            floor.albedo = {0.9f, 0.9f, 0.9f};
-            scene.push_back(floor);
-
-            scene_dirty = true;
-        }
-
-        ImGui::SameLine();
-        if (ImGui::Button("Cornell Box 2D"))
-        {
-            build_default_scene();
-        }
-
-        if (ImGui::Button("Telescope"))
-        {
-            scene.clear();
-            selected_index = -1;
-
-            scene_primitive light;
-            light.type = prim_type::box;
-            light.mat = material_type::diffuse;
-            light.position = {-6.0f, 0.0f};
-            light.params = {0.1f, 2.0f, 0.0f, 0.0f};
-            light.albedo = {1.0f, 1.0f, 1.0f};
-            light.emission = 20.0f;
-            scene.push_back(light);
-
-            scene_primitive objective;
-            objective.type = prim_type::lens;
-            objective.mat = material_type::glass;
-            objective.position = {-2.0f, 0.0f};
-            objective.params = {2.5f, 2.5f, 1.8f, 0.0f};
-            objective.albedo = {1.0f, 1.0f, 1.0f};
-            objective.ior_base = 1.5f;
-            objective.cauchy_b = 0.004f;
-            scene.push_back(objective);
-
-            scene_primitive eyepiece;
-            eyepiece.type = prim_type::lens;
-            eyepiece.mat = material_type::glass;
-            eyepiece.position = {3.0f, 0.0f};
-            eyepiece.params = {1.2f, 1.2f, 0.8f, 0.0f};
-            eyepiece.albedo = {1.0f, 1.0f, 1.0f};
-            eyepiece.ior_base = 1.5f;
-            eyepiece.cauchy_b = 0.004f;
-            scene.push_back(eyepiece);
-
-            scene_primitive screen;
-            screen.type = prim_type::box;
-            screen.mat = material_type::diffuse;
-            screen.position = {6.0f, 0.0f};
-            screen.params = {0.1f, 3.0f, 0.0f, 0.0f};
-            screen.albedo = {0.9f, 0.9f, 0.9f};
-            scene.push_back(screen);
-
-            scene_dirty = true;
-        }
-
-        ImGui::SameLine();
-        if (ImGui::Button("Achromatic Doublet"))
-        {
-            scene.clear();
-            selected_index = -1;
-
-            scene_primitive light;
-            light.type = prim_type::box;
-            light.mat = material_type::diffuse;
-            light.position = {-5.0f, 0.0f};
-            light.params = {0.1f, 2.0f, 0.0f, 0.0f};
-            light.albedo = {1.0f, 1.0f, 1.0f};
-            light.emission = 20.0f;
-            scene.push_back(light);
-
-            scene_primitive crown;
-            crown.type = prim_type::lens;
-            crown.mat = material_type::glass;
-            crown.position = {-0.15f, 0.0f};
-            crown.params = {2.0f, 2.0f, 1.2f, 0.0f};
-            crown.albedo = {1.0f, 1.0f, 1.0f};
-            crown.ior_base = 1.52f;
-            crown.cauchy_b = 0.004f;
-            scene.push_back(crown);
-
-            scene_primitive flint;
-            flint.type = prim_type::lens;
-            flint.mat = material_type::glass;
-            flint.position = {0.55f, 0.0f};
-            flint.params = {2.0f, 3.0f, 1.2f, 0.0f};
-            flint.albedo = {1.0f, 1.0f, 1.0f};
-            flint.ior_base = 1.62f;
-            flint.cauchy_b = 0.012f;
-            scene.push_back(flint);
-
-            scene_primitive screen;
-            screen.type = prim_type::box;
-            screen.mat = material_type::diffuse;
-            screen.position = {5.0f, 0.0f};
-            screen.params = {0.1f, 3.0f, 0.0f, 0.0f};
-            screen.albedo = {0.9f, 0.9f, 0.9f};
-            scene.push_back(screen);
-
-            scene_dirty = true;
-        }
-
-        if (ImGui::Button("Laser Mirrors"))
-        {
-            scene.clear();
-            selected_index = -1;
-
-            scene_primitive laser;
-            laser.type = prim_type::circle;
-            laser.mat = material_type::diffuse;
-            laser.position = {-4.0f, -1.0f};
-            laser.rotation = 0.0f;
-            laser.params = {0.15f, 0.0f, 0.0f, 0.0f};
-            laser.albedo = {1.0f, 0.1f, 0.1f};
-            laser.emission = 50.0f;
-            laser.emission_half_angle = 0.12f;
-            scene.push_back(laser);
-
-            scene_primitive m1;
-            m1.type = prim_type::box;
-            m1.mat = material_type::mirror;
-            m1.position = {3.0f, -1.0f};
-            m1.rotation = static_cast<float>(POLYMER_PI) * 0.25f;
-            m1.params = {0.1f, 1.2f, 0.0f, 0.0f};
-            m1.albedo = {0.95f, 0.95f, 0.95f};
-            scene.push_back(m1);
-
-            scene_primitive m2;
-            m2.type = prim_type::box;
-            m2.mat = material_type::mirror;
-            m2.position = {3.0f, 2.5f};
-            m2.rotation = -static_cast<float>(POLYMER_PI) * 0.25f;
-            m2.params = {0.1f, 1.2f, 0.0f, 0.0f};
-            m2.albedo = {0.95f, 0.95f, 0.95f};
-            scene.push_back(m2);
-
-            scene_primitive screen;
-            screen.type = prim_type::box;
-            screen.mat = material_type::diffuse;
-            screen.position = {-4.0f, 2.5f};
-            screen.params = {0.1f, 2.0f, 0.0f, 0.0f};
-            screen.albedo = {0.9f, 0.9f, 0.9f};
-            scene.push_back(screen);
-
-            scene_dirty = true;
-        }
-
-        if (ImGui::Button("Nested Media Stack"))
-        {
-            scene.clear();
-            selected_index = -1;
-
-            // Narrow emissive source on the left to produce refractive caustics
-            scene_primitive light;
-            light.type = prim_type::box;
-            light.mat = material_type::diffuse;
-            light.position = {-5.5f, 0.0f};
-            light.params = {0.1f, 1.8f, 0.0f, 0.0f};
-            light.albedo = {1.0f, 1.0f, 1.0f};
-            light.emission = 24.0f;
-            light.emission_half_angle = static_cast<float>(POLYMER_PI) * 0.45f;
-            scene.push_back(light);
-
-            // Outer medium (water): rays should enter and exit this shell.
-            scene_primitive outer_water;
-            outer_water.type = prim_type::circle;
-            outer_water.mat = material_type::water;
-            outer_water.position = {0.0f, 0.0f};
-            outer_water.params = {1.85f, 0.0f, 0.0f, 0.0f};
-            outer_water.albedo = {1.0f, 1.0f, 1.0f};
-            outer_water.ior_base = 1.333f;
-            outer_water.cauchy_b = 0.003f;
-            outer_water.cauchy_c = 0.0f;
-            outer_water.absorption = {0.10f, 0.03f, 0.01f};
-            scene.push_back(outer_water);
-
-            // Inner medium (glass): stack depth becomes 2 while inside this core.
-            scene_primitive inner_glass;
-            inner_glass.type = prim_type::circle;
-            inner_glass.mat = material_type::glass;
-            inner_glass.position = {0.0f, 0.0f};
-            inner_glass.params = {0.95f, 0.0f, 0.0f, 0.0f};
-            inner_glass.albedo = {1.0f, 1.0f, 1.0f};
-            inner_glass.ior_base = 1.52f;
-            inner_glass.cauchy_b = 0.006f;
-            inner_glass.cauchy_c = 0.0f;
-            inner_glass.absorption = {0.0f, 0.0f, 0.0f};
-            scene.push_back(inner_glass);
-
-            // A diffuse receiver screen on the right to observe focus/chromatic split.
-            scene_primitive screen;
-            screen.type = prim_type::box;
-            screen.mat = material_type::diffuse;
-            screen.position = {5.5f, 0.0f};
-            screen.params = {0.12f, 3.0f, 0.0f, 0.0f};
-            screen.albedo = {0.9f, 0.9f, 0.9f};
-            scene.push_back(screen);
-
-            // Ground reference plane for extra bounce context.
-            scene_primitive floor;
-            floor.type = prim_type::box;
-            floor.mat = material_type::diffuse;
-            floor.position = {0.0f, -3.2f};
-            floor.params = {6.0f, 0.25f, 0.0f, 0.0f};
-            floor.albedo = {0.85f, 0.85f, 0.85f};
-            scene.push_back(floor);
-
-            scene_dirty = true;
+            if (ImGui::Button(presets[i].name))
+            {
+                scene = presets[i].build();
+                selected_index = -1;
+                scene_dirty = true;
+            }
         }
     }
 
@@ -1108,24 +676,19 @@ void sample_2d_pathtracer::on_draw()
     imgui->end_frame();
 
     glfwSwapBuffers(window);
+
     gl_check_error(__FILE__, __LINE__);
 }
-
-// ============================================================================
-// Main
-// ============================================================================
 
 int main(int argc, char * argv[])
 {
     try
     {
-        sample_2d_pathtracer app;
-        app.main_loop();
+        sample_2d_pathtracer app; app.main_loop();
     }
     catch (const std::exception & e)
     {
-        std::cerr << "Fatal error: " << e.what() << std::endl;
-        return EXIT_FAILURE;
+        std::cerr << "Fatal error: " << e.what() << std::endl; return EXIT_FAILURE;
     }
     return EXIT_SUCCESS;
 }

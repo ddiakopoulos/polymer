@@ -86,6 +86,32 @@ rng_state rng_init(uvec2 pixel, uint frame)
 }
 
 // ============================================================================
+// R2 Low-Discrepancy Sequence + Cranley-Patterson Rotation
+// ============================================================================
+
+#define R2_ALPHA1 0.7548776662466927
+#define R2_ALPHA2 0.5698402909980532
+
+vec2 r2_sequence(uint n)
+{
+    return fract(vec2(0.5 + R2_ALPHA1 * float(n),
+                      0.5 + R2_ALPHA2 * float(n)));
+}
+
+vec2 cranley_patterson_offset(uvec2 pixel)
+{
+    uint h1 = pcg_hash(pixel.x * 1973u + pixel.y * 9277u + 1u);
+    uint h2 = pcg_hash(pixel.x * 2969u + pixel.y * 7541u + 2u);
+    return vec2(float(h1) / 4294967295.0, float(h2) / 4294967295.0);
+}
+
+vec2 lds_sample(vec2 cp_offset, int sample_base, int stride, int slot)
+{
+    uint n = uint(sample_base) * uint(stride) + uint(slot);
+    return fract(r2_sequence(n) + cp_offset);
+}
+
+// ============================================================================
 // 2D SDF Primitives
 // ============================================================================
 
@@ -214,6 +240,14 @@ vec2 sample_cosine_half_circle(inout rng_state rng, vec2 normal)
 {
     float u = rand_float(rng);
     // Inverse CDF for p(theta) = 0.5 * cos(theta), theta in [-pi/2, pi/2].
+    float theta = asin(2.0 * u - 1.0);
+    vec2 local_dir = vec2(cos(theta), sin(theta));
+    vec2 tangent = vec2(-normal.y, normal.x);
+    return local_dir.x * normal + local_dir.y * tangent;
+}
+
+vec2 sample_cosine_half_circle_u(float u, vec2 normal)
+{
     float theta = asin(2.0 * u - 1.0);
     vec2 local_dir = vec2(cos(theta), sin(theta));
     vec2 tangent = vec2(-normal.y, normal.x);
