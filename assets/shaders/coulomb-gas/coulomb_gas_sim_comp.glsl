@@ -7,6 +7,7 @@ layout(std430, binding = 1) readonly buffer VelIn  { vec2 vel_in[]; };
 layout(std430, binding = 2) writeonly buffer PosOut { vec2 pos_out[]; };
 layout(std430, binding = 3) writeonly buffer VelOut { vec2 vel_out[]; };
 layout(std430, binding = 4) readonly buffer InsertedParticles { vec4 inserted_particles[]; };
+layout(std430, binding = 5) readonly buffer TypeIn { float type_in[]; };
 
 uniform int u_n;
 uniform int u_pot;
@@ -15,8 +16,31 @@ uniform float u_dt;
 uniform float u_damping;
 uniform float u_lemniscate_t;
 uniform float u_lem_interpol;
+uniform float u_magnetic_b;
+uniform float u_riesz_s;
+uniform float u_temperature;
+uniform int u_frame_counter;
+uniform int u_two_species;
 
 shared vec2 tile_pos[256];
+shared float tile_type[256];
+
+uint pcg_hash(uint v)
+{
+    uint state = v * 747796405u + 2891336453u;
+    uint word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
+    return (word >> 22u) ^ word;
+}
+
+vec2 gaussian_noise(uint particle_idx, uint frame)
+{
+    uint seed = pcg_hash(particle_idx * 1099u + frame * 6151u);
+    float u1 = max(float(pcg_hash(seed)) / 4294967295.0, 1e-8);
+    float u2 = float(pcg_hash(seed + 1u)) / 4294967295.0;
+    float r = sqrt(-2.0 * log(u1));
+    float theta = 6.2831853 * u2;
+    return vec2(r * cos(theta), r * sin(theta));
+}
 
 vec2 grad_logs(float x, float y)
 {
@@ -136,6 +160,7 @@ void main()
     float py = 0.0;
     float vx = 0.0;
     float vy = 0.0;
+    float my_type = 1.0;
 
     if (i < N)
     {
@@ -143,11 +168,16 @@ void main()
         py = pos_in[i].y;
         vx = vel_in[i].x;
         vy = vel_in[i].y;
+        if (u_two_species != 0) my_type = type_in[i];
     }
 
     vec2 g = grad_conf(px, py);
     float accx = -float(N) * g.x;
     float accy = -float(N) * g.y;
+
+    // Riesz s-energy precomputation
+    float riesz_exponent = -(u_riesz_s + 2.0) * 0.5;
+    float use_riesz = smoothstep(0.0, 0.05, abs(u_riesz_s));
 
     uint tile_start = 0u;
     while (tile_start < N)
@@ -156,20 +186,25 @@ void main()
         if (j < N)
         {
             tile_pos[lid] = pos_in[j];
+            if (u_two_species != 0) tile_type[lid] = type_in[j];
         }
         barrier();
 
         uint count = min(256u, N - tile_start);
         for (uint k = 0u; k < count; ++k)
         {
-            float dx = tile_pos[k].x - px;
-            float dy = tile_pos[k].y - py;
-            float inv = 1.0 / (dx * dx + dy * dy + 1e-6);
-            float scale = 2.0 * inv;
             if (tile_start + k != i)
             {
-                accx -= dx * scale;
-                accy -= dy * scale;
+                float dx = tile_pos[k].x - px;
+                float dy = tile_pos[k].y - py;
+                float dist2 = dx * dx + dy * dy + 1e-6;
+                float scale_log = 2.0 / dist2;
+                float scale_riesz = 2.0 * pow(dist2, riesz_exponent);
+                float scale = mix(scale_log, scale_riesz, use_riesz);
+
+                float charge_product = (u_two_species != 0) ? my_type * tile_type[k] : 1.0;
+                accx -= dx * scale * charge_product;
+                accy -= dy * scale * charge_product;
             }
         }
         barrier();
@@ -179,8 +214,22 @@ void main()
 
     if (i < N)
     {
+        // Magnetic field: Lorentz force F = q(v x B) with B out of plane
+        float charge = (u_two_species != 0) ? my_type : 1.0;
+        accx += u_magnetic_b * charge * vy;
+        accy -= u_magnetic_b * charge * vx;
+
         vx += accx * u_dt;
         vy += accy * u_dt;
+
+        // Langevin dynamics: thermal noise
+        if (u_temperature > 0.0)
+        {
+            float noise_scale = sqrt(2.0 * u_temperature * u_dt);
+            vec2 noise = gaussian_noise(i, uint(u_frame_counter));
+            vx += noise.x * noise_scale;
+            vy += noise.y * noise_scale;
+        }
 
         px += vx * u_dt;
         py += vy * u_dt;

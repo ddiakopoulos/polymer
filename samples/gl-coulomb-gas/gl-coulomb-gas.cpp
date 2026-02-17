@@ -51,6 +51,21 @@ struct coulomb_gas_config
     int32_t particle_size_px = 1;
     float opacity = 1.0f;
     bool is_dark = true;
+
+    // Magnetic field
+    float magnetic_b = 0.0f;
+    // Time-varying potentials
+    bool animate_potential = false;
+    float animate_t_amplitude = 0.3f;
+    float animate_t_freq = 0.5f;
+    float animate_p_amplitude = 0.0f;
+    float animate_p_freq = 0.3f;
+    // Riesz s-energy
+    float riesz_s = 0.0f;
+    // Langevin dynamics
+    float temperature = 0.0f;
+    // Two-species
+    bool two_species = false;
 };
 
 struct sample_gl_coulomb_gas final : public polymer_app
@@ -64,6 +79,7 @@ struct sample_gl_coulomb_gas final : public polymer_app
 
     gl_buffer pos_a, pos_b, vel_a, vel_b;
     gl_buffer inserted_buf;
+    gl_buffer type_buf;
 
     gl_buffer quad_vbo;
     gl_vertex_array_object vao;
@@ -82,6 +98,7 @@ struct sample_gl_coulomb_gas final : public polymer_app
     ~sample_gl_coulomb_gas() = default;
 
     void allocate_particle_buffers(bool randomize);
+    void regenerate_type_buffer();
     void update_inserted_buffer();
     void set_n(int32_t new_n);
     void set_pot(int32_t new_pot);
@@ -153,6 +170,23 @@ void sample_gl_coulomb_gas::allocate_particle_buffers(bool randomize)
     vel_b.set_buffer_data(buf_size, nullptr, GL_DYNAMIC_DRAW);
 
     ping = 0;
+
+    regenerate_type_buffer();
+}
+
+void sample_gl_coulomb_gas::regenerate_type_buffer()
+{
+    std::vector<float> type_data(config.n);
+    if (config.two_species)
+    {
+        uniform_random_gen rng;
+        for (int32_t i = 0; i < config.n; ++i) type_data[i] = (rng.random_float() < 0.5f) ? 1.0f : -1.0f;
+    }
+    else
+    {
+        std::fill(type_data.begin(), type_data.end(), 1.0f);
+    }
+    type_buf.set_buffer_data(static_cast<GLsizeiptr>(config.n) * sizeof(float), type_data.data(), GL_DYNAMIC_DRAW);
 }
 
 void sample_gl_coulomb_gas::update_inserted_buffer()
@@ -241,6 +275,16 @@ void sample_gl_coulomb_gas::on_draw()
     float dt = static_cast<float>(config.dt_slider) / 30000.0f;
     float lemniscate_t = static_cast<float>(config.lemniscate_t_slider) / 50.0f;
     float lem_interpol = static_cast<float>(config.lem_interpol_slider) / 10.0f;
+
+    if (config.animate_potential && config.pot >= 3)
+    {
+        float time_sec = static_cast<float>(frame_counter) / 60.0f;
+        lemniscate_t += config.animate_t_amplitude * std::sin(2.0f * 3.14159265f * config.animate_t_freq * time_sec);
+        lem_interpol += config.animate_p_amplitude * std::sin(2.0f * 3.14159265f * config.animate_p_freq * time_sec);
+        lemniscate_t = std::max(0.0f, lemniscate_t);
+        lem_interpol = std::max(1.0f, lem_interpol);
+    }
+
     int32_t inserted_count = static_cast<int32_t>(std::min(inserted_particles.size(), static_cast<size_t>(MAX_INSERTED_PARTICLES)));
     uint32_t num_groups = (static_cast<uint32_t>(config.n) + WG_SIZE - 1) / WG_SIZE;
 
@@ -253,8 +297,14 @@ void sample_gl_coulomb_gas::on_draw()
     sim_compute.uniform("u_damping", DAMPING);
     sim_compute.uniform("u_lemniscate_t", lemniscate_t);
     sim_compute.uniform("u_lem_interpol", lem_interpol);
+    sim_compute.uniform("u_magnetic_b", config.magnetic_b);
+    sim_compute.uniform("u_riesz_s", config.riesz_s);
+    sim_compute.uniform("u_temperature", config.temperature);
+    sim_compute.uniform("u_frame_counter", frame_counter);
+    sim_compute.uniform("u_two_species", config.two_species ? 1 : 0);
 
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, inserted_buf);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, type_buf);
 
     for (int32_t s = 0; s < config.steps_per_frame; ++s)
     {
@@ -310,8 +360,14 @@ void sample_gl_coulomb_gas::on_draw()
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(float2), nullptr);
     glVertexAttribDivisor(1, 1);
 
+    // Attribute 2: particle type (per-instance, for two-species coloring)
+    glBindBuffer(GL_ARRAY_BUFFER, type_buf);
+    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(float), nullptr);
+    glVertexAttribDivisor(2, 1);
+
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
+    glEnableVertexAttribArray(2);
 
     render_shader.bind();
     render_shader.uniform("u_sim_to_clip", SIM_TO_CLIP);
@@ -320,6 +376,7 @@ void sample_gl_coulomb_gas::on_draw()
     render_shader.uniform("u_canvas_h", static_cast<float>(height));
     render_shader.uniform("u_alpha", config.opacity);
     render_shader.uniform("u_is_dark", config.is_dark ? 1.0f : 0.0f);
+    render_shader.uniform("u_two_species", config.two_species ? 1 : 0);
 
     glDrawArraysInstanced(GL_TRIANGLES, 0, 6, config.n);
 
@@ -327,6 +384,7 @@ void sample_gl_coulomb_gas::on_draw()
 
     glDisableVertexAttribArray(0);
     glDisableVertexAttribArray(1);
+    glDisableVertexAttribArray(2);
     glBindVertexArray(0);
 
     glDisable(GL_BLEND);
@@ -369,6 +427,15 @@ void sample_gl_coulomb_gas::on_draw()
             {
                 ImGui::SliderInt("p (interpolation)", &config.lem_interpol_slider, 10, 50);
             }
+
+            ImGui::Checkbox("Animate potential", &config.animate_potential);
+            if (config.animate_potential)
+            {
+                ImGui::SliderFloat("T amplitude", &config.animate_t_amplitude, 0.0f, 1.0f);
+                ImGui::SliderFloat("T frequency", &config.animate_t_freq, 0.01f, 2.0f);
+                ImGui::SliderFloat("p amplitude", &config.animate_p_amplitude, 0.0f, 2.0f);
+                ImGui::SliderFloat("p frequency", &config.animate_p_freq, 0.01f, 2.0f);
+            }
         }
     }
 
@@ -405,6 +472,27 @@ void sample_gl_coulomb_gas::on_draw()
         }
 
         ImGui::Text("Exact pairwise repulsion is O(n^2).");
+    }
+
+    ImGui::Separator();
+
+    if (ImGui::CollapsingHeader("Interaction", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        ImGui::SliderFloat("Riesz s", &config.riesz_s, -2.0f, 4.0f);
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("s=0: log (Coulomb). s>0: stronger short-range. s<0: longer range.");
+
+        bool prev_two_species = config.two_species;
+        ImGui::Checkbox("Two species (+/-)", &config.two_species);
+        if (config.two_species != prev_two_species) regenerate_type_buffer();
+
+        ImGui::SliderFloat("Magnetic B", &config.magnetic_b, -50.0f, 50.0f);
+    }
+
+    ImGui::Separator();
+
+    if (ImGui::CollapsingHeader("Thermodynamics", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        ImGui::SliderFloat("Temperature", &config.temperature, 0.0f, 10.0f);
     }
 
     ImGui::Separator();

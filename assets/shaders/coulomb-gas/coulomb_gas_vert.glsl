@@ -2,11 +2,14 @@
 
 layout(location = 0) in vec2 a_quad_pos;
 layout(location = 1) in vec2 a_inst_pos;
+layout(location = 2) in float a_inst_type;
 
 uniform float u_sim_to_clip;
 uniform float u_particle_size_px;
 uniform float u_canvas_w;
 uniform float u_canvas_h;
+
+flat out float v_particle_type;
 
 void main()
 {
@@ -16,4 +19,5 @@ void main()
         a_quad_pos.y * u_particle_size_px * 2.0 / u_canvas_h
     );
     gl_Position = vec4(base + off_clip, 0.0, 1.0);
+    v_particle_type = a_inst_type;
 }
