@@ -47,8 +47,8 @@ struct gpu_sdf_primitive
     float cauchy_c;      // offset 44
     vec3 albedo;         // offset 48 (16-aligned)
     float emission;      // offset 60
-    vec3 absorption;     // offset 64 (16-aligned)
-    float _pad;          // offset 76
+    vec3 absorption;           // offset 64 (16-aligned)
+    float emission_half_angle; // offset 76 (default PI = omnidirectional)
 };
 
 // SSBO - must precede eval_scene which references primitives[]
@@ -230,4 +230,11 @@ bool refract_2d(vec2 d, vec2 n, float eta, out vec2 refracted)
     float cos_t = sqrt(1.0 - sin2_t);
     refracted = eta * d + (eta * cos_i - cos_t) * n;
     return true;
+}
+
+bool emission_allowed(vec2 outward_normal, float rotation, float half_angle)
+{
+    if (half_angle >= PI) return true;
+    vec2 forward = vec2(cos(rotation), sin(rotation));
+    return dot(outward_normal, forward) > cos(half_angle);
 }

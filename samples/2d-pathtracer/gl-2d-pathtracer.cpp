@@ -1,8 +1,6 @@
 #include "polymer-core/lib-polymer.hpp"
 
 #include "polymer-gfx-gl/gl-loaders.hpp"
-#include "polymer-gfx-gl/gl-post-processing.hpp"
-#include "polymer-gfx-gl/post/gl-unreal-bloom.hpp"
 #include "polymer-app-base/glfw-app.hpp"
 #include "polymer-app-base/wrappers/gl-imgui.hpp"
 #include "polymer-engine/asset/asset-resolver.hpp"
@@ -37,8 +35,8 @@ struct gpu_sdf_primitive
     float cauchy_c     = 0.0f;
     float3 albedo      = {1.0f, 1.0f, 1.0f};
     float emission     = 0.0f;
-    float3 absorption  = {0.0f, 0.0f, 0.0f};
-    float _pad         = 0.0f;
+    float3 absorption           = {0.0f, 0.0f, 0.0f};
+    float emission_half_angle   = POLYMER_PI;
 };
 
 static_assert(sizeof(gpu_sdf_primitive) == 80, "gpu_sdf_primitive must be 80 bytes to match GLSL std430 layout");
@@ -59,8 +57,9 @@ struct scene_primitive
     float ior_base       = 1.5f;
     float cauchy_b       = 0.0f;
     float cauchy_c       = 0.0f;
-    float3 absorption    = {0.0f, 0.0f, 0.0f};
-    bool selected        = false;
+    float3 absorption           = {0.0f, 0.0f, 0.0f};
+    float emission_half_angle   = POLYMER_PI;
+    bool selected               = false;
 
     gpu_sdf_primitive pack() const
     {
@@ -76,7 +75,7 @@ struct scene_primitive
         g.albedo     = albedo;
         g.emission   = emission;
         g.absorption = absorption;
-        g._pad       = 0.0f;
+        g.emission_half_angle = emission_half_angle;
         return g;
     }
 };
@@ -87,13 +86,14 @@ struct scene_primitive
 
 struct path_tracer_config
 {
-    int32_t max_bounces         = 8;
-    int32_t samples_per_frame   = 1;
-    float environment_intensity = 0.05f;
-    float firefly_clamp         = 100.0f;
+    int32_t max_bounces         = 12;
+    int32_t samples_per_frame   = 2;
+    float environment_intensity = 0.025f;
+    float firefly_clamp         = 128.0f;
     float camera_zoom           = 1.0f;
     float2 camera_center        = {0.0f, 0.0f};
-    float exposure              = 1.0f;
+    float exposure              = 0.25;
+    bool debug_overlay          = false;
 };
 
 // ============================================================================
@@ -141,7 +141,7 @@ inline float sdf_lens(float2 p, float r1, float r2, float d)
 inline float sdf_ngon(float2 p, float r, float sides)
 {
     float n = std::max(sides, 3.0f);
-    float an = 3.14159265f / n;
+    float an = POLYMER_PI / n;
     float he = r * std::cos(an);
     float angle = std::atan2(p.y, p.x);
     float sector = std::fmod(angle + an + 100.0f * 2.0f * an, 2.0f * an) - an;
@@ -194,14 +194,6 @@ struct sample_2d_pathtracer final : public polymer_app
     // Primitives SSBO
     gl_buffer primitives_ssbo;
 
-    // HDR FBO for display pass
-    gl_framebuffer hdr_framebuffer;
-    gl_texture_2d hdr_color_texture;
-
-    // Post-processing
-    gl_effect_composer composer;
-    std::shared_ptr<gl_unreal_bloom> bloom_pass;
-
     // Empty VAO for fullscreen triangle
     gl_vertex_array_object empty_vao;
 
@@ -231,7 +223,6 @@ struct sample_2d_pathtracer final : public polymer_app
     void build_default_scene();
     void upload_scene();
     void setup_accumulation(int32_t width, int32_t height);
-    void setup_hdr_framebuffer(int32_t width, int32_t height);
     void clear_accumulation();
     void add_primitive(prim_type type, float2 world_pos);
 
@@ -279,7 +270,7 @@ void sample_2d_pathtracer::add_primitive(prim_type type, float2 world_pos)
         case prim_type::box:     sp.params = {0.5f, 0.5f, 0.0f, 0.0f}; break;
         case prim_type::capsule: sp.params = {0.2f, 0.5f, 0.0f, 0.0f}; break;
         case prim_type::segment: sp.params = {0.5f, 0.05f, 0.0f, 0.0f}; break;
-        case prim_type::lens:    sp.params = {0.8f, 0.8f, 0.6f, 0.0f}; break;
+        case prim_type::lens:    sp.params = {0.8f, 0.8f, 0.6f, 0.0f}; sp.mat = material_type::glass; sp.ior_base = 1.5f; sp.cauchy_b = 0.004f; break;
         case prim_type::ngon:    sp.params = {0.5f, 6.0f, 0.0f, 0.0f}; break;
     }
 
@@ -289,7 +280,7 @@ void sample_2d_pathtracer::add_primitive(prim_type type, float2 world_pos)
     scene_dirty = true;
 }
 
-sample_2d_pathtracer::sample_2d_pathtracer() : polymer_app(1920, 1080, "2d-pathtracer", 4)
+sample_2d_pathtracer::sample_2d_pathtracer() : polymer_app(1920, 1080, "pathtracer_2D", 1)
 {
     glfwMakeContextCurrent(window);
 
@@ -305,15 +296,7 @@ sample_2d_pathtracer::sample_2d_pathtracer() : polymer_app(1920, 1080, "2d-patht
 
     std::string fullscreen_vert = read_file_text(asset_base + "/shaders/waterfall_fullscreen_vert.glsl");
     std::string display_frag = read_file_text(shader_base + "pt_display_frag.glsl");
-    display_shader = gl_shader(fullscreen_vert, display_frag);
-
-    bloom_pass = std::make_shared<gl_unreal_bloom>(asset_base);
-    bloom_pass->config.threshold = 0.2f;
-    bloom_pass->config.strength = 0.8f;
-    bloom_pass->config.radius = 0.5f;
-    bloom_pass->config.exposure = 1.0f;
-    bloom_pass->config.tonemap_mode = 3;
-    composer.add_pass(bloom_pass);
+    display_shader = gl_shader(fullscreen_vert, common_src + "\n" + display_frag);
 
     int width, height;
     glfwGetWindowSize(window, &width, &height);
@@ -321,8 +304,6 @@ sample_2d_pathtracer::sample_2d_pathtracer() : polymer_app(1920, 1080, "2d-patht
     current_height = height;
 
     setup_accumulation(width, height);
-    setup_hdr_framebuffer(width, height);
-    composer.resize(width, height);
 
     build_default_scene();
 
@@ -338,7 +319,7 @@ void sample_2d_pathtracer::build_default_scene()
         scene_primitive light;
         light.type = prim_type::circle;
         light.mat = material_type::diffuse;
-        light.position = {0.0f, 2.5f};
+        light.position = {0.0f, 2.3f};
         light.params = {0.4f, 0.0f, 0.0f, 0.0f};
         light.albedo = {1.0f, 0.95f, 0.9f};
         light.emission = 15.0f;
@@ -350,8 +331,8 @@ void sample_2d_pathtracer::build_default_scene()
         scene_primitive floor;
         floor.type = prim_type::box;
         floor.mat = material_type::diffuse;
-        floor.position = {0.0f, -2.0f};
-        floor.params = {4.0f, 0.3f, 0.0f, 0.0f};
+        floor.position = {0.0f, -3.0f};
+        floor.params = {3.3f, 0.3f, 0.0f, 0.0f};
         floor.albedo = {0.8f, 0.8f, 0.8f};
         scene.push_back(floor);
     }
@@ -361,8 +342,8 @@ void sample_2d_pathtracer::build_default_scene()
         scene_primitive wall;
         wall.type = prim_type::box;
         wall.mat = material_type::diffuse;
-        wall.position = {-3.5f, 0.0f};
-        wall.params = {0.3f, 3.0f, 0.0f, 0.0f};
+        wall.position = {-3.0f, 0.0f};
+        wall.params = {0.3f, 3.3f, 0.0f, 0.0f};
         wall.albedo = {0.8f, 0.2f, 0.2f};
         scene.push_back(wall);
     }
@@ -372,8 +353,8 @@ void sample_2d_pathtracer::build_default_scene()
         scene_primitive wall;
         wall.type = prim_type::box;
         wall.mat = material_type::diffuse;
-        wall.position = {3.5f, 0.0f};
-        wall.params = {0.3f, 3.0f, 0.0f, 0.0f};
+        wall.position = {3.0f, 0.0f};
+        wall.params = {0.3f, 3.3f, 0.0f, 0.0f};
         wall.albedo = {0.2f, 0.8f, 0.2f};
         scene.push_back(wall);
     }
@@ -384,7 +365,7 @@ void sample_2d_pathtracer::build_default_scene()
         ceiling.type = prim_type::box;
         ceiling.mat = material_type::diffuse;
         ceiling.position = {0.0f, 3.0f};
-        ceiling.params = {4.0f, 0.3f, 0.0f, 0.0f};
+        ceiling.params = {3.3f, 0.3f, 0.0f, 0.0f};
         ceiling.albedo = {0.8f, 0.8f, 0.8f};
         scene.push_back(ceiling);
     }
@@ -394,7 +375,7 @@ void sample_2d_pathtracer::build_default_scene()
         scene_primitive sphere;
         sphere.type = prim_type::circle;
         sphere.mat = material_type::glass;
-        sphere.position = {0.0f, -1.0f};
+        sphere.position = {0.0f, -1.5f};
         sphere.params = {0.7f, 0.0f, 0.0f, 0.0f};
         sphere.albedo = {1.0f, 1.0f, 1.0f};
         sphere.ior_base = 1.5f;
@@ -438,18 +419,6 @@ void sample_2d_pathtracer::setup_accumulation(int32_t width, int32_t height)
     glTextureParameteri(accumulation_texture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 }
 
-void sample_2d_pathtracer::setup_hdr_framebuffer(int32_t width, int32_t height)
-{
-    hdr_color_texture.setup(width, height, GL_RGBA16F, GL_RGBA, GL_FLOAT, nullptr);
-    glTextureParameteri(hdr_color_texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTextureParameteri(hdr_color_texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    glNamedFramebufferTexture(hdr_framebuffer, GL_COLOR_ATTACHMENT0, hdr_color_texture, 0);
-    hdr_framebuffer.check_complete();
-
-    gl_check_error(__FILE__, __LINE__);
-}
-
 void sample_2d_pathtracer::clear_accumulation()
 {
     float clear_val[4] = {0.0f, 0.0f, 0.0f, 0.0f};
@@ -464,13 +433,7 @@ void sample_2d_pathtracer::on_window_resize(int2 size)
     current_height = size.y;
 
     accumulation_texture = gl_texture_2d();
-    hdr_color_texture = gl_texture_2d();
-    hdr_framebuffer = gl_framebuffer();
-
     setup_accumulation(size.x, size.y);
-    setup_hdr_framebuffer(size.x, size.y);
-    composer.resize(size.x, size.y);
-
     clear_accumulation();
 }
 
@@ -605,10 +568,10 @@ void sample_2d_pathtracer::on_draw()
     }
 
     // ========================================================================
-    // Display pass
+    // Display pass (direct to backbuffer with tonemapping)
     // ========================================================================
     {
-        glBindFramebuffer(GL_FRAMEBUFFER, hdr_framebuffer);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, width, height);
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
@@ -617,21 +580,24 @@ void sample_2d_pathtracer::on_draw()
         display_shader.texture("u_accumulation_tex", 0, accumulation_texture, GL_TEXTURE_2D);
         display_shader.uniform("u_exposure", config.exposure);
 
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, primitives_ssbo);
+        display_shader.uniform("u_camera_zoom", config.camera_zoom);
+        display_shader.uniform("u_camera_center", config.camera_center);
+        display_shader.uniform("u_resolution", float2(static_cast<float>(width), static_cast<float>(height)));
+        display_shader.uniform("u_num_prims", static_cast<int>(scene.size()));
+        display_shader.uniform("u_selected_prim", selected_index);
+        display_shader.uniform("u_debug_overlay", config.debug_overlay ? 1 : 0);
+
         glBindVertexArray(empty_vao);
         glDrawArrays(GL_TRIANGLES, 0, 3);
         display_shader.unbind();
     }
 
     // ========================================================================
-    // Post-processing -> backbuffer
-    // ========================================================================
-    composer.render(hdr_color_texture, width, height);
-
-    // ========================================================================
     // ImGui
     // ========================================================================
     imgui->begin_frame();
-    gui::imgui_fixed_window_begin("2D Path Tracer", ui_rect{{0, 0}, {320, height}});
+    gui::imgui_fixed_window_begin("PT Settings", ui_rect{{0, 0}, {320, height}});
 
     int32_t total_samples = frame_index * config.samples_per_frame;
     ImGui::Text("%.1f FPS (%.3f ms)", ImGui::GetIO().Framerate, 1000.0f / ImGui::GetIO().Framerate);
@@ -650,6 +616,7 @@ void sample_2d_pathtracer::on_draw()
         if (ImGui::Button("Reset Accumulation")) clear_accumulation();
         ImGui::SameLine();
         if (ImGui::Button("Reset Scene")) build_default_scene();
+        ImGui::Checkbox("Debug Overlay", &config.debug_overlay);
     }
 
     // ------ Camera ------
@@ -723,7 +690,7 @@ void sample_2d_pathtracer::on_draw()
 
             bool changed = false;
             changed |= ImGui::DragFloat2("Position", &sp.position.x, 0.05f);
-            changed |= ImGui::SliderFloat("Rotation", &sp.rotation, -3.14159f, 3.14159f);
+            changed |= ImGui::SliderFloat("Rotation", &sp.rotation, -POLYMER_PI, POLYMER_PI);
 
             int type_idx = static_cast<int>(sp.type);
             if (ImGui::Combo("Shape", &type_idx, type_names, IM_ARRAYSIZE(type_names)))
@@ -788,6 +755,7 @@ void sample_2d_pathtracer::on_draw()
 
             changed |= ImGui::ColorEdit3("Albedo", &sp.albedo.x);
             changed |= ImGui::DragFloat("Emission", &sp.emission, 0.1f, 0.0f, 100.0f);
+            if (sp.emission > 0.0f) changed |= ImGui::SliderFloat("Emission Angle", &sp.emission_half_angle, 0.05f, POLYMER_PI);
 
             if (static_cast<uint32_t>(sp.mat) >= 2)
             {
@@ -800,20 +768,6 @@ void sample_2d_pathtracer::on_draw()
 
             if (changed) scene_dirty = true;
         }
-    }
-
-    // ------ Bloom ------
-    if (ImGui::CollapsingHeader("Bloom", ImGuiTreeNodeFlags_DefaultOpen))
-    {
-        ImGui::Checkbox("Enabled", &bloom_pass->config.bloom_enabled);
-        ImGui::SliderFloat("Threshold", &bloom_pass->config.threshold, 0.0f, 1.0f);
-        ImGui::SliderFloat("Knee", &bloom_pass->config.knee, 0.0f, 1.0f);
-        ImGui::SliderFloat("Strength", &bloom_pass->config.strength, 0.0f, 3.0f);
-        ImGui::SliderFloat("Radius", &bloom_pass->config.radius, 0.0f, 1.0f);
-        ImGui::SliderFloat("Bloom Exposure", &bloom_pass->config.exposure, 0.1f, 5.0f);
-        ImGui::SliderFloat("Gamma", &bloom_pass->config.gamma, 1.0f, 3.0f);
-        const char * tonemap_modes[] = {"None", "Filmic", "Hejl", "ACES 2.0", "ACES 1.0"};
-        ImGui::Combo("Tonemap", &bloom_pass->config.tonemap_mode, tonemap_modes, IM_ARRAYSIZE(tonemap_modes));
     }
 
     // ------ Presets ------
@@ -831,6 +785,7 @@ void sample_2d_pathtracer::on_draw()
             light.params = {0.1f, 1.5f, 0.0f, 0.0f};
             light.albedo = {1.0f, 1.0f, 1.0f};
             light.emission = 20.0f;
+            light.emission_half_angle = static_cast<float>(POLYMER_PI) * 0.5f;
             scene.push_back(light);
 
             scene_primitive prism;
@@ -867,6 +822,7 @@ void sample_2d_pathtracer::on_draw()
             light.params = {0.1f, 2.0f, 0.0f, 0.0f};
             light.albedo = {1.0f, 1.0f, 1.0f};
             light.emission = 20.0f;
+            light.emission_half_angle = static_cast<float>(POLYMER_PI) * 0.5f;
             scene.push_back(light);
 
             scene_primitive lens;
@@ -930,6 +886,142 @@ void sample_2d_pathtracer::on_draw()
         if (ImGui::Button("Cornell Box 2D"))
         {
             build_default_scene();
+        }
+
+        if (ImGui::Button("Telescope"))
+        {
+            scene.clear();
+            selected_index = -1;
+
+            scene_primitive light;
+            light.type = prim_type::box;
+            light.mat = material_type::diffuse;
+            light.position = {-6.0f, 0.0f};
+            light.params = {0.1f, 2.0f, 0.0f, 0.0f};
+            light.albedo = {1.0f, 1.0f, 1.0f};
+            light.emission = 20.0f;
+            scene.push_back(light);
+
+            scene_primitive objective;
+            objective.type = prim_type::lens;
+            objective.mat = material_type::glass;
+            objective.position = {-2.0f, 0.0f};
+            objective.params = {2.5f, 2.5f, 1.8f, 0.0f};
+            objective.albedo = {1.0f, 1.0f, 1.0f};
+            objective.ior_base = 1.5f;
+            objective.cauchy_b = 0.004f;
+            scene.push_back(objective);
+
+            scene_primitive eyepiece;
+            eyepiece.type = prim_type::lens;
+            eyepiece.mat = material_type::glass;
+            eyepiece.position = {3.0f, 0.0f};
+            eyepiece.params = {1.2f, 1.2f, 0.8f, 0.0f};
+            eyepiece.albedo = {1.0f, 1.0f, 1.0f};
+            eyepiece.ior_base = 1.5f;
+            eyepiece.cauchy_b = 0.004f;
+            scene.push_back(eyepiece);
+
+            scene_primitive screen;
+            screen.type = prim_type::box;
+            screen.mat = material_type::diffuse;
+            screen.position = {6.0f, 0.0f};
+            screen.params = {0.1f, 3.0f, 0.0f, 0.0f};
+            screen.albedo = {0.9f, 0.9f, 0.9f};
+            scene.push_back(screen);
+
+            scene_dirty = true;
+        }
+
+        ImGui::SameLine();
+        if (ImGui::Button("Achromatic Doublet"))
+        {
+            scene.clear();
+            selected_index = -1;
+
+            scene_primitive light;
+            light.type = prim_type::box;
+            light.mat = material_type::diffuse;
+            light.position = {-5.0f, 0.0f};
+            light.params = {0.1f, 2.0f, 0.0f, 0.0f};
+            light.albedo = {1.0f, 1.0f, 1.0f};
+            light.emission = 20.0f;
+            scene.push_back(light);
+
+            scene_primitive crown;
+            crown.type = prim_type::lens;
+            crown.mat = material_type::glass;
+            crown.position = {-0.15f, 0.0f};
+            crown.params = {2.0f, 2.0f, 1.2f, 0.0f};
+            crown.albedo = {1.0f, 1.0f, 1.0f};
+            crown.ior_base = 1.52f;
+            crown.cauchy_b = 0.004f;
+            scene.push_back(crown);
+
+            scene_primitive flint;
+            flint.type = prim_type::lens;
+            flint.mat = material_type::glass;
+            flint.position = {0.55f, 0.0f};
+            flint.params = {2.0f, 3.0f, 1.2f, 0.0f};
+            flint.albedo = {1.0f, 1.0f, 1.0f};
+            flint.ior_base = 1.62f;
+            flint.cauchy_b = 0.012f;
+            scene.push_back(flint);
+
+            scene_primitive screen;
+            screen.type = prim_type::box;
+            screen.mat = material_type::diffuse;
+            screen.position = {5.0f, 0.0f};
+            screen.params = {0.1f, 3.0f, 0.0f, 0.0f};
+            screen.albedo = {0.9f, 0.9f, 0.9f};
+            scene.push_back(screen);
+
+            scene_dirty = true;
+        }
+
+        if (ImGui::Button("Laser Mirrors"))
+        {
+            scene.clear();
+            selected_index = -1;
+
+            scene_primitive laser;
+            laser.type = prim_type::circle;
+            laser.mat = material_type::diffuse;
+            laser.position = {-4.0f, -1.0f};
+            laser.rotation = 0.0f;
+            laser.params = {0.15f, 0.0f, 0.0f, 0.0f};
+            laser.albedo = {1.0f, 0.1f, 0.1f};
+            laser.emission = 50.0f;
+            laser.emission_half_angle = 0.12f;
+            scene.push_back(laser);
+
+            scene_primitive m1;
+            m1.type = prim_type::box;
+            m1.mat = material_type::mirror;
+            m1.position = {3.0f, -1.0f};
+            m1.rotation = static_cast<float>(POLYMER_PI) * 0.25f;
+            m1.params = {0.1f, 1.2f, 0.0f, 0.0f};
+            m1.albedo = {0.95f, 0.95f, 0.95f};
+            scene.push_back(m1);
+
+            scene_primitive m2;
+            m2.type = prim_type::box;
+            m2.mat = material_type::mirror;
+            m2.position = {3.0f, 2.5f};
+            m2.rotation = -static_cast<float>(POLYMER_PI) * 0.25f;
+            m2.params = {0.1f, 1.2f, 0.0f, 0.0f};
+            m2.albedo = {0.95f, 0.95f, 0.95f};
+            scene.push_back(m2);
+
+            scene_primitive screen;
+            screen.type = prim_type::box;
+            screen.mat = material_type::diffuse;
+            screen.position = {-4.0f, 2.5f};
+            screen.params = {0.1f, 2.0f, 0.0f, 0.0f};
+            screen.albedo = {0.9f, 0.9f, 0.9f};
+            scene.push_back(screen);
+
+            scene_dirty = true;
         }
     }
 

@@ -217,19 +217,23 @@ vec3 trace_path(vec2 origin, vec2 dir, int num_prims, inout rng_state rng)
         // Emission
         if (prim.emission > 0.0)
         {
-            float w = 1.0;
-            if (prev_was_diffuse && num_emitters > 0)
+            if (emission_allowed(outward_normal, prim.rotation, prim.emission_half_angle))
             {
-                float cos_light = max(dot(-dir, outward_normal), 0.0);
-                if (cos_light > 0.0)
+                float w = 1.0;
+                if (prev_was_diffuse && num_emitters > 0)
                 {
-                    float perim = primitive_perimeter(prim);
-                    float pdf_light_angular = mr.total_dist / (float(num_emitters) * perim * cos_light);
-                    w = prev_bsdf_pdf / (prev_bsdf_pdf + pdf_light_angular);
+                    float cos_light = max(dot(-dir, outward_normal), 0.0);
+                    if (cos_light > 0.0)
+                    {
+                        float perim = primitive_perimeter(prim);
+                        float pdf_light_angular = mr.total_dist / (float(num_emitters) * perim * cos_light);
+                        w = prev_bsdf_pdf / (prev_bsdf_pdf + pdf_light_angular);
+                    }
                 }
+                radiance += throughput * prim.emission * prim.albedo * w;
+                break;
             }
-            radiance += throughput * prim.emission * prim.albedo * w;
-            break;
+            // Surface still exists but not emitting in this direction — continue bouncing
         }
 
         uint mat = prim.material_type;
@@ -246,36 +250,34 @@ vec3 trace_path(vec2 origin, vec2 dir, int num_prims, inout rng_state rng)
                 int emitter_id = emitter_ids[eidx];
 
                 emitter_sample es = sample_emitter_boundary(emitter_id, rng);
+                gpu_sdf_primitive ep = primitives[emitter_id];
 
-                vec2 to_light = es.point - mr.pos;
-                float light_dist = length(to_light);
-
-                if (light_dist > EPSILON_SPAWN * 2.0)
+                if (emission_allowed(es.normal, ep.rotation, ep.emission_half_angle))
                 {
-                    vec2 light_dir = to_light / light_dist;
-                    float cos_surface = max(dot(light_dir, normal), 0.0);
-                    float cos_light = max(dot(-light_dir, es.normal), 0.0);
+                    vec2 to_light = es.point - mr.pos;
+                    float light_dist = length(to_light);
 
-                    if (cos_surface > 0.0 && cos_light > 0.0)
+                    if (light_dist > EPSILON_SPAWN * 2.0)
                     {
-                        vec2 shadow_origin = mr.pos + normal * EPSILON_SPAWN;
-                        if (test_visibility(shadow_origin, es.point, emitter_id, num_prims))
+                        vec2 light_dir = to_light / light_dist;
+                        float cos_surface = max(dot(light_dir, normal), 0.0);
+                        float cos_light = max(dot(-light_dir, es.normal), 0.0);
+
+                        if (cos_surface > 0.0 && cos_light > 0.0)
                         {
-                            gpu_sdf_primitive emitter = primitives[emitter_id];
-                            vec3 Le = emitter.emission * emitter.albedo;
+                            vec2 shadow_origin = mr.pos + normal * EPSILON_SPAWN;
+                            if (test_visibility(shadow_origin, es.point, emitter_id, num_prims))
+                            {
+                                vec3 Le = ep.emission * ep.albedo;
 
-                            // 2D Lambertian BRDF = albedo / 2
-                            // pdf_light in angular measure:
-                            //   pdf_area = 1 / (num_emitters * perimeter)
-                            //   pdf_angular = pdf_area * distance / cos_light
-                            float pdf_area = 1.0 / (float(num_emitters) * primitive_perimeter(emitter));
-                            float pdf_light_angular = pdf_area * light_dist / cos_light;
-                            float pdf_bsdf = cos_surface / 2.0;
+                                float pdf_area = 1.0 / (float(num_emitters) * primitive_perimeter(ep));
+                                float pdf_light_angular = pdf_area * light_dist / cos_light;
+                                float pdf_bsdf = cos_surface / 2.0;
 
-                            float w_light = pdf_light_angular / (pdf_light_angular + pdf_bsdf);
+                                float w_light = pdf_light_angular / (pdf_light_angular + pdf_bsdf);
 
-                            // Contribution: throughput * BRDF * cos * Le / pdf_light_angular * w
-                            radiance += throughput * (prim.albedo / 2.0) * cos_surface * Le / pdf_light_angular * w_light;
+                                radiance += throughput * (prim.albedo / 2.0) * cos_surface * Le / pdf_light_angular * w_light;
+                            }
                         }
                     }
                 }
