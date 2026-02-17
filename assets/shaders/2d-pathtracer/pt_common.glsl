@@ -112,12 +112,28 @@ float sdf_segment(vec2 p, float half_len, float thickness)
     return length(p) - thickness;
 }
 
-float sdf_lens(vec2 p, float r1, float r2, float d)
+float sdf_lens(vec2 p, float r1, float r2, float d, float aperture_half_height)
 {
     float half_d = d * 0.5;
-    float d1 = length(p - vec2(-half_d, 0.0)) - r1;
-    float d2 = length(p - vec2(half_d, 0.0)) - r2;
-    return max(d1, d2);
+    float ar1 = max(abs(r1), 1e-4);
+    float ar2 = max(abs(r2), 1e-4);
+
+    // Vertex positions are fixed at x = +/- half_d. The sign of r controls
+    // curvature direction: r > 0 is convex, r < 0 is concave.
+    vec2 c1 = vec2(-half_d + r1, 0.0);
+    vec2 c2 = vec2(half_d - r2, 0.0);
+
+    float side1 = length(p - c1) - ar1;
+    float side2 = length(p - c2) - ar2;
+
+    if (r1 < 0.0) side1 = -side1;
+    if (r2 < 0.0) side2 = -side2;
+
+    // Finite aperture keeps biconcave/meniscus forms bounded.
+    float aperture = (aperture_half_height > 0.0) ? aperture_half_height : (min(ar1, ar2) * 0.98);
+    float cap = abs(p.y) - aperture;
+
+    return max(max(side1, side2), cap);
 }
 
 float sdf_ngon(vec2 p, float r, float sides)
@@ -156,7 +172,7 @@ float eval_primitive(vec2 local_p, gpu_sdf_primitive prim)
         case PRIM_BOX:     return sdf_box(local_p, prim.params.xy);
         case PRIM_CAPSULE: return sdf_capsule(local_p, prim.params.x, prim.params.y);
         case PRIM_SEGMENT: return sdf_segment(local_p, prim.params.x, prim.params.y);
-        case PRIM_LENS:    return sdf_lens(local_p, prim.params.x, prim.params.y, prim.params.z);
+        case PRIM_LENS:    return sdf_lens(local_p, prim.params.x, prim.params.y, prim.params.z, prim.params.w);
         case PRIM_NGON:    return sdf_ngon(local_p, prim.params.x, prim.params.y);
         default:           return 1e10;
     }
@@ -197,7 +213,8 @@ vec2 calc_normal(vec2 p, int num_prims)
 vec2 sample_cosine_half_circle(inout rng_state rng, vec2 normal)
 {
     float u = rand_float(rng);
-    float theta = u * PI - HALF_PI;
+    // Inverse CDF for p(theta) = 0.5 * cos(theta), theta in [-pi/2, pi/2].
+    float theta = asin(2.0 * u - 1.0);
     vec2 local_dir = vec2(cos(theta), sin(theta));
     vec2 tangent = vec2(-normal.y, normal.x);
     return local_dir.x * normal + local_dir.y * tangent;

@@ -130,12 +130,27 @@ inline float sdf_segment(float2 p, float half_len, float thickness)
     return length(p) - thickness;
 }
 
-inline float sdf_lens(float2 p, float r1, float r2, float d)
+inline float sdf_lens(float2 p, float r1, float r2, float d, float aperture_half_height)
 {
     float half_d = d * 0.5f;
-    float d1 = length(p - float2{-half_d, 0.0f}) - r1;
-    float d2 = length(p - float2{half_d, 0.0f}) - r2;
-    return std::max(d1, d2);
+    float ar1 = std::max(std::abs(r1), 1e-4f);
+    float ar2 = std::max(std::abs(r2), 1e-4f);
+
+    // Vertex positions are fixed at x = +/- half_d. The sign of r controls
+    // curvature direction: r > 0 is convex, r < 0 is concave.
+    float2 c1 = {-half_d + r1, 0.0f};
+    float2 c2 = {half_d - r2, 0.0f};
+
+    float side1 = length(p - c1) - ar1;
+    float side2 = length(p - c2) - ar2;
+
+    if (r1 < 0.0f) side1 = -side1;
+    if (r2 < 0.0f) side2 = -side2;
+
+    float aperture = (aperture_half_height > 0.0f) ? aperture_half_height : (std::min(ar1, ar2) * 0.98f);
+    float cap = std::abs(p.y) - aperture;
+
+    return std::max(std::max(side1, side2), cap);
 }
 
 inline float sdf_ngon(float2 p, float r, float sides)
@@ -158,7 +173,7 @@ inline float eval_primitive_cpu(float2 world_pos, const scene_primitive & sp)
         case prim_type::box:     return sdf_box(local_p, {sp.params.x, sp.params.y});
         case prim_type::capsule: return sdf_capsule(local_p, sp.params.x, sp.params.y);
         case prim_type::segment: return sdf_segment(local_p, sp.params.x, sp.params.y);
-        case prim_type::lens:    return sdf_lens(local_p, sp.params.x, sp.params.y, sp.params.z);
+        case prim_type::lens:    return sdf_lens(local_p, sp.params.x, sp.params.y, sp.params.z, sp.params.w);
         case prim_type::ngon:    return sdf_ngon(local_p, sp.params.x, sp.params.y);
         default:                 return 1e10f;
     }
@@ -561,7 +576,7 @@ void sample_2d_pathtracer::on_draw()
 
         uint32_t groups_x = (width + 15) / 16;
         uint32_t groups_y = (height + 15) / 16;
-        trace_compute.dispatch_and_barrier(groups_x, groups_y, 1, GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+        trace_compute.dispatch_and_barrier(groups_x, groups_y, 1, GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
         trace_compute.unbind();
 
         frame_index++;
@@ -743,9 +758,10 @@ void sample_2d_pathtracer::on_draw()
                     changed |= ImGui::DragFloat("Thickness", &sp.params.y, 0.005f, 0.005f, 1.0f);
                     break;
                 case prim_type::lens:
-                    changed |= ImGui::DragFloat("Radius 1", &sp.params.x, 0.01f, 0.1f, 5.0f);
-                    changed |= ImGui::DragFloat("Radius 2", &sp.params.y, 0.01f, 0.1f, 5.0f);
+                    changed |= ImGui::DragFloat("Radius 1", &sp.params.x, 0.01f, -5.0f, 5.0f);
+                    changed |= ImGui::DragFloat("Radius 2", &sp.params.y, 0.01f, -5.0f, 5.0f);
                     changed |= ImGui::DragFloat("Distance", &sp.params.z, 0.01f, 0.0f, 5.0f);
+                    changed |= ImGui::DragFloat("Aperture (0=auto)", &sp.params.w, 0.01f, 0.0f, 5.0f);
                     break;
                 case prim_type::ngon:
                     changed |= ImGui::DragFloat("Radius##ngon", &sp.params.x, 0.01f, 0.01f, 5.0f);
@@ -1020,6 +1036,69 @@ void sample_2d_pathtracer::on_draw()
             screen.params = {0.1f, 2.0f, 0.0f, 0.0f};
             screen.albedo = {0.9f, 0.9f, 0.9f};
             scene.push_back(screen);
+
+            scene_dirty = true;
+        }
+
+        if (ImGui::Button("Nested Media Stack"))
+        {
+            scene.clear();
+            selected_index = -1;
+
+            // Narrow emissive source on the left to produce refractive caustics
+            scene_primitive light;
+            light.type = prim_type::box;
+            light.mat = material_type::diffuse;
+            light.position = {-5.5f, 0.0f};
+            light.params = {0.1f, 1.8f, 0.0f, 0.0f};
+            light.albedo = {1.0f, 1.0f, 1.0f};
+            light.emission = 24.0f;
+            light.emission_half_angle = static_cast<float>(POLYMER_PI) * 0.45f;
+            scene.push_back(light);
+
+            // Outer medium (water): rays should enter and exit this shell.
+            scene_primitive outer_water;
+            outer_water.type = prim_type::circle;
+            outer_water.mat = material_type::water;
+            outer_water.position = {0.0f, 0.0f};
+            outer_water.params = {1.85f, 0.0f, 0.0f, 0.0f};
+            outer_water.albedo = {1.0f, 1.0f, 1.0f};
+            outer_water.ior_base = 1.333f;
+            outer_water.cauchy_b = 0.003f;
+            outer_water.cauchy_c = 0.0f;
+            outer_water.absorption = {0.10f, 0.03f, 0.01f};
+            scene.push_back(outer_water);
+
+            // Inner medium (glass): stack depth becomes 2 while inside this core.
+            scene_primitive inner_glass;
+            inner_glass.type = prim_type::circle;
+            inner_glass.mat = material_type::glass;
+            inner_glass.position = {0.0f, 0.0f};
+            inner_glass.params = {0.95f, 0.0f, 0.0f, 0.0f};
+            inner_glass.albedo = {1.0f, 1.0f, 1.0f};
+            inner_glass.ior_base = 1.52f;
+            inner_glass.cauchy_b = 0.006f;
+            inner_glass.cauchy_c = 0.0f;
+            inner_glass.absorption = {0.0f, 0.0f, 0.0f};
+            scene.push_back(inner_glass);
+
+            // A diffuse receiver screen on the right to observe focus/chromatic split.
+            scene_primitive screen;
+            screen.type = prim_type::box;
+            screen.mat = material_type::diffuse;
+            screen.position = {5.5f, 0.0f};
+            screen.params = {0.12f, 3.0f, 0.0f, 0.0f};
+            screen.albedo = {0.9f, 0.9f, 0.9f};
+            scene.push_back(screen);
+
+            // Ground reference plane for extra bounce context.
+            scene_primitive floor;
+            floor.type = prim_type::box;
+            floor.mat = material_type::diffuse;
+            floor.position = {0.0f, -3.2f};
+            floor.params = {6.0f, 0.25f, 0.0f, 0.0f};
+            floor.albedo = {0.85f, 0.85f, 0.85f};
+            scene.push_back(floor);
 
             scene_dirty = true;
         }

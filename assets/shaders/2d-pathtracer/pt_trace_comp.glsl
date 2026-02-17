@@ -15,6 +15,7 @@ uniform vec2 u_camera_center;
 uniform vec2 u_resolution;
 
 #define MAX_EMITTERS 8
+#define MAX_MEDIUM_STACK 8
 
 // ============================================================================
 // Ray March
@@ -171,8 +172,8 @@ vec3 trace_path(vec2 origin, vec2 dir, int num_prims, inout rng_state rng)
 {
     vec3 throughput = vec3(1.0);
     vec3 radiance = vec3(0.0);
-    bool inside_medium = false;
-    int inside_prim_id = -1;
+    int medium_stack[MAX_MEDIUM_STACK];
+    int medium_count = 0;
     bool prev_was_diffuse = false;
     float prev_bsdf_pdf = 0.0;
 
@@ -195,7 +196,7 @@ vec3 trace_path(vec2 origin, vec2 dir, int num_prims, inout rng_state rng)
 
     for (int bounce = 0; bounce < u_max_bounces; ++bounce)
     {
-        march_result mr = ray_march(origin, dir, num_prims, inside_medium);
+        march_result mr = ray_march(origin, dir, num_prims, medium_count > 0);
 
         if (!mr.hit)
         {
@@ -209,9 +210,10 @@ vec3 trace_path(vec2 origin, vec2 dir, int num_prims, inout rng_state rng)
         if (dot(normal, dir) > 0.0) normal = -normal;
 
         // Beer-Lambert absorption
-        if (inside_medium && mr.total_dist > 0.0)
+        if (medium_count > 0 && mr.total_dist > 0.0)
         {
-            throughput *= exp(-primitives[inside_prim_id].absorption * mr.total_dist);
+            int current_medium_id = medium_stack[medium_count - 1];
+            throughput *= exp(-primitives[current_medium_id].absorption * mr.total_dist);
         }
 
         // Emission
@@ -303,10 +305,45 @@ vec3 trace_path(vec2 origin, vec2 dir, int num_prims, inout rng_state rng)
         {
             hit_dispersive = true;
 
-            float ior = cauchy_ior(prim.ior_base, prim.cauchy_b, prim.cauchy_c, wavelength_um);
-            bool entering = !inside_medium || inside_prim_id != mr.prim_id;
-            float n1 = entering ? 1.0 : ior;
-            float n2 = entering ? ior : 1.0;
+            float ior_hit = cauchy_ior(prim.ior_base, prim.cauchy_b, prim.cauchy_c, wavelength_um);
+            bool front_face = dot(dir, outward_normal) < 0.0;
+
+            float n1 = 1.0;
+            if (medium_count > 0)
+            {
+                int current_medium_id = medium_stack[medium_count - 1];
+                gpu_sdf_primitive current_medium = primitives[current_medium_id];
+                n1 = cauchy_ior(current_medium.ior_base, current_medium.cauchy_b, current_medium.cauchy_c, wavelength_um);
+            }
+
+            float n2 = n1;
+            if (front_face)
+            {
+                n2 = ior_hit;
+            }
+            else
+            {
+                int exit_index = -1;
+                for (int i = medium_count - 1; i >= 0; --i)
+                {
+                    if (medium_stack[i] == mr.prim_id)
+                    {
+                        exit_index = i;
+                        break;
+                    }
+                }
+
+                if (exit_index > 0)
+                {
+                    int outer_id = medium_stack[exit_index - 1];
+                    gpu_sdf_primitive outer_medium = primitives[outer_id];
+                    n2 = cauchy_ior(outer_medium.ior_base, outer_medium.cauchy_b, outer_medium.cauchy_c, wavelength_um);
+                }
+                else
+                {
+                    n2 = 1.0;
+                }
+            }
 
             float cos_theta = abs(dot(dir, normal));
             float R = fresnel_schlick(cos_theta, n1, n2);
@@ -324,15 +361,34 @@ vec3 trace_path(vec2 origin, vec2 dir, int num_prims, inout rng_state rng)
                 dir = normalize(refracted_dir);
                 origin = mr.pos - normal * EPSILON_SPAWN;
 
-                if (entering)
+                if (front_face)
                 {
-                    inside_medium = true;
-                    inside_prim_id = mr.prim_id;
+                    if (medium_count < MAX_MEDIUM_STACK)
+                    {
+                        medium_stack[medium_count] = mr.prim_id;
+                        medium_count++;
+                    }
                 }
                 else
                 {
-                    inside_medium = false;
-                    inside_prim_id = -1;
+                    int exit_index = -1;
+                    for (int i = medium_count - 1; i >= 0; --i)
+                    {
+                        if (medium_stack[i] == mr.prim_id)
+                        {
+                            exit_index = i;
+                            break;
+                        }
+                    }
+
+                    if (exit_index >= 0)
+                    {
+                        for (int i = exit_index; i < medium_count - 1; ++i)
+                        {
+                            medium_stack[i] = medium_stack[i + 1];
+                        }
+                        medium_count--;
+                    }
                 }
             }
             prev_was_diffuse = false;
@@ -342,6 +398,7 @@ vec3 trace_path(vec2 origin, vec2 dir, int num_prims, inout rng_state rng)
         if (bounce > 2)
         {
             float p_survive = min(max(throughput.x, max(throughput.y, throughput.z)), 0.95);
+            if (p_survive <= 1e-4) break;
             if (rand_float(rng) > p_survive) break;
             throughput /= p_survive;
         }
