@@ -67,6 +67,17 @@ uint pcg_hash(uint state)
     return (word >> 22u) ^ word;
 }
 
+// 32-bit avalanche mixer (Murmur3-style finalizer constants).
+uint mix_bits(uint x)
+{
+    x ^= x >> 16u;
+    x *= 0x7feb352du;
+    x ^= x >> 15u;
+    x *= 0x846ca68bu;
+    x ^= x >> 16u;
+    return x;
+}
+
 struct rng_state
 {
     uint s;
@@ -81,7 +92,12 @@ float rand_float(inout rng_state rng)
 rng_state rng_init(uvec2 pixel, uint frame)
 {
     rng_state rng;
-    rng.s = pcg_hash(pixel.x * 1973u + pixel.y * 9277u + frame * 26699u);
+    uint seed = (pixel.x * 0x9e3779b9u) ^ (pixel.y * 0x85ebca6bu) ^ (frame * 0xc2b2ae35u);
+    seed ^= (pixel.x >> 16u) ^ (pixel.y << 16u);
+    seed = mix_bits(seed);
+    rng.s = pcg_hash(seed);
+    rng.s = pcg_hash(rng.s ^ 0xa511e9b3u);
+    if (rng.s == 0u) rng.s = 0x6d2b79f5u;
     return rng;
 }
 

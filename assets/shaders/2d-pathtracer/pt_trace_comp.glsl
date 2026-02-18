@@ -9,6 +9,8 @@ uniform int u_frame_index;
 uniform int u_max_bounces;
 uniform int u_samples_per_frame;
 uniform float u_environment_intensity;
+uniform int u_use_environment_map;
+uniform sampler1D u_environment_map;
 uniform float u_firefly_clamp;
 uniform float u_camera_zoom;
 uniform vec2 u_camera_center;
@@ -200,7 +202,14 @@ vec3 trace_path(vec2 origin, vec2 dir, int num_prims, inout rng_state rng, vec2 
 
         if (!mr.hit)
         {
-            radiance += throughput * u_environment_intensity;
+            vec3 env = vec3(u_environment_intensity);
+            if (u_use_environment_map != 0)
+            {
+                float theta = atan(dir.y, dir.x);
+                float u = fract(theta / TWO_PI + 1.0);
+                env = texture(u_environment_map, u).rgb * u_environment_intensity;
+            }
+            radiance += throughput * env;
             break;
         }
 
@@ -432,7 +441,6 @@ void main()
     if (pixel.x >= size.x || pixel.y >= size.y) return;
 
     vec2 cp_offset = cranley_patterson_offset(uvec2(pixel));
-    rng_state rng = rng_init(uvec2(pixel), uint(u_frame_index));
 
     vec3 frame_radiance = vec3(0.0);
     float frame_count = 0.0;
@@ -441,6 +449,7 @@ void main()
     for (int s = 0; s < u_samples_per_frame; ++s)
     {
         int sample_base = u_frame_index * u_samples_per_frame + s;
+        rng_state sample_rng = rng_init(uvec2(pixel), uint(sample_base));
 
         vec2 jitter = lds_sample(cp_offset, sample_base, u_max_bounces + 2, 0);
         float jx = jitter.x - 0.5;
@@ -455,7 +464,7 @@ void main()
         float theta = angle_xi.x * TWO_PI;
         vec2 ray_dir = vec2(cos(theta), sin(theta));
 
-        frame_radiance += trace_path(world_pos, ray_dir, u_num_prims, rng, cp_offset, sample_base);
+        frame_radiance += trace_path(world_pos, ray_dir, u_num_prims, sample_rng, cp_offset, sample_base);
         frame_count += 1.0;
     }
 

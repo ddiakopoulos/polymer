@@ -1,14 +1,41 @@
 #pragma once
 
 #include "polymer-core/lib-polymer.hpp"
+#include "nlohmann/json.hpp"
 
 #include <cmath>
+#include <string>
+#include <type_traits>
 #include <vector>
 
 using namespace polymer;
 
 enum class prim_type : uint32_t { circle = 0, box = 1, capsule = 2, segment = 3, lens = 4, ngon = 5 };
 enum class material_type : uint32_t { diffuse = 0, mirror = 1, glass = 2, water = 3, diamond = 4 };
+using json = nlohmann::json;
+
+inline json normalize_json_format(const json & archive)
+{
+    if (archive.is_array())
+    {
+        json obj = json::object();
+        for (const auto & pair : archive)
+        {
+            if (pair.is_array() && pair.size() == 2 && pair[0].is_string())
+            {
+                obj[pair[0].get<std::string>()] = pair[1];
+            }
+        }
+        return obj;
+    }
+    return archive;
+}
+
+inline void to_json(json & archive, const prim_type & p) { archive = static_cast<uint32_t>(p); }
+inline void from_json(const json & archive, prim_type & p) { p = static_cast<prim_type>(archive.get<uint32_t>()); }
+
+inline void to_json(json & archive, const material_type & p) { archive = static_cast<uint32_t>(p); }
+inline void from_json(const json & archive, material_type & p) { p = static_cast<material_type>(archive.get<uint32_t>()); }
 
 // layout std430
 struct gpu_sdf_primitive
@@ -63,15 +90,71 @@ struct scene_primitive
     }
 };
 
+template<class F> inline void visit_fields(scene_primitive & o, F f)
+{
+    f("type", o.type);
+    f("material", o.mat);
+    f("position", o.position);
+    f("rotation", o.rotation);
+    f("params", o.params);
+    f("albedo", o.albedo);
+    f("emission", o.emission);
+    f("ior_base", o.ior_base);
+    f("cauchy_b", o.cauchy_b);
+    f("cauchy_c", o.cauchy_c);
+    f("absorption", o.absorption);
+    f("emission_half_angle", o.emission_half_angle);
+}
+
+inline void to_json(json & j, const scene_primitive & p)
+{
+    j = json::object();
+    visit_fields(const_cast<scene_primitive &>(p), [&j](const char * name, auto & field, auto... metadata) { j[name] = field; });
+}
+
+inline void from_json(const json & archive, scene_primitive & m)
+{
+    const json obj = archive;
+    visit_fields(m, [&obj](const char * name, auto & field, auto... metadata)
+    {
+        field = obj.at(name).get<std::remove_reference_t<decltype(field)>>();
+    });
+}
+
 struct path_tracer_config
 {
-    int32_t max_bounces         = 16;
-    int32_t samples_per_frame   = 2;
+    int32_t max_bounces         = 64;
+    int32_t samples_per_frame   = 1;
     float environment_intensity = 0.000f;
-    float firefly_clamp         = 128.0f;
+    float firefly_clamp         = 32.0f;
     float exposure              = 0.25;
     bool debug_overlay          = false;
 };
+
+template<class F> inline void visit_fields(path_tracer_config & o, F f)
+{
+    f("max_bounces", o.max_bounces);
+    f("samples_per_frame", o.samples_per_frame);
+    f("environment_intensity", o.environment_intensity);
+    f("firefly_clamp", o.firefly_clamp);
+    f("exposure", o.exposure);
+    f("debug_overlay", o.debug_overlay);
+}
+
+inline void to_json(json & j, const path_tracer_config & p)
+{
+    j = json::object();
+    visit_fields(const_cast<path_tracer_config &>(p), [&j](const char * name, auto & field, auto... metadata) { j[name] = field; });
+}
+
+inline void from_json(const json & archive, path_tracer_config & m)
+{
+    const json obj = archive;
+    visit_fields(m, [&obj](const char * name, auto & field, auto... metadata)
+    {
+        if (obj.contains(name)) field = obj.at(name).get<std::remove_reference_t<decltype(field)>>();
+    });
+}
 struct scene_preset
 {
     const char * name;

@@ -6,7 +6,13 @@
 #include "polymer-engine/asset/asset-resolver.hpp"
 #include "polymer-engine/renderer/renderer-util.hpp"
 
+#include <algorithm>
+#include <cctype>
+#include <cfloat>
+#include <filesystem>
 #include <string>
+#include <type_traits>
+#include <vector>
 
 using namespace gui;
 
@@ -94,6 +100,33 @@ inline void uniform3f(const gl_shader_compute & shader, const std::string & name
     glProgramUniform3fv(shader.handle(), shader.get_uniform_location(name), 1, &v.x);
 }
 
+inline std::string find_asset_directory(const std::vector<std::string> & search_paths)
+{
+    for (const std::string & search_path : search_paths)
+    {
+        std::error_code ec;
+        if (!std::filesystem::exists(search_path, ec) || ec) continue;
+        if (!std::filesystem::is_directory(search_path, ec) || ec) continue;
+
+        try
+        {
+            for (auto it = std::filesystem::recursive_directory_iterator(search_path, std::filesystem::directory_options::skip_permission_denied, ec);
+                 it != std::filesystem::recursive_directory_iterator() && !ec;
+                 it.increment(ec))
+            {
+                const std::filesystem::path & entry_path = it->path();
+                if (std::filesystem::is_directory(entry_path, ec) && !ec && entry_path.filename() == "assets")
+                {
+                    return entry_path.string();
+                }
+            }
+        }
+        catch (const std::filesystem::filesystem_error &) { continue; }
+    }
+
+    return {};
+}
+
 struct camera_controller_2d
 {
     float2 center = {0.0f, 0.0f};
@@ -130,8 +163,204 @@ struct camera_controller_2d
     void update_cursor(float2 cursor) { last_cursor = cursor; }
 };
 
+enum class env_interp_mode : int32_t
+{
+    rgb_linear = 0,
+    hsv_shortest = 1,
+    hsv_longest = 2
+};
+
+inline void to_json(json & archive, const env_interp_mode & p) { archive = static_cast<int32_t>(p); }
+inline void from_json(const json & archive, env_interp_mode & p)
+{
+    const int32_t mode = archive.get<int32_t>();
+    p = static_cast<env_interp_mode>(std::clamp(mode, 0, 2));
+}
+
+struct env_gradient_stop
+{
+    float u = 0.0f; // [0, 1)
+    float3 color = {0.0f, 0.0f, 0.0f};
+};
+
+struct env_lobe
+{
+    float u = 0.0f; // [0, 1)
+    float width = 0.08f; // angular half-width in [0, 0.5]
+    float intensity = 2.0f;
+    float falloff = 0.7f; // maps to exponent
+    float3 color = {1.0f, 1.0f, 1.0f};
+};
+
+struct env_composer
+{
+    bool enabled = false;
+    int32_t resolution = 1024;
+    env_interp_mode interpolation = env_interp_mode::rgb_linear;
+    float gain = 1.0f;
+    std::vector<env_gradient_stop> stops;
+    std::vector<env_lobe> lobes;
+};
+
+template<class F> inline void visit_fields(camera_controller_2d & o, F f)
+{
+    f("center", o.center);
+    f("zoom", o.zoom);
+}
+
+inline void to_json(json & j, const camera_controller_2d & p)
+{
+    j = json::object();
+    visit_fields(const_cast<camera_controller_2d &>(p), [&j](const char * name, auto & field, auto... metadata) { j[name] = field; });
+}
+
+inline void from_json(const json & archive, camera_controller_2d & m)
+{
+    const json obj = archive;
+    visit_fields(m, [&obj](const char * name, auto & field, auto... metadata)
+    {
+        if (obj.contains(name)) field = obj.at(name).get<std::remove_reference_t<decltype(field)>>();
+    });
+}
+
+template<class F> inline void visit_fields(env_gradient_stop & o, F f)
+{
+    f("u", o.u);
+    f("color", o.color);
+}
+
+inline void to_json(json & j, const env_gradient_stop & p)
+{
+    j = json::object();
+    visit_fields(const_cast<env_gradient_stop &>(p), [&j](const char * name, auto & field, auto... metadata) { j[name] = field; });
+}
+
+inline void from_json(const json & archive, env_gradient_stop & m)
+{
+    const json obj = archive;
+    visit_fields(m, [&obj](const char * name, auto & field, auto... metadata)
+    {
+        if (obj.contains(name)) field = obj.at(name).get<std::remove_reference_t<decltype(field)>>();
+    });
+}
+
+template<class F> inline void visit_fields(env_lobe & o, F f)
+{
+    f("u", o.u);
+    f("width", o.width);
+    f("intensity", o.intensity);
+    f("falloff", o.falloff);
+    f("color", o.color);
+}
+
+inline void to_json(json & j, const env_lobe & p)
+{
+    j = json::object();
+    visit_fields(const_cast<env_lobe &>(p), [&j](const char * name, auto & field, auto... metadata) { j[name] = field; });
+}
+
+inline void from_json(const json & archive, env_lobe & m)
+{
+    const json obj = archive;
+    visit_fields(m, [&obj](const char * name, auto & field, auto... metadata)
+    {
+        if (obj.contains(name)) field = obj.at(name).get<std::remove_reference_t<decltype(field)>>();
+    });
+}
+
+template<class F> inline void visit_fields(env_composer & o, F f)
+{
+    f("enabled", o.enabled);
+    f("resolution", o.resolution);
+    f("interpolation", o.interpolation);
+    f("gain", o.gain);
+    f("stops", o.stops);
+    f("lobes", o.lobes);
+}
+
+inline void to_json(json & j, const env_composer & p)
+{
+    j = json::object();
+    visit_fields(const_cast<env_composer &>(p), [&j](const char * name, auto & field, auto... metadata) { j[name] = field; });
+}
+
+inline void from_json(const json & archive, env_composer & m)
+{
+    const json obj = archive;
+    visit_fields(m, [&obj](const char * name, auto & field, auto... metadata)
+    {
+        if (obj.contains(name)) field = obj.at(name).get<std::remove_reference_t<decltype(field)>>();
+    });
+}
+
+struct pathtracer_scene_archive
+{
+    int32_t version = 1;
+    path_tracer_config config;
+    camera_controller_2d camera;
+    std::vector<scene_primitive> primitives;
+    env_composer environment;
+};
+
+template<class F> inline void visit_fields(pathtracer_scene_archive & o, F f)
+{
+    f("version", o.version);
+    f("config", o.config);
+    f("camera", o.camera);
+    f("primitives", o.primitives);
+    f("environment", o.environment);
+}
+
+inline void to_json(json & j, const pathtracer_scene_archive & p)
+{
+    j = json::object();
+    visit_fields(const_cast<pathtracer_scene_archive &>(p), [&j](const char * name, auto & field, auto... metadata) { j[name] = field; });
+}
+
+inline void from_json(const json & archive, pathtracer_scene_archive & m)
+{
+    const json obj = archive;
+    visit_fields(m, [&obj](const char * name, auto & field, auto... metadata)
+    {
+        if (obj.contains(name)) field = obj.at(name).get<std::remove_reference_t<decltype(field)>>();
+    });
+}
+
+inline float wrap01(float x)
+{
+    float y = x - std::floor(x);
+    if (y < 0.0f) y += 1.0f;
+    return y;
+}
+
+inline float circular_distance01(float a, float b)
+{
+    float d = std::abs(a - b);
+    return std::min(d, 1.0f - d);
+}
+
+inline float3 ui_hsv_to_rgb(float3 hsv)
+{
+    float rgb[3];
+    ImGui::ColorConvertHSVtoRGB(hsv.x, hsv.y, hsv.z, rgb[0], rgb[1], rgb[2]);
+    return {rgb[0], rgb[1], rgb[2]};
+}
+
+inline float3 ui_rgb_to_hsv(float3 rgb)
+{
+    float hsv[3];
+    ImGui::ColorConvertRGBtoHSV(rgb.x, rgb.y, rgb.z, hsv[0], hsv[1], hsv[2]);
+    return {hsv[0], hsv[1], hsv[2]};
+}
+
 struct sample_2d_pathtracer final : public polymer_app
 {
+    struct discovered_scene
+    {
+        std::string name;
+        std::string path;
+    };
+
     std::unique_ptr<imgui_instance> imgui;
 
     path_tracer_config config;
@@ -142,13 +371,22 @@ struct sample_2d_pathtracer final : public polymer_app
     gl_texture_2d accumulation_texture;
     gl_buffer primitives_ssbo;
     gl_vertex_array_object empty_vao;
+    GLuint environment_texture_1d = 0;
 
     int32_t current_width = 0;
     int32_t current_height = 0;
     int32_t frame_index = 0;
     bool scene_dirty = true;
+    bool show_env_composer_modal = false;
+    bool env_dirty = true;
 
     camera_controller_2d camera;
+    env_composer env;
+    std::vector<float3> env_baked;
+    int32_t env_selected_stop = -1;
+    int32_t env_selected_lobe = -1;
+    bool env_dragging_stop = false;
+    bool env_dragging_lobe = false;
 
     int32_t selected_index = -1;
     bool left_mouse_down = false;
@@ -156,9 +394,17 @@ struct sample_2d_pathtracer final : public polymer_app
     float2 drag_offset = {0.0f, 0.0f};
 
     int32_t pending_add_type = -1;
+    std::string scene_io_status;
+    bool scene_io_error = false;
+    std::vector<discovered_scene> discovered_scenes;
+    int32_t selected_scene_file_index = -1;
+    std::string scenes_directory;
+    std::string scene_file_path;
+    bool open_export_scene_modal = false;
+    char export_scene_filename[128] = "scene.json";
 
     sample_2d_pathtracer();
-    ~sample_2d_pathtracer() = default;
+    ~sample_2d_pathtracer();
 
     int32_t pick_primitive(float2 world_pos) const;
 
@@ -168,6 +414,15 @@ struct sample_2d_pathtracer final : public polymer_app
     void clear_accumulation();
     void add_primitive(prim_type type, float2 world_pos);
     void export_exr();
+    bool save_scene_to_file(const std::string & path);
+    bool load_scene_from_file(const std::string & path);
+    void load_scenes();
+    void draw_export_scene_modal();
+    void setup_environment_texture();
+    void bake_environment_texture();
+    float3 eval_environment(float u) const;
+    void draw_environment_composer_modal();
+    void apply_environment_preset(int preset_id);
 
     void on_input(const app_input_event & event) override;
     void on_update(const app_update_event & e) override;
@@ -242,11 +497,29 @@ sample_2d_pathtracer::sample_2d_pathtracer() : polymer_app(1920, 1080, "pathtrac
     current_width = width;
     current_height = height;
 
+    env.enabled = false;
+    env.interpolation = env_interp_mode::hsv_shortest;
+    env.gain = 1.0f;
+    env.resolution = 1024;
+    apply_environment_preset(0);
+    setup_environment_texture();
+    bake_environment_texture();
+
     setup_accumulation(width, height);
 
     build_default_scene();
+    load_scenes();
 
     gl_check_error(__FILE__, __LINE__);
+}
+
+sample_2d_pathtracer::~sample_2d_pathtracer()
+{
+    if (environment_texture_1d != 0)
+    {
+        glDeleteTextures(1, &environment_texture_1d);
+        environment_texture_1d = 0;
+    }
 }
 
 void sample_2d_pathtracer::build_default_scene()
@@ -294,6 +567,176 @@ void sample_2d_pathtracer::clear_accumulation()
     frame_index = 0;
 }
 
+void sample_2d_pathtracer::setup_environment_texture()
+{
+    int32_t resolution = std::max(env.resolution, 64);
+    if (env.resolution != resolution) env.resolution = resolution;
+
+    if (environment_texture_1d != 0) glDeleteTextures(1, &environment_texture_1d);
+    glCreateTextures(GL_TEXTURE_1D, 1, &environment_texture_1d);
+    glTextureStorage1D(environment_texture_1d, 1, GL_RGB32F, resolution);
+    glTextureParameteri(environment_texture_1d, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTextureParameteri(environment_texture_1d, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTextureParameteri(environment_texture_1d, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+}
+
+float3 sample_hsv_interp(const float3 & c0, const float3 & c1, float t, env_interp_mode mode)
+{
+    if (mode == env_interp_mode::rgb_linear) return c0 * (1.0f - t) + c1 * t;
+
+    float3 h0 = ui_rgb_to_hsv(c0);
+    float3 h1 = ui_rgb_to_hsv(c1);
+    float dh = h1.x - h0.x;
+    if (dh > 0.5f) dh -= 1.0f;
+    if (dh < -0.5f) dh += 1.0f;
+
+    if (mode == env_interp_mode::hsv_longest)
+    {
+        if (std::abs(dh) < 0.5f)
+        {
+            dh = (dh >= 0.0f) ? (dh - 1.0f) : (dh + 1.0f);
+        }
+    }
+
+    float3 h = {
+        wrap01(h0.x + dh * t),
+        h0.y * (1.0f - t) + h1.y * t,
+        h0.z * (1.0f - t) + h1.z * t
+    };
+    return ui_hsv_to_rgb(h);
+}
+
+float3 sample_gradient_ring(const std::vector<env_gradient_stop> & stops, float u, env_interp_mode mode)
+{
+    if (stops.empty()) return {0.0f, 0.0f, 0.0f};
+    if (stops.size() == 1) return stops[0].color;
+
+    std::vector<size_t> sorted(stops.size());
+    for (size_t i = 0; i < stops.size(); ++i) sorted[i] = i;
+    std::sort(sorted.begin(), sorted.end(), [&](size_t a, size_t b) { return stops[a].u < stops[b].u; });
+
+    for (size_t i = 0; i < sorted.size(); ++i)
+    {
+        const env_gradient_stop & a = stops[sorted[i]];
+        const env_gradient_stop & b = stops[sorted[(i + 1) % sorted.size()]];
+        float ua = a.u;
+        float ub = b.u;
+        if (i + 1 == sorted.size()) ub += 1.0f;
+
+        float x = u;
+        if (x < ua) x += 1.0f;
+        if (x >= ua && x <= ub)
+        {
+            float t = (ub > ua) ? (x - ua) / (ub - ua) : 0.0f;
+            return sample_hsv_interp(a.color, b.color, t, mode);
+        }
+    }
+
+    return stops[sorted[0]].color;
+}
+
+float3 sample_lobes(const std::vector<env_lobe> & lobes, float u)
+{
+    float3 sum = {0.0f, 0.0f, 0.0f};
+    for (const env_lobe & l : lobes)
+    {
+        float w = std::max(l.width, 1e-4f);
+        float du = circular_distance01(u, l.u);
+        if (du > w) continue;
+
+        float x = 1.0f - du / w;
+        float exponent = 1.0f + l.falloff * 15.0f;
+        float shape = std::pow(std::max(x, 0.0f), exponent);
+        sum += l.color * (l.intensity * shape);
+    }
+    return sum;
+}
+
+float3 sample_2d_pathtracer::eval_environment(float u) const
+{
+    float3 grad = sample_gradient_ring(env.stops, wrap01(u), env.interpolation);
+    float3 lobe = sample_lobes(env.lobes, wrap01(u));
+    return grad + lobe;
+}
+
+void sample_2d_pathtracer::bake_environment_texture()
+{
+    env.resolution = std::max(env.resolution, 64);
+    if (environment_texture_1d == 0) setup_environment_texture();
+
+    env_baked.resize(static_cast<size_t>(env.resolution));
+    std::vector<float> upload(static_cast<size_t>(env.resolution) * 3);
+
+    for (int32_t i = 0; i < env.resolution; ++i)
+    {
+        float u = (static_cast<float>(i) + 0.5f) / static_cast<float>(env.resolution);
+        float3 c = eval_environment(u) * env.gain;
+        c = {
+            std::max(0.0f, static_cast<float>(c.x)),
+            std::max(0.0f, static_cast<float>(c.y)),
+            std::max(0.0f, static_cast<float>(c.z))
+        };
+        env_baked[static_cast<size_t>(i)] = c;
+        upload[3 * i + 0] = c.x;
+        upload[3 * i + 1] = c.y;
+        upload[3 * i + 2] = c.z;
+    }
+
+    glTextureSubImage1D(environment_texture_1d, 0, 0, env.resolution, GL_RGB, GL_FLOAT, upload.data());
+    env_dirty = false;
+}
+
+void sample_2d_pathtracer::apply_environment_preset(int preset_id)
+{
+    env.stops.clear();
+    env.lobes.clear();
+
+    switch (preset_id)
+    {
+        case 0: // Single hard sun
+            env.stops.push_back({0.00f, {0.01f, 0.01f, 0.02f}});
+            env.stops.push_back({0.50f, {0.02f, 0.02f, 0.03f}});
+            env.lobes.push_back({0.12f, 0.05f, 24.0f, 0.9f, {1.0f, 0.96f, 0.85f}});
+            break;
+        case 1: // Dual key
+            env.stops.push_back({0.00f, {0.00f, 0.00f, 0.00f}});
+            env.stops.push_back({0.50f, {0.015f, 0.02f, 0.03f}});
+            env.lobes.push_back({0.16f, 0.08f, 14.0f, 0.7f, {1.0f, 0.85f, 0.65f}});
+            env.lobes.push_back({0.63f, 0.07f, 10.0f, 0.8f, {0.55f, 0.75f, 1.0f}});
+            break;
+        case 2: // Gradient sky
+            env.stops.push_back({0.00f, {0.06f, 0.08f, 0.15f}});
+            env.stops.push_back({0.25f, {0.22f, 0.30f, 0.55f}});
+            env.stops.push_back({0.50f, {0.10f, 0.12f, 0.20f}});
+            env.stops.push_back({0.75f, {0.02f, 0.02f, 0.04f}});
+            break;
+        case 3: // Neon arc
+            env.stops.push_back({0.00f, {0.01f, 0.01f, 0.01f}});
+            env.stops.push_back({0.50f, {0.00f, 0.00f, 0.00f}});
+            env.lobes.push_back({0.31f, 0.18f, 11.0f, 0.25f, {0.2f, 1.0f, 0.8f}});
+            env.lobes.push_back({0.33f, 0.06f, 20.0f, 0.85f, {0.05f, 0.85f, 0.65f}});
+            break;
+        case 4: // Striped angular lights
+            env.stops.push_back({0.00f, {0.005f, 0.005f, 0.005f}});
+            env.stops.push_back({0.50f, {0.0f, 0.0f, 0.0f}});
+            for (int i = 0; i < 12; ++i)
+            {
+                float u = (static_cast<float>(i) + 0.25f) / 12.0f;
+                float hue = wrap01(0.1f + i * 0.083f);
+                float3 rgb = ui_hsv_to_rgb({hue, 0.7f, 1.0f});
+                env.lobes.push_back({u, 0.03f, 8.0f, 0.75f, rgb});
+            }
+            break;
+        default:
+            env.stops.push_back({0.0f, {0.0f, 0.0f, 0.0f}});
+            break;
+    }
+
+    env_selected_stop = env.stops.empty() ? -1 : 0;
+    env_selected_lobe = env.lobes.empty() ? -1 : 0;
+    env_dirty = true;
+}
+
 void sample_2d_pathtracer::export_exr()
 {
     std::vector<float> rgba(current_width * current_height * 4);
@@ -326,6 +769,209 @@ void sample_2d_pathtracer::export_exr()
 
     std::string filename = "pathtracer_" + make_timestamp() + ".exr";
     export_exr_image(filename, current_width, current_height, 3, rgb);
+}
+
+bool sample_2d_pathtracer::save_scene_to_file(const std::string & path)
+{
+    try
+    {
+        const std::filesystem::path output_path(path);
+        const std::filesystem::path parent = output_path.parent_path();
+        if (!parent.empty())
+        {
+            std::error_code ec;
+            std::filesystem::create_directories(parent, ec);
+        }
+
+        pathtracer_scene_archive archive;
+        archive.config = config;
+        archive.camera = camera;
+        archive.primitives = scene;
+        archive.environment = env;
+
+        json j = archive;
+        write_file_text(output_path.string(), j.dump(4));
+        scene_file_path = output_path.string();
+        scene_io_status = "Saved scene to " + path;
+        scene_io_error = false;
+        return true;
+    }
+    catch (const std::exception & e)
+    {
+        scene_io_status = std::string("Save failed: ") + e.what();
+        scene_io_error = true;
+        return false;
+    }
+}
+
+bool sample_2d_pathtracer::load_scene_from_file(const std::string & path)
+{
+    try
+    {
+        const std::string content = read_file_text(path);
+        const json j = json::parse(content);
+        const pathtracer_scene_archive archive = j.get<pathtracer_scene_archive>();
+
+        config = archive.config;
+        camera = archive.camera;
+        scene = archive.primitives;
+        env = archive.environment;
+        env.resolution = std::max(env.resolution, 64);
+        setup_environment_texture();
+        env_selected_stop = env.stops.empty() ? -1 : 0;
+        env_selected_lobe = env.lobes.empty() ? -1 : 0;
+        env_dragging_stop = false;
+        env_dragging_lobe = false;
+        selected_index = -1;
+        pending_add_type = -1;
+        scene_dirty = true;
+        env_dirty = true;
+        clear_accumulation();
+
+        scene_file_path = path;
+        scene_io_status = "Loaded scene from " + path;
+        scene_io_error = false;
+        return true;
+    }
+    catch (const std::exception & e)
+    {
+        scene_io_status = std::string("Load failed: ") + e.what();
+        scene_io_error = true;
+        return false;
+    }
+}
+
+void sample_2d_pathtracer::load_scenes()
+{
+    discovered_scenes.clear();
+
+    std::vector<std::string> search_paths =
+    {
+        std::filesystem::current_path().string(),
+        std::filesystem::current_path().parent_path().string(),
+        std::filesystem::current_path().parent_path().parent_path().string(),
+        std::filesystem::current_path().parent_path().parent_path().parent_path().string()
+    };
+
+    const std::string asset_dir = find_asset_directory(search_paths);
+    if (asset_dir.empty())
+    {
+        scene_io_status = "Scene discovery failed: assets directory not found";
+        scene_io_error = true;
+        selected_scene_file_index = -1;
+        return;
+    }
+
+    const std::filesystem::path scene_dir = (std::filesystem::path(asset_dir) / ".." / "samples" / "2d-pathtracer" / "scenes").lexically_normal();
+    scenes_directory = scene_dir.string();
+
+    if (!std::filesystem::exists(scene_dir))
+    {
+        selected_scene_file_index = -1;
+        scene_io_status = "Scene directory not found: " + scenes_directory;
+        scene_io_error = true;
+        return;
+    }
+
+    for (const auto & entry : std::filesystem::directory_iterator(scene_dir))
+    {
+        if (!entry.is_regular_file()) continue;
+
+        std::string ext = entry.path().extension().string();
+        std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+        if (ext != ".json") continue;
+
+        discovered_scene scene_entry;
+        scene_entry.name = entry.path().stem().string();
+        scene_entry.path = entry.path().string();
+        discovered_scenes.push_back(std::move(scene_entry));
+    }
+
+    std::sort(discovered_scenes.begin(), discovered_scenes.end(), [](const discovered_scene & a, const discovered_scene & b) { return a.name < b.name; });
+
+    if (discovered_scenes.empty())
+    {
+        selected_scene_file_index = -1;
+        scene_io_status = "No JSON scenes found in " + scenes_directory;
+        scene_io_error = false;
+        return;
+    }
+
+    int32_t matched_index = -1;
+    if (!scene_file_path.empty())
+    {
+        for (int32_t i = 0; i < static_cast<int32_t>(discovered_scenes.size()); ++i)
+        {
+            if (discovered_scenes[i].path == scene_file_path)
+            {
+                matched_index = i;
+                break;
+            }
+        }
+    }
+
+    if (matched_index >= 0)
+    {
+        selected_scene_file_index = matched_index;
+    }
+    else
+    {
+        int32_t previous_index = selected_scene_file_index;
+        selected_scene_file_index = std::clamp(previous_index, 0, static_cast<int32_t>(discovered_scenes.size()) - 1);
+    }
+    scene_io_status = "Found " + std::to_string(discovered_scenes.size()) + " scene files";
+    scene_io_error = false;
+}
+
+void sample_2d_pathtracer::draw_export_scene_modal()
+{
+    if (open_export_scene_modal)
+    {
+        ImGui::OpenPopup("Export Scene");
+        open_export_scene_modal = false;
+    }
+
+    bool open = true;
+    if (!ImGui::BeginPopupModal("Export Scene", &open, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        return;
+    }
+
+    ImGui::Text("Directory:");
+    ImGui::TextWrapped("%s", scenes_directory.empty() ? "<unresolved>" : scenes_directory.c_str());
+    ImGui::InputText("Filename", export_scene_filename, IM_ARRAYSIZE(export_scene_filename));
+
+    if (ImGui::Button("Save"))
+    {
+        std::string filename = export_scene_filename;
+        if (filename.empty())
+        {
+            scene_io_status = "Export failed: filename is empty";
+            scene_io_error = true;
+        }
+        else if (scenes_directory.empty())
+        {
+            scene_io_status = "Export failed: scenes directory unresolved";
+            scene_io_error = true;
+        }
+        else
+        {
+            std::filesystem::path output = std::filesystem::path(scenes_directory) / filename;
+            if (output.extension().string().empty()) output.replace_extension(".json");
+            scene_file_path = output.string();
+            save_scene_to_file(scene_file_path);
+            load_scenes();
+        }
+
+        ImGui::CloseCurrentPopup();
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Cancel"))
+    {
+        ImGui::CloseCurrentPopup();
+    }
+
+    ImGui::EndPopup();
 }
 
 void sample_2d_pathtracer::on_window_resize(int2 size)
@@ -418,9 +1064,256 @@ void sample_2d_pathtracer::on_input(const app_input_event & event)
 
 void sample_2d_pathtracer::on_update(const app_update_event & e) {}
 
+void sample_2d_pathtracer::draw_environment_composer_modal()
+{
+    if (show_env_composer_modal)
+    {
+        ImGui::OpenPopup("Environment Composer");
+        show_env_composer_modal = false;
+    }
+
+    bool open = true;
+    if (!ImGui::BeginPopupModal("Environment Composer", &open, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        return;
+    }
+
+    bool changed = false;
+
+    changed |= ImGui::Checkbox("Enable Environment Map", &env.enabled);
+    changed |= ImGui::DragFloat("Composer Gain", &env.gain, 0.01f, 0.0f, 50.0f, "%.3f");
+
+    int32_t new_resolution = env.resolution;
+    if (ImGui::SliderInt("Resolution", &new_resolution, 128, 4096))
+    {
+        if (new_resolution != env.resolution)
+        {
+            env.resolution = new_resolution;
+            setup_environment_texture();
+            changed = true;
+        }
+    }
+
+    const char * interp_items[] = {"RGB linear", "HSV shortest", "HSV longest"};
+    int interp = static_cast<int>(env.interpolation);
+    if (ImGui::Combo("Interpolation", &interp, interp_items, IM_ARRAYSIZE(interp_items)))
+    {
+        env.interpolation = static_cast<env_interp_mode>(interp);
+        changed = true;
+    }
+
+    ImGui::SeparatorText("Presets");
+    if (ImGui::Button("Single Hard Sun")) { apply_environment_preset(0); changed = true; }
+    ImGui::SameLine();
+    if (ImGui::Button("Dual Key")) { apply_environment_preset(1); changed = true; }
+    ImGui::SameLine();
+    if (ImGui::Button("Gradient Sky")) { apply_environment_preset(2); changed = true; }
+    if (ImGui::Button("Neon Arc")) { apply_environment_preset(3); changed = true; }
+    ImGui::SameLine();
+    if (ImGui::Button("Striped Angular")) { apply_environment_preset(4); changed = true; }
+
+    if (env_dirty) bake_environment_texture();
+
+    ImGui::SeparatorText("Preview");
+    ImVec2 preview_pos = ImGui::GetCursorScreenPos();
+    float preview_w = 700.0f;
+    float preview_h = 36.0f;
+    ImGui::InvisibleButton("##env_preview", ImVec2(preview_w, preview_h));
+    ImDrawList * dl = ImGui::GetWindowDrawList();
+    dl->AddRectFilled(preview_pos, ImVec2(preview_pos.x + preview_w, preview_pos.y + preview_h), IM_COL32(20, 20, 20, 255));
+    if (!env_baked.empty())
+    {
+        for (int x = 0; x < static_cast<int>(preview_w); ++x)
+        {
+            float u = (x + 0.5f) / preview_w;
+            size_t idx = static_cast<size_t>(std::clamp(static_cast<int>(u * env.resolution), 0, env.resolution - 1));
+            const float3 c = env_baked[idx];
+            ImU32 col = IM_COL32(
+                static_cast<int>(std::clamp(static_cast<float>(c.x), 0.0f, 1.0f) * 255.0f),
+                static_cast<int>(std::clamp(static_cast<float>(c.y), 0.0f, 1.0f) * 255.0f),
+                static_cast<int>(std::clamp(static_cast<float>(c.z), 0.0f, 1.0f) * 255.0f),
+                255);
+            dl->AddLine(ImVec2(preview_pos.x + static_cast<float>(x), preview_pos.y),
+                        ImVec2(preview_pos.x + static_cast<float>(x), preview_pos.y + preview_h), col);
+        }
+    }
+
+    auto marker_to_u = [](float x, float x0, float w) { return std::clamp((x - x0) / w, 0.0f, 1.0f); };
+
+    ImGui::SeparatorText("Gradient Stops");
+    ImVec2 stop_pos = ImGui::GetCursorScreenPos();
+    float stop_h = 40.0f;
+    ImGui::InvisibleButton("##stop_lane", ImVec2(preview_w, stop_h));
+    bool stop_hovered = ImGui::IsItemHovered();
+    dl->AddRectFilled(stop_pos, ImVec2(stop_pos.x + preview_w, stop_pos.y + stop_h), IM_COL32(25, 25, 25, 255));
+    dl->AddRect(stop_pos, ImVec2(stop_pos.x + preview_w, stop_pos.y + stop_h), IM_COL32(70, 70, 70, 255));
+
+    for (int i = 0; i < static_cast<int>(env.stops.size()); ++i)
+    {
+        float x = stop_pos.x + env.stops[i].u * preview_w;
+        ImU32 col = IM_COL32(
+            static_cast<int>(std::clamp(static_cast<float>(env.stops[i].color.x), 0.0f, 1.0f) * 255.0f),
+            static_cast<int>(std::clamp(static_cast<float>(env.stops[i].color.y), 0.0f, 1.0f) * 255.0f),
+            static_cast<int>(std::clamp(static_cast<float>(env.stops[i].color.z), 0.0f, 1.0f) * 255.0f),
+            255);
+        dl->AddTriangleFilled(ImVec2(x, stop_pos.y + 3.0f), ImVec2(x - 6.0f, stop_pos.y + 14.0f), ImVec2(x + 6.0f, stop_pos.y + 14.0f), col);
+        if (i == env_selected_stop) dl->AddCircle(ImVec2(x, stop_pos.y + 21.0f), 6.0f, IM_COL32(255, 255, 255, 255), 16, 2.0f);
+    }
+
+    if (stop_hovered && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+    {
+        float u = marker_to_u(ImGui::GetIO().MousePos.x, stop_pos.x, preview_w);
+        env.stops.push_back({u, eval_environment(u)});
+        env_selected_stop = static_cast<int>(env.stops.size()) - 1;
+        changed = true;
+    }
+    if (stop_hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+    {
+        env_dragging_stop = false;
+        float best_px = 10.0f;
+        int best = -1;
+        for (int i = 0; i < static_cast<int>(env.stops.size()); ++i)
+        {
+            float x = stop_pos.x + env.stops[i].u * preview_w;
+            float d = std::abs(ImGui::GetIO().MousePos.x - x);
+            if (d < best_px) { best_px = d; best = i; }
+        }
+        env_selected_stop = best;
+        env_dragging_stop = (best >= 0);
+    }
+    if (env_dragging_stop)
+    {
+        if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && env_selected_stop >= 0)
+        {
+            env.stops[env_selected_stop].u = marker_to_u(ImGui::GetIO().MousePos.x, stop_pos.x, preview_w);
+            changed = true;
+        }
+        else
+        {
+            env_dragging_stop = false;
+        }
+    }
+    if (ImGui::Button("Add Stop"))
+    {
+        env.stops.push_back({0.5f, {1.0f, 1.0f, 1.0f}});
+        env_selected_stop = static_cast<int>(env.stops.size()) - 1;
+        changed = true;
+    }
+
+    ImGui::SeparatorText("Lobes");
+    ImVec2 lobe_pos = ImGui::GetCursorScreenPos();
+    float lobe_h = 46.0f;
+    ImGui::InvisibleButton("##lobe_lane", ImVec2(preview_w, lobe_h));
+    bool lobe_hovered = ImGui::IsItemHovered();
+    dl->AddRectFilled(lobe_pos, ImVec2(lobe_pos.x + preview_w, lobe_pos.y + lobe_h), IM_COL32(25, 25, 25, 255));
+    dl->AddRect(lobe_pos, ImVec2(lobe_pos.x + preview_w, lobe_pos.y + lobe_h), IM_COL32(70, 70, 70, 255));
+
+    for (int i = 0; i < static_cast<int>(env.lobes.size()); ++i)
+    {
+        const env_lobe & l = env.lobes[i];
+        float x = lobe_pos.x + l.u * preview_w;
+        float hw = std::max(l.width * preview_w, 2.0f);
+        ImU32 col = IM_COL32(
+            static_cast<int>(std::clamp(static_cast<float>(l.color.x), 0.0f, 1.0f) * 255.0f),
+            static_cast<int>(std::clamp(static_cast<float>(l.color.y), 0.0f, 1.0f) * 255.0f),
+            static_cast<int>(std::clamp(static_cast<float>(l.color.z), 0.0f, 1.0f) * 255.0f),
+            255);
+
+        dl->AddLine(ImVec2(x - hw, lobe_pos.y + 22.0f), ImVec2(x + hw, lobe_pos.y + 22.0f), col, 2.0f);
+        dl->AddCircleFilled(ImVec2(x, lobe_pos.y + 22.0f), 5.0f, col, 16);
+        if (i == env_selected_lobe) dl->AddCircle(ImVec2(x, lobe_pos.y + 22.0f), 8.0f, IM_COL32(255, 255, 255, 255), 16, 2.0f);
+    }
+
+    if (lobe_hovered && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+    {
+        float u = marker_to_u(ImGui::GetIO().MousePos.x, lobe_pos.x, preview_w);
+        env.lobes.push_back({u, 0.08f, 8.0f, 0.75f, {1.0f, 1.0f, 1.0f}});
+        env_selected_lobe = static_cast<int>(env.lobes.size()) - 1;
+        changed = true;
+    }
+    if (lobe_hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+    {
+        env_dragging_lobe = false;
+        float best_px = 10.0f;
+        int best = -1;
+        for (int i = 0; i < static_cast<int>(env.lobes.size()); ++i)
+        {
+            float x = lobe_pos.x + env.lobes[i].u * preview_w;
+            float d = std::abs(ImGui::GetIO().MousePos.x - x);
+            if (d < best_px) { best_px = d; best = i; }
+        }
+        env_selected_lobe = best;
+        env_dragging_lobe = (best >= 0);
+    }
+    if (env_dragging_lobe)
+    {
+        if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && env_selected_lobe >= 0)
+        {
+            env.lobes[env_selected_lobe].u = marker_to_u(ImGui::GetIO().MousePos.x, lobe_pos.x, preview_w);
+            changed = true;
+        }
+        else
+        {
+            env_dragging_lobe = false;
+        }
+    }
+    if (ImGui::Button("Add Lobe"))
+    {
+        env.lobes.push_back({0.5f, 0.08f, 6.0f, 0.75f, {1.0f, 1.0f, 1.0f}});
+        env_selected_lobe = static_cast<int>(env.lobes.size()) - 1;
+        changed = true;
+    }
+
+    ImGui::Separator();
+    ImGuiColorEditFlags color_flags = ImGuiColorEditFlags_Float;
+    if (env.interpolation != env_interp_mode::rgb_linear)
+    {
+        color_flags |= ImGuiColorEditFlags_InputHSV | ImGuiColorEditFlags_DisplayHSV;
+    }
+
+    if (env_selected_stop >= 0 && env_selected_stop < static_cast<int>(env.stops.size()))
+    {
+        env_gradient_stop & s = env.stops[env_selected_stop];
+        changed |= ImGui::SliderFloat("Stop U", &s.u, 0.0f, 1.0f);
+        changed |= ImGui::ColorEdit3("Stop Color", &s.color.x, color_flags);
+        if (ImGui::Button("Delete Stop"))
+        {
+            env.stops.erase(env.stops.begin() + env_selected_stop);
+            env_selected_stop = std::min(env_selected_stop, static_cast<int>(env.stops.size()) - 1);
+            changed = true;
+        }
+    }
+
+    if (env_selected_lobe >= 0 && env_selected_lobe < static_cast<int>(env.lobes.size()))
+    {
+        env_lobe & l = env.lobes[env_selected_lobe];
+        changed |= ImGui::SliderFloat("Lobe U", &l.u, 0.0f, 1.0f);
+        changed |= ImGui::SliderFloat("Width", &l.width, 0.001f, 0.5f, "%.4f");
+        changed |= ImGui::SliderFloat("Intensity", &l.intensity, 0.0f, 80.0f, "%.2f");
+        changed |= ImGui::SliderFloat("Falloff", &l.falloff, 0.0f, 1.0f, "%.3f");
+        changed |= ImGui::ColorEdit3("Lobe Color", &l.color.x, color_flags);
+        if (ImGui::Button("Delete Lobe"))
+        {
+            env.lobes.erase(env.lobes.begin() + env_selected_lobe);
+            env_selected_lobe = std::min(env_selected_lobe, static_cast<int>(env.lobes.size()) - 1);
+            changed = true;
+        }
+    }
+
+    if (changed)
+    {
+        env_dirty = true;
+        clear_accumulation();
+    }
+
+    if (ImGui::Button("Close")) ImGui::CloseCurrentPopup();
+    ImGui::EndPopup();
+}
+
 void sample_2d_pathtracer::on_draw()
 {
     glfwMakeContextCurrent(window);
+    glfwSwapInterval(0);  // disable vsync
 
     int width, height;
     glfwGetWindowSize(window, &width, &height);
@@ -437,6 +1330,12 @@ void sample_2d_pathtracer::on_draw()
         scene_dirty = false;
     }
 
+    if (env_dirty)
+    {
+        bake_environment_texture();
+        clear_accumulation();
+    }
+
     // path trace + accumulate
     {
         trace_compute.bind();
@@ -448,10 +1347,13 @@ void sample_2d_pathtracer::on_draw()
         trace_compute.uniform("u_max_bounces", config.max_bounces);
         trace_compute.uniform("u_samples_per_frame", config.samples_per_frame);
         trace_compute.uniform("u_environment_intensity", config.environment_intensity);
+        trace_compute.uniform("u_use_environment_map", env.enabled ? 1 : 0);
+        trace_compute.uniform("u_environment_map", 2);
         trace_compute.uniform("u_firefly_clamp", config.firefly_clamp);
         trace_compute.uniform("u_camera_zoom", camera.zoom);
         trace_compute.uniform("u_camera_center", camera.center);
         trace_compute.uniform("u_resolution", float2(static_cast<float>(width), static_cast<float>(height)));
+        glBindTextureUnit(2, environment_texture_1d);
 
         uint32_t groups_x = (width + 15) / 16;
         uint32_t groups_y = (height + 15) / 16;
@@ -508,6 +1410,13 @@ void sample_2d_pathtracer::on_draw()
         ImGui::SameLine();
         if (ImGui::Button("Export EXR")) export_exr();
         ImGui::Checkbox("Debug Overlay", &config.debug_overlay);
+    }
+
+    if (ImGui::CollapsingHeader("Environment Map", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        if (ImGui::Checkbox("Use 1D Environment Map", &env.enabled)) clear_accumulation();
+        ImGui::Text("Current profile: %d stops, %d lobes", static_cast<int>(env.stops.size()), static_cast<int>(env.lobes.size()));
+        if (ImGui::Button("Open Composer")) show_env_composer_modal = true;
     }
 
     if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_DefaultOpen))
@@ -672,7 +1581,57 @@ void sample_2d_pathtracer::on_draw()
         }
     }
 
+    if (ImGui::CollapsingHeader("Scene Export", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        ImGui::TextWrapped("Scene Directory: %s", scenes_directory.empty() ? "<unresolved>" : scenes_directory.c_str());
+        if (ImGui::Button("Refresh Scene List"))
+        {
+            load_scenes();
+        }
+
+        const char * preview = (selected_scene_file_index >= 0 && selected_scene_file_index < static_cast<int32_t>(discovered_scenes.size()))
+            ? discovered_scenes[selected_scene_file_index].name.c_str()
+            : "<none>";
+
+        if (ImGui::BeginCombo("Available Scenes", preview))
+        {
+            for (int32_t i = 0; i < static_cast<int32_t>(discovered_scenes.size()); ++i)
+            {
+                const bool is_selected = (i == selected_scene_file_index);
+                if (ImGui::Selectable(discovered_scenes[i].name.c_str(), is_selected)) selected_scene_file_index = i;
+                if (is_selected) ImGui::SetItemDefaultFocus();
+            }
+            ImGui::EndCombo();
+        }
+
+        if (ImGui::Button("Load Selected"))
+        {
+            if (selected_scene_file_index >= 0 && selected_scene_file_index < static_cast<int32_t>(discovered_scenes.size()))
+            {
+                load_scene_from_file(discovered_scenes[selected_scene_file_index].path);
+            }
+            else
+            {
+                scene_io_status = "Load failed: no scene selected";
+                scene_io_error = true;
+            }
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Export Scene"))
+        {
+            open_export_scene_modal = true;
+        }
+
+        if (!scene_io_status.empty())
+        {
+            const ImVec4 color = scene_io_error ? ImVec4(0.95f, 0.35f, 0.35f, 1.0f) : ImVec4(0.35f, 0.9f, 0.35f, 1.0f);
+            ImGui::TextColored(color, "%s", scene_io_status.c_str());
+        }
+    }
+
+    draw_export_scene_modal();
     gui::imgui_fixed_window_end();
+    draw_environment_composer_modal();
     imgui->end_frame();
 
     glfwSwapBuffers(window);
