@@ -44,7 +44,7 @@ void main()
         vec2 world_pos = vec2(ndc.x * aspect, ndc.y) / u_camera_zoom + u_camera_center;
 
         float pixel_size = 2.0 / (u_camera_zoom * u_resolution.y);
-        float outline_threshold = pixel_size * 2.0;
+        float outline_threshold = pixel_size * 8.0;
 
         for (int i = 0; i < u_num_prims; ++i)
         {

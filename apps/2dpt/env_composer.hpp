@@ -1,23 +1,41 @@
 #pragma once
 
-#include "scenes.hpp"
+#include "2dpt-utils.hpp"
+
 #include "polymer-gfx-gl/gl-loaders.hpp"
 #include "polymer-app-base/wrappers/gl-imgui.hpp"
 
-#include <algorithm>
-#include <cmath>
-#include <cstdint>
-#include <vector>
+inline float wrap01(float x)
+{
+    float y = x - std::floor(x);
+    if (y < 0.0f) y += 1.0f;
+    return y;
+}
 
-// ============================================================================
-// Types
-// ============================================================================
+inline float circular_distance01(float a, float b)
+{
+    float d = std::abs(a - b);
+    return std::min(d, 1.0f - d);
+}
+
+inline float3 ui_hsv_to_rgb(float3 hsv)
+{
+    float rgb[3];
+    ImGui::ColorConvertHSVtoRGB(hsv.x, hsv.y, hsv.z, rgb[0], rgb[1], rgb[2]);
+    return {rgb[0], rgb[1], rgb[2]};
+}
+
+inline float3 ui_rgb_to_hsv(float3 rgb)
+{
+    float hsv[3];
+    ImGui::ColorConvertRGBtoHSV(rgb.x, rgb.y, rgb.z, hsv[0], hsv[1], hsv[2]);
+    return {hsv[0], hsv[1], hsv[2]};
+}
 
 enum class env_interp_mode : int32_t
 {
     rgb_linear = 0,
     hsv_shortest = 1,
-    hsv_longest = 2
 };
 
 inline void to_json(json & archive, const env_interp_mode & p) { archive = static_cast<int32_t>(p); }
@@ -51,10 +69,6 @@ struct env_composer
     std::vector<env_gradient_stop> stops;
     std::vector<env_lobe> lobes;
 };
-
-// ============================================================================
-// JSON Serialization
-// ============================================================================
 
 template<class F> inline void visit_fields(env_gradient_stop & o, F f)
 {
@@ -126,10 +140,6 @@ inline void from_json(const json & archive, env_composer & m)
     });
 }
 
-// ============================================================================
-// UI Interaction State
-// ============================================================================
-
 struct env_composer_ui_state
 {
     bool show_modal = false;
@@ -138,41 +148,6 @@ struct env_composer_ui_state
     bool dragging_stop = false;
     bool dragging_lobe = false;
 };
-
-// ============================================================================
-// Math Helpers
-// ============================================================================
-
-inline float wrap01(float x)
-{
-    float y = x - std::floor(x);
-    if (y < 0.0f) y += 1.0f;
-    return y;
-}
-
-inline float circular_distance01(float a, float b)
-{
-    float d = std::abs(a - b);
-    return std::min(d, 1.0f - d);
-}
-
-inline float3 ui_hsv_to_rgb(float3 hsv)
-{
-    float rgb[3];
-    ImGui::ColorConvertHSVtoRGB(hsv.x, hsv.y, hsv.z, rgb[0], rgb[1], rgb[2]);
-    return {rgb[0], rgb[1], rgb[2]};
-}
-
-inline float3 ui_rgb_to_hsv(float3 rgb)
-{
-    float hsv[3];
-    ImGui::ColorConvertRGBtoHSV(rgb.x, rgb.y, rgb.z, hsv[0], hsv[1], hsv[2]);
-    return {hsv[0], hsv[1], hsv[2]};
-}
-
-// ============================================================================
-// Environment Evaluation
-// ============================================================================
 
 inline float3 sample_hsv_interp(const float3 & c0, const float3 & c1, float t, env_interp_mode mode)
 {
@@ -183,14 +158,6 @@ inline float3 sample_hsv_interp(const float3 & c0, const float3 & c1, float t, e
     float dh = h1.x - h0.x;
     if (dh > 0.5f) dh -= 1.0f;
     if (dh < -0.5f) dh += 1.0f;
-
-    if (mode == env_interp_mode::hsv_longest)
-    {
-        if (std::abs(dh) < 0.5f)
-        {
-            dh = (dh >= 0.0f) ? (dh - 1.0f) : (dh + 1.0f);
-        }
-    }
 
     float3 h = {
         wrap01(h0.x + dh * t),
@@ -253,10 +220,6 @@ inline float3 eval_environment(const env_composer & env, float u)
     return grad + lobe;
 }
 
-// ============================================================================
-// OpenGL Texture Management
-// ============================================================================
-
 inline void setup_environment_texture(env_composer & env, GLuint & texture_id)
 {
     int32_t resolution = std::max(env.resolution, 64);
@@ -296,10 +259,6 @@ inline void bake_environment_texture(env_composer & env, GLuint & texture_id, st
     glTextureSubImage1D(texture_id, 0, 0, env.resolution, GL_RGB, GL_FLOAT, upload.data());
     env_dirty = false;
 }
-
-// ============================================================================
-// Presets
-// ============================================================================
 
 inline void apply_environment_preset(env_composer & env, env_composer_ui_state & ui, int preset_id)
 {
@@ -351,9 +310,9 @@ inline void apply_environment_preset(env_composer & env, env_composer_ui_state &
     ui.selected_lobe = env.lobes.empty() ? -1 : 0;
 }
 
-// ============================================================================
-// ImGui Modal
-// ============================================================================
+/////////////////////////////////////
+// draw_environment_composer_modal //
+/////////////////////////////////////
 
 // Returns true if the caller should reset the path tracer accumulation buffer.
 inline bool draw_environment_composer_modal(env_composer & env, env_composer_ui_state & ui, std::vector<float3> & env_baked, GLuint & environment_texture_1d, bool & env_dirty)

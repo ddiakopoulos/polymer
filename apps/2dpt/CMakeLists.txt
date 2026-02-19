@@ -20,4 +20,4 @@ target_link_libraries(${PROJECT_NAME} "polymer-app-base")
 target_link_libraries(${PROJECT_NAME} "polymer-gfx-gl")
 target_link_libraries(${PROJECT_NAME} "polymer-engine")
 
-set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "samples")
+set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "apps")

@@ -1,3 +1,4 @@
+#include "2dpt-utils.hpp"
 #include "serialization.hpp"
 
 #include "polymer-gfx-gl/gl-loaders.hpp"
@@ -6,24 +7,15 @@
 #include "polymer-engine/asset/asset-resolver.hpp"
 #include "polymer-engine/renderer/renderer-util.hpp"
 
-#include <algorithm>
 #include <cctype>
 #include <cfloat>
-#include <filesystem>
-#include <string>
-#include <type_traits>
-#include <vector>
 
 using namespace gui;
 
-inline float2 rotate_2d(float2 p, float angle)
-{
-    float c = std::cos(angle);
-    float s = std::sin(angle);
-    return {c * p.x + s * p.y, -s * p.x + c * p.y};
+inline float sdf_circle(float2 p, float r) 
+{ 
+    return length(p) - r; 
 }
-
-inline float sdf_circle(float2 p, float r) { return length(p) - r; }
 
 inline float sdf_box(float2 p, float2 half_size)
 {
@@ -100,35 +92,7 @@ inline void uniform3f(const gl_shader_compute & shader, const std::string & name
     glProgramUniform3fv(shader.handle(), shader.get_uniform_location(name), 1, &v.x);
 }
 
-inline std::string find_asset_directory(const std::vector<std::string> & search_paths)
-{
-    for (const std::string & search_path : search_paths)
-    {
-        std::error_code ec;
-        if (!std::filesystem::exists(search_path, ec) || ec) continue;
-        if (!std::filesystem::is_directory(search_path, ec) || ec) continue;
-
-        try
-        {
-            for (auto it = std::filesystem::recursive_directory_iterator(search_path, std::filesystem::directory_options::skip_permission_denied, ec);
-                 it != std::filesystem::recursive_directory_iterator() && !ec;
-                 it.increment(ec))
-            {
-                const std::filesystem::path & entry_path = it->path();
-                if (std::filesystem::is_directory(entry_path, ec) && !ec && entry_path.filename() == "assets")
-                {
-                    return entry_path.string();
-                }
-            }
-        }
-        catch (const std::filesystem::filesystem_error &) { continue; }
-    }
-
-    return {};
-}
-
-
-struct sample_2d_pathtracer final : public polymer_app
+struct pathtracer_2d final : public polymer_app
 {
     struct discovered_scene
     {
@@ -172,12 +136,12 @@ struct sample_2d_pathtracer final : public polymer_app
     std::string scenes_directory;
     std::string scene_file_path;
     bool open_export_scene_modal = false;
-    char export_scene_filename[128] = "scene.json";
+    char export_scene_filename[128] = "new-scene.json";
 
-    sample_2d_pathtracer();
-    ~sample_2d_pathtracer();
+    pathtracer_2d();
+    ~pathtracer_2d();
 
-    int32_t pick_primitive(float2 world_pos) const;
+    int32_t pick_primitive(float2 world_pos, int32_t current_selection) const;
 
     void build_default_scene();
     void upload_scene();
@@ -196,24 +160,36 @@ struct sample_2d_pathtracer final : public polymer_app
     void on_window_resize(int2 size) override;
 };
 
-int32_t sample_2d_pathtracer::pick_primitive(float2 world_pos) const
+int32_t pathtracer_2d::pick_primitive(float2 world_pos, int32_t current_selection) const
 {
-    float best_dist = 1e10f;
-    int32_t best_id = -1;
+    const float pick_threshold = 0.5f;
+
+    std::vector<std::pair<float, int32_t>> candidates;
     for (int32_t i = 0; i < static_cast<int32_t>(scene.size()); ++i)
     {
         float d = eval_primitive_cpu(world_pos, scene[i]);
-        if (d < best_dist)
+        if (d < pick_threshold) candidates.push_back({d, i});
+    }
+
+    if (candidates.empty()) return -1;
+
+    std::sort(candidates.begin(), candidates.end());
+
+    if (current_selection < 0) return candidates[0].second;
+
+    for (int32_t c = 0; c < static_cast<int32_t>(candidates.size()); ++c)
+    {
+        if (candidates[c].second == current_selection)
         {
-            best_dist = d;
-            best_id = i;
+            int32_t next = (c + 1) % static_cast<int32_t>(candidates.size());
+            return candidates[next].second;
         }
     }
-    if (best_dist > 0.5f) return -1;
-    return best_id;
+
+    return candidates[0].second;
 }
 
-void sample_2d_pathtracer::add_primitive(prim_type type, float2 world_pos)
+void pathtracer_2d::add_primitive(prim_type type, float2 world_pos)
 {
     scene_primitive sp;
     sp.type = type;
@@ -240,7 +216,7 @@ void sample_2d_pathtracer::add_primitive(prim_type type, float2 world_pos)
     scene_dirty = true;
 }
 
-sample_2d_pathtracer::sample_2d_pathtracer() : polymer_app(1920, 1080, "pathtracer_2D", 1)
+pathtracer_2d::pathtracer_2d() : polymer_app(1920, 1080, "2dpt", 1)
 {
     glfwMakeContextCurrent(window);
 
@@ -279,7 +255,7 @@ sample_2d_pathtracer::sample_2d_pathtracer() : polymer_app(1920, 1080, "pathtrac
     gl_check_error(__FILE__, __LINE__);
 }
 
-sample_2d_pathtracer::~sample_2d_pathtracer()
+pathtracer_2d::~pathtracer_2d()
 {
     if (environment_texture_1d != 0)
     {
@@ -288,14 +264,13 @@ sample_2d_pathtracer::~sample_2d_pathtracer()
     }
 }
 
-void sample_2d_pathtracer::build_default_scene()
+void pathtracer_2d::build_default_scene()
 {
-    scene = scene_cornell_box();
     selected_index = -1;
     scene_dirty = true;
 }
 
-void sample_2d_pathtracer::upload_scene()
+void pathtracer_2d::upload_scene()
 {
     std::vector<gpu_sdf_primitive> gpu_prims;
     gpu_prims.reserve(scene.size());
@@ -316,7 +291,7 @@ void sample_2d_pathtracer::upload_scene()
     }
 }
 
-void sample_2d_pathtracer::setup_accumulation(int32_t width, int32_t height)
+void pathtracer_2d::setup_accumulation(int32_t width, int32_t height)
 {
     accumulation_texture = gl_texture_2d();
     accumulation_texture.setup(width, height, GL_RGBA32F, GL_RGBA, GL_FLOAT, nullptr);
@@ -326,7 +301,7 @@ void sample_2d_pathtracer::setup_accumulation(int32_t width, int32_t height)
     glTextureParameteri(accumulation_texture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 }
 
-void sample_2d_pathtracer::clear_accumulation()
+void pathtracer_2d::clear_accumulation()
 {
     float clear_val[4] = {0.0f, 0.0f, 0.0f, 0.0f};
     glClearTexImage(accumulation_texture, 0, GL_RGBA, GL_FLOAT, clear_val);
@@ -334,7 +309,7 @@ void sample_2d_pathtracer::clear_accumulation()
 }
 
 
-void sample_2d_pathtracer::export_exr()
+void pathtracer_2d::export_exr()
 {
     std::vector<float> rgba(current_width * current_height * 4);
     glGetTextureImage(accumulation_texture, 0, GL_RGBA, GL_FLOAT, static_cast<GLsizei>(rgba.size() * sizeof(float)), rgba.data());
@@ -368,7 +343,7 @@ void sample_2d_pathtracer::export_exr()
     export_exr_image(filename, current_width, current_height, 3, rgb);
 }
 
-bool sample_2d_pathtracer::save_scene_to_file(const std::string & path)
+bool pathtracer_2d::save_scene_to_file(const std::string & path)
 {
     try
     {
@@ -401,7 +376,7 @@ bool sample_2d_pathtracer::save_scene_to_file(const std::string & path)
     }
 }
 
-bool sample_2d_pathtracer::load_scene_from_file(const std::string & path)
+bool pathtracer_2d::load_scene_from_file(const std::string & path)
 {
     try
     {
@@ -413,7 +388,7 @@ bool sample_2d_pathtracer::load_scene_from_file(const std::string & path)
         camera = archive.camera;
         scene = archive.primitives;
         env = archive.environment;
-        env.resolution = std::max(env.resolution, 64);
+        env.resolution = std::max(env.resolution, 2048);
         setup_environment_texture(env, environment_texture_1d);
         env_ui.selected_stop = env.stops.empty() ? -1 : 0;
         env_ui.selected_lobe = env.lobes.empty() ? -1 : 0;
@@ -423,11 +398,13 @@ bool sample_2d_pathtracer::load_scene_from_file(const std::string & path)
         pending_add_type = -1;
         scene_dirty = true;
         env_dirty = true;
+
         clear_accumulation();
 
         scene_file_path = path;
         scene_io_status = "Loaded scene from " + path;
         scene_io_error = false;
+
         return true;
     }
     catch (const std::exception & e)
@@ -438,7 +415,7 @@ bool sample_2d_pathtracer::load_scene_from_file(const std::string & path)
     }
 }
 
-void sample_2d_pathtracer::load_scenes()
+void pathtracer_2d::load_scenes()
 {
     discovered_scenes.clear();
 
@@ -459,7 +436,7 @@ void sample_2d_pathtracer::load_scenes()
         return;
     }
 
-    const std::filesystem::path scene_dir = (std::filesystem::path(asset_dir) / ".." / "samples" / "2d-pathtracer" / "scenes").lexically_normal();
+    const std::filesystem::path scene_dir = (std::filesystem::path(asset_dir) / ".." / "apps" / "2dpt" / "scenes").lexically_normal();
     scenes_directory = scene_dir.string();
 
     if (!std::filesystem::exists(scene_dir))
@@ -520,7 +497,7 @@ void sample_2d_pathtracer::load_scenes()
     scene_io_error = false;
 }
 
-void sample_2d_pathtracer::draw_export_scene_modal()
+void pathtracer_2d::draw_export_scene_modal()
 {
     if (open_export_scene_modal)
     {
@@ -571,9 +548,10 @@ void sample_2d_pathtracer::draw_export_scene_modal()
     ImGui::EndPopup();
 }
 
-void sample_2d_pathtracer::on_window_resize(int2 size)
+void pathtracer_2d::on_window_resize(int2 size)
 {
     if (size.x == current_width && size.y == current_height) return;
+
     current_width = size.x;
     current_height = size.y;
 
@@ -582,7 +560,7 @@ void sample_2d_pathtracer::on_window_resize(int2 size)
     clear_accumulation();
 }
 
-void sample_2d_pathtracer::on_input(const app_input_event & event)
+void pathtracer_2d::on_input(const app_input_event & event)
 {
     imgui->update_input(event);
 
@@ -603,7 +581,7 @@ void sample_2d_pathtracer::on_input(const app_input_event & event)
             }
             else
             {
-                int32_t picked = pick_primitive(world);
+                int32_t picked = pick_primitive(world, selected_index);
                 selected_index = picked;
                 dragging = (picked >= 0);
                 if (dragging) drag_offset = scene[picked].position - world;
@@ -615,7 +593,6 @@ void sample_2d_pathtracer::on_input(const app_input_event & event)
         }
     }
 
-    // Right click drag: pan camera
     if (event.type == app_input_event::MOUSE && event.value.x == GLFW_MOUSE_BUTTON_RIGHT)
     {
         camera.panning = event.is_down();
@@ -659,10 +636,12 @@ void sample_2d_pathtracer::on_input(const app_input_event & event)
     }
 }
 
-void sample_2d_pathtracer::on_update(const app_update_event & e) {}
+void pathtracer_2d::on_update(const app_update_event & e) 
+{
+    // ... 
+}
 
-
-void sample_2d_pathtracer::on_draw()
+void pathtracer_2d::on_draw()
 {
     glfwMakeContextCurrent(window);
     glfwSwapInterval(0);  // disable vsync
@@ -919,27 +898,9 @@ void sample_2d_pathtracer::on_draw()
         }
     }
 
-    if (ImGui::CollapsingHeader("Presets", ImGuiTreeNodeFlags_DefaultOpen))
-    {
-        const std::vector<scene_preset> & presets = get_scene_presets();
-        for (size_t i = 0; i < presets.size(); ++i)
-        {
-            if (ImGui::Button(presets[i].name))
-            {
-                scene = presets[i].build();
-                selected_index = -1;
-                scene_dirty = true;
-            }
-        }
-    }
-
     if (ImGui::CollapsingHeader("Scene Export", ImGuiTreeNodeFlags_DefaultOpen))
     {
         ImGui::TextWrapped("Scene Directory: %s", scenes_directory.empty() ? "<unresolved>" : scenes_directory.c_str());
-        if (ImGui::Button("Refresh Scene List"))
-        {
-            load_scenes();
-        }
 
         const char * preview = (selected_scene_file_index >= 0 && selected_scene_file_index < static_cast<int32_t>(discovered_scenes.size()))
             ? discovered_scenes[selected_scene_file_index].name.c_str()
@@ -983,7 +944,9 @@ void sample_2d_pathtracer::on_draw()
 
     draw_export_scene_modal();
     gui::imgui_fixed_window_end();
+
     if (draw_environment_composer_modal(env, env_ui, env_baked, environment_texture_1d, env_dirty)) clear_accumulation();
+
     imgui->end_frame();
 
     glfwSwapBuffers(window);
@@ -995,7 +958,7 @@ int main(int argc, char * argv[])
 {
     try
     {
-        sample_2d_pathtracer app; app.main_loop();
+        pathtracer_2d app; app.main_loop();
     }
     catch (const std::exception & e)
     {
