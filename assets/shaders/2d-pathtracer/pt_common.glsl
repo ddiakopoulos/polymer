@@ -248,6 +248,21 @@ vec2 calc_normal(vec2 p, int num_prims)
     return normalize(vec2(dx, dy));
 }
 
+// Compute the outward normal for a single primitive, ignoring all other geometry.
+// Correct at nested shape boundaries where the global SDF gradient is dominated
+// by an enclosing medium. O(1) vs the O(n) calc_normal.
+vec2 calc_primitive_normal(vec2 p, int prim_id)
+{
+    gpu_sdf_primitive prim = primitives[prim_id];
+    vec2 lp_x1 = rotate_2d(p + vec2(EPSILON_GRAD, 0.0) - prim.position, -prim.rotation);
+    vec2 lp_x0 = rotate_2d(p - vec2(EPSILON_GRAD, 0.0) - prim.position, -prim.rotation);
+    vec2 lp_y1 = rotate_2d(p + vec2(0.0, EPSILON_GRAD) - prim.position, -prim.rotation);
+    vec2 lp_y0 = rotate_2d(p - vec2(0.0, EPSILON_GRAD) - prim.position, -prim.rotation);
+    float dx = eval_primitive(lp_x1, prim) - eval_primitive(lp_x0, prim);
+    float dy = eval_primitive(lp_y1, prim) - eval_primitive(lp_y0, prim);
+    return normalize(vec2(dx, dy));
+}
+
 // ============================================================================
 // Sampling Helpers
 // ============================================================================

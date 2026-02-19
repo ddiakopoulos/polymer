@@ -31,7 +31,11 @@ struct march_result
     int prim_id;
 };
 
-march_result ray_march(vec2 origin, vec2 dir, int num_prims, bool inside)
+// current_medium_id: index of the medium the ray is currently travelling through,
+// or -1 when the ray is in vacuum. When inside a medium the step size is computed
+// as min(abs(sdf_i)) over all primitives so that we correctly approach both the
+// exit wall of the current medium AND any nested surfaces inside it.
+march_result ray_march(vec2 origin, vec2 dir, int num_prims, int current_medium_id)
 {
     march_result result;
     result.hit = false;
@@ -42,18 +46,46 @@ march_result ray_march(vec2 origin, vec2 dir, int num_prims, bool inside)
     for (int step = 0; step < MAX_MARCH_STEPS; ++step)
     {
         vec2 p = origin + dir * result.total_dist;
-        scene_hit sh = eval_scene(p, num_prims);
-        float d = inside ? abs(sh.dist) : sh.dist;
 
-        if (d < EPSILON_HIT)
+        if (current_medium_id >= 0)
         {
-            result.hit = true;
-            result.pos = p;
-            result.prim_id = sh.prim_id;
-            return result;
+            // Inside a medium: step by the minimum absolute SDF across all
+            // primitives so we safely approach every surface boundary.
+            float min_abs = 1e10;
+            int nearest_id = -1;
+            for (int i = 0; i < num_prims; ++i)
+            {
+                vec2 local_p = rotate_2d(p - primitives[i].position, -primitives[i].rotation);
+                float d = eval_primitive(local_p, primitives[i]);
+                float ad = abs(d);
+                if (ad < min_abs)
+                {
+                    min_abs = ad;
+                    nearest_id = i;
+                }
+            }
+            if (min_abs < EPSILON_HIT)
+            {
+                result.hit = true;
+                result.pos = p;
+                result.prim_id = nearest_id;
+                return result;
+            }
+            result.total_dist += max(min_abs, EPSILON_HIT * 0.5);
+        }
+        else
+        {
+            scene_hit sh = eval_scene(p, num_prims);
+            if (sh.dist < EPSILON_HIT)
+            {
+                result.hit = true;
+                result.pos = p;
+                result.prim_id = sh.prim_id;
+                return result;
+            }
+            result.total_dist += max(sh.dist, EPSILON_HIT * 0.5);
         }
 
-        result.total_dist += max(d, EPSILON_HIT * 0.5);
         if (result.total_dist > MAX_MARCH_DIST) break;
     }
 
@@ -198,7 +230,8 @@ vec3 trace_path(vec2 origin, vec2 dir, int num_prims, inout rng_state rng, vec2 
 
     for (int bounce = 0; bounce < u_max_bounces; ++bounce)
     {
-        march_result mr = ray_march(origin, dir, num_prims, medium_count > 0);
+        int cm_id = (medium_count > 0) ? medium_stack[medium_count - 1] : -1;
+        march_result mr = ray_march(origin, dir, num_prims, cm_id);
 
         if (!mr.hit)
         {
@@ -214,7 +247,7 @@ vec3 trace_path(vec2 origin, vec2 dir, int num_prims, inout rng_state rng, vec2 
         }
 
         gpu_sdf_primitive prim = primitives[mr.prim_id];
-        vec2 outward_normal = calc_normal(mr.pos, num_prims);
+        vec2 outward_normal = calc_primitive_normal(mr.pos, mr.prim_id);
         vec2 normal = outward_normal;
         if (dot(normal, dir) > 0.0) normal = -normal;
 
