@@ -136,10 +136,10 @@ float sdf_circle(vec2 p, float r)
     return length(p) - r;
 }
 
-float sdf_box(vec2 p, vec2 half_size)
+float sdf_box(vec2 p, vec2 half_size, float radius)
 {
-    vec2 d = abs(p) - half_size;
-    return length(max(d, 0.0)) + min(max(d.x, d.y), 0.0);
+    vec2 d = abs(p) - half_size + radius;
+    return length(max(d, 0.0)) + min(max(d.x, d.y), 0.0) - radius;
 }
 
 float sdf_capsule(vec2 p, float r, float half_len)
@@ -211,7 +211,7 @@ float eval_primitive(vec2 local_p, gpu_sdf_primitive prim)
     switch (prim.prim_type)
     {
         case PRIM_CIRCLE:  return sdf_circle(local_p, prim.params.x);
-        case PRIM_BOX:     return sdf_box(local_p, prim.params.xy);
+        case PRIM_BOX:     return sdf_box(local_p, prim.params.xy, prim.params.z);
         case PRIM_CAPSULE: return sdf_capsule(local_p, prim.params.x, prim.params.y);
         case PRIM_SEGMENT: return sdf_segment(local_p, prim.params.x, prim.params.y);
         case PRIM_LENS:    return sdf_lens(local_p, prim.params.x, prim.params.y, prim.params.z, prim.params.w);
@@ -248,10 +248,8 @@ vec2 calc_normal(vec2 p, int num_prims)
     return normalize(vec2(dx, dy));
 }
 
-// Compute the outward normal for a single primitive, ignoring all other geometry.
-// Correct at nested shape boundaries where the global SDF gradient is dominated
-// by an enclosing medium. O(1) vs the O(n) calc_normal.
-vec2 calc_primitive_normal(vec2 p, int prim_id)
+// Finite-difference normal for a single primitive (fallback for future shapes).
+vec2 calc_primitive_normal_fd(vec2 p, int prim_id)
 {
     gpu_sdf_primitive prim = primitives[prim_id];
     vec2 lp_x1 = rotate_2d(p + vec2(EPSILON_GRAD, 0.0) - prim.position, -prim.rotation);
@@ -261,6 +259,103 @@ vec2 calc_primitive_normal(vec2 p, int prim_id)
     float dx = eval_primitive(lp_x1, prim) - eval_primitive(lp_x0, prim);
     float dy = eval_primitive(lp_y1, prim) - eval_primitive(lp_y0, prim);
     return normalize(vec2(dx, dy));
+}
+
+// ============================================================================
+// Analytic Normals
+// ============================================================================
+
+vec2 analytic_normal_circle(vec2 lp)
+{
+    return normalize(lp);
+}
+
+vec2 analytic_normal_box(vec2 lp, vec2 half_size, float radius)
+{
+    vec2 q = abs(lp) - half_size + radius;
+    if (q.x > 0.0 && q.y > 0.0)
+    {
+        vec2 corner = sign(lp) * (half_size - radius);
+        return normalize(lp - corner);
+    }
+    if (q.x > q.y) return vec2(sign(lp.x), 0.0);
+    return vec2(0.0, sign(lp.y));
+}
+
+vec2 analytic_normal_capsule(vec2 lp, float half_len)
+{
+    vec2 nearest = vec2(clamp(lp.x, -half_len, half_len), 0.0);
+    return normalize(lp - nearest);
+}
+
+vec2 analytic_normal_segment(vec2 lp, float half_len)
+{
+    vec2 nearest = vec2(clamp(lp.x, -half_len, half_len), 0.0);
+    return normalize(lp - nearest);
+}
+
+vec2 analytic_normal_lens(vec2 lp, float r1, float r2, float d, float aperture_half_height)
+{
+    float half_d = d * 0.5;
+    float ar1 = max(abs(r1), 1e-4);
+    float ar2 = max(abs(r2), 1e-4);
+
+    vec2 c1 = vec2(-half_d + r1, 0.0);
+    vec2 c2 = vec2(half_d - r2, 0.0);
+
+    float side1 = length(lp - c1) - ar1;
+    float side2 = length(lp - c2) - ar2;
+    if (r1 < 0.0) side1 = -side1;
+    if (r2 < 0.0) side2 = -side2;
+
+    float aperture = (aperture_half_height > 0.0) ? aperture_half_height : (min(ar1, ar2) * 0.98);
+    float cap = abs(lp.y) - aperture;
+
+    // The active constraint (largest value) determines the normal
+    if (cap > side1 && cap > side2) return vec2(0.0, sign(lp.y));
+
+    if (side1 > side2)
+    {
+        vec2 n = normalize(lp - c1);
+        return (r1 < 0.0) ? -n : n;
+    }
+
+    vec2 n = normalize(lp - c2);
+    return (r2 < 0.0) ? -n : n;
+}
+
+vec2 analytic_normal_ngon(vec2 lp, float r, float sides)
+{
+    float n = max(sides, 3.0);
+    float an = PI / n;
+    float angle = atan(lp.y, lp.x);
+    float sector_angle = floor((angle + an) / (2.0 * an)) * 2.0 * an;
+    // Face normal is the outward normal of the edge in this sector
+    return vec2(cos(sector_angle), sin(sector_angle));
+}
+
+vec2 calc_analytic_normal(vec2 lp, gpu_sdf_primitive prim)
+{
+    switch (prim.prim_type)
+    {
+        case PRIM_CIRCLE:  return analytic_normal_circle(lp);
+        case PRIM_BOX:     return analytic_normal_box(lp, prim.params.xy, prim.params.z);
+        case PRIM_CAPSULE: return analytic_normal_capsule(lp, prim.params.y);
+        case PRIM_SEGMENT: return analytic_normal_segment(lp, prim.params.x);
+        case PRIM_LENS:    return analytic_normal_lens(lp, prim.params.x, prim.params.y, prim.params.z, prim.params.w);
+        case PRIM_NGON:    return analytic_normal_ngon(lp, prim.params.x, prim.params.y);
+        default:           return vec2(0.0, 1.0);
+    }
+}
+
+// Compute the outward normal for a single primitive, ignoring all other geometry.
+// Uses analytic normals (no finite differences) for sharp, artifact-free results.
+vec2 calc_primitive_normal(vec2 p, int prim_id)
+{
+    gpu_sdf_primitive prim = primitives[prim_id];
+    vec2 local_p = rotate_2d(p - prim.position, -prim.rotation);
+    vec2 local_n = calc_analytic_normal(local_p, prim);
+    return rotate_2d(local_n, prim.rotation);
 }
 
 // ============================================================================

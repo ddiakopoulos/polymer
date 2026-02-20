@@ -432,18 +432,18 @@ sample_waterfall_fft::sample_waterfall_fft() : polymer_app(1920, 1200, "waterfal
 
     // Load solid shader
     waterfall_shader = gl_shader(
-        read_file_text(asset_base + "/shaders/waterfall_vert.glsl"),
-        read_file_text(asset_base + "/shaders/waterfall_frag.glsl"));
+        read_file_text(asset_base + "/shaders/waterfall-fft/waterfall_vert.glsl"),
+        read_file_text(asset_base + "/shaders/waterfall-fft/waterfall_frag.glsl"));
 
     // Load wireframe shader with geometry stage
     waterfall_wireframe_shader = gl_shader(
-        read_file_text(asset_base + "/shaders/waterfall_wireframe_vert.glsl"),
-        read_file_text(asset_base + "/shaders/waterfall_wireframe_frag.glsl"),
-        read_file_text(asset_base + "/shaders/waterfall_wireframe_geom.glsl"));
+        read_file_text(asset_base + "/shaders/waterfall-fft/waterfall_wireframe_vert.glsl"),
+        read_file_text(asset_base + "/shaders/waterfall-fft/waterfall_wireframe_frag.glsl"),
+        read_file_text(asset_base + "/shaders/waterfall-fft/waterfall_wireframe_geom.glsl"));
 
-    std::string fullscreen_vert = read_file_text(asset_base + "/shaders/waterfall_fullscreen_vert.glsl");
-    taa_velocity_shader = gl_shader( read_file_text(asset_base + "/shaders/waterfall_taa_velocity_vert.glsl"), read_file_text(asset_base + "/shaders/waterfall_taa_velocity_frag.glsl"));
-    taa_resolve_shader = gl_shader(fullscreen_vert, read_file_text(asset_base + "/shaders/waterfall_taa_resolve_frag.glsl"));
+    std::string fullscreen_vert = read_file_text(asset_base + "/shaders/fullscreen_vert.glsl");
+    taa_velocity_shader = gl_shader( read_file_text(asset_base + "/shaders/waterfall-fft/waterfall_taa_velocity_vert.glsl"), read_file_text(asset_base + "/shaders/waterfall-fft/waterfall_taa_velocity_frag.glsl"));
+    taa_resolve_shader = gl_shader(fullscreen_vert, read_file_text(asset_base + "/shaders/waterfall-fft/waterfall_taa_resolve_frag.glsl"));
 
     // Post-processing (bloom + tonemapping)
     bloom_pass = std::make_shared<gl_unreal_bloom>(asset_base);

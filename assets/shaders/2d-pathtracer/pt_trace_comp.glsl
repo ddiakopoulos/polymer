@@ -27,66 +27,238 @@ struct march_result
 {
     bool hit;
     vec2 pos;
-    float total_dist;
+    float t_hit;
     int prim_id;
 };
 
-// current_medium_id: index of the medium the ray is currently travelling through,
-// or -1 when the ray is in vacuum. When inside a medium the step size is computed
-// as min(abs(sdf_i)) over all primitives so that we correctly approach both the
-// exit wall of the current medium AND any nested surfaces inside it.
-march_result ray_march(vec2 origin, vec2 dir, int num_prims, int current_medium_id)
+float primitive_signed_distance(vec2 p, gpu_sdf_primitive prim)
+{
+    vec2 local_p = rotate_2d(p - prim.position, -prim.rotation);
+    return eval_primitive(local_p, prim);
+}
+
+bool intersect_circle_exact(vec2 origin, vec2 dir, gpu_sdf_primitive prim, float min_t, out float t_hit)
+{
+    vec2 ro = rotate_2d(origin - prim.position, -prim.rotation);
+    vec2 rd = rotate_2d(dir, -prim.rotation);
+    float r = prim.params.x;
+
+    float b = dot(ro, rd);
+    float c = dot(ro, ro) - r * r;
+    float h = b * b - c;
+    if (h < 0.0) return false;
+
+    float s = sqrt(h);
+    float t0 = -b - s;
+    float t1 = -b + s;
+    float best = 1e30;
+
+    if (t0 >= min_t) best = t0;
+    if (t1 >= min_t && t1 < best) best = t1;
+    if (best >= 1e30 || best > MAX_MARCH_DIST) return false;
+
+    t_hit = best;
+    return true;
+}
+
+bool intersect_box_exact(vec2 origin, vec2 dir, gpu_sdf_primitive prim, float min_t, out float t_hit)
+{
+    vec2 ro = rotate_2d(origin - prim.position, -prim.rotation);
+    vec2 rd = rotate_2d(dir, -prim.rotation);
+
+    vec2 h = prim.params.xy;
+    float r = clamp(prim.params.z, 0.0, min(h.x, h.y));
+    float hx = max(h.x - r, 0.0);
+    float hy = max(h.y - r, 0.0);
+
+    float best = 1e30;
+    float eps = 1e-7;
+
+    // Side segments
+    if (abs(rd.x) > eps)
+    {
+        float txp = (h.x - ro.x) / rd.x;
+        if (txp >= min_t)
+        {
+            float y = ro.y + txp * rd.y;
+            if (abs(y) <= hy + EPSILON_HIT) best = min(best, txp);
+        }
+
+        float txn = (-h.x - ro.x) / rd.x;
+        if (txn >= min_t)
+        {
+            float y = ro.y + txn * rd.y;
+            if (abs(y) <= hy + EPSILON_HIT) best = min(best, txn);
+        }
+    }
+
+    if (abs(rd.y) > eps)
+    {
+        float typ = (h.y - ro.y) / rd.y;
+        if (typ >= min_t)
+        {
+            float x = ro.x + typ * rd.x;
+            if (abs(x) <= hx + EPSILON_HIT) best = min(best, typ);
+        }
+
+        float tyn = (-h.y - ro.y) / rd.y;
+        if (tyn >= min_t)
+        {
+            float x = ro.x + tyn * rd.x;
+            if (abs(x) <= hx + EPSILON_HIT) best = min(best, tyn);
+        }
+    }
+
+    // Corner arcs
+    if (r > 0.0)
+    {
+        for (int sx_i = 0; sx_i < 2; ++sx_i)
+        {
+            for (int sy_i = 0; sy_i < 2; ++sy_i)
+            {
+                float sx = (sx_i == 0) ? -1.0 : 1.0;
+                float sy = (sy_i == 0) ? -1.0 : 1.0;
+                vec2 c = vec2(sx * hx, sy * hy);
+
+                vec2 oc = ro - c;
+                float b = dot(oc, rd);
+                float cterm = dot(oc, oc) - r * r;
+                float disc = b * b - cterm;
+                if (disc < 0.0) continue;
+
+                float s = sqrt(disc);
+                float t0 = -b - s;
+                float t1 = -b + s;
+
+                if (t0 >= min_t)
+                {
+                    vec2 p = ro + rd * t0;
+                    bool in_quadrant = (sx * (p.x - c.x) >= -EPSILON_HIT) &&
+                                       (sy * (p.y - c.y) >= -EPSILON_HIT);
+                    if (in_quadrant) best = min(best, t0);
+                }
+                if (t1 >= min_t)
+                {
+                    vec2 p = ro + rd * t1;
+                    bool in_quadrant = (sx * (p.x - c.x) >= -EPSILON_HIT) &&
+                                       (sy * (p.y - c.y) >= -EPSILON_HIT);
+                    if (in_quadrant) best = min(best, t1);
+                }
+            }
+        }
+    }
+
+    if (best >= 1e30 || best > MAX_MARCH_DIST) return false;
+    t_hit = best;
+    return true;
+}
+
+float refine_root_bisection(vec2 origin, vec2 dir, gpu_sdf_primitive prim, float a, float b, float fa, float fb)
+{
+    float lo = a;
+    float hi = b;
+    float flo = fa;
+
+    for (int i = 0; i < 10; ++i)
+    {
+        float m = 0.5 * (lo + hi);
+        float fm = primitive_signed_distance(origin + dir * m, prim);
+        if (abs(fm) < EPSILON_HIT) return m;
+        if (flo * fm <= 0.0)
+        {
+            hi = m;
+        }
+        else
+        {
+            lo = m;
+            flo = fm;
+        }
+    }
+
+    return 0.5 * (lo + hi);
+}
+
+bool intersect_primitive_marched(vec2 origin, vec2 dir, gpu_sdf_primitive prim, float min_t, out float t_hit)
+{
+    float t = max(min_t, 0.0);
+    float sd = primitive_signed_distance(origin + dir * t, prim);
+
+    for (int step = 0; step < MAX_MARCH_STEPS; ++step)
+    {
+        float step_len = max(abs(sd), EPSILON_HIT * 0.5);
+        float t_next = t + step_len;
+        if (t_next > MAX_MARCH_DIST) break;
+
+        float sd_next = primitive_signed_distance(origin + dir * t_next, prim);
+
+        if (abs(sd_next) < EPSILON_HIT)
+        {
+            t_hit = t_next;
+            return true;
+        }
+
+        if (sd * sd_next < 0.0)
+        {
+            t_hit = refine_root_bisection(origin, dir, prim, t, t_next, sd, sd_next);
+            return true;
+        }
+
+        t = t_next;
+        sd = sd_next;
+    }
+
+    return false;
+}
+
+bool intersect_primitive(vec2 origin, vec2 dir, gpu_sdf_primitive prim, float min_t, out float t_hit)
+{
+    if (prim.prim_type == PRIM_CIRCLE) return intersect_circle_exact(origin, dir, prim, min_t, t_hit);
+    if (prim.prim_type == PRIM_BOX) return intersect_box_exact(origin, dir, prim, min_t, t_hit);
+    return intersect_primitive_marched(origin, dir, prim, min_t, t_hit);
+}
+
+bool find_nearest_intersection(vec2 origin, vec2 dir, int num_prims, float min_t, float max_t, out float out_t, out int out_id)
+{
+    float best_t = 1e30;
+    int best_id = -1;
+
+    for (int i = 0; i < num_prims; ++i)
+    {
+        float t_i;
+        if (intersect_primitive(origin, dir, primitives[i], min_t, t_i))
+        {
+            if (t_i <= max_t && t_i < best_t)
+            {
+                best_t = t_i;
+                best_id = i;
+            }
+        }
+    }
+
+    out_t = best_t;
+    out_id = best_id;
+    return best_id >= 0;
+}
+
+march_result ray_march(vec2 origin, vec2 dir, int num_prims)
 {
     march_result result;
     result.hit = false;
     result.pos = origin;
-    result.total_dist = 0.0;
+    result.t_hit = 0.0;
     result.prim_id = -1;
 
-    for (int step = 0; step < MAX_MARCH_STEPS; ++step)
+    float min_t = EPSILON_HIT * 2.0;
+    float best_t;
+    int best_id;
+    bool has_hit = find_nearest_intersection(origin, dir, num_prims, min_t, MAX_MARCH_DIST, best_t, best_id);
+
+    if (has_hit)
     {
-        vec2 p = origin + dir * result.total_dist;
-
-        if (current_medium_id >= 0)
-        {
-            // Inside a medium: step by the minimum absolute SDF across all
-            // primitives so we safely approach every surface boundary.
-            float min_abs = 1e10;
-            int nearest_id = -1;
-            for (int i = 0; i < num_prims; ++i)
-            {
-                vec2 local_p = rotate_2d(p - primitives[i].position, -primitives[i].rotation);
-                float d = eval_primitive(local_p, primitives[i]);
-                float ad = abs(d);
-                if (ad < min_abs)
-                {
-                    min_abs = ad;
-                    nearest_id = i;
-                }
-            }
-            if (min_abs < EPSILON_HIT)
-            {
-                result.hit = true;
-                result.pos = p;
-                result.prim_id = nearest_id;
-                return result;
-            }
-            result.total_dist += max(min_abs, EPSILON_HIT * 0.5);
-        }
-        else
-        {
-            scene_hit sh = eval_scene(p, num_prims);
-            if (sh.dist < EPSILON_HIT)
-            {
-                result.hit = true;
-                result.pos = p;
-                result.prim_id = sh.prim_id;
-                return result;
-            }
-            result.total_dist += max(sh.dist, EPSILON_HIT * 0.5);
-        }
-
-        if (result.total_dist > MAX_MARCH_DIST) break;
+        result.hit = true;
+        result.prim_id = best_id;
+        result.t_hit = best_t;
+        result.pos = origin + dir * best_t;
     }
 
     return result;
@@ -102,7 +274,11 @@ float primitive_perimeter(gpu_sdf_primitive prim)
     // Only circle and box have proper boundary sampling; all others fall back
     // to circle approximation, so perimeter must match that fallback.
     if (prim.prim_type == PRIM_CIRCLE) return TWO_PI * prim.params.x;
-    if (prim.prim_type == PRIM_BOX) return 4.0 * (prim.params.x + prim.params.y);
+    if (prim.prim_type == PRIM_BOX)
+    {
+        float r = prim.params.z;
+        return 4.0 * (prim.params.x + prim.params.y) + (TWO_PI - 8.0) * r;
+    }
     return TWO_PI * prim.params.x;
 }
 
@@ -131,30 +307,68 @@ emitter_sample sample_emitter_boundary(int emitter_id, inout rng_state rng)
     else if (ep.prim_type == PRIM_BOX)
     {
         vec2 h = ep.params.xy;
-        float perim = 4.0 * (h.x + h.y);
+        float r = ep.params.z;
+
+        float edge_x = 2.0 * (h.x - r);
+        float edge_y = 2.0 * (h.y - r);
+        float arc = HALF_PI * r;
+        float perim = 2.0 * (edge_x + edge_y) + 4.0 * arc;
         float t = u * perim;
 
+        // Walk: bottom edge, BR arc, right edge, TR arc, top edge, TL arc, left edge, BL arc
         vec2 lp, ln;
-        if (t < 2.0 * h.x)
+        float seg;
+
+        seg = edge_x;
+        if (t < seg)
         {
-            lp = vec2(t - h.x, -h.y);
+            lp = vec2(t - (h.x - r), -h.y);
             ln = vec2(0.0, -1.0);
         }
-        else if (t < 2.0 * h.x + 2.0 * h.y)
+        else { t -= seg; seg = arc;
+        if (t < seg)
         {
-            lp = vec2(h.x, t - 2.0 * h.x - h.y);
+            float a = -HALF_PI + t / r;
+            lp = vec2(h.x - r, -h.y + r) + r * vec2(cos(a), sin(a));
+            ln = vec2(cos(a), sin(a));
+        }
+        else { t -= seg; seg = edge_y;
+        if (t < seg)
+        {
+            lp = vec2(h.x, -h.y + r + t);
             ln = vec2(1.0, 0.0);
         }
-        else if (t < 4.0 * h.x + 2.0 * h.y)
+        else { t -= seg; seg = arc;
+        if (t < seg)
         {
-            lp = vec2(h.x - (t - 2.0 * h.x - 2.0 * h.y), h.y);
+            float a = t / r;
+            lp = vec2(h.x - r, h.y - r) + r * vec2(cos(a), sin(a));
+            ln = vec2(cos(a), sin(a));
+        }
+        else { t -= seg; seg = edge_x;
+        if (t < seg)
+        {
+            lp = vec2(h.x - r - t, h.y);
             ln = vec2(0.0, 1.0);
         }
-        else
+        else { t -= seg; seg = arc;
+        if (t < seg)
         {
-            lp = vec2(-h.x, h.y - (t - 4.0 * h.x - 2.0 * h.y));
+            float a = HALF_PI + t / r;
+            lp = vec2(-h.x + r, h.y - r) + r * vec2(cos(a), sin(a));
+            ln = vec2(cos(a), sin(a));
+        }
+        else { t -= seg; seg = edge_y;
+        if (t < seg)
+        {
+            lp = vec2(-h.x, h.y - r - t);
             ln = vec2(-1.0, 0.0);
         }
+        else { t -= seg;
+            float a = PI + t / max(r, 1e-6);
+            lp = vec2(-h.x + r, -h.y + r) + r * vec2(cos(a), sin(a));
+            ln = vec2(cos(a), sin(a));
+        }}}}}}}
 
         es.point = ep.position + rotate_2d(lp, ep.rotation);
         es.normal = rotate_2d(ln, ep.rotation);
@@ -180,22 +394,13 @@ bool test_visibility(vec2 from, vec2 to, int target_prim_id, int num_prims)
     if (target_dist < EPSILON_SPAWN) return false;
     vec2 dir = diff / target_dist;
 
-    float t = 0.0;
-    for (int step = 0; step < MAX_MARCH_STEPS; ++step)
-    {
-        if (t >= target_dist - EPSILON_SPAWN) return true;
+    float min_t = EPSILON_HIT * 2.0;
+    float max_t = target_dist + EPSILON_SPAWN * 4.0;
+    float hit_t;
+    int hit_id;
 
-        vec2 p = from + dir * t;
-        scene_hit sh = eval_scene(p, num_prims);
-
-        if (sh.dist < EPSILON_HIT)
-        {
-            return sh.prim_id == target_prim_id && t >= target_dist - EPSILON_SPAWN * 4.0;
-        }
-
-        t += max(sh.dist, EPSILON_HIT * 0.5);
-    }
-    return false;
+    if (!find_nearest_intersection(from, dir, num_prims, min_t, max_t, hit_t, hit_id)) return true;
+    return hit_id == target_prim_id && hit_t >= target_dist - EPSILON_SPAWN * 4.0;
 }
 
 // ============================================================================
@@ -216,6 +421,50 @@ vec3 trace_path(vec2 origin, vec2 dir, int num_prims, inout rng_state rng, vec2 
     float wavelength_um = (wavelength_channel == 0) ? 0.650 : (wavelength_channel == 1) ? 0.550 : 0.450;
     bool hit_dispersive = false;
 
+    // Initialize medium stack from the ray origin so Beer absorption and IOR
+    // are correct when the camera/sample starts inside refractive geometry.
+    int inside_ids[MAX_MEDIUM_STACK];
+    float inside_sd[MAX_MEDIUM_STACK];
+    int inside_count = 0;
+    for (int i = 0; i < num_prims; ++i)
+    {
+        uint mat_i = primitives[i].material_type;
+        bool dielectric = (mat_i == MAT_GLASS || mat_i == MAT_WATER || mat_i == MAT_DIAMOND);
+        if (!dielectric) continue;
+
+        float sd = primitive_signed_distance(origin, primitives[i]);
+        if (sd < 0.0 && inside_count < MAX_MEDIUM_STACK)
+        {
+            inside_ids[inside_count] = i;
+            inside_sd[inside_count] = sd;
+            inside_count++;
+        }
+    }
+
+    // Sort by signed distance ascending (more negative first): outer -> inner.
+    for (int a = 0; a < inside_count; ++a)
+    {
+        for (int b = a + 1; b < inside_count; ++b)
+        {
+            if (inside_sd[b] < inside_sd[a])
+            {
+                float tmp_sd = inside_sd[a];
+                inside_sd[a] = inside_sd[b];
+                inside_sd[b] = tmp_sd;
+
+                int tmp_id = inside_ids[a];
+                inside_ids[a] = inside_ids[b];
+                inside_ids[b] = tmp_id;
+            }
+        }
+    }
+
+    for (int i = 0; i < inside_count; ++i)
+    {
+        medium_stack[medium_count] = inside_ids[i];
+        medium_count++;
+    }
+
     // Find emitters once per path
     int emitter_ids[MAX_EMITTERS];
     int num_emitters = 0;
@@ -230,8 +479,7 @@ vec3 trace_path(vec2 origin, vec2 dir, int num_prims, inout rng_state rng, vec2 
 
     for (int bounce = 0; bounce < u_max_bounces; ++bounce)
     {
-        int cm_id = (medium_count > 0) ? medium_stack[medium_count - 1] : -1;
-        march_result mr = ray_march(origin, dir, num_prims, cm_id);
+        march_result mr = ray_march(origin, dir, num_prims);
 
         if (!mr.hit)
         {
@@ -252,10 +500,10 @@ vec3 trace_path(vec2 origin, vec2 dir, int num_prims, inout rng_state rng, vec2 
         if (dot(normal, dir) > 0.0) normal = -normal;
 
         // Beer-Lambert absorption
-        if (medium_count > 0 && mr.total_dist > 0.0)
+        if (medium_count > 0 && mr.t_hit > 0.0)
         {
             int current_medium_id = medium_stack[medium_count - 1];
-            throughput *= exp(-primitives[current_medium_id].absorption * mr.total_dist);
+            throughput *= exp(-primitives[current_medium_id].absorption * mr.t_hit);
         }
 
         // Emission
@@ -270,7 +518,7 @@ vec3 trace_path(vec2 origin, vec2 dir, int num_prims, inout rng_state rng, vec2 
                     if (cos_light > 0.0)
                     {
                         float perim = primitive_perimeter(prim);
-                        float pdf_light_angular = mr.total_dist / (float(num_emitters) * perim * cos_light);
+                        float pdf_light_angular = mr.t_hit / (float(num_emitters) * perim * cos_light);
                         w = prev_bsdf_pdf / (prev_bsdf_pdf + pdf_light_angular);
                     }
                 }

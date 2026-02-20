@@ -18,20 +18,6 @@ inline float circular_distance01(float a, float b)
     return std::min(d, 1.0f - d);
 }
 
-inline float3 ui_hsv_to_rgb(float3 hsv)
-{
-    float rgb[3];
-    ImGui::ColorConvertHSVtoRGB(hsv.x, hsv.y, hsv.z, rgb[0], rgb[1], rgb[2]);
-    return {rgb[0], rgb[1], rgb[2]};
-}
-
-inline float3 ui_rgb_to_hsv(float3 rgb)
-{
-    float hsv[3];
-    ImGui::ColorConvertRGBtoHSV(rgb.x, rgb.y, rgb.z, hsv[0], hsv[1], hsv[2]);
-    return {hsv[0], hsv[1], hsv[2]};
-}
-
 enum class env_interp_mode : int32_t
 {
     rgb_linear = 0,
@@ -153,8 +139,8 @@ inline float3 sample_hsv_interp(const float3 & c0, const float3 & c1, float t, e
 {
     if (mode == env_interp_mode::rgb_linear) return c0 * (1.0f - t) + c1 * t;
 
-    float3 h0 = ui_rgb_to_hsv(c0);
-    float3 h1 = ui_rgb_to_hsv(c1);
+    float3 h0 = rgb_to_hsv(c0);
+    float3 h1 = rgb_to_hsv(c1);
     float dh = h1.x - h0.x;
     if (dh > 0.5f) dh -= 1.0f;
     if (dh < -0.5f) dh += 1.0f;
@@ -164,7 +150,7 @@ inline float3 sample_hsv_interp(const float3 & c0, const float3 & c1, float t, e
         h0.y * (1.0f - t) + h1.y * t,
         h0.z * (1.0f - t) + h1.z * t
     };
-    return ui_hsv_to_rgb(h);
+    return hsv_to_rgb(h);
 }
 
 inline float3 sample_gradient_ring(const std::vector<env_gradient_stop> & stops, float u, env_interp_mode mode)
@@ -297,7 +283,7 @@ inline void apply_environment_preset(env_composer & env, env_composer_ui_state &
             {
                 float u = (static_cast<float>(i) + 0.25f) / 12.0f;
                 float hue = wrap01(0.1f + i * 0.083f);
-                float3 rgb = ui_hsv_to_rgb({hue, 0.7f, 1.0f});
+                float3 rgb = hsv_to_rgb({hue, 0.7f, 1.0f});
                 env.lobes.push_back({u, 0.03f, 8.0f, 0.75f, rgb});
             }
             break;

@@ -55,7 +55,7 @@ struct gl_unreal_bloom : public gl_post_pass
 
     gl_unreal_bloom(const std::string & asset_base_path)
     {
-        std::string fullscreen_vert = polymer::read_file_text(asset_base_path + "/shaders/waterfall_fullscreen_vert.glsl");
+        std::string fullscreen_vert = polymer::read_file_text(asset_base_path + "/shaders/fullscreen_vert.glsl");
         std::string bloom_base = asset_base_path + "/shaders/bloom/";
 
         brightness_shader = gl_shader(fullscreen_vert, polymer::read_file_text(bloom_base + "bloom_brightness_frag.glsl"));

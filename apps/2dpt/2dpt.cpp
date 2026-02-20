@@ -17,13 +17,13 @@ inline float sdf_circle(float2 p, float r)
     return length(p) - r; 
 }
 
-inline float sdf_box(float2 p, float2 half_size)
+inline float sdf_box(float2 p, float2 half_size, float radius)
 {
-    float dx = std::abs(p.x) - half_size.x;
-    float dy = std::abs(p.y) - half_size.y;
+    float dx = std::abs(p.x) - half_size.x + radius;
+    float dy = std::abs(p.y) - half_size.y + radius;
     float2 clamped = {(dx > 0.0f ? dx : 0.0f), (dy > 0.0f ? dy : 0.0f)};
     float inner = (dx > dy) ? dx : dy;
-    return length(clamped) + (inner < 0.0f ? inner : 0.0f);
+    return length(clamped) + (inner < 0.0f ? inner : 0.0f) - radius;
 }
 
 inline float sdf_capsule(float2 p, float r, float half_len)
@@ -78,7 +78,7 @@ inline float eval_primitive_cpu(float2 world_pos, const scene_primitive & sp)
     switch (sp.type)
     {
         case prim_type::circle:  return sdf_circle(local_p, sp.params.x);
-        case prim_type::box:     return sdf_box(local_p, {sp.params.x, sp.params.y});
+        case prim_type::box:     return sdf_box(local_p, {sp.params.x, sp.params.y}, sp.params.z);
         case prim_type::capsule: return sdf_capsule(local_p, sp.params.x, sp.params.y);
         case prim_type::segment: return sdf_segment(local_p, sp.params.x, sp.params.y);
         case prim_type::lens:    return sdf_lens(local_p, sp.params.x, sp.params.y, sp.params.z, sp.params.w);
@@ -230,7 +230,7 @@ pathtracer_2d::pathtracer_2d() : polymer_app(1920, 1080, "2dpt", 1)
     std::string trace_src = read_file_text(shader_base + "pt_trace_comp.glsl");
     trace_compute = gl_shader_compute(common_src + "\n" + trace_src);
 
-    std::string fullscreen_vert = read_file_text(asset_base + "/shaders/waterfall_fullscreen_vert.glsl");
+    std::string fullscreen_vert = read_file_text(asset_base + "/shaders/fullscreen_vert.glsl");
     std::string display_frag = read_file_text(shader_base + "pt_display_frag.glsl");
     display_shader = gl_shader(fullscreen_vert, common_src + "\n" + display_frag);
 
@@ -339,8 +339,35 @@ void pathtracer_2d::export_exr()
         }
     }
 
-    std::string filename = "pathtracer_" + make_timestamp() + ".exr";
+    std::string timestamp = make_timestamp();
+
+    std::string filename = "pathtracer_" + timestamp + ".exr";
     export_exr_image(filename, current_width, current_height, 3, rgb);
+
+    // Export object mask AOV: white where any SDF is present, black for background
+    std::vector<float> mask(current_width * current_height * 3);
+    float aspect = static_cast<float>(current_width) / static_cast<float>(current_height);
+    for (int32_t y = 0; y < current_height; ++y)
+    {
+        for (int32_t x = 0; x < current_width; ++x)
+        {
+            float ndc_x = ((x + 0.5f) / static_cast<float>(current_width)) * 2.0f - 1.0f;
+            float ndc_y = 1.0f - ((y + 0.5f) / static_cast<float>(current_height)) * 2.0f;
+            float2 world_pos = float2{ndc_x * aspect, ndc_y} / camera.zoom + camera.center;
+
+            float min_dist = std::numeric_limits<float>::max();
+            for (const scene_primitive & sp : scene) min_dist = std::min(min_dist, eval_primitive_cpu(world_pos, sp));
+
+            int32_t dst = (y * current_width + x) * 3;
+            float val = (min_dist <= 0.0f) ? 1.0f : 0.0f;
+            mask[dst + 0] = val;
+            mask[dst + 1] = val;
+            mask[dst + 2] = val;
+        }
+    }
+
+    std::string mask_filename = "pathtracer_mask_" + timestamp + ".exr";
+    export_exr_image(mask_filename, current_width, current_height, 3, mask);
 }
 
 bool pathtracer_2d::save_scene_to_file(const std::string & path)
@@ -860,6 +887,7 @@ void pathtracer_2d::on_draw()
                 case prim_type::box:
                     changed |= ImGui::DragFloat("Half Width", &sp.params.x, 0.01f, 0.01f, 10.0f);
                     changed |= ImGui::DragFloat("Half Height", &sp.params.y, 0.01f, 0.01f, 10.0f);
+                    changed |= ImGui::DragFloat("Corner Radius", &sp.params.z, 0.005f, 0.0f, min(sp.params.x, sp.params.y));
                     break;
                 case prim_type::capsule:
                     changed |= ImGui::DragFloat("Radius##cap", &sp.params.x, 0.01f, 0.01f, 5.0f);
