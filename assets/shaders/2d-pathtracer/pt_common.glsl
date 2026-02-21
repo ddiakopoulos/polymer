@@ -123,8 +123,19 @@ vec2 cranley_patterson_offset(uvec2 pixel)
 
 vec2 lds_sample(vec2 cp_offset, int sample_base, int stride, int slot)
 {
-    uint n = uint(sample_base) * uint(stride) + uint(slot);
-    return fract(r2_sequence(n) + cp_offset);
+    // Rebase long-running sample indices to avoid float precision collapse in
+    // fract(alpha * n) at large n. Each epoch gets an additional CP rotation.
+    const uint LDS_WRAP = 65536u;
+
+    uint n_full = uint(sample_base) * uint(stride) + uint(slot);
+    uint epoch = n_full / LDS_WRAP;
+    uint n_local = n_full - epoch * LDS_WRAP;
+
+    uint h1 = pcg_hash(epoch * 0x9e3779b9u + uint(slot) * 0x85ebca6bu + 17u);
+    uint h2 = pcg_hash(epoch * 0x85ebca6bu + uint(slot) * 0xc2b2ae35u + 29u);
+    vec2 epoch_cp = vec2(float(h1) / 4294967295.0, float(h2) / 4294967295.0);
+
+    return fract(r2_sequence(n_local) + cp_offset + epoch_cp);
 }
 
 // ============================================================================
