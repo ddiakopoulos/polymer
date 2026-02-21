@@ -9,6 +9,7 @@
 
 #include <cctype>
 #include <cfloat>
+#include <cstring>
 
 using namespace gui;
 
@@ -83,6 +84,7 @@ inline float eval_primitive_cpu(float2 world_pos, const scene_primitive & sp)
         case prim_type::segment: return sdf_segment(local_p, sp.params.x, sp.params.y);
         case prim_type::lens:    return sdf_lens(local_p, sp.params.x, sp.params.y, sp.params.z, sp.params.w);
         case prim_type::ngon:    return sdf_ngon(local_p, sp.params.x, sp.params.y);
+        case prim_type::image_sdf: return 1e10f;
         default:                 return 1e10f;
     }
 }
@@ -100,6 +102,16 @@ struct pathtracer_2d final : public polymer_app
         std::string path;
     };
 
+    struct discovered_sdf
+    {
+        std::string name;
+        std::string path;
+        int32_t width = 0;
+        int32_t height = 0;
+        int32_t channels = 0;
+        std::vector<uint8_t> pixels;
+    };
+
     std::unique_ptr<imgui_instance> imgui;
 
     path_tracer_config config;
@@ -108,6 +120,7 @@ struct pathtracer_2d final : public polymer_app
     gl_shader_compute trace_compute;
     gl_shader display_shader;
     gl_texture_2d accumulation_texture;
+    gl_texture_3d sdf_texture_array;
     gl_buffer primitives_ssbo;
     gl_vertex_array_object empty_vao;
     GLuint environment_texture_1d = 0;
@@ -138,10 +151,18 @@ struct pathtracer_2d final : public polymer_app
     bool open_export_scene_modal = false;
     char export_scene_filename[128] = "new-scene.json";
 
+    std::vector<discovered_sdf> discovered_sdfs;
+    int32_t selected_sdf_file_index = -1;
+    std::string sdfs_directory;
+    std::string sdf_io_status;
+    bool sdf_io_error = false;
+
     pathtracer_2d();
     ~pathtracer_2d();
 
     int32_t pick_primitive(float2 world_pos, int32_t current_selection) const;
+    float eval_primitive_distance_cpu(float2 world_pos, const scene_primitive & sp) const;
+    void fit_image_sdf_aspect(scene_primitive & sp, int32_t sdf_index) const;
 
     void build_default_scene();
     void upload_scene();
@@ -152,6 +173,8 @@ struct pathtracer_2d final : public polymer_app
     bool save_scene_to_file(const std::string & path);
     bool load_scene_from_file(const std::string & path);
     void load_scenes();
+    void load_sdfs();
+    void rebuild_sdf_texture_array();
     void draw_export_scene_modal();
 
     void on_input(const app_input_event & event) override;
@@ -167,7 +190,7 @@ int32_t pathtracer_2d::pick_primitive(float2 world_pos, int32_t current_selectio
     std::vector<std::pair<float, int32_t>> candidates;
     for (int32_t i = 0; i < static_cast<int32_t>(scene.size()); ++i)
     {
-        float d = eval_primitive_cpu(world_pos, scene[i]);
+        float d = eval_primitive_distance_cpu(world_pos, scene[i]);
         if (d < pick_threshold) candidates.push_back({d, i});
     }
 
@@ -189,6 +212,94 @@ int32_t pathtracer_2d::pick_primitive(float2 world_pos, int32_t current_selectio
     return candidates[0].second;
 }
 
+float pathtracer_2d::eval_primitive_distance_cpu(float2 world_pos, const scene_primitive & sp) const
+{
+    if (sp.type != prim_type::image_sdf) return eval_primitive_cpu(world_pos, sp);
+
+    if (discovered_sdfs.empty()) return 1e10f;
+
+    const int32_t sdf_index = std::clamp(static_cast<int32_t>(std::lround(sp.params.z)), 0, static_cast<int32_t>(discovered_sdfs.size()) - 1);
+    const discovered_sdf & sdf = discovered_sdfs[sdf_index];
+    if (sdf.width <= 0 || sdf.height <= 0 || sdf.channels <= 0 || sdf.pixels.empty()) return 1e10f;
+
+    float2 local_p = rotate_2d(world_pos - sp.position, -sp.rotation);
+    const float half_x = std::max(static_cast<float>(sp.params.x), 1e-4f);
+    const float half_y = std::max(static_cast<float>(sp.params.y), 1e-4f);
+    float2 half_extents = {half_x, half_y};
+    float2 uv = local_p / (2.0f * half_extents) + float2{0.5f, 0.5f};
+    float2 uv_clamped = {clamp(uv.x, 0.0f, 1.0f), clamp(uv.y, 0.0f, 1.0f)};
+
+    const float x = uv_clamped.x * static_cast<float>(sdf.width - 1);
+    const float y = uv_clamped.y * static_cast<float>(sdf.height - 1);
+    const int32_t x0 = std::clamp(static_cast<int32_t>(std::floor(x)), 0, sdf.width - 1);
+    const int32_t y0 = std::clamp(static_cast<int32_t>(std::floor(y)), 0, sdf.height - 1);
+    const int32_t x1 = std::min(x0 + 1, sdf.width - 1);
+    const int32_t y1 = std::min(y0 + 1, sdf.height - 1);
+    const float tx = x - static_cast<float>(x0);
+    const float ty = y - static_cast<float>(y0);
+
+    auto sample_r = [&sdf](int32_t sx, int32_t sy)
+    {
+        const size_t idx = static_cast<size_t>(sy * sdf.width + sx) * static_cast<size_t>(sdf.channels);
+        const float value = static_cast<float>(sdf.pixels[idx]);
+
+        if (sdf.channels == 2)
+        {
+            const float alpha = static_cast<float>(sdf.pixels[idx + 1]) / 255.0f;
+            return (value * alpha + 255.0f * (1.0f - alpha)) / 255.0f;
+        }
+
+        if (sdf.channels >= 4)
+        {
+            const float alpha = static_cast<float>(sdf.pixels[idx + 3]) / 255.0f;
+            return (value * alpha + 255.0f * (1.0f - alpha)) / 255.0f;
+        }
+
+        return value / 255.0f;
+    };
+
+    const float s00 = sample_r(x0, y0);
+    const float s10 = sample_r(x1, y0);
+    const float s01 = sample_r(x0, y1);
+    const float s11 = sample_r(x1, y1);
+    const float sx0 = s00 + (s10 - s00) * tx;
+    const float sx1 = s01 + (s11 - s01) * tx;
+    float encoded = sx0 + (sx1 - sx0) * ty;
+    if (sp.invert_image) encoded = 1.0f - encoded;
+
+    const float range_scale = (std::abs(sp.params.w) > 1e-6f) ? sp.params.w : 1.0f;
+    const float signed_dist = (encoded * 2.0f - 1.0f) * range_scale;
+
+    float2 q = {std::abs(local_p.x) - half_extents.x, std::abs(local_p.y) - half_extents.y};
+    const float qx = std::max(static_cast<float>(q.x), 0.0f);
+    const float qy = std::max(static_cast<float>(q.y), 0.0f);
+    float2 q_pos = {qx, qy};
+    const float outside = length(q_pos);
+
+    return signed_dist + outside;
+}
+
+void pathtracer_2d::fit_image_sdf_aspect(scene_primitive & sp, int32_t sdf_index) const
+{
+    if (sdf_index < 0 || sdf_index >= static_cast<int32_t>(discovered_sdfs.size())) return;
+
+    const discovered_sdf & sdf = discovered_sdfs[sdf_index];
+    if (sdf.width <= 0 || sdf.height <= 0) return;
+
+    const float w = static_cast<float>(sdf.width);
+    const float h = static_cast<float>(sdf.height);
+    if (w >= h)
+    {
+        sp.params.x = 1.0f;
+        sp.params.y = std::max(h / w, 1e-4f);
+    }
+    else
+    {
+        sp.params.x = std::max(w / h, 1e-4f);
+        sp.params.y = 1.0f;
+    }
+}
+
 void pathtracer_2d::add_primitive(prim_type type, float2 world_pos)
 {
     scene_primitive sp;
@@ -208,6 +319,17 @@ void pathtracer_2d::add_primitive(prim_type type, float2 world_pos)
                                  sp.cauchy_b = 0.004f; 
                                  break;
         case prim_type::ngon:    sp.params = {0.5f, 6.0f, 0.0f, 0.0f}; break;
+        case prim_type::image_sdf:
+        {
+            int32_t sdf_idx = 0;
+            if (!discovered_sdfs.empty())
+            {
+                sdf_idx = std::clamp(selected_sdf_file_index, 0, static_cast<int32_t>(discovered_sdfs.size()) - 1);
+            }
+            sp.params = {1.0f, 1.0f, static_cast<float>(sdf_idx), 1.0f};
+            fit_image_sdf_aspect(sp, sdf_idx);
+            break;
+        }
     }
 
     sp.albedo = {0.8f, 0.8f, 0.8f};
@@ -249,6 +371,7 @@ pathtracer_2d::pathtracer_2d() : polymer_app(1920, 1080, "2dpt", 1)
 
     setup_accumulation(width, height);
 
+    load_sdfs();
     build_default_scene();
     load_scenes();
 
@@ -356,7 +479,7 @@ void pathtracer_2d::export_exr()
             float2 world_pos = float2{ndc_x * aspect, ndc_y} / camera.zoom + camera.center;
 
             float min_dist = std::numeric_limits<float>::max();
-            for (const scene_primitive & sp : scene) min_dist = std::min(min_dist, eval_primitive_cpu(world_pos, sp));
+            for (const scene_primitive & sp : scene) min_dist = std::min(min_dist, eval_primitive_distance_cpu(world_pos, sp));
 
             int32_t dst = (y * current_width + x) * 3;
             float val = (min_dist <= 0.0f) ? 1.0f : 0.0f;
@@ -414,6 +537,24 @@ bool pathtracer_2d::load_scene_from_file(const std::string & path)
         config = archive.config;
         camera = archive.camera;
         scene = archive.primitives;
+        for (scene_primitive & sp : scene)
+        {
+            if (sp.type == prim_type::image_sdf)
+            {
+                sp.params.x = std::max(static_cast<float>(sp.params.x), 1e-4f);
+                sp.params.y = std::max(static_cast<float>(sp.params.y), 1e-4f);
+                sp.params.w = (std::abs(sp.params.w) > 1e-6f) ? sp.params.w : 1.0f;
+                if (!discovered_sdfs.empty())
+                {
+                    const int32_t safe_idx = std::clamp(static_cast<int32_t>(std::lround(sp.params.z)), 0, static_cast<int32_t>(discovered_sdfs.size()) - 1);
+                    sp.params.z = static_cast<float>(safe_idx);
+                }
+                else
+                {
+                    sp.params.z = 0.0f;
+                }
+            }
+        }
         env = archive.environment;
         env.resolution = std::max(env.resolution, 2048);
         setup_environment_texture(env, environment_texture_1d);
@@ -522,6 +663,158 @@ void pathtracer_2d::load_scenes()
     }
     scene_io_status = "Found " + std::to_string(discovered_scenes.size()) + " scene files";
     scene_io_error = false;
+}
+
+void pathtracer_2d::rebuild_sdf_texture_array()
+{
+    if (discovered_sdfs.empty())
+    {
+        sdf_texture_array = gl_texture_3d();
+        return;
+    }
+
+    int32_t max_width = 0;
+    int32_t max_height = 0;
+    for (const discovered_sdf & sdf : discovered_sdfs)
+    {
+        max_width = std::max(max_width, sdf.width);
+        max_height = std::max(max_height, sdf.height);
+    }
+
+    max_width = std::max(max_width, 1);
+    max_height = std::max(max_height, 1);
+
+    const size_t layer_count = discovered_sdfs.size();
+    std::vector<uint8_t> atlas(static_cast<size_t>(max_width) * static_cast<size_t>(max_height) * layer_count, 0);
+
+    for (size_t layer = 0; layer < discovered_sdfs.size(); ++layer)
+    {
+        const discovered_sdf & sdf = discovered_sdfs[layer];
+        if (sdf.width <= 0 || sdf.height <= 0 || sdf.channels <= 0 || sdf.pixels.empty()) continue;
+
+        for (int32_t y = 0; y < max_height; ++y)
+        {
+            for (int32_t x = 0; x < max_width; ++x)
+            {
+                const int32_t src_x = std::clamp(static_cast<int32_t>((static_cast<float>(x) + 0.5f) * static_cast<float>(sdf.width) / static_cast<float>(max_width)), 0, sdf.width - 1);
+                const int32_t src_y = std::clamp(static_cast<int32_t>((static_cast<float>(y) + 0.5f) * static_cast<float>(sdf.height) / static_cast<float>(max_height)), 0, sdf.height - 1);
+
+                const size_t src_idx = static_cast<size_t>(src_y * sdf.width + src_x) * static_cast<size_t>(sdf.channels);
+                const size_t dst_idx =
+                    (layer * static_cast<size_t>(max_width) * static_cast<size_t>(max_height)) +
+                    static_cast<size_t>(y * max_width + x);
+                const float value = static_cast<float>(sdf.pixels[src_idx]);
+                float encoded = value;
+
+                if (sdf.channels == 2)
+                {
+                    const float alpha = static_cast<float>(sdf.pixels[src_idx + 1]) / 255.0f;
+                    encoded = value * alpha + 255.0f * (1.0f - alpha);
+                }
+                else if (sdf.channels >= 4)
+                {
+                    const float alpha = static_cast<float>(sdf.pixels[src_idx + 3]) / 255.0f;
+                    encoded = value * alpha + 255.0f * (1.0f - alpha);
+                }
+
+                atlas[dst_idx] = static_cast<uint8_t>(std::clamp(encoded, 0.0f, 255.0f));
+            }
+        }
+    }
+
+    sdf_texture_array.setup(GL_TEXTURE_2D_ARRAY, max_width, max_height, static_cast<int32_t>(layer_count), GL_R8, GL_RED, GL_UNSIGNED_BYTE, atlas.data());
+    glTextureParameteri(sdf_texture_array, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(sdf_texture_array, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(sdf_texture_array, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(sdf_texture_array, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTextureParameteri(sdf_texture_array, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+}
+
+void pathtracer_2d::load_sdfs()
+{
+    discovered_sdfs.clear();
+
+    std::vector<std::string> search_paths =
+    {
+        std::filesystem::current_path().string(),
+        std::filesystem::current_path().parent_path().string(),
+        std::filesystem::current_path().parent_path().parent_path().string(),
+        std::filesystem::current_path().parent_path().parent_path().parent_path().string()
+    };
+
+    const std::string asset_dir = find_asset_directory(search_paths);
+    if (asset_dir.empty())
+    {
+        sdf_io_status = "SDF discovery failed: assets directory not found";
+        sdf_io_error = true;
+        selected_sdf_file_index = -1;
+        rebuild_sdf_texture_array();
+        return;
+    }
+
+    const std::filesystem::path sdf_dir = (std::filesystem::path(asset_dir) / ".." / "apps" / "2dpt" / "sdfs").lexically_normal();
+    sdfs_directory = sdf_dir.string();
+
+    if (!std::filesystem::exists(sdf_dir))
+    {
+        selected_sdf_file_index = -1;
+        sdf_io_status = "SDF directory not found: " + sdfs_directory;
+        sdf_io_error = true;
+        rebuild_sdf_texture_array();
+        return;
+    }
+
+    for (const auto & entry : std::filesystem::directory_iterator(sdf_dir))
+    {
+        if (!entry.is_regular_file()) continue;
+
+        std::string ext = entry.path().extension().string();
+        std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+        if (ext != ".png") continue;
+
+        discovered_sdf sdf_entry;
+        sdf_entry.name = entry.path().stem().string();
+        sdf_entry.path = entry.path().string();
+        try
+        {
+            sdf_entry.pixels = load_image_data(sdf_entry.path, &sdf_entry.width, &sdf_entry.height, &sdf_entry.channels, true);
+            if (sdf_entry.width > 0 && sdf_entry.height > 0 && sdf_entry.channels > 0 && !sdf_entry.pixels.empty())
+            {
+                discovered_sdfs.push_back(std::move(sdf_entry));
+            }
+        }
+        catch (const std::exception &)
+        {
+            continue;
+        }
+    }
+
+    std::sort(discovered_sdfs.begin(), discovered_sdfs.end(), [](const discovered_sdf & a, const discovered_sdf & b) { return a.name < b.name; });
+
+    if (discovered_sdfs.empty())
+    {
+        selected_sdf_file_index = -1;
+        sdf_io_status = "No PNG SDFs found in " + sdfs_directory;
+        sdf_io_error = false;
+        rebuild_sdf_texture_array();
+        return;
+    }
+
+    selected_sdf_file_index = std::clamp(selected_sdf_file_index, 0, static_cast<int32_t>(discovered_sdfs.size()) - 1);
+    rebuild_sdf_texture_array();
+
+    for (scene_primitive & sp : scene)
+    {
+        if (sp.type == prim_type::image_sdf)
+        {
+            const int32_t safe_idx = std::clamp(static_cast<int32_t>(std::lround(sp.params.z)), 0, static_cast<int32_t>(discovered_sdfs.size()) - 1);
+            sp.params.z = static_cast<float>(safe_idx);
+        }
+    }
+
+    sdf_io_status = "Found " + std::to_string(discovered_sdfs.size()) + " PNG SDF files";
+    sdf_io_error = false;
+    scene_dirty = true;
 }
 
 void pathtracer_2d::draw_export_scene_modal()
@@ -711,7 +1004,10 @@ void pathtracer_2d::on_draw()
         trace_compute.uniform("u_camera_zoom", camera.zoom);
         trace_compute.uniform("u_camera_center", camera.center);
         trace_compute.uniform("u_resolution", float2(static_cast<float>(width), static_cast<float>(height)));
+        trace_compute.uniform("u_sdf_texture_array", 3);
+        trace_compute.uniform("u_num_sdf_textures", static_cast<int>(discovered_sdfs.size()));
         glBindTextureUnit(2, environment_texture_1d);
+        glBindTextureUnit(3, static_cast<GLuint>(sdf_texture_array));
 
         uint32_t groups_x = (width + 15) / 16;
         uint32_t groups_y = (height + 15) / 16;
@@ -739,6 +1035,9 @@ void pathtracer_2d::on_draw()
         display_shader.uniform("u_num_prims", static_cast<int>(scene.size()));
         display_shader.uniform("u_selected_prim", selected_index);
         display_shader.uniform("u_debug_overlay", config.debug_overlay ? 1 : 0);
+        display_shader.uniform("u_sdf_texture_array", 3);
+        display_shader.uniform("u_num_sdf_textures", static_cast<int>(discovered_sdfs.size()));
+        display_shader.texture("u_sdf_texture_array", 3, static_cast<GLuint>(sdf_texture_array), GL_TEXTURE_2D_ARRAY);
 
         glBindVertexArray(empty_vao);
         glDrawArrays(GL_TRIANGLES, 0, 3);
@@ -785,8 +1084,8 @@ void pathtracer_2d::on_draw()
 
     if (ImGui::CollapsingHeader("Add Primitive", ImGuiTreeNodeFlags_DefaultOpen))
     {
-        const char * labels[] = {"Circle", "Box", "Capsule", "Segment", "Lens", "N-gon"};
-        for (int32_t i = 0; i < 6; ++i)
+        const char * labels[] = {"Circle", "Box", "Capsule", "Segment", "Lens", "N-gon", "Image SDF"};
+        for (int32_t i = 0; i < IM_ARRAYSIZE(labels); ++i)
         {
             if (i > 0) ImGui::SameLine();
             bool is_pending = (pending_add_type == i);
@@ -802,7 +1101,7 @@ void pathtracer_2d::on_draw()
 
     if (ImGui::CollapsingHeader("Primitives", ImGuiTreeNodeFlags_DefaultOpen))
     {
-        const char * type_names[] = {"Circle", "Box", "Capsule", "Segment", "Lens", "N-gon"};
+        const char * type_names[] = {"Circle", "Box", "Capsule", "Segment", "Lens", "N-gon", "Image SDF"};
         const char * mat_names[] = {"Diffuse", "Mirror", "Glass", "Water", "Diamond"};
 
         for (int32_t i = 0; i < static_cast<int32_t>(scene.size()); ++i)
@@ -813,10 +1112,14 @@ void pathtracer_2d::on_draw()
             bool is_selected = (i == selected_index);
 
             char label[128];
+            const char * vis_tag = "";
+            if (sp.visibility == visibility_mode::primary_holdout) vis_tag = " [H]";
+            else if (sp.visibility == visibility_mode::primary_no_direct) vis_tag = " [ND]";
             snprintf(label, sizeof(label), "%s %d (%s)%s",
                 type_names[static_cast<int>(sp.type)], i,
                 mat_names[static_cast<int>(sp.mat)],
                 sp.emission > 0.0f ? " [E]" : "");
+            if (vis_tag[0] != '\0') strncat(label, vis_tag, sizeof(label) - strlen(label) - 1);
 
             if (ImGui::Selectable(label, is_selected))
             {
@@ -832,6 +1135,25 @@ void pathtracer_2d::on_draw()
             selected_index = -1;
             scene_dirty = true;
         }
+
+        if (selected_index >= 0 && selected_index < static_cast<int32_t>(scene.size()))
+        {
+            ImGui::SameLine();
+            if (ImGui::Button("Layer -") && selected_index > 0)
+            {
+                std::swap(scene[selected_index], scene[selected_index - 1]);
+                selected_index -= 1;
+                scene_dirty = true;
+            }
+
+            ImGui::SameLine();
+            if (ImGui::Button("Layer +") && selected_index < static_cast<int32_t>(scene.size()) - 1)
+            {
+                std::swap(scene[selected_index], scene[selected_index + 1]);
+                selected_index += 1;
+                scene_dirty = true;
+            }
+        }
     }
 
     if (selected_index >= 0 && selected_index < static_cast<int32_t>(scene.size()))
@@ -839,8 +1161,9 @@ void pathtracer_2d::on_draw()
         if (ImGui::CollapsingHeader("Selected Primitive", ImGuiTreeNodeFlags_DefaultOpen))
         {
             scene_primitive & sp = scene[selected_index];
-            const char * type_names[] = {"Circle", "Box", "Capsule", "Segment", "Lens", "N-gon"};
+            const char * type_names[] = {"Circle", "Box", "Capsule", "Segment", "Lens", "N-gon", "Image SDF"};
             const char * mat_names[] = {"Diffuse", "Mirror", "Glass", "Water", "Diamond"};
+            const char * vis_names[] = {"Normal", "Primary Holdout", "Primary No-Direct"};
 
             bool changed = false;
             changed |= ImGui::DragFloat2("Position", &sp.position.x, 0.05f);
@@ -850,6 +1173,22 @@ void pathtracer_2d::on_draw()
             if (ImGui::Combo("Shape", &type_idx, type_names, IM_ARRAYSIZE(type_names)))
             {
                 sp.type = static_cast<prim_type>(type_idx);
+                if (sp.type == prim_type::image_sdf)
+                {
+                    sp.params.w = (std::abs(sp.params.w) > 1e-6f) ? sp.params.w : 1.0f;
+                    if (!discovered_sdfs.empty())
+                    {
+                        const int32_t safe_idx = std::clamp(static_cast<int32_t>(std::lround(sp.params.z)), 0, static_cast<int32_t>(discovered_sdfs.size()) - 1);
+                        sp.params.z = static_cast<float>(safe_idx);
+                        fit_image_sdf_aspect(sp, safe_idx);
+                    }
+                    else
+                    {
+                        sp.params.z = 0.0f;
+                        sp.params.x = 1.0f;
+                        sp.params.y = 1.0f;
+                    }
+                }
                 changed = true;
             }
 
@@ -907,6 +1246,76 @@ void pathtracer_2d::on_draw()
                     changed |= ImGui::DragFloat("Radius##ngon", &sp.params.x, 0.01f, 0.01f, 5.0f);
                     changed |= ImGui::DragFloat("Sides", &sp.params.y, 0.1f, 3.0f, 12.0f);
                     break;
+                case prim_type::image_sdf:
+                {
+                    float base_half_x = 1.0f;
+                    float base_half_y = 1.0f;
+
+                    if (!discovered_sdfs.empty())
+                    {
+                        const int32_t sdf_idx = std::clamp(static_cast<int32_t>(std::lround(sp.params.z)), 0, static_cast<int32_t>(discovered_sdfs.size()) - 1);
+                        const discovered_sdf & sdf = discovered_sdfs[sdf_idx];
+                        if (sdf.width > 0 && sdf.height > 0)
+                        {
+                            const float w = static_cast<float>(sdf.width);
+                            const float h = static_cast<float>(sdf.height);
+                            if (w >= h)
+                            {
+                                base_half_x = 1.0f;
+                                base_half_y = std::max(h / w, 1e-4f);
+                            }
+                            else
+                            {
+                                base_half_x = std::max(w / h, 1e-4f);
+                                base_half_y = 1.0f;
+                            }
+                        }
+                    }
+
+                    float scale = std::max(static_cast<float>(sp.params.x) / base_half_x, static_cast<float>(sp.params.y) / base_half_y);
+                    scale = std::max(scale, 0.01f);
+                    if (ImGui::DragFloat("Scale##img", &scale, 0.01f, 0.01f, 100.0f))
+                    {
+                        sp.params.x = base_half_x * scale;
+                        sp.params.y = base_half_y * scale;
+                        changed = true;
+                    }
+                    changed |= ImGui::DragFloat("Distance Range##img", &sp.params.w, 0.005f, -0.1f, +0.1f);
+                    changed |= ImGui::Checkbox("Invert Image##img", &sp.invert_image);
+
+                    if (!discovered_sdfs.empty())
+                    {
+                        int32_t sdf_idx = std::clamp(static_cast<int32_t>(std::lround(sp.params.z)), 0, static_cast<int32_t>(discovered_sdfs.size()) - 1);
+                        const char * preview = discovered_sdfs[sdf_idx].name.c_str();
+                        if (ImGui::BeginCombo("SDF Image", preview))
+                        {
+                            for (int32_t i = 0; i < static_cast<int32_t>(discovered_sdfs.size()); ++i)
+                            {
+                                const bool is_selected = (i == sdf_idx);
+                                if (ImGui::Selectable(discovered_sdfs[i].name.c_str(), is_selected))
+                                {
+                                    sp.params.z = static_cast<float>(i);
+                                    fit_image_sdf_aspect(sp, i);
+                                    changed = true;
+                                }
+                                if (is_selected) ImGui::SetItemDefaultFocus();
+                            }
+                            ImGui::EndCombo();
+                        }
+                    }
+                    else
+                    {
+                        ImGui::TextDisabled("No SDF PNGs discovered");
+                    }
+                    break;
+                }
+            }
+
+            int vis_idx = static_cast<int>(sp.visibility);
+            if (ImGui::Combo("Visibility", &vis_idx, vis_names, IM_ARRAYSIZE(vis_names)))
+            {
+                sp.visibility = static_cast<visibility_mode>(vis_idx);
+                changed = true;
             }
 
             changed |= ImGui::ColorEdit3("Albedo", &sp.albedo.x);
@@ -923,6 +1332,34 @@ void pathtracer_2d::on_draw()
             }
 
             if (changed) scene_dirty = true;
+        }
+    }
+
+    if (ImGui::CollapsingHeader("SDF Library", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        ImGui::TextWrapped("SDF Directory: %s", sdfs_directory.empty() ? "<unresolved>" : sdfs_directory.c_str());
+
+        const char * preview = (selected_sdf_file_index >= 0 && selected_sdf_file_index < static_cast<int32_t>(discovered_sdfs.size()))
+            ? discovered_sdfs[selected_sdf_file_index].name.c_str()
+            : "<none>";
+
+        if (ImGui::BeginCombo("Available SDF PNGs", preview))
+        {
+            for (int32_t i = 0; i < static_cast<int32_t>(discovered_sdfs.size()); ++i)
+            {
+                const bool is_selected = (i == selected_sdf_file_index);
+                if (ImGui::Selectable(discovered_sdfs[i].name.c_str(), is_selected)) selected_sdf_file_index = i;
+                if (is_selected) ImGui::SetItemDefaultFocus();
+            }
+            ImGui::EndCombo();
+        }
+
+        if (ImGui::Button("Refresh SDFs")) load_sdfs();
+
+        if (!sdf_io_status.empty())
+        {
+            const ImVec4 color = sdf_io_error ? ImVec4(0.95f, 0.35f, 0.35f, 1.0f) : ImVec4(0.35f, 0.9f, 0.35f, 1.0f);
+            ImGui::TextColored(color, "%s", sdf_io_status.c_str());
         }
     }
 

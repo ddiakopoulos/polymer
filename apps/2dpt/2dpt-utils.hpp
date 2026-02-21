@@ -13,14 +13,23 @@
 using namespace polymer;
 using json = nlohmann::json;
 
-enum class prim_type : uint32_t { circle = 0, box = 1, capsule = 2, segment = 3, lens = 4, ngon = 5 };
+enum class prim_type : uint32_t { circle = 0, box = 1, capsule = 2, segment = 3, lens = 4, ngon = 5, image_sdf = 6 };
 enum class material_type : uint32_t { diffuse = 0, mirror = 1, glass = 2, water = 3, diamond = 4 };
+enum class visibility_mode : uint32_t
+{
+    normal = 0,
+    primary_holdout = 1,
+    primary_no_direct = 2
+};
 
 inline void to_json(json & archive, const prim_type & p) { archive = static_cast<uint32_t>(p); }
 inline void from_json(const json & archive, prim_type & p) { p = static_cast<prim_type>(archive.get<uint32_t>()); }
 
 inline void to_json(json & archive, const material_type & p) { archive = static_cast<uint32_t>(p); }
 inline void from_json(const json & archive, material_type & p) { p = static_cast<material_type>(archive.get<uint32_t>()); }
+
+inline void to_json(json & archive, const visibility_mode & p) { archive = static_cast<uint32_t>(p); }
+inline void from_json(const json & archive, visibility_mode & p) { p = static_cast<visibility_mode>(archive.get<uint32_t>()); }
 
 inline float2 rotate_2d(const float2 & p, const float angle)
 {
@@ -139,6 +148,10 @@ struct gpu_sdf_primitive
 };
 static_assert(sizeof(gpu_sdf_primitive) == 80, "gpu_sdf_primitive must be 80 bytes");
 
+constexpr uint32_t gpu_material_mask = 0xFFu;
+constexpr uint32_t gpu_visibility_shift = 8u;
+constexpr uint32_t gpu_image_invert_bit = 1u << 16u;
+
 /////////////////////////
 //   scene_primitive   //
 /////////////////////////
@@ -157,6 +170,8 @@ struct scene_primitive
     float cauchy_c       = 0.0f;
     float3 absorption           = {0.0f, 0.0f, 0.0f};
     float emission_half_angle   = POLYMER_PI;
+    visibility_mode visibility  = visibility_mode::normal;
+    bool invert_image           = false;
     bool selected               = false;
 
     gpu_sdf_primitive pack() const
@@ -166,7 +181,9 @@ struct scene_primitive
         g.rotation   = rotation;
         g.prim       = static_cast<uint32_t>(type);
         g.params     = params;
-        g.material   = static_cast<uint32_t>(mat);
+        const uint32_t packed_material = static_cast<uint32_t>(mat) & gpu_material_mask;
+        const uint32_t packed_visibility = static_cast<uint32_t>(visibility) << gpu_visibility_shift;
+        g.material   = packed_material | packed_visibility | (invert_image ? gpu_image_invert_bit : 0u);
         g.ior_base   = ior_base;
         g.cauchy_b   = cauchy_b;
         g.cauchy_c   = cauchy_c;
@@ -192,6 +209,8 @@ template<class F> inline void visit_fields(scene_primitive & o, F f)
     f("cauchy_c", o.cauchy_c);
     f("absorption", o.absorption);
     f("emission_half_angle", o.emission_half_angle);
+    f("visibility", o.visibility);
+    f("invert_image", o.invert_image);
 }
 
 inline void to_json(json & j, const scene_primitive & p)
@@ -205,7 +224,7 @@ inline void from_json(const json & archive, scene_primitive & m)
     const json obj = archive;
     visit_fields(m, [&obj](const char * name, auto & field, auto... metadata)
     {
-        field = obj.at(name).get<std::remove_reference_t<decltype(field)>>();
+        if (obj.contains(name)) field = obj.at(name).get<std::remove_reference_t<decltype(field)>>();
     });
 }
 

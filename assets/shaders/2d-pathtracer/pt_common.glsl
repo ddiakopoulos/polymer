@@ -24,12 +24,20 @@
 #define PRIM_SEGMENT 3u
 #define PRIM_LENS    4u
 #define PRIM_NGON    5u
+#define PRIM_IMAGE   6u
 
 #define MAT_DIFFUSE  0u
 #define MAT_MIRROR   1u
 #define MAT_GLASS    2u
 #define MAT_WATER    3u
 #define MAT_DIAMOND  4u
+
+#define MATERIAL_MASK 0xFFu
+#define VISIBILITY_SHIFT 8u
+#define IMAGE_INVERT_BIT (1u << 16u)
+#define VIS_NORMAL 0u
+#define VIS_PRIMARY_HOLDOUT 1u
+#define VIS_PRIMARY_NO_DIRECT 2u
 
 // ============================================================================
 // GPU SDF Primitive (80 bytes, std430 compatible)
@@ -56,6 +64,9 @@ layout(std430, binding = 0) readonly buffer PrimitiveBuffer
 {
     gpu_sdf_primitive primitives[];
 };
+
+uniform sampler2DArray u_sdf_texture_array;
+uniform int u_num_sdf_textures;
 
 // ============================================================================
 // RNG - PCG Hash
@@ -200,6 +211,24 @@ float sdf_ngon(vec2 p, float r, float sides)
     return q.x - he;
 }
 
+float sdf_image(vec2 p, vec2 half_extents, int layer, float range_scale, bool invert_image)
+{
+    if (u_num_sdf_textures <= 0) return 1e10;
+    if (layer < 0 || layer >= u_num_sdf_textures) return 1e10;
+
+    vec2 he = max(half_extents, vec2(1e-4));
+    vec2 uv = p / (2.0 * he) + 0.5;
+    vec2 uv_clamped = clamp(uv, 0.0, 1.0);
+
+    float encoded = texture(u_sdf_texture_array, vec3(uv_clamped, float(layer))).r;
+    if (invert_image) encoded = 1.0 - encoded;
+    float signed_dist = (encoded * 2.0 - 1.0) * range_scale;
+
+    vec2 q = abs(p) - he;
+    float outside = length(max(q, 0.0));
+    return signed_dist + outside;
+}
+
 // ============================================================================
 // Scene Evaluation
 // ============================================================================
@@ -227,6 +256,13 @@ float eval_primitive(vec2 local_p, gpu_sdf_primitive prim)
         case PRIM_SEGMENT: return sdf_segment(local_p, prim.params.x, prim.params.y);
         case PRIM_LENS:    return sdf_lens(local_p, prim.params.x, prim.params.y, prim.params.z, prim.params.w);
         case PRIM_NGON:    return sdf_ngon(local_p, prim.params.x, prim.params.y);
+        case PRIM_IMAGE:
+        {
+            int layer = int(round(prim.params.z));
+            float range_scale = (abs(prim.params.w) > 1e-6) ? prim.params.w : 1.0;
+            bool invert_image = (prim.material_type & IMAGE_INVERT_BIT) != 0u;
+            return sdf_image(local_p, prim.params.xy, layer, range_scale, invert_image);
+        }
         default:           return 1e10;
     }
 }
@@ -364,6 +400,7 @@ vec2 calc_analytic_normal(vec2 lp, gpu_sdf_primitive prim)
 vec2 calc_primitive_normal(vec2 p, int prim_id)
 {
     gpu_sdf_primitive prim = primitives[prim_id];
+    if (prim.prim_type == PRIM_IMAGE) return calc_primitive_normal_fd(p, prim_id);
     vec2 local_p = rotate_2d(p - prim.position, -prim.rotation);
     vec2 local_n = calc_analytic_normal(local_p, prim);
     return rotate_2d(local_n, prim.rotation);
@@ -425,4 +462,14 @@ bool emission_allowed(vec2 outward_normal, float rotation, float half_angle)
     if (half_angle >= PI) return true;
     vec2 forward = vec2(cos(rotation), sin(rotation));
     return dot(outward_normal, forward) > cos(half_angle);
+}
+
+uint unpack_material_type(uint packed_material)
+{
+    return packed_material & MATERIAL_MASK;
+}
+
+uint unpack_visibility_mode(uint packed_material)
+{
+    return (packed_material >> VISIBILITY_SHIFT) & MATERIAL_MASK;
 }

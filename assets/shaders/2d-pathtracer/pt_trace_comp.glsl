@@ -217,13 +217,19 @@ bool intersect_primitive(vec2 origin, vec2 dir, gpu_sdf_primitive prim, float mi
     return intersect_primitive_marched(origin, dir, prim, min_t, t_hit);
 }
 
-bool find_nearest_intersection(vec2 origin, vec2 dir, int num_prims, float min_t, float max_t, out float out_t, out int out_id)
+bool find_nearest_intersection(vec2 origin, vec2 dir, int num_prims, float min_t, float max_t, bool skip_primary_holdouts, out float out_t, out int out_id)
 {
     float best_t = 1e30;
     int best_id = -1;
 
     for (int i = 0; i < num_prims; ++i)
     {
+        if (skip_primary_holdouts)
+        {
+            uint vis_mode = unpack_visibility_mode(primitives[i].material_type);
+            if (vis_mode == VIS_PRIMARY_HOLDOUT) continue;
+        }
+
         float t_i;
         if (intersect_primitive(origin, dir, primitives[i], min_t, t_i))
         {
@@ -240,7 +246,7 @@ bool find_nearest_intersection(vec2 origin, vec2 dir, int num_prims, float min_t
     return best_id >= 0;
 }
 
-march_result ray_march(vec2 origin, vec2 dir, int num_prims)
+march_result ray_march(vec2 origin, vec2 dir, int num_prims, bool is_primary_ray)
 {
     march_result result;
     result.hit = false;
@@ -251,7 +257,7 @@ march_result ray_march(vec2 origin, vec2 dir, int num_prims)
     float min_t = EPSILON_HIT * 2.0;
     float best_t;
     int best_id;
-    bool has_hit = find_nearest_intersection(origin, dir, num_prims, min_t, MAX_MARCH_DIST, best_t, best_id);
+    bool has_hit = find_nearest_intersection(origin, dir, num_prims, min_t, MAX_MARCH_DIST, is_primary_ray, best_t, best_id);
 
     if (has_hit)
     {
@@ -279,6 +285,7 @@ float primitive_perimeter(gpu_sdf_primitive prim)
         float r = prim.params.z;
         return 4.0 * (prim.params.x + prim.params.y) + (TWO_PI - 8.0) * r;
     }
+    if (prim.prim_type == PRIM_IMAGE) return 4.0 * (prim.params.x + prim.params.y);
     return TWO_PI * prim.params.x;
 }
 
@@ -374,6 +381,41 @@ emitter_sample sample_emitter_boundary(int emitter_id, inout rng_state rng)
         es.normal = rotate_2d(ln, ep.rotation);
         es.pdf = 1.0 / perim;
     }
+    else if (ep.prim_type == PRIM_IMAGE)
+    {
+        vec2 h = ep.params.xy;
+        float perim = 4.0 * (h.x + h.y);
+        float t = u * perim;
+        vec2 lp, ln;
+
+        if (t < 2.0 * h.x)
+        {
+            lp = vec2(t - h.x, -h.y);
+            ln = vec2(0.0, -1.0);
+        }
+        else if (t < 2.0 * h.x + 2.0 * h.y)
+        {
+            float k = t - 2.0 * h.x;
+            lp = vec2(h.x, -h.y + k);
+            ln = vec2(1.0, 0.0);
+        }
+        else if (t < 4.0 * h.x + 2.0 * h.y)
+        {
+            float k = t - (2.0 * h.x + 2.0 * h.y);
+            lp = vec2(h.x - k, h.y);
+            ln = vec2(0.0, 1.0);
+        }
+        else
+        {
+            float k = t - (4.0 * h.x + 2.0 * h.y);
+            lp = vec2(-h.x, h.y - k);
+            ln = vec2(-1.0, 0.0);
+        }
+
+        es.point = ep.position + rotate_2d(lp, ep.rotation);
+        es.normal = rotate_2d(ln, ep.rotation);
+        es.pdf = 1.0 / perim;
+    }
     else
     {
         float angle = u * TWO_PI;
@@ -399,7 +441,7 @@ bool test_visibility(vec2 from, vec2 to, int target_prim_id, int num_prims)
     float hit_t;
     int hit_id;
 
-    if (!find_nearest_intersection(from, dir, num_prims, min_t, max_t, hit_t, hit_id)) return true;
+    if (!find_nearest_intersection(from, dir, num_prims, min_t, max_t, false, hit_t, hit_id)) return true;
     return hit_id == target_prim_id && hit_t >= target_dist - EPSILON_SPAWN * 4.0;
 }
 
@@ -428,7 +470,7 @@ vec3 trace_path(vec2 origin, vec2 dir, int num_prims, inout rng_state rng, vec2 
     int inside_count = 0;
     for (int i = 0; i < num_prims; ++i)
     {
-        uint mat_i = primitives[i].material_type;
+        uint mat_i = unpack_material_type(primitives[i].material_type);
         bool dielectric = (mat_i == MAT_GLASS || mat_i == MAT_WATER || mat_i == MAT_DIAMOND);
         if (!dielectric) continue;
 
@@ -479,7 +521,7 @@ vec3 trace_path(vec2 origin, vec2 dir, int num_prims, inout rng_state rng, vec2 
 
     for (int bounce = 0; bounce < u_max_bounces; ++bounce)
     {
-        march_result mr = ray_march(origin, dir, num_prims);
+        march_result mr = ray_march(origin, dir, num_prims, bounce == 0);
 
         if (!mr.hit)
         {
@@ -495,6 +537,8 @@ vec3 trace_path(vec2 origin, vec2 dir, int num_prims, inout rng_state rng, vec2 
         }
 
         gpu_sdf_primitive prim = primitives[mr.prim_id];
+        uint vis_mode = unpack_visibility_mode(prim.material_type);
+        bool primary_no_direct = (bounce == 0 && vis_mode == VIS_PRIMARY_NO_DIRECT);
         vec2 outward_normal = calc_primitive_normal(mr.pos, mr.prim_id);
         vec2 normal = outward_normal;
         if (dot(normal, dir) > 0.0) normal = -normal;
@@ -507,7 +551,7 @@ vec3 trace_path(vec2 origin, vec2 dir, int num_prims, inout rng_state rng, vec2 
         }
 
         // Emission
-        if (prim.emission > 0.0)
+        if (prim.emission > 0.0 && !primary_no_direct)
         {
             if (emission_allowed(outward_normal, prim.rotation, prim.emission_half_angle))
             {
@@ -528,7 +572,7 @@ vec3 trace_path(vec2 origin, vec2 dir, int num_prims, inout rng_state rng, vec2 
             // Surface still exists but not emitting in this direction — continue bouncing
         }
 
-        uint mat = prim.material_type;
+        uint mat = unpack_material_type(prim.material_type);
 
         if (mat == MAT_DIFFUSE)
         {
@@ -537,7 +581,7 @@ vec3 trace_path(vec2 origin, vec2 dir, int num_prims, inout rng_state rng, vec2 
             // ================================================================
             // NEE: sample an emitter directly
             // ================================================================
-            if (num_emitters > 0)
+            if (!primary_no_direct && num_emitters > 0)
             {
                 int eidx = int(xi.y * float(num_emitters));
                 eidx = min(eidx, num_emitters - 1);
