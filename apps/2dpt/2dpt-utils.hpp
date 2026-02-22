@@ -239,6 +239,7 @@ struct path_tracer_config
     float environment_intensity = 0.000f;
     float firefly_clamp = 32.0f;
     float exposure = 0.25;
+    bool strict_layer_masking = true;
     bool debug_overlay = false;
 };
 
@@ -249,6 +250,7 @@ template<class F> inline void visit_fields(path_tracer_config & o, F f)
     f("environment_intensity", o.environment_intensity);
     f("firefly_clamp", o.firefly_clamp);
     f("exposure", o.exposure);
+    f("strict_layer_masking", o.strict_layer_masking);
     f("debug_overlay", o.debug_overlay);
 }
 

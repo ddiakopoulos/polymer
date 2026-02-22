@@ -12,6 +12,7 @@ uniform float u_environment_intensity;
 uniform int u_use_environment_map;
 uniform sampler1D u_environment_map;
 uniform float u_firefly_clamp;
+uniform int u_strict_layer_masking;
 uniform float u_camera_zoom;
 uniform vec2 u_camera_center;
 uniform vec2 u_resolution;
@@ -217,27 +218,48 @@ bool intersect_primitive(vec2 origin, vec2 dir, gpu_sdf_primitive prim, float mi
     return intersect_primitive_marched(origin, dir, prim, min_t, t_hit);
 }
 
+bool should_skip_primitive_for_ray(int prim_id, bool skip_primary_holdouts)
+{
+    if (!skip_primary_holdouts) return false;
+    uint vis_mode = unpack_visibility_mode(primitives[prim_id].material_type);
+    return vis_mode == VIS_PRIMARY_HOLDOUT;
+}
+
+bool is_masked_by_higher_layers(vec2 p, int hit_id, int num_prims, bool skip_primary_holdouts)
+{
+    int upper_count = min(hit_id, num_prims);
+    for (int i = 0; i < upper_count; ++i)
+    {
+        if (should_skip_primitive_for_ray(i, skip_primary_holdouts)) continue;
+        if (primitive_signed_distance(p, primitives[i]) <= EPSILON_HIT * 2.0) return true;
+    }
+    return false;
+}
+
 bool find_nearest_intersection(vec2 origin, vec2 dir, int num_prims, float min_t, float max_t, bool skip_primary_holdouts, out float out_t, out int out_id)
 {
     float best_t = 1e30;
     int best_id = -1;
+    bool strict_masking = (u_strict_layer_masking != 0);
 
     for (int i = 0; i < num_prims; ++i)
     {
-        if (skip_primary_holdouts)
-        {
-            uint vis_mode = unpack_visibility_mode(primitives[i].material_type);
-            if (vis_mode == VIS_PRIMARY_HOLDOUT) continue;
-        }
+        if (should_skip_primitive_for_ray(i, skip_primary_holdouts)) continue;
 
         float t_i;
-        if (intersect_primitive(origin, dir, primitives[i], min_t, t_i))
+        if (!intersect_primitive(origin, dir, primitives[i], min_t, t_i)) continue;
+        if (t_i > max_t) continue;
+
+        if (strict_masking)
         {
-            if (t_i <= max_t && t_i < best_t)
-            {
-                best_t = t_i;
-                best_id = i;
-            }
+            vec2 p = origin + dir * t_i;
+            if (is_masked_by_higher_layers(p, i, num_prims, skip_primary_holdouts)) continue;
+        }
+
+        if (t_i < best_t)
+        {
+            best_t = t_i;
+            best_id = i;
         }
     }
 

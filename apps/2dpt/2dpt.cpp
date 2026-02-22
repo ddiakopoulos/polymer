@@ -1001,6 +1001,7 @@ void pathtracer_2d::on_draw()
         trace_compute.uniform("u_use_environment_map", env.enabled ? 1 : 0);
         trace_compute.uniform("u_environment_map", 2);
         trace_compute.uniform("u_firefly_clamp", config.firefly_clamp);
+        trace_compute.uniform("u_strict_layer_masking", config.strict_layer_masking ? 1 : 0);
         trace_compute.uniform("u_camera_zoom", camera.zoom);
         trace_compute.uniform("u_camera_center", camera.center);
         trace_compute.uniform("u_resolution", float2(static_cast<float>(width), static_cast<float>(height)));
@@ -1060,6 +1061,7 @@ void pathtracer_2d::on_draw()
         if (ImGui::SliderFloat("Environment", &config.environment_intensity, 0.0f, 1.0f)) scene_dirty = true;
         if (ImGui::SliderFloat("Firefly Clamp", &config.firefly_clamp, 1.0f, 1000.0f, "%.0f")) scene_dirty = true;
         ImGui::SliderFloat("Exposure", &config.exposure, 0.1f, 10.0f);
+        if (ImGui::Checkbox("Strict Layer Masking", &config.strict_layer_masking)) scene_dirty = true;
 
         if (ImGui::Button("Reset Accumulation")) clear_accumulation();
         ImGui::SameLine();
