@@ -83,6 +83,7 @@ if(POLYMER_ENGINE_APPS)
     add_subdirectory(apps/editor polymer-scene-editor)
     add_subdirectory(apps/3dgs-viewer 3dgs-viewer)
     add_subdirectory(apps/2dpt 2d-pathtracer)
+    add_subdirectory(apps/radiance-cascades radiance-cascades)
 endif()
 
 option(POLYMER_BUILD_SAMPLES "Build the Polymer sample applications" ON)
