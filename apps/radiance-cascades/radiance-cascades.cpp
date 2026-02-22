@@ -37,7 +37,7 @@ struct radiance_cascades_app final : public polymer_app
     gl_shader seed_shader;
     gl_shader jfa_shader;
     gl_shader distance_shader;
-    gl_shader cascades_shader;
+    gl_shader_compute cascades_compute;
     gl_shader overlay_shader;
 
     gl_texture_2d draw_tex[2];
@@ -109,7 +109,7 @@ radiance_cascades_app::radiance_cascades_app() : polymer_app(1920, 1080, "Radian
     seed_shader = gl_shader(fullscreen_vert, read_file_text(shader_base + "rc_seed_frag.glsl"));
     jfa_shader = gl_shader(fullscreen_vert, read_file_text(shader_base + "rc_jfa_frag.glsl"));
     distance_shader = gl_shader(fullscreen_vert, read_file_text(shader_base + "rc_distance_frag.glsl"));
-    cascades_shader = gl_shader(fullscreen_vert, read_file_text(shader_base + "rc_cascades_frag.glsl"));
+    cascades_compute = gl_shader_compute(read_file_text(shader_base + "rc_cascades_comp.glsl"));
     overlay_shader = gl_shader(fullscreen_vert, read_file_text(shader_base + "rc_overlay_frag.glsl"));
 
     int width, height;
@@ -296,7 +296,6 @@ void radiance_cascades_app::on_draw()
     float base_pixels_between_probes = std::pow(2.0f, static_cast<float>(config.base_pixels_between_probes_exp));
     float2 resolution = {static_cast<float>(canvas_width), static_cast<float>(canvas_height)};
     float2 one_over_size = {1.0f / resolution.x, 1.0f / resolution.y};
-
     bool is_frame_0 = config.force_full_pass || (frame == 0);
 
     // -------------------------------------------------------
@@ -455,6 +454,10 @@ void radiance_cascades_app::on_draw()
         int32_t first_layer = cascade_count - 1;
         int32_t last_layer = config.first_cascade_index;
 
+        float2 cascade_extent = {static_cast<float>(radiance_width), static_cast<float>(radiance_height)};
+        GLuint gx = (radiance_width + 15) / 16;
+        GLuint gy = (radiance_height + 15) / 16;
+
         if (config.force_full_pass)
         {
             cascade_idx = 0;
@@ -463,41 +466,29 @@ void radiance_cascades_app::on_draw()
                 int32_t read = cascade_idx;
                 int32_t write = 1 - cascade_idx;
 
-                bind_fbo_to_texture(fbo, cascade_tex[write], radiance_width, radiance_height);
+                cascades_compute.bind();
+                cascades_compute.bind_image(0, cascade_tex[write], GL_WRITE_ONLY, GL_R11F_G11F_B10F);
+                cascades_compute.texture("u_scene_texture", 0, draw_tex[draw_idx], GL_TEXTURE_2D);
+                cascades_compute.texture("u_distance_texture", 1, distance_tex, GL_TEXTURE_2D);
+                cascades_compute.texture("u_last_texture", 2, cascade_tex[read], GL_TEXTURE_2D);
 
-                cascades_shader.bind();
-                cascades_shader.texture("u_scene_texture", 0, draw_tex[draw_idx], GL_TEXTURE_2D);
-                cascades_shader.texture("u_distance_texture", 1, distance_tex, GL_TEXTURE_2D);
+                cascades_compute.uniform("u_resolution", resolution);
+                cascades_compute.uniform("u_cascade_extent", cascade_extent);
+                cascades_compute.uniform("u_cascade_count", static_cast<float>(cascade_count));
+                cascades_compute.uniform("u_cascade_index", static_cast<float>(i));
+                cascades_compute.uniform("u_base_pixels_between_probes", base_pixels_between_probes);
+                cascades_compute.uniform("u_cascade_interval", config.cascade_interval);
+                cascades_compute.uniform("u_ray_interval", config.ray_interval);
+                cascades_compute.uniform("u_interval_overlap", config.interval_overlap);
+                cascades_compute.uniform("u_base_ray_count", static_cast<float>(config.base_ray_count));
+                cascades_compute.uniform("u_srgb", config.srgb_gamma);
+                cascades_compute.uniform("u_enable_sun", config.enable_sun ? 1 : 0);
+                cascades_compute.uniform("u_sun_angle", config.sun_angle);
+                cascades_compute.uniform("u_add_noise", config.add_noise ? 1 : 0);
+                cascades_compute.uniform("u_first_cascade_index", static_cast<float>(config.first_cascade_index));
+                cascades_compute.uniform("u_bilinear_fix_enabled", 0);
 
-                if (i == first_layer)
-                {
-                    // Outermost cascade: no previous cascade to merge with.
-                    // Bind a black texture (cascade_tex[read] was cleared or contains previous frame data).
-                    // The merge function will early-out because cascadeIndex >= cascadeCount - 1.
-                    cascades_shader.texture("u_last_texture", 2, cascade_tex[read], GL_TEXTURE_2D);
-                }
-                else
-                {
-                    cascades_shader.texture("u_last_texture", 2, cascade_tex[read], GL_TEXTURE_2D);
-                }
-
-                cascades_shader.uniform("u_resolution", resolution);
-                cascades_shader.uniform("u_cascade_extent", float2{static_cast<float>(radiance_width), static_cast<float>(radiance_height)});
-                cascades_shader.uniform("u_cascade_count", static_cast<float>(cascade_count));
-                cascades_shader.uniform("u_cascade_index", static_cast<float>(i));
-                cascades_shader.uniform("u_base_pixels_between_probes", base_pixels_between_probes);
-                cascades_shader.uniform("u_cascade_interval", config.cascade_interval);
-                cascades_shader.uniform("u_ray_interval", config.ray_interval);
-                cascades_shader.uniform("u_interval_overlap", config.interval_overlap);
-                cascades_shader.uniform("u_base_ray_count", static_cast<float>(config.base_ray_count));
-                cascades_shader.uniform("u_srgb", config.srgb_gamma);
-                cascades_shader.uniform("u_enable_sun", config.enable_sun ? 1 : 0);
-                cascades_shader.uniform("u_sun_angle", config.sun_angle);
-                cascades_shader.uniform("u_add_noise", config.add_noise ? 1 : 0);
-                cascades_shader.uniform("u_first_cascade_index", static_cast<float>(config.first_cascade_index));
-                cascades_shader.uniform("u_bilinear_fix_enabled", 0);
-
-                draw_fullscreen_tri();
+                cascades_compute.dispatch_and_barrier(gx, gy, 1, GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
                 glGenerateTextureMipmap(cascade_tex[write]);
                 cascade_idx = write;
             }
@@ -525,30 +516,29 @@ void radiance_cascades_app::on_draw()
                 int32_t read = cascade_idx;
                 int32_t write = 1 - cascade_idx;
 
-                bind_fbo_to_texture(fbo, cascade_tex[write], radiance_width, radiance_height);
+                cascades_compute.bind();
+                cascades_compute.bind_image(0, cascade_tex[write], GL_WRITE_ONLY, GL_R11F_G11F_B10F);
+                cascades_compute.texture("u_scene_texture", 0, draw_tex[draw_idx], GL_TEXTURE_2D);
+                cascades_compute.texture("u_distance_texture", 1, distance_tex, GL_TEXTURE_2D);
+                cascades_compute.texture("u_last_texture", 2, cascade_tex[read], GL_TEXTURE_2D);
 
-                cascades_shader.bind();
-                cascades_shader.texture("u_scene_texture", 0, draw_tex[draw_idx], GL_TEXTURE_2D);
-                cascades_shader.texture("u_distance_texture", 1, distance_tex, GL_TEXTURE_2D);
-                cascades_shader.texture("u_last_texture", 2, cascade_tex[read], GL_TEXTURE_2D);
+                cascades_compute.uniform("u_resolution", resolution);
+                cascades_compute.uniform("u_cascade_extent", cascade_extent);
+                cascades_compute.uniform("u_cascade_count", static_cast<float>(cascade_count));
+                cascades_compute.uniform("u_cascade_index", static_cast<float>(i));
+                cascades_compute.uniform("u_base_pixels_between_probes", base_pixels_between_probes);
+                cascades_compute.uniform("u_cascade_interval", config.cascade_interval);
+                cascades_compute.uniform("u_ray_interval", config.ray_interval);
+                cascades_compute.uniform("u_interval_overlap", config.interval_overlap);
+                cascades_compute.uniform("u_base_ray_count", static_cast<float>(config.base_ray_count));
+                cascades_compute.uniform("u_srgb", config.srgb_gamma);
+                cascades_compute.uniform("u_enable_sun", config.enable_sun ? 1 : 0);
+                cascades_compute.uniform("u_sun_angle", config.sun_angle);
+                cascades_compute.uniform("u_add_noise", config.add_noise ? 1 : 0);
+                cascades_compute.uniform("u_first_cascade_index", static_cast<float>(config.first_cascade_index));
+                cascades_compute.uniform("u_bilinear_fix_enabled", 0);
 
-                cascades_shader.uniform("u_resolution", resolution);
-                cascades_shader.uniform("u_cascade_extent", float2{static_cast<float>(radiance_width), static_cast<float>(radiance_height)});
-                cascades_shader.uniform("u_cascade_count", static_cast<float>(cascade_count));
-                cascades_shader.uniform("u_cascade_index", static_cast<float>(i));
-                cascades_shader.uniform("u_base_pixels_between_probes", base_pixels_between_probes);
-                cascades_shader.uniform("u_cascade_interval", config.cascade_interval);
-                cascades_shader.uniform("u_ray_interval", config.ray_interval);
-                cascades_shader.uniform("u_interval_overlap", config.interval_overlap);
-                cascades_shader.uniform("u_base_ray_count", static_cast<float>(config.base_ray_count));
-                cascades_shader.uniform("u_srgb", config.srgb_gamma);
-                cascades_shader.uniform("u_enable_sun", config.enable_sun ? 1 : 0);
-                cascades_shader.uniform("u_sun_angle", config.sun_angle);
-                cascades_shader.uniform("u_add_noise", config.add_noise ? 1 : 0);
-                cascades_shader.uniform("u_first_cascade_index", static_cast<float>(config.first_cascade_index));
-                cascades_shader.uniform("u_bilinear_fix_enabled", 0);
-
-                draw_fullscreen_tri();
+                cascades_compute.dispatch_and_barrier(gx, gy, 1, GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
                 glGenerateTextureMipmap(cascade_tex[write]);
                 cascade_idx = write;
             }
