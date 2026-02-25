@@ -48,9 +48,9 @@ vec3 sunAndSky(float rayAngle)
     return mix(sunColor * sunIntensity, skyColor, 0.3);
 }
 
-float rand(vec2 co)
+float rand(vec2 pixel)
 {
-    return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453);
+    return fract(52.9829189 * fract(0.06711056 * pixel.x + 0.00583715 * pixel.y));
 }
 
 vec4 raymarch(vec2 rayStart, vec2 rayEnd, float scale, vec2 oneOverSize, float minStepSize)
@@ -153,7 +153,7 @@ void main()
     float avgRecip = 1.0 / preAvgAmt;
 
     vec4 totalRadiance = vec4(0.0);
-    float noise = (u_add_noise == 1) ? rand(uv * (u_cascade_index + 1.0)) : 0.0;
+    float noise = (u_add_noise == 1) ? rand(coord + u_cascade_index * 5.3819) : 0.0;
 
     for (int i = 0; i < int(preAvgAmt); i++)
     {
