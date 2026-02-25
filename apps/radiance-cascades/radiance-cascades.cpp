@@ -1,3 +1,7 @@
+// Based on RadianceCascadesPaper by Alexander Sannikov
+// https://github.com/Raikiri/RadianceCascadesPaper
+// Licensed under the MIT License
+
 #include "polymer-core/lib-polymer.hpp"
 #include "polymer-gfx-gl/gl-loaders.hpp"
 #include "polymer-app-base/glfw-app.hpp"
@@ -23,8 +27,6 @@ struct rc_config
     bool add_noise = true;
     float brush_radius = 6.0f;
     float4 brush_color = {1.0f, 0.96f, 0.83f, 1.0f};
-    int32_t stage_to_render = 3;
-    int32_t first_cascade_index = 0;
     bool force_full_pass = true;
     bool show_surface = true;
 };
@@ -87,7 +89,7 @@ struct radiance_cascades_app final : public polymer_app
     void on_window_resize(int2 size) override;
 };
 
-inline void bind_fbo_to_texture(gl_framebuffer & fbo, GLuint tex, int32_t w, int32_t h)
+inline void bind_fbo_to_texture(gl_framebuffer & fbo, gl_texture_2d & tex, int32_t w, int32_t h)
 {
     glNamedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, tex, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
@@ -298,9 +300,6 @@ void radiance_cascades_app::on_draw()
     float2 one_over_size = {1.0f / resolution.x, 1.0f / resolution.y};
     bool is_frame_0 = config.force_full_pass || (frame == 0);
 
-    // -------------------------------------------------------
-    // 1. DRAW PASS
-    // -------------------------------------------------------
     {
         int32_t read = draw_idx;
         int32_t write = 1 - draw_idx;
@@ -344,26 +343,7 @@ void radiance_cascades_app::on_draw()
         draw_idx = write;
     }
 
-    // Early out for stage-to-render = 0 (draw only)
-    if (config.stage_to_render == 0)
-    {
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glViewport(0, 0, width, height);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        overlay_shader.bind();
-        overlay_shader.texture("u_input_texture", 0, draw_tex[draw_idx], GL_TEXTURE_2D);
-        overlay_shader.texture("u_draw_texture", 1, draw_tex[draw_idx], GL_TEXTURE_2D);
-        overlay_shader.uniform("u_resolution", resolution);
-        overlay_shader.uniform("u_show_surface", 1);
-        draw_fullscreen_tri();
-
-        goto do_imgui;
-    }
-
-    // -------------------------------------------------------
-    // 2. SEED PASS (only on frame 0 or force_full_pass)
-    // -------------------------------------------------------
+    // Seed pass
     if (is_frame_0)
     {
         bind_fbo_to_texture(fbo, seed_tex, canvas_width, canvas_height);
@@ -372,9 +352,7 @@ void radiance_cascades_app::on_draw()
         draw_fullscreen_tri();
     }
 
-    // -------------------------------------------------------
-    // 3. JFA PASSES (only on frame 0 or force_full_pass)
-    // -------------------------------------------------------
+    // Jump Flooding Algorithm
     if (is_frame_0)
     {
         jfa_idx = 0;
@@ -386,7 +364,7 @@ void radiance_cascades_app::on_draw()
             bind_fbo_to_texture(fbo, jfa_tex[write], canvas_width, canvas_height);
             jfa_shader.bind();
 
-            GLuint input_tex = (i == 0) ? static_cast<GLuint>(seed_tex) : static_cast<GLuint>(jfa_tex[read]);
+            gl_texture_2d & input_tex = (i == 0) ? seed_tex : jfa_tex[read];
             jfa_shader.texture("u_input_texture", 0, input_tex, GL_TEXTURE_2D);
             jfa_shader.uniform("u_resolution", resolution);
             jfa_shader.uniform("u_one_over_size", one_over_size);
@@ -398,27 +376,7 @@ void radiance_cascades_app::on_draw()
         }
     }
 
-    // Early out for stage 1 (JFA visualization)
-    if (config.stage_to_render == 1)
-    {
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glViewport(0, 0, width, height);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        // Render JFA texture directly (it's RG32F, so just show it)
-        overlay_shader.bind();
-        overlay_shader.texture("u_input_texture", 0, jfa_tex[jfa_idx], GL_TEXTURE_2D);
-        overlay_shader.texture("u_draw_texture", 1, draw_tex[draw_idx], GL_TEXTURE_2D);
-        overlay_shader.uniform("u_resolution", resolution);
-        overlay_shader.uniform("u_show_surface", 0);
-        draw_fullscreen_tri();
-
-        goto do_imgui;
-    }
-
-    // -------------------------------------------------------
-    // 4. DISTANCE FIELD PASS (only on frame 0 or force_full_pass)
-    // -------------------------------------------------------
+    // Distance field
     if (is_frame_0)
     {
         bind_fbo_to_texture(fbo, distance_tex, canvas_width, canvas_height);
@@ -428,31 +386,12 @@ void radiance_cascades_app::on_draw()
         draw_fullscreen_tri();
     }
 
-    // Early out for stage 2 (distance field)
-    if (config.stage_to_render == 2)
-    {
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glViewport(0, 0, width, height);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        overlay_shader.bind();
-        overlay_shader.texture("u_input_texture", 0, distance_tex, GL_TEXTURE_2D);
-        overlay_shader.texture("u_draw_texture", 1, draw_tex[draw_idx], GL_TEXTURE_2D);
-        overlay_shader.uniform("u_resolution", resolution);
-        overlay_shader.uniform("u_show_surface", 0);
-        draw_fullscreen_tri();
-
-        goto do_imgui;
-    }
-
-    // -------------------------------------------------------
-    // 5. RADIANCE CASCADES (coarsest to finest)
-    // -------------------------------------------------------
+    // Radiance cascades
     {
         compute_cascade_params();
 
         int32_t first_layer = cascade_count - 1;
-        int32_t last_layer = config.first_cascade_index;
+        int32_t last_layer = 0;
 
         float2 cascade_extent = {static_cast<float>(radiance_width), static_cast<float>(radiance_height)};
         GLuint gx = (radiance_width + 15) / 16;
@@ -485,7 +424,7 @@ void radiance_cascades_app::on_draw()
                 cascades_compute.uniform("u_enable_sun", config.enable_sun ? 1 : 0);
                 cascades_compute.uniform("u_sun_angle", config.sun_angle);
                 cascades_compute.uniform("u_add_noise", config.add_noise ? 1 : 0);
-                cascades_compute.uniform("u_first_cascade_index", static_cast<float>(config.first_cascade_index));
+                cascades_compute.uniform("u_first_cascade_index", 0.0f);
                 cascades_compute.uniform("u_bilinear_fix_enabled", 0);
 
                 cascades_compute.dispatch_and_barrier(gx, gy, 1, GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
@@ -535,7 +474,7 @@ void radiance_cascades_app::on_draw()
                 cascades_compute.uniform("u_enable_sun", config.enable_sun ? 1 : 0);
                 cascades_compute.uniform("u_sun_angle", config.sun_angle);
                 cascades_compute.uniform("u_add_noise", config.add_noise ? 1 : 0);
-                cascades_compute.uniform("u_first_cascade_index", static_cast<float>(config.first_cascade_index));
+                cascades_compute.uniform("u_first_cascade_index", 0.0f);
                 cascades_compute.uniform("u_bilinear_fix_enabled", 0);
 
                 cascades_compute.dispatch_and_barrier(gx, gy, 1, GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
@@ -545,61 +484,49 @@ void radiance_cascades_app::on_draw()
         }
     }
 
-    // -------------------------------------------------------
-    // 6. OVERLAY PASS
-    // -------------------------------------------------------
+    // Overlay
+    if (config.force_full_pass)
     {
-        if (config.force_full_pass)
-        {
-            // Render directly to screen
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            glViewport(0, 0, width, height);
-            glClear(GL_COLOR_BUFFER_BIT);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glViewport(0, 0, width, height);
+        glClear(GL_COLOR_BUFFER_BIT);
 
-            overlay_shader.bind();
-            overlay_shader.texture("u_input_texture", 0, cascade_tex[cascade_idx], GL_TEXTURE_2D);
-            overlay_shader.texture("u_draw_texture", 1, draw_tex[draw_idx], GL_TEXTURE_2D);
-            overlay_shader.uniform("u_resolution", resolution);
-            overlay_shader.uniform("u_show_surface", config.show_surface ? 1 : 0);
-            draw_fullscreen_tri();
-        }
-        else
-        {
-            // Double-buffered overlay for progressive rendering
-            int32_t overlay_write = overlay_idx;
-            int32_t overlay_read = 1 - overlay_idx;
+        overlay_shader.bind();
+        overlay_shader.texture("u_input_texture", 0, cascade_tex[cascade_idx], GL_TEXTURE_2D);
+        overlay_shader.texture("u_draw_texture", 1, draw_tex[draw_idx], GL_TEXTURE_2D);
+        overlay_shader.uniform("u_resolution", resolution);
+        overlay_shader.uniform("u_show_surface", config.show_surface ? 1 : 0);
+        draw_fullscreen_tri();
+    }
+    else
+    {
+        int32_t overlay_write = overlay_idx;
+        int32_t overlay_read = 1 - overlay_idx;
 
-            bind_fbo_to_texture(fbo, overlay_tex[overlay_write], canvas_width, canvas_height);
-            overlay_shader.bind();
-            overlay_shader.texture("u_input_texture", 0, cascade_tex[cascade_idx], GL_TEXTURE_2D);
-            overlay_shader.texture("u_draw_texture", 1, draw_tex[draw_idx], GL_TEXTURE_2D);
-            overlay_shader.uniform("u_resolution", resolution);
-            overlay_shader.uniform("u_show_surface", config.show_surface ? 1 : 0);
-            draw_fullscreen_tri();
+        bind_fbo_to_texture(fbo, overlay_tex[overlay_write], canvas_width, canvas_height);
+        overlay_shader.bind();
+        overlay_shader.texture("u_input_texture", 0, cascade_tex[cascade_idx], GL_TEXTURE_2D);
+        overlay_shader.texture("u_draw_texture", 1, draw_tex[draw_idx], GL_TEXTURE_2D);
+        overlay_shader.uniform("u_resolution", resolution);
+        overlay_shader.uniform("u_show_surface", config.show_surface ? 1 : 0);
+        draw_fullscreen_tri();
 
-            // Display previous frame's overlay
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            glViewport(0, 0, width, height);
-            glClear(GL_COLOR_BUFFER_BIT);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glViewport(0, 0, width, height);
+        glClear(GL_COLOR_BUFFER_BIT);
 
-            overlay_shader.bind();
-            overlay_shader.texture("u_input_texture", 0, overlay_tex[overlay_read], GL_TEXTURE_2D);
-            overlay_shader.texture("u_draw_texture", 1, draw_tex[draw_idx], GL_TEXTURE_2D);
-            overlay_shader.uniform("u_resolution", resolution);
-            overlay_shader.uniform("u_show_surface", config.show_surface ? 1 : 0);
-            draw_fullscreen_tri();
+        overlay_shader.bind();
+        overlay_shader.texture("u_input_texture", 0, overlay_tex[overlay_read], GL_TEXTURE_2D);
+        overlay_shader.texture("u_draw_texture", 1, draw_tex[draw_idx], GL_TEXTURE_2D);
+        overlay_shader.uniform("u_resolution", resolution);
+        overlay_shader.uniform("u_show_surface", config.show_surface ? 1 : 0);
+        draw_fullscreen_tri();
 
-            overlay_idx = 1 - overlay_idx;
-        }
-
-        if (!config.force_full_pass) frame = 1 - frame;
+        overlay_idx = 1 - overlay_idx;
     }
 
-do_imgui:
+    if (!config.force_full_pass) frame = 1 - frame;
 
-    // -------------------------------------------------------
-    // 7. IMGUI
-    // -------------------------------------------------------
     imgui->begin_frame();
     gui::imgui_fixed_window_begin("Radiance Cascades", ui_rect{{0, 0}, {340, height}});
 
@@ -631,8 +558,6 @@ do_imgui:
         ImGui::SliderFloat("Interval Overlap", &config.interval_overlap, -1.0f, 2.0f);
         ImGui::Text("Cascade Count: %d", cascade_count);
         ImGui::Text("Radiance Dims: %d x %d", radiance_width, radiance_height);
-        ImGui::SliderInt("Layer to Render", &config.first_cascade_index, 0, std::max(0, cascade_count - 1));
-        ImGui::SliderInt("Stage to Render", &config.stage_to_render, 0, 3);
         ImGui::Checkbox("Add Noise", &config.add_noise);
 
         bool srgb_enabled = config.srgb_gamma > 1.5f;
