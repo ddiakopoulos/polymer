@@ -97,10 +97,10 @@ scene_editor_app::scene_editor_app() : polymer_app(1920, 1080, "Polymer Scene Ed
                 xform->local_pose.position = float3(6.f, 0.5f, 0.f);
             }
         }
-        */
 
         the_scene.get_graph().refresh();
     }
+    */
 }
 
 void scene_editor_app::on_drop(std::vector<std::string> filepaths)

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.10...4.0)
 project(engine-procedural-material LANGUAGES CXX)
 
 file(GLOB INCLUDE_FILES *.hpp)

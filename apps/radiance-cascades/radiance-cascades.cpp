@@ -16,7 +16,7 @@ using namespace gui;
 
 struct rc_config
 {
-    int32_t base_ray_count = 4;
+    int32_t base_ray_count = 16;
     int32_t base_pixels_between_probes_exp = 0;
     float ray_interval = 1.0f;
     float cascade_interval = 1.0f;
